@@ -1,9 +1,0 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
-<!--
-This file was created by NSISDialogDesigner 1.5.0.0
-https://coolsoft.altervista.org/nsisdialogdesigner
-Do not edit manually!
--->
-<Dialog Name="AddPathPage" Title="ADD PATH" Subtitle="You can use coderrect without absolute path">
-  <CheckBox Name="chkAddPath" Location="27, 95" Size="316, 24" Text="Add coderrect.exe to PATH environment variable" Checked="True" TabIndex="0" onClick="addPathOnClicked" />
-</Dialog>

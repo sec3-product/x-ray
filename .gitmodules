@@ -1,0 +1,15 @@
+[submodule "demo/jet-v1"]
+	path = demo/jet-v1
+	url = https://github.com/jet-lab/jet-v1
+[submodule "coderrect"]
+	path = coderrect
+	url = https://github.com/coderrect-inc/coderrect
+	branch = rust
+[submodule "smallrace"]
+	path = smallrace
+	url = https://github.com/coderrect-inc/smallrace
+	branch = rust
+[submodule "LLVMRace"]
+	path = LLVMRace
+	url = https://github.com/coderrect-inc/LLVMRace
+	branch = rust

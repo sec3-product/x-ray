@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-llvm-profdata merge -sparse default.profraw -o racedetect.profdata
-llvm-cov export `which racedetect` -instr-profile=racedetect.profdata -ignore-filename-regex='.*(llvm|z3|spdlog|json).*$' -format=lcov > racedetect.lcov
-cat racedetect.lcov | grep "FNDA:" |  cut -f2 -d':' | sed '/^0,*/d' | cut -f2 -d',' | sort | uniq > t.lcov.o
-#cat racedetect.lcov | grep "FNF:" |  cut -f2 -d':' | awk '{for(i=1;i<=NF;i++)s+=$i}END{print s}'
-

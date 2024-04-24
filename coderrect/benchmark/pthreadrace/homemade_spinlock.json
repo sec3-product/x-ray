@@ -1,5 +1,0 @@
-{
-  "lockUnlockFunctions" : {
-    "homemade_spin_lock":"homemade_spin_unlock"
-  }
-}

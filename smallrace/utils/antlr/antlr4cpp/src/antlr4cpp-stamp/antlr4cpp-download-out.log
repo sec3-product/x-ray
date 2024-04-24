@@ -1,8 +1,0 @@
--- extracting...
-     src='/git/LAM/Smalltalk/utils/antlr/antlr4-master.zip'
-     dst='/git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp'
--- extracting... [tar xfz]
--- extracting... [analysis]
--- extracting... [rename]
--- extracting... [clean up]
--- extracting... done

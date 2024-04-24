@@ -1,9 +1,0 @@
-FROM centos:centos7.0.1406
-
-# Install dependencies
-RUN yum install -y python3 tar make gcc gcc-c++
-
-RUN pip3 install pytest
-
-ENV CODERRECT_HOME=/compat_test/coderrect-linux
-ENV PATH=$CODERRECT_HOME/bin:$PATH
