@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "types": ["mocha", "chai", "chai-as-promised"],
+    "typeRoots": ["./node_modules/@types", "/usr/local/lib/node_modules"],
+    "lib": ["es2019"],
+    "module": "commonjs",
+    "target": "es2020",
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "baseUrl": "./",
+    "paths": {
+      "@jet-lab/jet-client": ["libraries/ts/src/index.ts"]
+    }
+  }
+}

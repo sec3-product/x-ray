@@ -1,0 +1,48 @@
+# This is for nmake specific makefile on WINDOWS, a little bit different syntax from GNU MAKE.
+#
+# build default for example: 
+#      nmake -f makefile.win
+# 
+# build all for example
+#      nmake -f makefile.win all
+
+GO              = set GO111MODULE=on&& set GOOS=windows&&set GOARCH=amd64&& go
+GOBUILD         = $(GO) build $(BUILD_FLAG)
+GOTEST          = $(GO) test -p $(P)
+CMD             = cmd /V /C
+
+default: coderrect buildsucc
+
+.PHONY: all clean test coderrect.exe reporter.exe .gllvm
+
+buildsucc:
+	@echo Build Coderrect successfully!
+
+all: clean coderrect.exe reporter.exe .gllvm
+
+tidy:
+	@echo "go mod tidy"
+	./tools/check-tidy.sh
+
+clean: 
+	$(GO) clean -i .\...
+
+coderrect.exe:
+	$(CMD) "$(GOBUILD)-o bin/coderrect.exe cmd/coderrect/main.go"
+	
+reporter.exe:
+	$(CMD) "$(GOBUILD)-o bin/reporter.exe cmd/reporter/main.go"
+
+.gllvm: coderrect-dispatcher.exe
+
+coderrect-dispatcher.exe:
+	$(CMD) "$(GOBUILD)-o bin/coderrect-dispatcher.exe cmd/coderrect-dispatcher/main.go"
+
+lint:tools/bin/revive
+	@echo "linting"
+	@tools/bin/revive -formatter friendly -config tools/check/revive.toml $(FILES)
+
+leak: failpoint-enable
+	@export log_level=debug; \
+	$(GOTEST) -tags leak $(PACKAGES) || { $(FAILPOINT_DISABLE); exit 1; }
+	@$(FAILPOINT_DISABLE)

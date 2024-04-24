@@ -1,0 +1,222 @@
+{
+  "logger": {
+    "level": "debug",
+    "logFolder": "logs",
+    "maximumLogFileCount": 8,
+    "maximumLogFileSize": 128,
+    "toStderr": false
+  },
+  "report": {
+    "enableTerminal": false,
+    "//ouputDir": "please remove // and set the right path here"
+  },
+  "cleanBuild": false,
+  "analyzeAll": false,
+  "continueIfBuildErrorPresents": false,
+  "//bcPaths": "Remove // and specify a list of comma-separated paths",
+  "//analyzeBinaries": "Remove // and specify a list of comma-separated binary names",
+  "publishResults": false,
+  "mode": "normal",
+  "enableOpenMP": true,
+  "enableOrderViolation": true,
+  "enableMismatchedAPI": true,
+  "enableFilter": true,
+  "enableLockSet": true,
+  "enableLoopUnroll": false,
+  "raceLimit": 25,
+  "skipFunctions": [],
+  "indirectFunctions": [],
+  "ignoreRacesInFunctions": [
+    "std::*"
+  ],
+  "ignoreRacesAtLocations": [],
+  "ignoreRaceVariables": [],
+  "lowPriorityFiles": [],
+  "lowPriorityRaces": [],
+  "highPriorityRaces": [],
+  "heapAllocFunctions": [
+    "je_malloc",
+    "je_calloc",
+    "je_mallocx",
+    "u_malloc",
+    "u_calloc",
+    "rm_malloc",
+    "rm_calloc"
+  ],
+  "lockUnlockFunctions": {"malloc_mutex_lock":"malloc_mutex_unlock"},
+  "notParallelFunctionPairs": {},
+  "highPriorityFiles": [],
+  "openlib": {
+    "entryPoints": [],
+    "limit": 999
+  },
+  "threadAPIProfiles": {
+    "pthread": {
+      "readWriteLock": {
+        "readLock": [
+          "pthread_rwlock_rdlock",
+          "pthread_rwlock_tryrdlock",
+          "pthread_rwlock_timedrdlock"
+        ],
+        "writeLock": [
+          "pthread_rwlock_wrlock",
+          "pthread_rwlock_trywrlock",
+          "pthread_rwlock_timedwrlock"
+        ],
+        "unlock": [
+          "pthread_rwlock_unlock"
+        ]
+      },
+      "conditionVariable": {
+        "wait": [
+          "pthread_cond_wait",
+          "pthread_cond_timedwait"
+        ],
+        "signal": [
+          "pthread_cond_signal",
+          "pthread_cond_broadcast"
+        ]
+      },
+      "mutex": {
+        "lock": [
+          "pthread_mutex_lock",
+          "pthread_mutex_trylock",
+          "pthread_mutex_timedlock",
+          "pthread_spin_lock",
+          "pthread_spin_trylock"
+        ],
+        "unlock": [
+          "pthread_mutex_unlock",
+          "pthread_spin_unlock"
+        ]
+      },
+      "thread": {
+        "create": [
+          {
+            "function": "pthread_create",
+            "entryPoint": 3,
+            "arg": 4
+          }
+        ],
+        "exit": [
+          "pthread_exit"
+        ],
+        "join": [
+          "pthread_join"
+        ]
+      }
+    },
+    "win32": {
+      "thread": {
+        "create": [
+          {
+            "function": "CreateThread",
+            "entryPoint": 3,
+            "arg": 4,
+            "handleArg": 0
+          }
+        ],
+        "exit": [
+          "ExitThread"
+        ],
+        "join": [
+          "WaitForSingleObject"
+        ]
+      },
+      "conditionVariable": {
+        "allocator": {
+          "name": "CreateEvent"
+        },
+        "wait": [
+          "WaitForSingleObject"
+        ],
+        "signal": [
+          "SetEvent"
+        ]
+      },
+      "semaphore": {
+        "allocator": {
+          "name": "CreateSemaphore"
+        },
+        "wait": [
+          "WaitForSingleObject"
+        ],
+        "post": [
+          "ReleaseSemaphore"
+        ]
+      },
+      "mutex": {
+        "lockAllocator": {
+          "name": "CreateMutex"
+        },
+        "lock": [
+          "WaitForSingleObject",
+          "EnterCriticalSection"
+        ],
+        "unlock": [
+          "ReleaseMutex",
+          "LeaveCriticalSection"
+        ]
+      }
+    },
+    "apr": {
+      "readWriteLock": {
+        "readLock": [
+          "apr_thread_rwlock_rdlock",
+          "apr_thread_rwlock_tryrdlock"
+        ],
+        "writeLock": [
+          "apr_thread_rwlock_wrlock",
+          "apr_thread_rwlock_trywrlock"
+        ],
+        "lockAllocator": {
+          "name": "apr_thread_rwlock_create",
+          "arg": 1
+        },
+        "unlock": [
+          "apr_thread_rwlock_unlock"
+        ]
+      },
+      "conditionVariable": {
+        "wait": [
+          "apr_thread_cond_wait",
+          "apr_thread_cond_timedwait"
+        ],
+        "signal": [
+          "apr_thread_cond_signal",
+          "apr_thread_cond_broadcast"
+        ]
+      },
+      "mutex": {
+        "lock": [
+          "apr_thread_mutex_lock",
+          "apr_thread_mutex_trylock",
+          "apr_thread_mutex_timedlock"
+        ],
+        "lockAllocator": {
+          "name": "apr_thread_mutex_create",
+          "arg": 1
+        },
+        "unlock": [
+          "apr_thread_mutex_unlock"
+        ]
+      },
+      "thread": {
+        "create": [
+          {
+            "function": "apr_thread_create",
+            "entryPoint": 3,
+            "arg": 4,
+            "callbackArg": 2
+          }
+        ],
+        "exit": [
+          "apr_thread_exit"
+        ],
+        "join": [
+          "apr_thread_join"
+        ]
+      }
+    }
+  }
+}

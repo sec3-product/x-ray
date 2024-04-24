@@ -1,0 +1,404 @@
+#!/usr/bin/perl
+
+#
+# build-pkg builds the installation package from source code
+#
+# usage
+#  build-pkg [options] version
+#
+# example
+#
+# Example 2. build a package from release branch
+#   build-pkg -r 0.0.1
+# 
+# Example 3. Show usage information
+#   build-pkg -h
+#
+# the example above will generate an installation package called
+# coderrect-linux-0.0.1.tar.gz under the current directory
+#
+# Example 4. Build a package from develop branch.
+#   build-pkg -d 
+#
+# the example above will generate an installation package called
+# coderrect-linux-devlop.tar.gz under the current directory
+#
+# it checkouts code from github and compile gllvm 
+#     
+# todo
+#   1. check the base dir and mkdir "build" under the base. for now, we assume
+#      cwd is the base dir
+#   2. git authentication automation
+#
+
+use strict;
+use warnings;
+use Cwd qw(cwd);
+use Getopt::Std;
+
+sub packageRaceDetect {
+  my ($releaseBuild, $pkgVersion, $develop, $buildLocally) = (@_);
+
+  print "Building racedetect ...\n";
+
+  if ($buildLocally) {
+    if ($releaseBuild) {
+      system("cd build && wget https://llvmrace-binary.s3-us-west-2.amazonaws.com/release/llvmrace-$pkgVersion.tar.gz");
+    }
+    elsif ($develop) {
+      system("cd build && wget https://llvmrace-binary.s3-us-west-2.amazonaws.com/develop/llvmrace-develop.tar.gz");
+    }
+    else {
+      system("cd build && wget https://llvmrace-binary.s3-us-west-2.amazonaws.com/master/llvmrace-$pkgVersion.tar.gz");
+    }
+    my $rc = $? >> 8;
+    if ($rc != 0) {
+      print STDERR "Failed to download binary of racedetect, quit\n";
+      exit 1;
+    }
+
+    my $llvmrace_pkg = "";
+    if ($develop) {
+      $llvmrace_pkg = "llvmrace-develop.tar.gz";
+    }
+    else {
+      $llvmrace_pkg = "llvmrace-$pkgVersion.tar.gz";
+    }
+
+    `cd build && tar -xzvf $llvmrace_pkg`;
+    if ($? != 0) {
+      print STDERR "Failed to unpack $llvmrace_pkg\n";
+      exit 1;
+    }
+    `cd build && cp -r llvmrace/bin/* package/bin/`;
+  }
+  else {
+    `cd build && git clone ssh://git\@github.com/coderrect/LLVMRace.git`;
+    if ($? != 0) {
+      print STDERR "Failed to clone LLVMRace\n";
+      exit 1;
+    }
+    if ($releaseBuild) {
+      system("cd build/LLVMRace && git checkout release-v$pkgVersion");
+    }
+    elsif ($develop) {
+      system("cd build/LLVMRace && git checkout develop");
+    }
+    else {
+      system("cd build/LLVMRace && git checkout tags/v$pkgVersion"); 
+    }
+    my $rc = $? >> 8;
+    if ($rc != 0) {
+      print STDERR "No right tag or release brnach, quit\n";
+      exit 1;
+    }
+
+    $rc = system("cd build/LLVMRace && git submodule init && git submodule update");
+    if ($rc != 0) {
+      print STDERR "Unable to get z3 source code\n";
+      exit 1;
+    }
+
+	#
+	# build clang-10.0.0 if it doesn't exist
+	#
+    if (! -d "build/llvm10/clang-10.0.0") {
+    	print "Building clang 10.0.0 ...\n";
+    	`./build-custom-clang10.pl -k`;
+    }
+
+	#
+	# build aser-race with the installer docker
+	#
+    `docker run --rm --user=\$(id -u):\$(id -g) -v \$(pwd)/build:/build -v \$(pwd)/dockerstuff/scripts:/scripts coderrect/installer:1.1 /scripts/build-llvmrace.sh`;
+    if ($? != 0) {
+    	system("cat \$(pwd)/build/LLVMRace/build/unittest.log");
+    	print STDERR "Failed to build LLVMRace.\n";
+    	exit 1;
+  	}
+  }
+}
+
+
+sub upload_llvmrace {
+  my ($releaseBuild, $pkgVersion, $develop) = (@_);
+  my $tarballName = "llvmrace-develop.tar.gz";
+  if ($releaseBuild) {
+    $tarballName = "llvmrace-$pkgVersion.tar.gz";
+  }
+
+  #create package
+  `cd build/package && mkdir llvmrace && cp -r bin/ llvmrace/`;
+
+  #create a tar package of llvmrace
+  `cd build/package && tar -czvf $tarballName llvmrace/`;
+
+  #upload package to aws bucket
+  if ($develop) {
+      `./upload-pkg build/package/$tarballName llvmrace-binary/develop`;
+  } else {
+      `./upload-pkg build/package/$tarballName llvmrace-binary/release`;
+  }
+}
+
+
+sub installClang {
+  print "Copy clang 10.0.0 ...\n";
+  `cd build && wget https://public-installer-pkg.s3.us-east-2.amazonaws.com/custom_clang_10.tar.gz`;
+  if ($? != 0) {
+    print STDERR "Failed to download customized clang package from S3\n";
+    exit 1;
+  }
+  `cd build && tar -xzvf custom_clang_10.tar.gz`;
+  if ($? != 0) {
+    print STDERR "Failed to unpack custom_clang.tar.gz\n";
+    exit 1;
+  }
+  `cd build && cp -r custom_clang/* package/clang/`;
+}
+
+
+sub packageJenkinsPlugin {
+  print "Jenkins plugin ...\n";
+
+  # get source code
+  `cd build && git clone ssh://git\@github.com/coderrect-inc/coderrect-jenkins-plugin.git`;
+  if ($? != 0) {
+    print STDERR "Failed to clone jenkins plugin\n";
+    exit 1;
+  }
+
+  # build the binary
+  `docker run --rm --user=\$(id -u):\$(id -g) -v \$(pwd)/build:/build -v \$(pwd)/dockerstuff/scripts:/scripts coderrect/installer:1.0 /scripts/build-jenkins-plugin.sh`;
+  if ($? != 0) {
+    print STDERR "Failed to copy coderrect.hpi\n";
+    exit 1;
+  }
+}
+
+
+sub resetBuildDirOwner {
+  `docker run --rm -v \$(pwd)/build:/build coderrect/installer:1.0 /bin/chown -R \$(id -u):\$(id -g) /build/`;
+}
+
+#
+# build golang project
+#
+sub packageCoderrectGo {
+  print "Building coderrect ...\n";
+  
+  # build coderrect 
+  # `cd ../gosrc && make all && mv bin/* ../installer/build/package/bin/.`;
+  `docker run --rm --user=\$(id -u):\$(id -g) -v \$(pwd)/build:/build -v \$(pwd)/../gosrc:/src -v \$(pwd)/dockerstuff/scripts:/scripts coderrect/installer:1.1 /scripts/build-gosrc.sh`;
+  if ($? != 0) {        
+    print STDERR "Failed to build coderrect\n";
+    exit 1;
+  }
+}
+
+#
+# build cpp project
+#
+sub packageCoderrectCpp {
+  # call docker to build the c code "coderrect-exec"
+  `docker run --rm --user=\$(id -u):\$(id -g) -v \$(pwd)/build:/build -v \$(pwd)/../coderrect-exec:/src -v \$(pwd)/dockerstuff/scripts:/scripts coderrect/clang:1.0 /scripts/build-coderrect-exec.sh`;
+  if ($? != 0) {
+    print STDERR "Failed to build coderrect-exec\n";
+    exit 1;
+  }
+
+  # call docker to build the c code "libear.so"
+  `docker run --rm --user=\$(id -u):\$(id -g) -v \$(pwd)/build:/build -v \$(pwd)/../libear:/src -v \$(pwd)/dockerstuff/scripts:/scripts coderrect/clang:1.0 /scripts/build-libear.sh`;
+  if ($? != 0) {
+    print STDERR "Failed to build libear.so\n";
+    exit 1;
+  }
+  print "package coderrect cpp successfully\n";
+}
+
+#
+# copy example from benchmark
+#
+sub packageExample {
+   # copy all examples, except for the big "concurrency-bugs"
+  `cp -r ../benchmark/fortran build/package/examples/.`;
+  `cp -r ../benchmark/hello build/package/examples/.`;
+  `cp -r ../benchmark/pi build/package/examples/.`;
+  `cp -r ../benchmark/pthreadrace build/package/examples/.`;
+  `cp -r ../benchmark/singlemake build/package/examples/.`;
+}
+
+sub packageDocker {
+    `cp ../docker-installer/docker-coderrect build/package/bin/`;
+}
+
+sub buildDockerImage {
+    my ($pkgName, $pkgVersion, $pkgPath) = (@_);
+    print "Building docker image: $pkgName, $pkgVersion, $pkgPath\n";
+    my $absPkgPath = `realpath $pkgPath`;
+    my $pkgFileName=`basename $pkgPath`;
+
+    `cp -f $pkgPath ../docker-installer`;
+    if ($pkgName eq "develop") {
+        `cd ../docker-installer && ./build-docker.sh -l $pkgFileName`;
+    } elsif ($pkgName eq "system") {
+        `cd ../docker-installer && ./build-docker.sh -s $pkgVersion -l $pkgFileName`;
+    } else {
+        `cd ../docker-installer && ./build-docker.sh -c $pkgVersion -l $pkgFileName`;
+    }
+    `rm ../docker-installer/$pkgFileName`;
+}
+
+#
+# main
+#
+my %opt;
+getopts('hrdlpo', \%opt);
+my ($help, $release, $develop, $buildLocally, $dualProduct, $racedetectOnly) = @opt{ qw(h r d l p o) };
+my $pkgVersion = shift;
+my $effectiveVersion = shift;
+if (!defined($effectiveVersion)) {
+    $effectiveVersion = $pkgVersion;
+}
+
+if ($help) {
+    print <<EOF
+build-pkg - build a installer from the master branch or the release branch
+
+Usage:
+  build-pkg [options] version [effective_version]
+
+  -h - print this message
+  -r - build from the release branches (the default is from master branch)
+  -d - build from the develop branches
+  -l - build with downloading racedetect
+  -o - just build racedetect and upload to s3
+
+Examples:
+  1. build the package v0.0.1 from release branches
+  \$ build-pkg -r 0.0.1
+
+  2. build the package from the develop branch
+  \$ build-pkg -d
+
+  3. build the package from the release-v0.8.0 branch 
+     but set VERSION file to be 0.8.1
+  \$ build-pkg -r 0.8.0 0.8.1
+
+  4. build coderrect-linux-system-0.8.0.tar.gz and coderrect-linux-hpc-0.8.0.tar.gz
+  \$ build-pkg -p 0.8.0
+
+  5. just build racedetect from the develop branch and upload it to s3
+  \$ build-pkg -o -d
+EOF
+;
+    exit 0;
+}
+
+
+$ENV{'GOPATH'} = cwd() . "/build/go";
+ 
+# clean the battlefield
+#
+if (! -d "build") {
+    `mkdir build`;
+}
+`chmod -R 770 build/go`;
+`cd build && rm -fr LLVMRace package executor reporter gllvm custom_clang_10.tar.gz custom_clang go coderrect-linux-develop`;
+
+# copy the package scaffold to build
+#
+`cp -r package build/.`;
+if ($? != 0) {
+    print STDERR "Failed to copy the package template\n";
+    exit 1;
+}
+
+if (! -d "build/package/bin") {
+    `mkdir -p build/package/bin`;
+}
+if (! -d "build/package/logs") {
+    `mkdir -p build/package/logs`;
+}
+if (! -d "build/package/clang") {
+    `mkdir -p build/package/clang`;
+}
+if (! -d "build/package/examples") {
+    `mkdir -p build/package/examples`;
+}
+
+packageRaceDetect($release, $pkgVersion, $develop, $buildLocally);
+if ($racedetectOnly) {
+    upload_llvmrace($release, $effectiveVersion, $develop);
+    print "Done - build racedetect only\n";
+    exit 0;
+}
+installClang();
+packageCoderrectGo();
+packageCoderrectCpp();
+packageExample();
+# packageJenkinsPlugin($uid, $gid);
+packageDocker();
+resetBuildDirOwner();
+
+# package
+#
+print "Create the installation package ...\n";
+my $version = "";
+if ($effectiveVersion) {
+  $version = $effectiveVersion;
+}
+else {
+  $version = "develop";
+}
+
+my $build = `date +'\%s'`;
+chomp $build;
+
+if (!$dualProduct) {
+  `cd build && rm -fr coderrect-linux-$version`;
+  `cd build && echo package $version build $build >> package/VERSION`;
+  `cd build && mv package coderrect-linux-$version`;
+  `cd build && tar -czvf coderrect-linux-$version.tar.gz coderrect-linux-$version/*`;
+  if ($? != 0) {
+    print STDERR "Failed to build the tarball\n";
+    exit 1;
+  }
+  `mv build/coderrect-linux-$version.tar.gz .`;
+  if ($version eq "develop") {
+    buildDockerImage($version, "", "coderrect-linux-$version.tar.gz");
+  }
+}
+else {
+  # build coderrect-linux-system-$version.tar.gz
+  `cd build && rm -fr coderrect-linux-system-$version`;
+  `cd build && echo "package (system) $version build $build" > package/VERSION`;
+  `cd build && mkdir coderrect-linux-system-$version && cp -r package/* coderrect-linux-system-$version/.`;
+  `cd build/coderrect-linux-system-$version && rm clang/bin/flang*`;
+  `cd build && tar -czvf coderrect-linux-system-$version.tar.gz coderrect-linux-system-$version/*`;
+  if ($? != 0) {
+    print STDERR "Failed to build the system tarball\n";
+    exit 1;
+  }
+
+  # build coderrect-linux-hpc-$version.tar.gz
+  `cd build && rm -fr coderrect-linux-hpc-$version`;
+  `cd build && echo "package (hpc) $version build $build" > package/VERSION`;
+  `cd build && mv package coderrect-linux-hpc-$version`;
+  `cd build && tar -czvf coderrect-linux-hpc-$version.tar.gz coderrect-linux-hpc-$version/*`;
+  if ($? != 0) {
+    print STDERR "Failed to build the hpc tarball\n";
+    exit 1;
+  }  
+
+  `mv build/coderrect-linux-system-$version.tar.gz .`;
+  `mv build/coderrect-linux-hpc-$version.tar.gz .`;
+
+  buildDockerImage("system", $version, "coderrect-linux-system-$version.tar.gz");
+  buildDockerImage("hpc", $version, "coderrect-linux-hpc-$version.tar.gz");
+}
+
+print "Build package successfully\n";
+
+
+__END__

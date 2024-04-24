@@ -1,0 +1,9 @@
+{
+  "openlib": {
+    "entryPoints": [
+      "foo",
+      "myThreadFun",
+      "myThreadFun2"
+    ]
+  }
+}

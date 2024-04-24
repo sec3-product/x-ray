@@ -1,0 +1,516 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Coderrect Race Detection Report</title>
+
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="../artifacts/jquery-3.4.1.min.js"></script>
+    <script src="../artifacts/jquery.modal.js"></script>
+    <script src="../artifacts/highlight.pack.js"></script>
+    <script src="../artifacts/toastr.min.js"></script>
+    <link rel="stylesheet" href="../artifacts/jquery.modal.css" />
+    <link rel="stylesheet" href="../artifacts/select2.min.css" />
+    <link rel="stylesheet" href="../artifacts/styles/default.css">
+    <link rel="stylesheet" type="text/css" href="../artifacts/pretty-checkbox.min.css" />
+    <link rel="stylesheet" type="text/css" href="../artifacts/coderrect.css" />
+    <link href="../artifacts/toastr.min.css" rel="stylesheet" />
+    <script src="race.json"></script>
+    <script src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
+    <script src="../artifacts/coderrect.js"></script>
+</head>
+
+<body>
+    <nav class="header">
+        <img class="logo" src="../artifacts/images/Coderrect-Horizontal-Logo-RGB.svg">
+        <a href="#filterConfig" rel="modal:open" id="createFilter" class="raw-anchor nav-btn nav-filter">CREATE A FILTER
+            LIST</a>
+        <a href="#feedbackForm" rel="modal:open" class="raw-anchor nav-btn nav-questions">QUESTIONS</a>
+    </nav>
+
+    <div class="summary">
+        <span class="summary-title">
+            <div class="summary-title-text">Race</div>
+            <div class="summary-title-text">Detection</div>
+            <div class="summary-title-text">Report</div>
+        </span>
+
+        <span class="summary-content">
+            <div class="summary-content-title">Report Summary</div>
+            <div class="summary-content-text">Report Title:&nbsp;&nbsp;<span>Race Detection for </span><span
+                    id="projectName"></span></div>
+            <div class="summary-content-text">Date Time:&nbsp;&nbsp;<span id="reportGeneratedAt"></span></div>
+            <div class="summary-content-text">Generated With:&nbsp;&nbsp;<span id="coderrectVer"></span></div>
+            <div class="summary-content-text">Detected Races:&nbsp;&nbsp;<span id="numOfRaces"></span></div>
+            <div class="summary-content-text">Configuration List:&nbsp;&nbsp;<a
+                    href="../configuration.json">configuration.json</a>
+            </div>
+        </span>
+    </div>
+
+    <!-- differencetial display -->
+    <div class="view-mode" id="viewMode">
+        <div class="view-selection" id="viewSelection">
+            <label id="fullView" class="view-selection-btn selected">Full Races</label>
+            <label id="newView" class="view-selection-btn">New Races</label>
+        </div>
+
+        <div class="git-commit" id="gitCommit">
+            <div>
+                <span>Base Git Commit: </span>
+                <span id="baseGitCommit"></span>
+            </div>
+            <div>
+                <span>Current Git Commit: </span>
+                <span id="currGitCommit"></span>
+            </div>
+        </div>
+
+        <div class="diff-summary" id="diffSummary">
+            There are in total <span id="diffRaceNum"></span> new race(s),
+            <span id="diffMismatchNum"></span> new mismatched API(s),
+            and <span id="diffToctouNum"></span> new TOCTOU(s).
+        </div>
+        <!-- <div class="new-race-list" id="newRaceList">
+            <a id="new-race0" href="#race0"></a>
+        </div> -->
+    </div>
+
+    <div id="races" class="race-list">
+        <div class="race" id="race0">
+            <div class="race-header flex-container">
+                Race No. <span class="race-no"></span>
+                <span class="separator"></span>
+                <img src="../artifacts/images/hide.png" class="race-toggle race-hide"></span>
+            </div>
+
+            <div class="race-body">
+                <div class="race-var">
+                    <div class="race-var-src">
+                        <span class="explanation">A variable defined here could be accessed by multiple threads
+                            simultaneously without
+                            correct synchronizations.</span>
+                        <span class="source-info">
+                            <a class="filepath" href=""></a>:<span class="line-number"></span>:
+                        </span>
+                    </div>
+                    <div class="code-snippet source-line race-source-line">
+                        <pre><code></code></pre>
+                        <a href="#filterSharedVariable" rel="modal:open" class="filter-toggle filter-var-toggle">Filter
+                            this Race</a>
+                    </div>
+                </div>
+
+                <div class="race-omp">
+                    <div class="race-var-src">
+                        <span class="explanation">This is the OpenMP section causing the race.</span>
+                    </div>
+                    <div class="code-snippet">
+                        <pre><code></code></pre>
+                    </div>
+                </div>
+
+                <div class="race-threads">
+                    <div class="thread-table">
+                        <div class="thread-row">
+                            <div class="thread-cell">
+                                <div class="race-thread-src1">
+                                    <span class="label">Thread1: </span>
+                                    <span class="source-info">
+                                        <a class="filepath" href=""></a></span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="thread-cell">
+                                <div class="race-thread-src2">
+                                    <span class="label">Thread2: </span>
+                                    <span class="source-info">
+                                        <a class="filepath" href=""></a></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="thread-row">
+                            <div class="thread-cell code-snippet-cell">
+                                <div class="code-snippet race-code-snippet race-code-snippet1">
+                                    <a href="#filterLine" rel="modal:open"
+                                        class="filter-toggle filter-line-toggle">Filter this
+                                        Race</a>
+                                    <pre><code></code></pre>
+                                </div>
+                            </div>
+                            <div class="thread-cell code-snippet-cell">
+                                <div class="code-snippet race-code-snippet race-code-snippet2">
+                                    <a href="#filterLine" rel="modal:open"
+                                        class="filter-toggle filter-line-toggle">Filter this
+                                        Race</a>
+                                    <pre><code></code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="thread-row">
+                            <!-- <div class="thread-cell">
+                                <div class="stacktrace code-snippet race-stacktrace race-stacktrace1">
+                                    <pre><code></code></pre>
+                                </div>
+                            </div> -->
+                            <div class="thread-cell stacktrace code-snippet race-stacktrace race-stacktrace1">
+                                <pre><code></code></pre>
+                            </div>
+                            <!-- <div class="thread-cell">
+                                <div class="stacktrace code-snippet race-stacktrace race-stacktrace2">
+                                    <pre><code></code></pre>
+                                </div>
+                            </div> -->
+                            <div class="thread-cell stacktrace code-snippet race-stacktrace race-stacktrace2">
+                                <pre><code></code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="avs" class="race-list">
+        <div class="race" id="av0">
+            <div class="race-header flex-container">
+                Atomicity Violation No. <span class="race-no"></span>
+                <span class="separator"></span>
+                <img src="../artifacts/images/hide.png" class="race-toggle race-hide"></span>
+            </div>
+
+            <div class="race-body">
+                <div class="race-var">
+                    <div class="race-var-src">
+                        <span class="explanation">A variable defined here could be loaded and stored by one thread,
+                            meanwhile interleaved by a store from other thread, causing inconsistent results.</span>
+                        <span class="source-info">
+                            <a class="filepath" href=""></a>:<span class="line-number"></span>:
+                        </span>
+                    </div>
+                    <div class="code-snippet source-line race-source-line">
+                        <pre><code></code></pre>
+                        <a href="#filterSharedVariable" rel="modal:open" class="filter-toggle filter-var-toggle">Filter
+                            this Race</a>
+                    </div>
+                </div>
+
+                <div class="race-threads">
+                    <div class="thread-table">
+                        <div class="thread-row">
+                            <div class="thread-cell-full">
+                                <div class="race-thread-src1">
+                                    <span class="label">Thread1 (load): </span>
+                                    <span class="source-info">
+                                        <a class="filepath" href=""></a></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="thread-row">
+                            <div class="thread-cell-full code-snippet-cell">
+                                <div class="code-snippet race-code-snippet race-code-snippet1">
+                                    <a href="#filterLine" rel="modal:open"
+                                        class="filter-toggle filter-line-toggle">Filter this
+                                        Atomicity Violation</a>
+                                    <pre><code></code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="thread-row">
+                            <!-- <div class="thread-cell">
+                                <div class="stacktrace code-snippet race-stacktrace race-stacktrace1">
+                                    <pre><code></code></pre>
+                                </div>
+                            </div> -->
+                            <div class="thread-cell-full stacktrace code-snippet race-stacktrace race-stacktrace1">
+                                <pre><code></code></pre>
+                            </div>
+                            <!-- <div class="thread-cell">
+                                <div class="stacktrace code-snippet race-stacktrace race-stacktrace2">
+                                    <pre><code></code></pre>
+                                </div>
+                            </div> -->
+                        </div>
+
+                        <div class="thread-row">
+                            <div class="thread-cell-full">
+                                <div class="race-thread-src2">
+                                    <span class="label">Thread2 (store): </span>
+                                    <span class="source-info">
+                                        <a class="filepath" href=""></a></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="thread-row">
+                            <div class="thread-cell-full code-snippet-cell">
+                                <div class="code-snippet race-code-snippet race-code-snippet2">
+                                    <a href="#filterLine" rel="modal:open"
+                                        class="filter-toggle filter-line-toggle">Filter this
+                                        Atomicity Violation</a>
+                                    <pre><code></code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="thread-row">
+                            <div class="thread-cell-full stacktrace code-snippet race-stacktrace race-stacktrace2">
+                                <pre><code></code></pre>
+                            </div>
+                        </div>
+
+                        <div class="thread-row">
+                            <div class="thread-cell-full">
+                                <div class="race-thread-src3">
+                                    <span class="label">Thread1 (store): </span>
+                                    <span class="source-info">
+                                        <a class="filepath" href=""></a></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="thread-row">
+                            <div class="thread-cell-full code-snippet-cell">
+                                <div class="code-snippet race-code-snippet race-code-snippet3">
+                                    <a href="#filterLine" rel="modal:open"
+                                        class="filter-toggle filter-line-toggle">Filter this
+                                        Atomicity Violation</a>
+                                    <pre><code></code></pre>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="thread-row">
+                            <div class="thread-cell-full stacktrace code-snippet race-stacktrace race-stacktrace3">
+                                <pre><code></code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="mismatchedAPIs" class="mismatchedAPI-list">
+        <div class="mismatchedAPI" id="mismatchedAPI0">
+            <div class="race-header flex-container">
+                Mismatched API No. <span class="race-no"></span>
+                <span class="separator"></span>
+                <img src="../artifacts/images/hide.png" class="race-toggle race-hide"></span>
+            </div>
+
+            <div class="race-body">
+                <div class="race-var">
+                    <div class="race-var-src">
+                        <span class="explanation error-msg"></span>
+                        <span class="source-info">
+                            <a class="filepath" href=""></a>:<span class="line-number"></span>:
+                        </span>
+                    </div>
+                    <!-- The sourceline seems just to be a subset of source-snippet -->
+                    <!-- <div class="source-line code-snippet mismatchedAPI-row">
+                        <pre><code></code></pre>
+                    </div> -->
+                </div>
+
+                <div class="source-snippet code-snippet mismatchedAPI-row">
+                    <pre><code></code></pre>
+                </div>
+
+                <div class="stacktrace code-snippet">
+                    <pre><code></code></pre>
+                </div>
+
+                <!-- Below is only used for re-entrant locks -->
+                <!-- errorMsg2 -->
+                <span class="explanation error-msg2 hide"></span>
+
+                <!-- inst2 -->
+                <div class="source-snippet code-snippet mismatchedAPI-row inst2-snippet hide">
+                    <pre><code></code></pre>
+                </div>
+                <div class="stacktrace code-snippet inst2-stacktrace hide">
+                    <pre><code></code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="go-top">
+        <img src="../artifacts/images/arrow.png">
+    </div>
+
+    <iframe name="hiddenFrame" class="hide" style="visibility: hidden"></iframe>
+
+    <form id="feedbackForm" class="modal feedback"
+        action="https://nu7j9uusr6.execute-api.us-east-2.amazonaws.com/prod/feedbacks" method="get"
+        target="hiddenFrame">
+        <div class="feedback-title">Let us know your question:</div>
+        <input type="email" id="mail" name="email" size="100" class="feedback-email" placeholder="E-mail">
+        <textarea id="comment" name="comment" rows="20" cols="100" class="feedback-comment"
+            placeholder="Your question"></textarea>
+        <div class="feedback-btns">
+            <button type="submit" class="feedback-submit">
+                <span>Save</span>
+            </button>
+            <a href="#close-modal" rel="modal:close" class="raw-anchor filter-close"><span>Close</span></a>
+        </div>
+    </form>
+
+    <div id="filterConfig" class="modal">
+        <div class="filter-select-header">
+            <div>Filter Results</span></div>
+        </div>
+        <div class="note note-top">You can copy the JSON below to the
+            <code class="inline-code">coderrect.json</code> under the directory where you run Coderrect.
+        </div>
+        <div class="note note-bot">Coderrect will automatically filter all races defined here next time you run it.
+        </div>
+        <pre id="config"><code id="configJson" class="json"></code></pre>
+        <div class="filter-btns">
+            <a href="#close-modal" rel="modal:close" class="raw-anchor filter-close"><span>Close</span></a>
+        </div>
+    </div>
+</body>
+
+<div id="filterSharedVariable" class="modal filter-select">
+    <div class="filter-select-header">
+        <div>Filter Races by the <span id="filter-type">Shared Variable</span></div>
+    </div>
+    <div class="filter-select-body">
+        <div class="filter-instruction">
+            Coderrect can suppress races by attributes of the shared variable in the next run
+        </div>
+        <div class="filter-options">
+            <div class="filter-option-item selected">
+                <div class="filter-name">
+                    <input type="checkbox" name="filterSharedVar" id="sharedVarName">
+                    <label for="sharedVarName">Variable name</label>
+                    <img src="../artifacts/images/checkmark.png" class="checkmark-checked">
+                    <span class="checkmark-unchecked"></span>
+                </div>
+                <div id="variableNameVal" class="filter-content"></div>
+                <div class="filter-hint">
+                    Races accessing this variable will be suppressed. You can use glob expr to suppress races accessing
+                    similar variables (e.g. "foo*")
+                </div>
+            </div>
+            <div class="filter-option-item selected">
+                <div class="filter-name">
+                    <input type="checkbox" name="filterSharedVar" id="sharedVarFile">
+                    <label for="sharedVarFile">Source file</label>
+                    <img src="../artifacts/images/checkmark.png" class="checkmark-checked">
+                    <span class="checkmark-unchecked"></span>
+                </div>
+                <div id="sourceFileVal" class="filter-content"></div>
+                <div class="filter-hint">
+                    Races whose shared variable defined in this file will be suppressed
+                </div>
+            </div>
+            <div class="filter-option-item">
+                <div class="filter-name">
+                    <input type="checkbox" name="filterSharedVar" id="sharedVarType">
+                    <label for="sharedVarType">Variable type</label>
+                    <img src="../artifacts/images/checkmark.png" class="checkmark-checked">
+                    <span class="checkmark-unchecked"></span>
+                </div>
+                <div id="variableTypeVal" class="filter-content"></div>
+                <div class="filter-hint">
+                    Races accessing variable with this type will be suppressed
+                </div>
+            </div>
+        </div>
+        <div class="filter-btns">
+            <a id="sharedVarSave" href="#close-modal" rel="modal:close"
+                class="raw-anchor filter-save"><span>Save</span></a>
+            <a href="#close-modal" rel="modal:close" class="raw-anchor filter-close"><span>Close</span></a>
+        </div>
+    </div>
+</div>
+
+<div id="filterLine" class="modal filter-select">
+    <div class="filter-select-header">
+        <div>Filter Races by the <span id="filter-type">Access Line</span></div>
+    </div>
+    <div class="filter-select-body">
+        <div class="filter-instruction">
+            Coderrect can supress races by attributes of the line accessing the shared variable
+        </div>
+        <div class="filter-options">
+            <div class="filter-option-item selected">
+                <div class="filter-name">
+                    <input type="checkbox" name="sourceLine" id="sourceLine">
+                    <label for="sourceLine">Code</label>
+                    <img src="../artifacts/images/checkmark.png" class="checkmark-checked">
+                    <span class="checkmark-unchecked"></span>
+                </div>
+                <div id="sourceLineVal" class="filter-content">
+                </div>
+                <div class="filter-hint">
+                    Races whose conflicting line matches this string will be suppressed
+                </div>
+            </div>
+            <div class="filter-option-item selected">
+                <div class="filter-name">
+                    <input type="checkbox" name="sourceLineFile" id="sourceLineFile">
+                    <label for="sourceLineFile">Source file</label>
+                    <img src="../artifacts/images/checkmark.png" class="checkmark-checked">
+                    <span class="checkmark-unchecked"></span>
+                </div>
+                <div id="sourceLineFileVal" class="filter-content"></div>
+                <div class="filter-hint">
+                    Races whose conflicting line is defined in this file will be suppressed
+                </div>
+            </div>
+        </div>
+        <div class="filter-btns">
+            <a id="lineSave" href="#close-modal" rel="modal:close" class="raw-anchor filter-save"><span>Save</span></a>
+            <a href="#close-modal" rel="modal:close" class="raw-anchor filter-close"><span>Close</span></a>
+        </div>
+    </div>
+</div>
+
+<div id="vs" class="modal vs-container">
+    <div id="editor"></div>
+</div>
+
+<!-- <div id="filterFunction" class="modal filter-select">
+    <div class="filter-select-header">
+        <div>Filter Races by a <span id="filter-type">Function Call in the Stacktrace</span></div>
+    </div>
+    <div class="filter-select-body">
+        <div class="filter-instruction">
+            Coderrect can supress races by attributes of a call in the call stack
+        </div>
+        <div class="filter-options">
+            <div class="filter-dropdown">
+                <select name="function" id="stacktraceFunctions" class="filter-function-list" style="width: 100%">
+                    <option value="pthread_create">pthread_create</option>
+                    <option value="Editor(void*)">Editor(void*)</option>
+                    <option value="pthreadrace::BulletinRWLock::Update(std::__cxx11::basic_string, std::allocator >)">
+                        pthreadrace::BulletinRWLock::Update(std::__cxx11::basic_string, std::allocator >)</option>
+                </select>
+            </div>
+            <div class="filter-option-row">
+                <div class="filter-name">
+                    <input type="checkbox" name="sharedVariable" id="sourceFile">
+                    <label for="sourceFile">Source file</label>
+                </div>
+                <div class="filter-content">
+                </div>
+                <div class="filter-hint">
+                    Races whose conflicting line is defined in this file will be suppressed
+                </div>
+            </div>
+        </div>
+        <button class="filter-save"> Save </button>
+    </div>
+</div> -->
+
+</html>

@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+
+<!ENTITY % common SYSTEM "common.dtd">
+%common;
+
+<!-- <manualpage> is the root element -->
+<!ELEMENT manualpage (parentdocument?, title, summary?,
+seealso*, section*)>
+
+<!ATTLIST manualpage metafile CDATA  #REQUIRED>

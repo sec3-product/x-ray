@@ -1,0 +1,11 @@
+{
+  "report": {
+    "filters": [
+      {
+        "node": "function",
+        "name": "crawler_expired_finalize",
+        "callsiteSourceFile": "crawler.c"
+      }
+    ]
+  }
+}

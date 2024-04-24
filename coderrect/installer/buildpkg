@@ -1,0 +1,252 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Cwd qw(cwd);
+use Getopt::Std;
+
+sub pullComponents {
+    # get args passed in
+    my ($release, $pkgVersion, $develop) = (@_);
+
+    # we will build our package under build
+    if (! -d "build") {
+        `mkdir build`;
+        print "Create build directory\n";
+    }
+    print "Build directory created\n";
+
+    # LLVMRace
+    # clone LLVMRace
+    if (! -d "build/LLVMRace") {
+        `cd build && git clone --recursive ssh://git\@github.com/coderrect/LLVMRace.git`;
+        if ($? != 0) {
+            print STDERR "Failed to clone LLVMRace\n";
+            exit 1;
+        }
+    }
+    # pull LLVMRace
+    else {
+        `cd build/LLVMRace && git pull --all`;
+        if ($? != 0) {
+            print STDERR "Failed to pull LLVMRace\n";
+            exit 1;
+        }
+    }
+    print "Finish updating LLVMRace\n";
+
+    # Note: this is project only contains flang driver, not real flang
+    # classic-flang-llvm-project
+    # clone llvm/clang/flang-driver
+    if (! -d "build/classic-flang-llvm-project") {
+        `cd build && git clone --recursive ssh://git\@github.com/coderrect-inc/classic-flang-llvm-project.git`;
+        if ($? != 0) {
+            print STDERR "Failed to clone classic-flang-llvm-project\n";
+            exit 1;
+        }
+    }
+    # pull llvm/flang/clang
+    else {
+        `cd build/classic-flang-llvm-project && git pull --all`;
+        if ($? != 0) {
+            print STDERR "Failed to pull classic-flang-llvm-project\n";
+            exit 1;
+        }
+    }
+    print "Finish updating classic-flang-llvm-project\n";
+
+    # Note: this is the real flang
+    # clone flang
+    if (! -d "build/flang") {
+        `cd build && git clone --recursive ssh://git\@github.com/coderrect-inc/flang.git`;
+        if ($? != 0) {
+            print STDERR "Failed to clone flang\n";
+            exit 1;
+        }
+    }
+    # pull flang
+    else {
+        `cd build/flang && git pull --all`;
+        if ($? != 0) {
+            print STDERR "Failed to pull flang\n";
+            exit 1;
+        }
+    }
+    print "Finish updating flang\n";
+
+    # coderrect
+    # clone coderrect
+    if (! -d "build/coderrect") {
+        `cd build && git clone --recursive ssh://git\@github.com/coderrect-inc/coderrect.git`;
+        if ($? != 0) {
+            print STDERR "Failed to clone coderrect\n";
+            exit 1;
+        }
+    }
+    # pull coderrect
+    else {
+        `cd build/coderrect && git pull --all`;
+        if ($? != 0) {
+            print STDERR "Failed to pull coderrect\n";
+            exit 1;
+        }
+    }
+    print "Finish updating coderrect\n";
+
+    # checkout to correct branches
+    # classic-flang-llvm-project and flang are relatively stable and not changed regularly,
+    # so all changes are directly pushed to develop branch, no need to switch branches for them
+    if ($release) {
+        `cd build/LLVMRace && git checkout release-v$pkgVersion && git pull`;
+        `cd build/coderrect && git checkout release-v$pkgVersion && git pull`;
+        print "Checkout to the HEAD of release-v$pkgVersion branch\n;"
+    }
+    elsif ($develop) {
+        `cd build/LLVMRace && git checkout develop && git pull`;
+        `cd build/coderrect && git checkout develop && git pull`;
+        print "Checkout to the HEAD of develop branch\n";
+    }
+    else {
+        print STDERR "You need to specify build type with either -d or -r <version number>\n";
+    }
+}
+
+sub buildInDocker {
+    # check if docker imege has been installed
+    my $hasImage = `docker images | grep 'coderrect/installer' | grep 1.1 | wc -l`;
+    if ($hasImage != 1) {
+        print STDERR "Docker image coderrect/installer:1.1 not installed, please run build-coderrect-installer-1.1-docker.sh first\n";
+        exit 1;
+    }
+
+    print "Start building all coderrect's components in the docker container...\n";
+    # run a container to do all builds
+    `docker run --rm -v \$(pwd)/build:/build -v \$(pwd)/dockerstuff/scripts:/scripts coderrect/installer:1.1 /scripts/build-components.sh`;
+    if ($? != 0) {
+        print STDERR "Failed to build components in the docker container\n";
+        exit 1;
+    }
+}
+
+sub buildPackage {
+    # get args passed in
+    my ($release, $pkgVersion, $develop) = (@_);
+    my $version = "";
+    # get version type
+    if ($release) {
+        $version = $pkgVersion;
+    }
+    else {
+        $version = "develop";
+    }
+    # get package timestamp
+    my $build = `date +'\%s'`;
+    chomp $build;
+
+    print "Start copying files to build/package...\n";
+    `rm -rf build/package && mkdir -p build/package`;
+    `echo package $version build $build >> build/package/VERSION`;
+    # copy things to package/bin
+    `mkdir -p build/package/bin`;
+    `cp build/coderrect/gosrc/bin/* build/package/bin/`;
+    `cp build/coderrect/coderrect-exec/coderrect-exec build/package/bin/`;
+    `cp build/coderrect/libear/build/libear/libear.so build/package/bin/`;
+    `cp build/coderrect/docker-installer/docker-coderrect build/package/bin/`;
+    `cp -r build/LLVMRace/build/bin/* build/package/bin/`;
+    if ($? != 0) {
+        print STDERR "Failed to copy files to build/package/bin\n";
+        exit 1;
+    }
+    # copy things to package/clang
+    `mkdir -p build/package/clang/bin`;
+    `mkdir -p build/package/clang/include`;
+    `mkdir -p build/package/clang/lib`;
+    `cp build/custom-clang/bin/clang-10 build/package/clang/bin/`;
+    `cp build/custom-clang/bin/flang1 build/package/clang/bin/`;
+    `cp build/custom-clang/bin/flang2 build/package/clang/bin/`;
+    `cp build/custom-clang/bin/llvm-link build/package/clang/bin/`;
+    `cp build/custom-clang/lib/libomp.so build/package/bin/`;
+    `cd build/package/clang/bin && ln -s clang-10 clang && ln -s clang-10 clang++ && ln -s clang-10 flang`;
+    `cp -r build/custom-clang/include/* build/package/clang/include`;
+    `cp -r build/custom-clang/lib/clang build/package/clang/lib`;
+    `cp -r build/custom-clang/lib/cmake build/package/clang/lib`;
+    if ($? != 0) {
+        print STDERR "Failed to copy files to build/package/clang\n";
+        exit 1;
+    }
+    # copy things to package/conf, package/data, and package/EULA.txt
+    `cp -r build/coderrect/installer/package/* build/package/`;
+    if ($? != 0) {
+        print STDERR "Failed to copy files to build/package/{conf,data,EULA.txt}\n";
+        exit 1;
+    }
+    # copy things to package/examples
+    `mkdir -p build/package/examples`;
+    `cp -r build/coderrect/benchmark/fortran build/package/examples`;
+    `cp -r build/coderrect/benchmark/hello build/package/examples`;
+    `cp -r build/coderrect/benchmark/pi build/package/examples`;
+    `cp -r build/coderrect/benchmark/pthreadrace build/package/examples`;
+    `cp -r build/coderrect/benchmark/singlemake build/package/examples`;
+    if ($? != 0) {
+        print STDERR "Failed to copy files to build/package/examples\n";
+        exit 1;
+    }
+    print "Finish copying files to build/package...\n";
+
+    # create tarball based on the build type
+    print "Start creating a tarball for build/package...\n";
+    if ($develop) {
+        `cd build && rm -rf coderrect-linux-develop && mv package coderrect-linux-develop`;
+        `cd build && tar -czvf coderrect-linux-develop.tar.gz coderrect-linux-develop`;
+        if ($? != 0) {
+            print STDERR "Failed to create tarball for build/package\n";
+            exit 1;
+        }
+        print "Final package is created at build/coderrect-linux-develop.tar.gz\n"
+    }
+    elsif($release) {
+        `cd build && rm -rf coderrect-linux-$pkgVersion && mv package coderrect-linux-$pkgVersion`;
+        `cd build && tar -czvf coderrect-linux-$pkgVersion.tar.gz coderrect-linux-$pkgVersion`;
+        if ($? != 0) {
+            print STDERR "Failed to create tarball for build/package\n";
+            exit 1;
+        }
+        print "Final package is created at build/coderrect-linux-$pkgVersion.tar.gz\n"
+    }
+    else {
+        print STDERR "No build type specified, no tarball created. Use either -d or -r <version number> to specify the build type.\n";
+        exit 1;
+    }
+}
+
+
+#######################
+#        MAIN         #
+#######################
+
+my %opt;
+getopts('hrdp', \%opt);
+my ($help, $release, $develop) = @opt{ qw(h r d) };
+my $pkgVersion = shift;
+
+if ($help) {
+    print <<EOF
+build-pkg - build a installer from the master branch or the release branch
+Usage:
+  build-pkg [options] version [effective_version]
+  -h - print this message
+  -r - build from the release branches (the default is from master branch)
+  -d - build from the develop branches
+Examples:
+  1. build the package v0.0.1 from release branches
+  \$ build-pkg -r 0.0.1
+  2. build the package from the develop branch
+  \$ build-pkg -d
+EOF
+;
+    exit 0;
+}
+
+pullComponents($release, $pkgVersion, $develop);
+buildInDocker();
+buildPackage($release, $pkgVersion, $develop);

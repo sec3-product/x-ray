@@ -1,0 +1,251 @@
+#!/usr/bin/perl
+
+
+use strict;
+use warnings;
+
+
+# find the corresponding source file of the given
+# benchmark case. It terminates the program
+# when fails
+#
+sub findSourceFile {
+    my ($case) = @_;
+    if ($case =~ /\.c$/ || $case =~ /\.cpp$/) {
+        unless (-e $case) {
+            die "Unable to find the file $case\n";
+        }
+
+        return $case;
+    }
+
+    if (-e "$case.c") {
+        return "$case.c";
+    }
+
+    if (-e "$case.cpp") {
+        return "$case.cpp";
+    }
+
+    die "Unable to find the file for case '$case'\n";
+}
+
+
+# returns a list of test cases
+#
+sub getCases {
+    my @cases = ();
+    foreach my $a (@ARGV) {
+        $a = findSourceFile($a);
+        push(@cases, $a);
+    }
+
+    my $length = scalar(@cases);
+    if ($length > 0) {
+        return @cases;
+    }
+
+    my $lines = `ls`;
+    my @lines = split(/\n/, $lines);
+    foreach my $line (@lines) {
+        if ($line =~ /cp*$/) {
+            push(@cases, $line);
+        }
+    }
+
+    return @cases;
+}
+
+
+# parse the header of a benchmark case
+#
+sub parseCase {
+    my ($filepath) = @_;
+    my ($purpose, $name, $races, $ov, $mm, $toctou, $confile, $lib) = (undef, undef, 0, 0, 0, 0, undef, undef);
+
+    $filepath =~ /(.+)\.cp*$/;
+    $name = $1;
+    my @tokens = split(/\//, $name);
+    $name = $tokens[$#tokens];
+
+    open(FH, '<', $filepath) or die "Failed to read the file $filepath - $!";
+    while(<FH>){
+        my $line = $_;
+        if (length($line) < 5) {
+            last;
+        }
+        if ($line =~ /^\/\/\s+\@purpose\s+(.+)$/) {
+            $purpose = $1;
+        }
+        elsif ($line =~ /^\/\/\s+\@dataRaces\s+(.+)$/) {
+            $races = $1;
+        }
+        elsif ($line =~ /^\/\/\s+\@configuration\s+(.+)$/) {
+            $confile = $1;
+        }
+        elsif ($line =~ /^\/\/\s+\@lib\s+(.+)$/) {
+            $lib = $1;
+        }
+        elsif ($line =~ /^\/\/\s+\@orderViolations\s+(.+)$/) {
+            $ov = $1;
+        }
+        elsif ($line =~ /^\/\/\s+\@misMatchedAPI\s+(.+)$/) {
+            $mm = $1;
+        }
+        elsif ($line =~ /^\/\/\s+\@toctou\s+(.+)$/) {
+            $toctou = $1;
+        }
+    }
+    close(FH);
+
+    return ($name, $purpose, $races, $ov, $mm, $toctou, $confile, $lib);
+}
+
+
+sub runRace {
+    my ($filepath, $races, $ov, $mm, $toctou, $confile, $lib) = @_;
+    my @tokens = split(/\//, $filepath);
+    $tokens[$#tokens] =~ /(.+)\.cp*$/;
+    my $executableName = $1;
+
+    if (defined($confile)) {
+        $confile = "../$confile";
+    }
+
+    `rm -fr *`;
+    `rm -fr .coderrect`;
+    my $rc = "";
+    if (!defined($confile)) {
+        if (!defined($lib)) {
+            $rc = `coderrect clang++ -std=gnu++11 $filepath -o $executableName -lpthread`;
+        } else {
+            $rc = `coderrect ../buildlib $lib $filepath`;
+        }
+    } else {
+        if (!defined($lib)) {
+            $rc = `coderrect -conf=$confile clang++ $filepath -o $executableName -lpthread`;
+        } else {
+# print "DEBUG CMDLNE=coderrect -conf=$confile ../buildlib $lib $filepath\n";
+            $rc = `coderrect -conf=$confile ../buildlib $lib $filepath`;
+# print "DEBUG - $rc\n";
+        }
+    }
+    chomp $rc;
+    my $exitCode = $?;
+    if ($exitCode != 0) {
+        return $rc;
+    }
+
+    # check raw_$executableName.json
+    my $jsonPath = ".coderrect/build/raw_$executableName.json";
+    if (defined($lib)) {
+        $jsonPath = ".coderrect/build/raw_$lib.json";
+    }
+# print "DEBUG - $jsonPath\n";
+    if (-e "$jsonPath") {
+        $rc = `jq '.dataRaces | length' $jsonPath`;
+        chomp $rc;
+        if ($? != 0) {
+            return $rc;
+        }
+    } else {
+        $rc = -1;
+    }
+    if ($rc != $races) {
+        return "Found $rc data races, expect $races";
+    }
+
+    if (-e "$jsonPath") {
+        $rc = `jq '.orderViolations | length' $jsonPath`;
+        chomp $rc;
+        if ($? != 0) {
+            return $rc;
+        }
+    } else {
+        $rc = -1
+    }
+    if ($rc != $ov) {
+        return "Found $rc order violations, expect $ov";
+    }
+
+    if (-e "$jsonPath") {
+        $rc = `jq '.mismatchedAPIs | length' $jsonPath`;
+        chomp $rc;
+        if ($? != 0) {
+            return $rc;
+        }
+    } else {
+        $rc = -1
+    }
+    if ($rc != $mm) {
+        return "Found $rc mis-matched API calls, expect $mm";
+    }
+
+    if (-e "$jsonPath") {
+        $rc = `jq '.toctou | length' $jsonPath`;
+        chomp $rc;
+        if ($? != 0) {
+            return $rc;
+        }
+    } else {
+        $rc = -1
+    }
+    if ($rc != $toctou) {
+        return "Found $rc TOCTOUs, expect $toctou";
+    }
+
+    return undef;
+}
+
+
+# main()
+#
+
+# get a list of cases
+my @cases = getCases();
+
+# create the working directory
+unless (-e "build") {
+    mkdir("build") || die "Failed to create 'build' directory - $!\n";
+}
+
+# change the working directory to 'build'
+chdir("build") || die "Failed to change the working directory - $!\n";
+
+my $succeed = 0;
+my $total = 0;
+foreach my $case (@cases) {
+    my $filepath = "../$case";
+    my ($name, $purpose, $races, $ov, $mm, $toctou, $confile, $lib) = parseCase($filepath);
+    if (!defined($purpose)) {
+        print "$case - not a valid case, skip\n";
+        next;
+    }
+
+    $total++;
+
+    print "Test $name - $purpose\n";
+    my $errmsg = runRace($filepath, $races, $ov, $mm, $toctou, $confile, $lib);
+    if ($errmsg) {
+        print "Failed - $errmsg\n";
+    }
+    else {
+        print "Succeed\n";
+        $succeed++;
+    }
+
+    print "\n----------------------------------------\n\n";
+}
+
+my $failed = $total - $succeed;
+print "\nTotal: $total; Succeed: $succeed; Failed: $failed\n";
+
+if ($failed > 0) {
+    exit(1);
+}
+else {
+    exit(0);
+}
+
+
+__END__

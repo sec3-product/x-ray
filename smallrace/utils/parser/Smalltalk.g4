@@ -1,0 +1,115 @@
+grammar Smalltalk;
+
+module: function | script;
+function: funcdecl ws? (EOF | script);
+funcdecl: ws? IDENTIFIER | declPairs | ('-'|'|'| PIPE2 | PIPE3 | AMP |BINARY_SELECTOR| NEQ | LLT | GGT | LTE | GTE | LT | GT) ws? variable;
+declPairs : ws? (declPair ws?)+;
+declPair : KEYWORD ws? variable;
+script : ws? (primitive ws?)* sequence ws? EOF;
+sequence : temps ws? primitive? ws? statements? |primitive? ws? statements;
+ws : (SEPARATOR | COMMENT)+;
+temps: 	(PIPE|PIPE2) (ws? IDENTIFIER)* ws? (PIPE|PIPE2)
+	| PIPE2;
+statements : answer ws? 
+           | expressions ws? PERIOD? ws? answer ws? 
+           | expressions ws? PERIOD? ws? 
+           ;
+answer : CARROT ws? expression ws? PERIOD?;
+expression : (assignment | cascade | keywordSend | binarySend | primitive) ws? PERIOD? ws?;
+expressions : expression expressionList*;
+expressionList : PERIOD ws? expression;
+cascade : (keywordSend | binarySend) (ws? SEMI_COLON ws? message)+;
+message : binaryMessage | unaryMessage | keywordMessage;
+assignment : variable ws? ASSIGNMENT ws? expression;
+variable : IDENTIFIER | IDENTIFIER2 | UNDERSCORE | UNDERSCORE2;
+binarySend : unarySend binaryTail?;
+unarySend : operand ws? unaryTail?;
+keywordSend : binarySend keywordMessage;
+keywordMessage : ws? (keywordPair ws?)+;
+keywordPair : KEYWORD ws? binarySend ws?;
+operand : literal | reference | subexpression;
+subexpression : OPEN_PAREN ws? expression ws? CLOSE_PAREN;
+literal : runtimeLiteral | parsetimeLiteral;
+runtimeLiteral : dynamicDictionary | dynamicArray | block;
+block : BLOCK_START blockParamList? ws? (PIPE? ws? temps? | PIPE3) ws? sequence? BLOCK_END
+		| BLOCK_START ws? PIPE2 ws? sequence? BLOCK_END;
+blockParamList : (ws? BLOCK_PARAM)+;
+dynamicDictionary : DYNDICT_START ws? expressions? ws? DYNARR_END;
+dynamicArray : DYNARR_START ws? expressions? ws? DYNARR_END;
+parsetimeLiteral : pseudoVariable | number | charConstant | literalArray | string | symbol | byteLiteralArray;
+number : numberExp | hex_ | stFloat | stInteger;
+numberExp : (stFloat | stInteger) EXP stInteger;
+charConstant : CHARACTER_CONSTANT | DOLLAR;
+hex_ : MINUS? HEXNUM;
+stInteger : MINUS? INTNUM;
+stFloat : MINUS? INTNUM PERIOD INTNUM;
+pseudoVariable : RESERVED_WORD;
+string : STRING ;
+primitive : PRIMITIVE;
+symbol : HASH ws? bareSymbol | HASH SPECIAL_UNDERLINE_IDENTIFIER?;
+bareSymbol : (IDENTIFIER | '_' | '-' | '|' | PIPE2 | PIPE3 | AMP |BINARY_SELECTOR| NEQ | LTE | GTE | LT | GT | GGT | LLT | MINUS | OPEN_PAREN | CLOSE_PAREN) | KEYWORD+ | string | RESERVED_WORD;
+literalArray : ( HASH ws? OPEN_PAREN | HASH ws? BLOCK_START ) ws? dynamicDictionary? ws? literalArrayRest;
+literalArrayRest : ws? ((literal | bareLiteralArray | bareSymbol | byteLiteralArrayBody) ws?)* (CLOSE_PAREN | ']');
+byteLiteralArray: HASH ws? byteLiteralArrayBody ws?;
+byteLiteralArrayBody: BLOCK_START ws? (INTNUM ws?)* BLOCK_END ws?;
+bareLiteralArray : OPEN_PAREN literalArrayRest;
+unaryTail : unaryMessage ws? unaryTail? ws?;
+unaryMessage : ws? unarySelector;
+unarySelector : IDENTIFIER;
+keywords : KEYWORD+;
+reference : variable;
+binaryTail : binaryMessage binaryTail?;
+binaryMessage : ws? ('-'|'|'| PIPE2 | PIPE3 | AMP | BINARY_SELECTOR| NEQ | LLT | GGT |LTE | GTE | LT | GT) ws? (unarySend | operand);
+
+SEPARATOR : [ \t\r\n\f];
+STRING : '\'' (ESC|~'\'')* '\'';
+fragment ESC : '\'\'' ;
+//STRING : '\'' ( . )*? '\'';
+PRIMITIVE: LT IDENTIFIER ':'? (GGT|~'>')* GT               // to avoid < ... > in different lines
+         | LT SEPARATOR* IDENTIFIER ':' (GGT|~'>')* SEPARATOR* GT;     // to allow the space within < a:b >
+COMMENT : '"' (.)*? '"' ->skip;
+ST_COMMENT : '<comment>' .*? '</comment>' ->skip;
+BLOCK_START : '[';
+BLOCK_END : ']';
+CLOSE_PAREN : ')';
+OPEN_PAREN : '(';
+PIPE3 : '|||';
+PIPE2 : '||';
+PIPE : '|';
+PERIOD : '.';
+SEMI_COLON : ';';
+LLT : '<<' | '&lt;&lt;';
+GGT : '>>' | '&gt;&gt;';
+LTE : '<=' | '&lt;='|'&le;';
+GTE : '>=' | '&gt;='|'&ge;';
+NEQ: '~=' | '&ne;';
+LT : '<' | '&lt;';
+GT : '>' | '&gt;';
+AMP: '&amp;';
+MINUS : '-';
+//BINARY_SELECTOR : ('\\' | '+' |'-'| '*' | '/' | '=' | ',' | '@' | '%' | '~' | '|' | '&' | '?'| '-' GT)+;
+BINARY_SELECTOR : ('+' |'-'| '*' | '/' | '**' | '//' | '\\' | '\\\\' | '=' | '==' | '~~' | '&' | '|' | ',' | '@' | '-' GT | '%' | '~' | '?' | '!')+;
+RESERVED_WORD : 'nil' | 'true' | 'false' | 'self' | 'super' | 'thisContext';
+IDENTIFIER : [_]*[a-zA-Z]+[a-zA-Z0-9_]*;
+IDENTIFIER2: IDENTIFIER (PERIOD IDENTIFIER)+;
+SPECIAL_UNDERLINE_IDENTIFIER: '_'[0-9]+IDENTIFIER;
+CARROT : '^';
+UNDERSCORE: '_';
+UNDERSCORE2: '__';
+ASSIGNMENT : ':=';
+COLON : ':' {_input->LA(1) != '='}?;
+HASH : '#';
+DOLLAR : '$';
+EXP : 'e';
+HEXNUM : '16r'[0-9a-fA-F]+;
+INTNUM: [0-9]+;
+HEX : '16r';
+//LITARR_START : '#(' | '#[';
+DYNDICT_START : '#{';
+DYNARR_END : '}';
+DYNARR_START : '{';
+HEXDIGIT : [0-9a-fA-F];
+KEYWORD : IDENTIFIER COLON;
+BLOCK_PARAM : COLON SEPARATOR* IDENTIFIER;
+CHARACTER_CONSTANT :  DOLLAR (AMP | LTE | GTE | LT | GT | HEXDIGIT | DOLLAR | HASH|'~'|'?'|'*'|'+'|';'|'&'|'^'|'['|']'|','|':'|'"'|'='|'\''| '-'|'\\'|'/'|PIPE|'%'|'@' |'.' | '!'|UNDERSCORE|OPEN_PAREN|CLOSE_PAREN|DYNARR_END|DYNARR_START|BLOCK_START|BLOCK_END|MINUS);
+

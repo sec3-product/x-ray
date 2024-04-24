@@ -1,0 +1,93 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Cwd qw(cwd);
+use Getopt::Std;
+
+sub packageRaceDetect {
+  my ($releaseBuild, $pkgVersion, $develop) = (@_);
+
+  print "Building racedetect ...\n";
+
+  `cd build && git clone ssh://git\@github.com/coderrect/LLVMRace.git`;
+  if ($? != 0) {
+    print STDERR "Failed to clone LLVMRace\n";
+    exit 1;
+  }
+  if ($releaseBuild) {
+    system("cd build/LLVMRace && git checkout release-v$pkgVersion");
+  }
+  elsif ($develop) {
+    system("cd build/LLVMRace && git checkout develop");
+  }
+  else {
+    system("cd build/LLVMRace && git checkout tags/v$pkgVersion"); 
+  }
+  my $rc = $? >> 8;
+  if ($rc != 0) {
+    print STDERR "No right tag or release brnach, quit\n";
+    exit 1;
+  }
+
+  $rc = system("cd build/LLVMRace && git submodule init && git submodule update");
+  if ($rc != 0) {
+    print STDERR "Unable to get z3 source code\n";
+    exit 1;
+  }
+
+#
+# build aser-race with the installer docker
+#
+  `docker run --rm --user=\$(id -u):\$(id -g) -v \$(pwd)/build:/build -v \$(pwd)/dockerstuff/scripts:/scripts coderrect/installer:1.1 /scripts/build-llvmrace.sh`;
+  if ($? != 0) {
+    system("cat \$(pwd)/build/LLVMRace/build/unittest.log");
+    print STDERR "Failed to build LLVMRace.\n";
+    exit 1;
+  }
+}
+
+
+sub upload_llvmrace {
+  my ($releaseBuild, $pkgVersion, $develop) = (@_);
+  my $tarballName = "llvmrace-develop.tar.gz";
+  if ($releaseBuild) {
+    $tarballName = "llvmrace-$pkgVersion.tar.gz";
+  }
+  
+  #create package 
+  `cd build/package && mkdir llvmrace && cp -r bin/ llvmrace/`;
+
+  #create a tar package of llvmrace
+  `cd build/package && tar -czvf $tarballName llvmrace/`;
+
+  #upload package to aws bucket 
+  if ($develop) {
+	  `./upload-pkg build/package/$tarballName llvmrace-binary/develop`;
+  } else {
+	  `./upload-pkg build/package/$tarballName llvmrace-binary/release`;
+  }  
+}
+
+
+# main
+#
+my %opt;
+getopts('hrd', \%opt);
+my ($help, $release, $develop) = @opt{ qw(h r d) };
+my $package = shift;
+
+# clean the battlefield
+#
+`rm -fr build`;
+`mkdir -p build/package/bin`;
+if ($? != 0) {
+    print STDERR "Failed to create build directory\n";
+    exit 1;
+}
+
+packageRaceDetect($release, $package, $develop);
+upload_llvmrace($release, $package, $develop);
+
+__END__
+

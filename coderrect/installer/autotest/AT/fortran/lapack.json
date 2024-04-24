@@ -1,0 +1,9 @@
+{
+  "openlib": {
+    "entryPoints": [
+      "dgetsls_",
+      "sstevd_",
+      "zunhr_col_"
+    ]
+  }
+}

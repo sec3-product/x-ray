@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Coderrect Race Detection Report</title>
+
+    <script src="artifacts/jquery-3.4.1.min.js"></script>
+    <script src="artifacts/jquery.modal.js"></script>
+    <link rel="stylesheet" href="artifacts/jquery.modal.css" />
+
+    <link rel="stylesheet" type="text/css" href="artifacts/coderrect.css" />
+
+    <script>
+        // Customized JQuery default options
+        $.modal.defaults.showClose = false;
+
+        $(document).ready(function () {
+            $("#feedbackForm").submit(function () {
+                $.modal.close();
+            });
+        });
+    </script>
+</head>
+
+<body>
+    <nav class="header">
+        <img class="logo" src="artifacts/images/Coderrect-Horizontal-Logo-RGB.svg">
+        <a href="#feedbackForm" rel="modal:open" class="raw-anchor nav-btn nav-questions">QUESTIONS</a>
+    </nav>
+
+    <div class="index">
+        <div class="index-title">Index</div>
+
+        <div class="index-content">
+            <div class="index-content-title">Report Summary</div>
+            <span class="index-content-body">
+                <div class="index-content-text">Generated With:&nbsp;&nbsp;<span id="coderrectVer">{{.Version}}</span>
+                </div>
+                <div class="index-content-text">Configuration List:&nbsp;&nbsp;<a
+                        href="configuration.json">configuration.json</a></div>
+
+            </span>
+        </div>
+    </div>
+    <div class="report-list">
+        {{ with .ReportList}}
+        {{ range .}}
+        <a href="{{.Name}}/{{.Name}}.html" class="report-entry">
+            <span class="proj-name">{{.Name}}</span>
+            <span class="proj-race-no">{{.Num}} race(s) detected</span>
+            <img src="artifacts/images/link.png" class="proj-link">
+        </a>
+        {{ end }}
+        {{ end }}
+        {{if .NoRace}}
+        {{ with .NoRace}}
+        {{ range .}}
+        <a class="report-entry report-entry-no-race">
+            <span class="proj-name">{{.}}</span>
+            <span class="proj-race-no">No race detected</span>
+        </a>
+        {{ end }}
+        {{ end }}
+        {{ end }}
+    </div>
+
+    <iframe name="hiddenFrame" class="hide" style="visibility: hidden"></iframe>
+
+    <form id="feedbackForm" class="modal feedback"
+        action="https://nu7j9uusr6.execute-api.us-east-2.amazonaws.com/prod/feedbacks" method="get"
+        target="hiddenFrame">
+        <div class="feedback-title">Let us know your question:</div>
+        <input type="email" id="mail" name="email" size="100" class="feedback-email" placeholder="E-mail">
+        <textarea id="comment" name="comment" rows="20" cols="100" class="feedback-comment"
+            placeholder="Your question"></textarea>
+        <div class="feedback-btns">
+            <button type="submit" class="feedback-submit">
+                <span>Save</span>
+            </button>
+            <a href="#close-modal" rel="modal:close" class="raw-anchor filter-close"><span>Close</span></a>
+        </div>
+    </form>
+
+</body>
+
+</html>

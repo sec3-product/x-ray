@@ -1,0 +1,487 @@
+Scanning dependencies of target utfcpp
+Scanning dependencies of target make_lib_output_dir
+[  1%] Creating directories for 'utfcpp'
+[  1%] Built target make_lib_output_dir
+[  1%] Performing download step (git clone) for 'utfcpp'
+Submodule path 'extern/gtest': checked out '2fe3bd994b3189899d93f1d5a881e725e046fdc2'
+[  1%] No patch step for 'utfcpp'
+[  2%] Skipping update step for 'utfcpp'
+[  3%] Performing configure step for 'utfcpp'
+-- The CXX compiler identification is GNU 7.5.0
+-- Check for working CXX compiler: /usr/bin/c++
+-- Check for working CXX compiler: /usr/bin/c++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- The C compiler identification is GNU 7.5.0
+-- Check for working C compiler: /usr/bin/cc
+-- Check for working C compiler: /usr/bin/cc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Found PythonInterp: /usr/bin/python (found version "2.7.17") 
+-- Looking for pthread.h
+-- Looking for pthread.h - found
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Check if compiler accepts -pthread
+-- Check if compiler accepts -pthread - yes
+-- Found Threads: TRUE  
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/utfcpp-prefix/src/utfcpp-build
+[  3%] Performing build step for 'utfcpp'
+Scanning dependencies of target negative
+Scanning dependencies of target docsample
+[  9%] Building CXX object CMakeFiles/docsample.dir/samples/docsample.cpp.o
+[  9%] Building CXX object tests/CMakeFiles/negative.dir/negative.cpp.o
+[ 13%] Linking CXX executable negative
+Scanning dependencies of target gtest
+[ 13%] Built target negative
+[ 18%] Linking CXX executable docsample
+[ 22%] Building CXX object extern/gtest/googlemock/gtest/CMakeFiles/gtest.dir/src/gtest-all.cc.o
+[ 22%] Built target docsample
+[ 27%] Linking CXX static library libgtest.a
+[ 27%] Built target gtest
+Scanning dependencies of target gtest_main
+[ 31%] Building CXX object extern/gtest/googlemock/gtest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o
+Scanning dependencies of target gmock
+[ 36%] Building CXX object extern/gtest/googlemock/CMakeFiles/gmock.dir/src/gmock-all.cc.o
+[ 40%] Linking CXX static library libgtest_main.a
+[ 40%] Built target gtest_main
+Scanning dependencies of target cpp11
+[ 45%] Building CXX object tests/CMakeFiles/cpp11.dir/test_cpp11.cpp.o
+Scanning dependencies of target noexceptionstests
+[ 54%] Building CXX object tests/CMakeFiles/noexceptionstests.dir/test_unchecked_api.cpp.o
+[ 54%] Building CXX object tests/CMakeFiles/noexceptionstests.dir/test_unchecked_iterator.cpp.o
+Scanning dependencies of target apitests
+[ 68%] Building CXX object tests/CMakeFiles/apitests.dir/test_checked_api.cpp.o
+[ 72%] Building CXX object tests/CMakeFiles/apitests.dir/test_unchecked_api.cpp.o
+[ 72%] Building CXX object tests/CMakeFiles/apitests.dir/test_unchecked_iterator.cpp.o
+[ 72%] Building CXX object tests/CMakeFiles/apitests.dir/test_checked_iterator.cpp.o
+[ 77%] Linking CXX static library libgmock.a
+[ 77%] Built target gmock
+Scanning dependencies of target gmock_main
+[ 81%] Building CXX object extern/gtest/googlemock/CMakeFiles/gmock_main.dir/src/gmock_main.cc.o
+[ 86%] Linking CXX executable cpp11
+[ 90%] Linking CXX executable noexceptionstests
+[ 95%] Linking CXX executable apitests
+[ 95%] Built target cpp11
+[ 95%] Built target noexceptionstests
+[ 95%] Built target apitests
+[100%] Linking CXX static library libgmock_main.a
+[100%] Built target gmock_main
+[  3%] Performing install step for 'utfcpp'
+[ 18%] Built target docsample
+[ 18%] Built target negative
+[ 27%] Built target gtest
+[ 36%] Built target gtest_main
+[ 45%] Built target gmock
+[ 72%] Built target cpp11
+[ 81%] Built target noexceptionstests
+[ 90%] Built target apitests
+[100%] Built target gmock_main
+Install the project...
+-- Install configuration: ""
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/utf8cpp
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/utf8cpp/utf8
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/utf8cpp/utf8/core.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/utf8cpp/utf8/unchecked.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/utf8cpp/utf8/cpp11.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/utf8cpp/utf8/checked.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/utf8cpp/utf8.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/lib/cmake/utf8cpp/utf8cppConfig.cmake
+-- Up-to-date: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/gmock-generated-actions.h.pump
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/gmock-generated-function-mockers.h.pump
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/gmock-matchers.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/gmock-more-actions.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/gmock-generated-matchers.h.pump
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/gmock-generated-nice-strict.h.pump
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/gmock-generated-actions.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/gmock-generated-matchers.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/gmock-generated-nice-strict.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/internal
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/internal/gmock-port.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/internal/gmock-internal-utils.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/internal/gmock-generated-internal-utils.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/internal/gmock-generated-internal-utils.h.pump
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/internal/custom
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/internal/custom/gmock-generated-actions.h.pump
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/internal/custom/gmock-port.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/internal/custom/gmock-matchers.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/internal/custom/gmock-generated-actions.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/internal/custom/README.md
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/gmock-more-matchers.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/gmock-generated-function-mockers.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/gmock-cardinalities.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/gmock-spec-builders.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/gmock.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gmock/gmock-actions.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/lib/libgmock.a
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/lib/libgmock_main.a
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/lib/pkgconfig/gmock.pc
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/lib/pkgconfig/gmock_main.pc
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/lib/cmake/GTest/GTestTargets.cmake
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/lib/cmake/GTest/GTestTargets-noconfig.cmake
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/lib/cmake/GTest/GTestConfigVersion.cmake
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/lib/cmake/GTest/GTestConfig.cmake
+-- Up-to-date: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/gtest-death-test.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/gtest-spi.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/internal
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/internal/gtest-linked_ptr.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/internal/gtest-string.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/internal/gtest-tuple.h.pump
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/internal/gtest-death-test-internal.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/internal/gtest-type-util.h.pump
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/internal/gtest-port.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/internal/gtest-port-arch.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/internal/gtest-internal.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/internal/gtest-param-util-generated.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/internal/gtest-param-util.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/internal/gtest-type-util.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/internal/gtest-filepath.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/internal/custom
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/internal/custom/gtest-port.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/internal/custom/README.md
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/internal/custom/gtest.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/internal/custom/gtest-printers.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/internal/gtest-tuple.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/internal/gtest-param-util-generated.h.pump
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/gtest-message.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/gtest-param-test.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/gtest-typed-test.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/gtest_pred_impl.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/gtest_prod.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/gtest-param-test.h.pump
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/gtest-test-part.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/gtest.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/include/gtest/gtest-printers.h
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/lib/libgtest.a
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/lib/libgtest_main.a
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/lib/pkgconfig/gtest.pc
+-- Installing: /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/thirdparty/utfcpp/install/lib/pkgconfig/gtest_main.pc
+[  3%] Performing test step for 'utfcpp'
+Running tests...
+Test project /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp-build/runtime/utfcpp-prefix/src/utfcpp-build
+    Start 1: negative_test
+1/4 Test #1: negative_test ....................   Passed    0.01 sec
+    Start 2: cpp11_test
+2/4 Test #2: cpp11_test .......................   Passed    0.01 sec
+    Start 3: api_test
+3/4 Test #3: api_test .........................   Passed    0.01 sec
+    Start 4: noexceptions_test
+4/4 Test #4: noexceptions_test ................   Passed    0.01 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   0.11 sec
+[  3%] Completed 'utfcpp'
+[  3%] Built target utfcpp
+Scanning dependencies of target antlr4_shared
+Scanning dependencies of target antlr4_static
+[  3%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/ANTLRErrorListener.cpp.o
+[  3%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/ANTLRErrorListener.cpp.o
+[  4%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/ANTLRErrorStrategy.cpp.o
+[  4%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/ANTLRErrorStrategy.cpp.o
+[  4%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/ANTLRFileStream.cpp.o
+[  4%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/ANTLRFileStream.cpp.o
+[  4%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/ANTLRInputStream.cpp.o
+[  5%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/ANTLRInputStream.cpp.o
+[  5%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/BailErrorStrategy.cpp.o
+[  6%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/BailErrorStrategy.cpp.o
+[  6%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/BaseErrorListener.cpp.o
+[  6%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/BaseErrorListener.cpp.o
+[  7%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/BufferedTokenStream.cpp.o
+[  7%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/CharStream.cpp.o
+[  7%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/BufferedTokenStream.cpp.o
+[  7%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/CommonToken.cpp.o
+[  8%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/CharStream.cpp.o
+[  8%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/CommonToken.cpp.o
+[  9%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/CommonTokenFactory.cpp.o
+[  9%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/CommonTokenStream.cpp.o
+[  9%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/ConsoleErrorListener.cpp.o
+[ 10%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/DefaultErrorStrategy.cpp.o
+[ 10%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/DiagnosticErrorListener.cpp.o
+[ 10%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/CommonTokenFactory.cpp.o
+[ 10%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/Exceptions.cpp.o
+[ 11%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/CommonTokenStream.cpp.o
+[ 11%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/ConsoleErrorListener.cpp.o
+[ 12%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/FailedPredicateException.cpp.o
+[ 12%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/InputMismatchException.cpp.o
+[ 12%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/DefaultErrorStrategy.cpp.o
+[ 12%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/IntStream.cpp.o
+[ 13%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/DiagnosticErrorListener.cpp.o
+[ 14%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/InterpreterRuleContext.cpp.o
+[ 14%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/Exceptions.cpp.o
+[ 14%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/FailedPredicateException.cpp.o
+[ 15%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/InputMismatchException.cpp.o
+[ 15%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/Lexer.cpp.o
+[ 15%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/IntStream.cpp.o
+[ 15%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/LexerInterpreter.cpp.o
+[ 16%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/LexerNoViableAltException.cpp.o
+[ 16%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/InterpreterRuleContext.cpp.o
+[ 16%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/ListTokenSource.cpp.o
+[ 16%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/NoViableAltException.cpp.o
+[ 16%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/Lexer.cpp.o
+[ 16%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/Parser.cpp.o
+[ 17%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/LexerInterpreter.cpp.o
+[ 18%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/ParserInterpreter.cpp.o
+[ 18%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/LexerNoViableAltException.cpp.o
+[ 18%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/ListTokenSource.cpp.o
+[ 18%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/ParserRuleContext.cpp.o
+[ 19%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/NoViableAltException.cpp.o
+[ 19%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/ProxyErrorListener.cpp.o
+[ 19%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/Parser.cpp.o
+[ 20%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/RecognitionException.cpp.o
+[ 20%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/ParserInterpreter.cpp.o
+[ 20%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/Recognizer.cpp.o
+[ 21%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/ParserRuleContext.cpp.o
+[ 21%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/ProxyErrorListener.cpp.o
+[ 21%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/RuleContext.cpp.o
+[ 21%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/RecognitionException.cpp.o
+[ 22%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/Recognizer.cpp.o
+[ 23%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/RuleContextWithAltNum.cpp.o
+[ 23%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/RuleContext.cpp.o
+[ 23%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/RuntimeMetaData.cpp.o
+[ 23%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/Token.cpp.o
+[ 23%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/RuleContextWithAltNum.cpp.o
+[ 24%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/RuntimeMetaData.cpp.o
+[ 25%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/TokenSource.cpp.o
+[ 25%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/TokenStream.cpp.o
+[ 25%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/TokenStreamRewriter.cpp.o
+[ 25%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/Token.cpp.o
+[ 25%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/TokenSource.cpp.o
+[ 26%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/UnbufferedCharStream.cpp.o
+[ 27%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/TokenStream.cpp.o
+[ 27%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/TokenStreamRewriter.cpp.o
+[ 27%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/UnbufferedTokenStream.cpp.o
+[ 27%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/Vocabulary.cpp.o
+[ 27%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/UnbufferedCharStream.cpp.o
+[ 28%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/WritableToken.cpp.o
+[ 28%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/ATN.cpp.o
+[ 29%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/UnbufferedTokenStream.cpp.o
+[ 29%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/Vocabulary.cpp.o
+[ 29%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/ATNConfig.cpp.o
+[ 29%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/WritableToken.cpp.o
+[ 30%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/ATNConfigSet.cpp.o
+[ 31%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/ATN.cpp.o
+[ 31%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/ATNDeserializationOptions.cpp.o
+[ 31%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/ATNConfig.cpp.o
+[ 31%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/ATNConfigSet.cpp.o
+[ 31%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/ATNDeserializationOptions.cpp.o
+[ 31%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/ATNDeserializer.cpp.o
+[ 32%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/ATNSerializer.cpp.o
+[ 32%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/ATNSimulator.cpp.o
+[ 32%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/ATNState.cpp.o
+[ 32%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/AbstractPredicateTransition.cpp.o
+[ 33%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/ActionTransition.cpp.o
+[ 33%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/AmbiguityInfo.cpp.o
+[ 34%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/ATNDeserializer.cpp.o
+[ 34%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/ATNSerializer.cpp.o
+[ 34%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/ArrayPredictionContext.cpp.o
+[ 35%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/AtomTransition.cpp.o
+[ 35%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/BasicBlockStartState.cpp.o
+[ 35%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/BasicState.cpp.o
+[ 36%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/BlockEndState.cpp.o
+[ 36%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/BlockStartState.cpp.o
+[ 36%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/ContextSensitivityInfo.cpp.o
+[ 37%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/DecisionEventInfo.cpp.o
+[ 37%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/DecisionInfo.cpp.o
+[ 37%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/ATNSimulator.cpp.o
+[ 38%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/ATNState.cpp.o
+[ 38%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/DecisionState.cpp.o
+[ 39%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/EmptyPredictionContext.cpp.o
+[ 39%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/EpsilonTransition.cpp.o
+[ 39%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/ErrorInfo.cpp.o
+[ 40%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/LL1Analyzer.cpp.o
+[ 40%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/LexerATNConfig.cpp.o
+[ 40%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/LexerATNSimulator.cpp.o
+[ 40%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/AbstractPredicateTransition.cpp.o
+[ 40%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/ActionTransition.cpp.o
+[ 41%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/LexerAction.cpp.o
+[ 41%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/LexerActionExecutor.cpp.o
+[ 41%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/LexerChannelAction.cpp.o
+[ 42%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/LexerCustomAction.cpp.o
+[ 42%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/LexerIndexedCustomAction.cpp.o
+[ 43%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/AmbiguityInfo.cpp.o
+[ 43%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/LexerModeAction.cpp.o
+[ 43%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/ArrayPredictionContext.cpp.o
+[ 43%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/LexerMoreAction.cpp.o
+[ 44%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/LexerPopModeAction.cpp.o
+[ 44%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/LexerPushModeAction.cpp.o
+[ 44%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/LexerSkipAction.cpp.o
+[ 45%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/LexerTypeAction.cpp.o
+[ 45%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/AtomTransition.cpp.o
+[ 45%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/LookaheadEventInfo.cpp.o
+[ 45%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/LoopEndState.cpp.o
+[ 46%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/BasicBlockStartState.cpp.o
+[ 47%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/NotSetTransition.cpp.o
+[ 47%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/OrderedATNConfigSet.cpp.o
+[ 47%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/BasicState.cpp.o
+[ 47%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/BlockEndState.cpp.o
+[ 47%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/ParseInfo.cpp.o
+[ 48%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/ParserATNSimulator.cpp.o
+[ 48%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/PlusBlockStartState.cpp.o
+[ 50%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/BlockStartState.cpp.o
+[ 50%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/PlusLoopbackState.cpp.o
+[ 51%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/PrecedencePredicateTransition.cpp.o
+[ 51%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/ContextSensitivityInfo.cpp.o
+[ 51%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/DecisionEventInfo.cpp.o
+[ 51%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/PredicateEvalInfo.cpp.o
+[ 52%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/DecisionInfo.cpp.o
+[ 52%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/PredicateTransition.cpp.o
+[ 52%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/DecisionState.cpp.o
+[ 53%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/PredictionContext.cpp.o
+[ 53%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/PredictionMode.cpp.o
+[ 53%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/EmptyPredictionContext.cpp.o
+[ 54%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/EpsilonTransition.cpp.o
+[ 54%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/ProfilingATNSimulator.cpp.o
+[ 54%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/ErrorInfo.cpp.o
+[ 54%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/LL1Analyzer.cpp.o
+[ 55%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/RangeTransition.cpp.o
+[ 55%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/RuleStartState.cpp.o
+[ 56%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/LexerATNConfig.cpp.o
+[ 56%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/LexerATNSimulator.cpp.o
+[ 56%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/RuleStopState.cpp.o
+[ 56%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/RuleTransition.cpp.o
+[ 56%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/LexerAction.cpp.o
+[ 57%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/SemanticContext.cpp.o
+[ 57%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/LexerActionExecutor.cpp.o
+[ 58%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/LexerChannelAction.cpp.o
+[ 58%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/LexerCustomAction.cpp.o
+[ 58%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/LexerIndexedCustomAction.cpp.o
+[ 58%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/SetTransition.cpp.o
+[ 59%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/LexerModeAction.cpp.o
+[ 59%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/SingletonPredictionContext.cpp.o
+[ 60%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/StarBlockStartState.cpp.o
+[ 60%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/StarLoopEntryState.cpp.o
+[ 60%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/LexerMoreAction.cpp.o
+[ 60%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/LexerPopModeAction.cpp.o
+[ 61%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/LexerPushModeAction.cpp.o
+[ 61%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/LexerSkipAction.cpp.o
+[ 61%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/StarLoopbackState.cpp.o
+[ 61%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/LexerTypeAction.cpp.o
+[ 62%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/LookaheadEventInfo.cpp.o
+[ 63%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/TokensStartState.cpp.o
+[ 63%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/LoopEndState.cpp.o
+[ 63%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/NotSetTransition.cpp.o
+[ 64%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/OrderedATNConfigSet.cpp.o
+[ 64%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/Transition.cpp.o
+[ 64%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/ParseInfo.cpp.o
+[ 64%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/ParserATNSimulator.cpp.o
+[ 65%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/PlusBlockStartState.cpp.o
+[ 65%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/PlusLoopbackState.cpp.o
+[ 65%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/atn/WildcardTransition.cpp.o
+[ 65%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/PrecedencePredicateTransition.cpp.o
+[ 66%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/PredicateEvalInfo.cpp.o
+[ 67%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/dfa/DFA.cpp.o
+[ 67%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/dfa/DFASerializer.cpp.o
+[ 67%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/dfa/DFAState.cpp.o
+[ 67%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/PredicateTransition.cpp.o
+[ 68%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/dfa/LexerDFASerializer.cpp.o
+[ 68%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/PredictionContext.cpp.o
+[ 68%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/PredictionMode.cpp.o
+[ 69%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/ProfilingATNSimulator.cpp.o
+[ 69%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/misc/InterpreterDataReader.cpp.o
+[ 69%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/RangeTransition.cpp.o
+[ 69%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/misc/Interval.cpp.o
+[ 69%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/RuleStartState.cpp.o
+[ 70%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/RuleStopState.cpp.o
+[ 71%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/misc/IntervalSet.cpp.o
+[ 71%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/misc/MurmurHash.cpp.o
+[ 71%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/misc/Predicate.cpp.o
+[ 71%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/RuleTransition.cpp.o
+[ 72%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/support/Any.cpp.o
+[ 72%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/support/Arrays.cpp.o
+[ 72%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/SemanticContext.cpp.o
+[ 73%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/SetTransition.cpp.o
+[ 73%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/support/CPPUtils.cpp.o
+[ 74%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/support/StringUtils.cpp.o
+[ 74%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/support/guid.cpp.o
+[ 74%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/ErrorNode.cpp.o
+[ 74%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/SingletonPredictionContext.cpp.o
+[ 74%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/StarBlockStartState.cpp.o
+[ 74%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/ErrorNodeImpl.cpp.o
+[ 75%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/StarLoopEntryState.cpp.o
+[ 76%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/IterativeParseTreeWalker.cpp.o
+[ 76%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/ParseTree.cpp.o
+[ 76%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/ParseTreeListener.cpp.o
+[ 77%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/ParseTreeVisitor.cpp.o
+[ 77%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/StarLoopbackState.cpp.o
+[ 77%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/ParseTreeWalker.cpp.o
+[ 77%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/TokensStartState.cpp.o
+[ 78%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/Transition.cpp.o
+[ 78%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/TerminalNode.cpp.o
+[ 79%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/TerminalNodeImpl.cpp.o
+[ 79%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/Trees.cpp.o
+[ 79%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/pattern/Chunk.cpp.o
+[ 79%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/atn/WildcardTransition.cpp.o
+[ 80%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/pattern/ParseTreeMatch.cpp.o
+[ 80%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/dfa/DFA.cpp.o
+[ 81%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/dfa/DFASerializer.cpp.o
+[ 81%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/pattern/ParseTreePattern.cpp.o
+[ 81%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/pattern/ParseTreePatternMatcher.cpp.o
+[ 82%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/pattern/RuleTagToken.cpp.o
+[ 82%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/dfa/DFAState.cpp.o
+[ 82%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/dfa/LexerDFASerializer.cpp.o
+[ 83%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/misc/InterpreterDataReader.cpp.o
+[ 83%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/pattern/TagChunk.cpp.o
+[ 83%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/misc/Interval.cpp.o
+[ 83%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/pattern/TextChunk.cpp.o
+[ 84%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/pattern/TokenTagToken.cpp.o
+[ 84%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/misc/IntervalSet.cpp.o
+[ 84%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/xpath/XPath.cpp.o
+[ 85%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/misc/MurmurHash.cpp.o
+[ 85%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/xpath/XPathElement.cpp.o
+[ 86%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/xpath/XPathLexer.cpp.o
+[ 86%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/xpath/XPathLexerErrorListener.cpp.o
+[ 86%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/xpath/XPathRuleAnywhereElement.cpp.o
+[ 86%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/misc/Predicate.cpp.o
+[ 87%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/xpath/XPathRuleElement.cpp.o
+[ 87%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/support/Any.cpp.o
+[ 87%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/xpath/XPathTokenAnywhereElement.cpp.o
+[ 87%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/support/Arrays.cpp.o
+[ 87%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/xpath/XPathTokenElement.cpp.o
+[ 87%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/xpath/XPathWildcardAnywhereElement.cpp.o
+[ 88%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/support/CPPUtils.cpp.o
+[ 89%] Building CXX object runtime/CMakeFiles/antlr4_shared.dir/src/tree/xpath/XPathWildcardElement.cpp.o
+[ 89%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/support/StringUtils.cpp.o
+[ 89%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/support/guid.cpp.o
+[ 90%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/ErrorNode.cpp.o
+[ 90%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/ErrorNodeImpl.cpp.o
+[ 90%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/IterativeParseTreeWalker.cpp.o
+[ 91%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/ParseTree.cpp.o
+[ 91%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/ParseTreeListener.cpp.o
+[ 91%] Linking CXX shared library /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp/runtime/Cpp/dist/libantlr4-runtime.so
+[ 91%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/ParseTreeVisitor.cpp.o
+[ 92%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/ParseTreeWalker.cpp.o
+[ 92%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/TerminalNode.cpp.o
+[ 92%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/TerminalNodeImpl.cpp.o
+[ 93%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/Trees.cpp.o
+[ 93%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/pattern/Chunk.cpp.o
+[ 93%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/pattern/ParseTreeMatch.cpp.o
+[ 94%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/pattern/ParseTreePattern.cpp.o
+[ 94%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/pattern/ParseTreePatternMatcher.cpp.o
+[ 94%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/pattern/RuleTagToken.cpp.o
+[ 94%] Built target antlr4_shared
+[ 95%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/pattern/TagChunk.cpp.o
+[ 95%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/pattern/TextChunk.cpp.o
+[ 95%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/pattern/TokenTagToken.cpp.o
+[ 96%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/xpath/XPath.cpp.o
+[ 96%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/xpath/XPathElement.cpp.o
+[ 96%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/xpath/XPathLexer.cpp.o
+[ 96%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/xpath/XPathLexerErrorListener.cpp.o
+[ 97%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/xpath/XPathRuleAnywhereElement.cpp.o
+[ 97%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/xpath/XPathRuleElement.cpp.o
+[ 97%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/xpath/XPathTokenAnywhereElement.cpp.o
+[ 98%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/xpath/XPathTokenElement.cpp.o
+[ 98%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/xpath/XPathWildcardAnywhereElement.cpp.o
+[ 98%] Building CXX object runtime/CMakeFiles/antlr4_static.dir/src/tree/xpath/XPathWildcardElement.cpp.o
+[100%] Linking CXX static library /git/LAM/Smalltalk/build/locals/antlr4cpp/src/antlr4cpp/runtime/Cpp/dist/libantlr4-runtime.a
+[100%] Built target antlr4_static

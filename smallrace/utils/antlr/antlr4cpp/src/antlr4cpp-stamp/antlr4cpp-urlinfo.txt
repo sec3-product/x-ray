@@ -1,0 +1,3 @@
+repository='external project URL'
+module='/git/LAM/Smalltalk/utils/antlr/antlr4-master.zip'
+tag=''

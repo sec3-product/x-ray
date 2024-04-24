@@ -1,0 +1,73 @@
+FROM ubuntu:14.04 as base
+
+MAINTAINER Jie Song
+
+
+ENV DEBIAN_FRONTEND=noninteractive 
+
+# Install dependencies
+RUN apt-get -qq update; \
+    apt-get install -qqy --no-install-recommends \
+        autoconf automake cmake git make build-essential ca-certificates \
+        awscli \
+        libz-dev libtinfo-dev wget xz-utils; \
+    rm -fr /var/lib/apt/lists/*
+
+RUN apt-get -qq update; \
+    apt-get install -y manpages-pl gawk
+
+RUN apt-get install -y libxml2-dev; \
+    apt-get install -y ocaml-nox 
+#    apt-get install -y realpath
+
+RUN apt-get -qq update; \
+    apt-get install -y software-properties-common; \
+    add-apt-repository -y ppa:ubuntu-toolchain-r/test; \
+    apt update; \
+    apt install g++-9 gcc-9 -y; \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-9
+
+# install clang
+# 
+ENV LLVM_RELEASE 11
+ENV LLVM_VERSION 11.0.0 
+RUN wget https://public-installer-pkg.s3.us-east-2.amazonaws.com/clang-11.0.0.tar.gz; \
+    tar zxvf clang-11.0.0.tar.gz; \
+    rm clang-11.0.0.tar.gz; \
+    mv clang-11.0.0 /usr/local/
+
+
+# install cmake
+#
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.16.5/cmake-3.16.5-Linux-x86_64.tar.gz; \
+    tar xzvf cmake-3.16.5-Linux-x86_64.tar.gz; \
+    rm cmake-3.16.5-Linux-x86_64.tar.gz; \
+    mv cmake-3.16.5-Linux-x86_64 /usr/local/
+
+# install go
+#
+RUN wget --no-check-certificate https://dl.google.com/go/go1.13.4.linux-amd64.tar.gz; \
+    tar zxvf go1.13.4.linux-amd64.tar.gz; \
+    rm go1.13.4.linux-amd64.tar.gz; \
+    mv go /usr/local/.
+
+# install maven
+#
+RUN apt update; \
+    apt -y install maven
+
+# install jdk
+#
+RUN cd /usr/local; \
+    wget https://cr-qa-automation.s3-us-west-2.amazonaws.com/jdk-8u202-linux-x64.tar.gz; \
+    tar -xzvf jdk-8u202-linux-x64.tar.gz; \
+    rm -f jdk-8u202-linux-x64.tar.gz;
+
+ENV JAVA_HOME=/usr/local/jdk1.8.0_202
+
+ENV PATH=/usr/local/jdk1.8.0_202/bin:/usr/local/go/bin:/usr/local/clang-11.0.0/bin:/usr/local/cmake-3.16.5-Linux-x86_64/bin:$PATH
+ENV GOROOT=/usr/local/go
+ENV GOPATH=/build/go
+ENV XDG_CACHE_HOME=/tmp/.cache
+
+RUN git config --global http.sslVerify false

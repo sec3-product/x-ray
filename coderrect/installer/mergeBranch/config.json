@@ -1,0 +1,20 @@
+{
+    "Repos": [
+        {
+            "name": "LLVMRace",
+            "cmd": "git clone git@github.com:coderrect/LLVMRace.git && cd LLVMRace && git checkout release-vVERSION && git pull && git checkout master && git merge --no-ff release-vVERSION -m 'merge release-vVERSION automatically by tool.' && git pull && git push"
+        },
+        {
+            "name": "gllvm",
+            "cmd": "git clone git@github.com:coderrect-inc/gllvm.git && cd gllvm && git checkout release-vVERSION && git pull && git checkout master && git merge --no-ff release-vVERSION -m 'merge release-vVERSION automatically by tool.' && git pull && git push"
+        },
+        {
+            "name": "executor",
+            "cmd": "git clone git@github.com:coderrect-inc/executor.git && cd executor && git checkout release-vVERSION && git pull && git checkout master && git merge --no-ff release-vVERSION -m 'merge release-vVERSION automatically by tool.' && git pull && git push"
+        },
+        {
+            "name": "reporter",
+            "cmd": "git clone git@github.com:coderrect-inc/reporter.git && cd reporter && git checkout release-vVERSION && git pull && git checkout master && git merge --no-ff release-vVERSION -m 'merge release-vVERSION automatically by tool.' && git pull && git push"
+        }
+    ]
+}
