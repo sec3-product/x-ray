@@ -1,0 +1,48 @@
+{
+  "@threadAPIProfiles": {
+    "micthread": {      
+      "readWriteLock": {
+        "readLock": ["micthread_rwlock_rdlock", 
+                     "micthread_rwlock_tryrdlock",
+                     "micthread_rwlock_timedrdlock"], 
+        "writeLock": ["micthread_rwlock_wrlock",
+                      "micthread_rwlock_trywrlock",
+                      "micthread_rwlock_timedwrlock"],
+        "unlock": ["micthread_rwlock_unlock"]              
+      },
+
+      "conditionVariable": {
+        "wait": ["micthread_cond_wait", 
+                 "micthread_cond_timedwait"], 
+        "signal": ["micthread_cond_signal",
+                   "micthread_cond_broadcast"]               
+      },
+
+      "mutex": {
+        "lock": ["micthread_mutex_lock", 
+                 "micthread_mutex_trylock", 
+                 "micthread_mutex_timedlock",
+                 "micthread_spin_lock",
+                 "micthread_spin_trylock"],
+        "unlock": ["micthread_mutex_unlock",
+                   "micthread_spin_unlock"]               
+      },
+      
+      "thread": {
+        "create": [
+            {
+              "function": "micthread_create",
+              "entryPoint": 3,
+              "arg": 4
+            }
+        ],
+        "exit": ["micthread_exit"],
+        "join": ["micthread_join"]
+      },
+      
+      "barrier": {
+        "wait": ["micthread_barrier_wait"]
+      }      
+    }
+  }  
+}

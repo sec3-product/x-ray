@@ -1,0 +1,2 @@
+# REQUIRES: pycodestyle
+# RUN: pycodestyle --show-source --show-pep8 %S/../../../bear/bear.py

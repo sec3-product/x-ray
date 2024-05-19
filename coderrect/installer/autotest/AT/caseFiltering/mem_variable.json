@@ -1,0 +1,11 @@
+{
+  "report": {
+    "filters": [
+      {
+        "node": "variable",
+        "name": "l",
+        "sourceFile": "logger.c"
+      }
+    ]
+  }
+}

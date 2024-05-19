@@ -1,0 +1,447 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Cwd qw(cwd);
+use Getopt::Std;
+
+sub pullComponents {
+    # get args passed in
+    my ($release, $pkgVersion, $develop, $sol, $lam , $rust , $move , $solidity) = (@_);
+
+    # we will build our package under build
+    if (! -d "build") {
+        `mkdir build`;
+        print "Create build directory\n";
+    }
+    print "Build directory created\n";
+
+    # LLVMRace
+    # clone LLVMRace
+    if (! -d "build/LLVMRace") {
+        `cd build && git clone --recursive ssh://git\@github.com/coderrect/LLVMRace.git`;
+        if ($? != 0) {
+            print STDERR "Failed to clone LLVMRace\n";
+            exit 1;
+        }
+    }
+    # pull LLVMRace
+    else {
+        `cd build/LLVMRace && git pull --all`;
+        if ($? != 0) {
+            print STDERR "Failed to pull LLVMRace\n";
+            exit 1;
+        }
+    }
+    print "Finish updating LLVMRace\n";
+    
+    # llvm-project
+    # clone llvm-project
+    if (! -d "build/llvm12") {
+        `cd build && git clone --recursive ssh://git\@github.com/coderrect-inc/llvm12.git`;
+        if ($? != 0) {
+            print STDERR "Failed to clone llvm12\n";
+            exit 1;
+        }
+    }
+    # pull llvm-project
+    else {
+        `cd build/llvm12 && git pull --all`;
+        if ($? != 0) {
+            print STDERR "Failed to pull llvm12\n";
+            exit 1;
+        }
+    }
+    print "Finish updating llvm12\n";
+
+    # Note: this is project only contains flang driver, not real flang
+    # classic-flang-llvm-project
+    # clone llvm/clang/flang-driver
+    if (! -d "build/classic-flang-llvm-project") {
+        `cd build && git clone --recursive ssh://git\@github.com/coderrect-inc/classic-flang-llvm-project.git`;
+        if ($? != 0) {
+            print STDERR "Failed to clone classic-flang-llvm-project\n";
+            exit 1;
+        }
+    }
+    # pull llvm/flang/clang
+    else {
+        `cd build/classic-flang-llvm-project && git pull --all`;
+        if ($? != 0) {
+            print STDERR "Failed to pull classic-flang-llvm-project\n";
+            exit 1;
+        }
+    }
+    print "Finish updating classic-flang-llvm-project\n";
+
+    # Note: this is the real flang
+    # clone flang
+    if (! -d "build/flang") {
+        `cd build && git clone --recursive ssh://git\@github.com/coderrect-inc/flang.git`;
+        if ($? != 0) {
+            print STDERR "Failed to clone flang\n";
+            exit 1;
+        }
+    }
+    # pull flang
+    else {
+        `cd build/flang && git pull --all`;
+        if ($? != 0) {
+            print STDERR "Failed to pull flang\n";
+            exit 1;
+        }
+    }
+    print "Finish updating flang\n";
+
+    # coderrect
+    # clone coderrect
+    if (! -d "build/coderrect") {
+        `cd build && git clone --recursive ssh://git\@github.com/coderrect-inc/coderrect.git`;
+        if ($? != 0) {
+            print STDERR "Failed to clone coderrect\n";
+            exit 1;
+        }
+    }
+    # pull coderrect
+    else {
+        `cd build/coderrect && git pull --all`;
+        if ($? != 0) {
+            print STDERR "Failed to pull coderrect\n";
+            exit 1;
+        }
+    }
+    print "Finish updating coderrect\n";
+
+
+    # clone smallrace
+    if (! -d "build/smallrace") {
+        `cd build && git clone --recursive ssh://git\@github.com/coderrect-inc/smallrace.git`;
+        if ($? != 0) {
+            print STDERR "Failed to clone smallrace\n";
+            exit 1;
+        }
+    }
+    # pull smallrace
+    else {
+        `cd build/smallrace && git pull --all`;
+        if ($? != 0) {
+            print STDERR "Failed to pull smallrace\n";
+            exit 1;
+        }
+    }
+    print "Finish updating smallrace\n";
+
+
+    # checkout to correct branches
+    # classic-flang-llvm-project and flang are relatively stable and not changed regularly,
+    # so all changes are directly pushed to develop branch, no need to switch branches for them
+    if ($release) {
+        `cd build/LLVMRace && git checkout release-v$pkgVersion && git pull`;
+        `cd build/coderrect && git checkout release-v$pkgVersion && git pull`;
+        print "Checkout to the HEAD of release-v$pkgVersion branch\n;"
+    }
+    elsif ($develop) {
+        `cd build/LLVMRace && git checkout develop && git pull`;
+        `cd build/coderrect && git checkout develop && git pull`;
+        print "Checkout to the HEAD of develop branch\n";
+    }
+    elsif ($sol) {
+        `cd build/LLVMRace && git checkout sol && git pull`;
+        `cd build/llvm12 && git checkout release/12.x && git pull`;
+        `cd build/coderrect && git checkout sol && git pull`;
+        print "Checkout to the HEAD of sol branch\n";
+    }
+    elsif ($lam) {
+        `cd build/LLVMRace && git checkout stx && git pull`;
+        `cd build/llvm12 && git checkout release/12.x && git pull`;
+        `cd build/coderrect && git checkout stx && git pull`;
+        `cd build/smallrace && git pull`;
+        print "Checkout to the HEAD of stx branch\n";
+    }
+    elsif ($rust) {
+        `cd build/LLVMRace && git checkout rust && git pull`;
+        `cd build/llvm12 && git checkout release/12.x && git pull`;
+        `cd build/coderrect && git checkout rust && git pull`;
+        `cd build/smallrace && git checkout rust && git pull`;
+        print "Checkout to the HEAD of rust branch\n";
+    }
+     elsif ($move) {
+        `cd build/LLVMRace && git checkout move && git pull`;
+        `cd build/llvm12 && git checkout release/12.x && git pull`;
+        `cd build/coderrect && git checkout move && git pull`;
+        `cd build/smallrace && git checkout move && git pull`;
+        print "Checkout to the HEAD of move branch\n";
+    }
+    elsif ($solidity) {
+        `cd build/LLVMRace && git checkout solidity && git pull`;
+        `cd build/llvm12 && git checkout release/12.x && git pull`;
+        `cd build/coderrect && git checkout solidity && git pull`;
+        `cd build/smallrace && git checkout solidity && git pull`;
+        print "Checkout to the HEAD of solidity branch\n";
+    }
+    else {
+        print STDERR "You need to specify build type with either -d, -s, -l, or -r <version number>\n";
+    }
+}
+
+sub buildInDocker {
+    # get args passed in
+    my ($release, $pkgVersion, $develop, $sol, $lam, $rust, $move, $solidity) = (@_);
+    # check if docker imege has been installed
+    my $hasImage = `docker images | grep 'coderrect/installer' | grep 1.2 | wc -l`;
+    if ($hasImage != 1) {
+        print STDERR "Docker image coderrect/installer:1.2 not installed, please run build-coderrect-installer-1.1-docker.sh first\n";
+        exit 1;
+    }
+
+    print "Start building all coderrect's components in the docker container...\n";
+    # run a container to do all builds
+    if ($sol) {
+    	`docker run --rm -v \$(pwd)/build:/build -v \$(pwd)/dockerstuff/scripts:/scripts --user=\$(id -u):\$(id -g) coderrect/installer:1.1 /scripts/build-components-llvm12.sh`;
+    }	
+    elsif ($lam) {
+    	`docker run --rm -v \$(pwd)/build:/build -v \$(pwd)/dockerstuff/scripts:/scripts --user=\$(id -u):\$(id -g) coderrect/installer:1.1 /scripts/build-components-llvm12-lam.sh`;
+    }
+    elsif ($rust) {
+    	`docker run --rm -v \$(pwd)/build:/build -v \$(pwd)/dockerstuff/scripts:/scripts --user=\$(id -u):\$(id -g) coderrect/installer:1.2 /scripts/build-components-llvm12-rust.sh`;
+    }
+    elsif ($move) {
+    	`docker run --rm -v \$(pwd)/build:/build -v \$(pwd)/dockerstuff/scripts:/scripts --user=\$(id -u):\$(id -g) coderrect/installer:1.2 /scripts/build-components-llvm12-rust.sh`;
+    }
+    elsif ($solidity) {
+    	`docker run --rm -v \$(pwd)/build:/build -v \$(pwd)/dockerstuff/scripts:/scripts --user=\$(id -u):\$(id -g) coderrect/installer:1.2 /scripts/build-components-llvm12-rust.sh`;
+    }		
+    else {
+    	`docker run --rm -v \$(pwd)/build:/build -v \$(pwd)/dockerstuff/scripts:/scripts --user=\$(id -u):\$(id -g) coderrect/installer:1.1 /scripts/build-components.sh`;
+    }
+    if ($? != 0) {
+        print STDERR "Failed to build components in the docker container\n";
+        exit 1;
+    }
+}
+
+sub buildPackage {
+    # get args passed in
+    my ($release, $pkgVersion, $develop, $sol, $lam, $rust, $move, $solidity) = (@_);
+    my $version = "";
+    # get version type
+    if ($release) {
+        $version = $pkgVersion;
+    }
+    elsif ($sol)  {
+        $version = "soteria";
+    }
+    elsif ($lam)  {
+        $version = "smalltalk";
+    }
+    elsif ($rust)  {
+        $version = "solana";
+    }
+    elsif ($move)  {
+        $version = "move";
+    }
+    elsif ($solidity)  {
+        $version = "solidity";
+    }
+    else {
+        $version = "develop";
+    }
+    # get package timestamp
+    my $build = `date +'\%s'`;
+    chomp $build;
+
+    print "Start copying files to build/package...\n";
+    # `rm -rf build/package && mkdir -p build/package`;
+    if (! -d "build/package") {
+     `mkdir -p build/package`;
+    }
+    `echo package $version build $build >> build/package/VERSION`;
+    # copy things to package/bin
+    if (! -d "build/package/bin") {
+     `mkdir -p build/package/bin`;
+    }
+    `cp build/coderrect/gosrc/bin/* build/package/bin/`;
+    `cp build/coderrect/coderrect-exec/coderrect-exec build/package/bin/`;
+    `cp build/coderrect/libear/build/libear/libear.so build/package/bin/`;
+    `cp build/coderrect/docker-installer/docker-coderrect build/package/bin/`;
+    `cp -r build/LLVMRace/build/bin/* build/package/bin/`;
+    if ($? != 0) {
+        print STDERR "Failed to copy files to build/package/bin\n";
+        exit 1;
+    }
+    # copy things to package/clang
+    if (! -d "build/package/clang") {
+    `mkdir -p build/package/clang/bin`;
+    `mkdir -p build/package/clang/include`;
+    `mkdir -p build/package/clang/lib`;
+    }
+    if ($sol) {
+    	`cp build/custom-clang/bin/clang-12 build/package/clang/bin/`;
+    	`cd build/package/clang/bin && ln -s clang-12 clang && ln -s clang-12 clang++`;
+    	`cd build/package/bin && ln -s coderrect soteria`;
+    }
+    elsif ($lam)  {
+    	`cp build/smallrace/build/bin/st-racedetect build/package/bin/`;
+    }
+    elsif ($rust)  {
+    	`cp build/smallrace/build/bin/sol-racedetect build/package/bin/`;
+    	`cd build/package/bin && ln -s coderrect soteria`;
+    }
+    elsif ($move)  {
+        `cp build/smallrace/build/bin/sol-racedetect build/package/bin/`;
+    	`cp build/smallrace/build/bin/solidity-racedetect build/package/bin/`;
+        `cp build/smallrace/build/bin/move-racedetect build/package/bin/`;
+    	`cd build/package/bin && ln -s coderrect soteria`;
+    }
+    elsif ($solidity)  {
+        `cp build/smallrace/build/bin/sol-racedetect build/package/bin/`;
+    	`cp build/smallrace/build/bin/solidity-racedetect build/package/bin/`;
+    	`cd build/package/bin && ln -s coderrect soteria`;
+    }
+    else {
+    	`cp build/custom-clang/bin/clang-10 build/package/clang/bin/`;
+    	`cp build/custom-clang/bin/flang1 build/package/clang/bin/`;
+    	`cp build/custom-clang/bin/flang2 build/package/clang/bin/`;
+    	`cd build/package/clang/bin && ln -s clang-10 clang && ln -s clang-10 clang++ && ln -s clang-10 flang`;
+    }
+    `cp build/custom-clang/bin/llvm-link build/package/clang/bin/`;
+    `cp build/custom-clang/lib/libomp.so build/package/bin/`;
+    `cp -r build/custom-clang/include/* build/package/clang/include`;
+    `cp -r build/custom-clang/lib/clang build/package/clang/lib`;
+    `cp -r build/custom-clang/lib/cmake build/package/clang/lib`;
+    if ($? != 0) {
+        print STDERR "Failed to copy files to build/package/clang\n";
+        exit 1;
+    }
+    # copy things to package/conf, package/data, and package/EULA.txt
+    `cp -r build/coderrect/installer/package/* build/package/`;
+    if ($? != 0) {
+        print STDERR "Failed to copy files to build/package/{conf,data,EULA.txt}\n";
+        exit 1;
+    }
+    # copy things to package/examples
+    #`mkdir -p build/package/examples`;
+    #`cp -r build/coderrect/benchmark/helloworld build/package/examples`;
+    #if ($? != 0) {
+    #    print STDERR "Failed to copy files to build/package/examples\n";
+    #    exit 1;
+    #}
+    print "Finish copying files to build/package...\n";
+
+    # create tarball based on the build type
+    print "Start creating a tarball for build/package...\n";
+    if ($develop) {
+        `cd build && rm -rf coderrect-linux-develop && mv package coderrect-linux-develop`;
+        `cd build && tar -czvf coderrect-linux-develop.tar.gz coderrect-linux-develop`;
+        if ($? != 0) {
+            print STDERR "Failed to create tarball for build/package\n";
+            exit 1;
+        }
+        print "Final package is created at build/coderrect-linux-develop.tar.gz\n"
+    }
+    elsif ($sol) {
+        `cd build && rm -rf soteria-linux-develop && mv package soteria-linux-develop`;
+        `cd build && tar -czvf soteria-linux-develop.tar.gz soteria-linux-develop`;
+        if ($? != 0) {
+            print STDERR "Failed to create tarball for build/package\n";
+            exit 1;
+        }
+        print "Final package is created at build/soteria-linux-develop.tar.gz\n"
+    }
+    elsif ($lam) {
+        `cd build && rm -rf coderrect-linux-lam-develop && mv package coderrect-linux-lam-develop`;
+        `cd build && tar -czvf coderrect-linux-lam-develop.tar.gz coderrect-linux-lam-develop`;
+        if ($? != 0) {
+            print STDERR "Failed to create tarball for build/package\n";
+            exit 1;
+        }
+        print "Final package is created at build/coderrect-linux-lam-develop.tar.gz\n"
+    }
+    elsif ($rust) {
+        `cd build && rm -rf soteria-linux-rust && mv package soteria-linux-rust`;
+        `cd build && tar -czvf soteria-linux-rust.tar.gz soteria-linux-rust`;
+        if ($? != 0) {
+            print STDERR "Failed to create tarball for build/package\n";
+            exit 1;
+        }
+        print "Final package is created at build/soteria-linux-rust.tar.gz\n"
+    }
+    elsif ($move) {
+        `cd build && rm -rf soteria-linux-rust && mv package soteria-linux-rust`;
+        `cd build && tar -czvf soteria-linux-rust.tar.gz soteria-linux-rust`;
+        if ($? != 0) {
+            print STDERR "Failed to create tarball for build/package\n";
+            exit 1;
+        }
+        print "Final package is created at build/soteria-linux-rust.tar.gz\n"
+    }
+    elsif ($solidity) {
+        `cd build && rm -rf soteria-linux-rust && mv package soteria-linux-rust`;
+        `cd build && tar -czvf soteria-linux-rust.tar.gz soteria-linux-rust`;
+        if ($? != 0) {
+            print STDERR "Failed to create tarball for build/package\n";
+            exit 1;
+        }
+        print "Final package is created at build/soteria-linux-rust.tar.gz\n"
+    }
+    elsif($release) {
+        `cd build && rm -rf coderrect-linux-$pkgVersion && mv package coderrect-linux-$pkgVersion`;
+        `cd build && tar -czvf coderrect-linux-$pkgVersion.tar.gz coderrect-linux-$pkgVersion`;
+        if ($? != 0) {
+            print STDERR "Failed to create tarball for build/package\n";
+            exit 1;
+        }
+        print "Final package is created at build/coderrect-linux-$pkgVersion.tar.gz\n"
+    }
+    else {
+        print STDERR "No build type specified, no tarball created. Use either -d, -s, -lam, or -r <version number> to specify the build type.\n";
+        exit 1;
+    }
+}
+
+
+#######################
+#        MAIN         #
+#######################
+
+my %opt;
+getopts('hrdslxmep', \%opt);
+my ($help, $release, $develop, $sol, $lam, $rust, $move,$solidity) = @opt{ qw(h r d s l x m e) };
+my $pkgVersion = shift;
+
+if ($help) {
+    print <<EOF
+build-pkg - build a installer from the master branch or the release branch
+Usage:
+  build-pkg [options] version [effective_version]
+  -h - print this message
+  -r - build from the release branches (the default is from master branch)
+  -d - build from the develop branches
+  -s - build from the sol branches
+  -l - build from the stx branches
+  -x - build from the rust branches
+  -m - build from the move branches
+  -e - build from the solidity branches
+Examples:
+  1. build the package v0.0.1 from release branches
+  \$ build-pkg -r 0.0.1
+  2. build the package from the develop branch
+  \$ build-pkg -d
+  3. build the package from the sol branch
+  \$ build-pkg -s
+  4. build the package from the stx branch
+  \$ build-pkg -l
+  5. build the package from the rust branch
+  \$ build-pkg -x
+  6. build the package from the move branch
+  \$ build-pkg -m
+  7. build the package from the solidity branch
+  \$ build-pkg -e
+EOF
+;
+    exit 0;
+}
+
+pullComponents($release, $pkgVersion, $develop, $sol, $lam, $rust, $move, $solidity);
+buildInDocker($release, $pkgVersion, $develop, $sol, $lam, $rust, $move, $solidity);
+buildPackage($release, $pkgVersion, $develop, $sol, $lam, $rust, $move, $solidity);

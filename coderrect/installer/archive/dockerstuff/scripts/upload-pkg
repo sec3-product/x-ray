@@ -1,0 +1,55 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+
+#
+# upload-pkg $accessKeyId $secretAccessKey $defaultRegion $package [$s3path]
+#
+# $package is a filename like "coderrect-0.8.0.tar.gz".
+#
+# if $s3path is set, $package will be loaded there. Otherwise, it will be
+# uploaded to "public-installer-pkg"
+#
+# upload-pkg will upload /data/$package to the AWS S3 
+#
+
+use constant BUCKET_NAME => "public-installer-pkg";
+
+
+#
+# uploadPackge($packageName) - download the package to /build
+#
+sub uploadPackage {
+  my ($packageName, $s3path) = (@_);
+
+    `aws s3 cp /package/$packageName s3://$s3path/$packageName`;
+}
+
+
+#
+# main
+#
+$ENV{'AWS_ACCESS_KEY_ID'} = $ARGV[0];
+$ENV{'AWS_SECRET_ACCESS_KEY'} = $ARGV[1];
+$ENV{'AWS_DEFAULT_REGION'} = $ARGV[2];
+
+my $package = $ARGV[3];
+if (!defined($package)) {
+  print "No installer package is found.\n";
+  exit 1;
+}
+my $s3path = $ARGV[4] || BUCKET_NAME;
+
+print STDERR "Uploading $package to $s3path ...\n";
+my $err = `aws s3 cp /data/$package s3://$s3path/$package 2>&1`;
+if ($? != 0 ) {
+    print STDERR "Failed to upload file - $err";
+    exit(1);
+}
+
+exit(0);
+
+
+__END__

@@ -1,0 +1,95 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+use Cwd;
+use Getopt::Std;
+
+#
+# upload-pkg - upload the installer package to AWS S3
+#
+# The script get access key id, secret key and the default region
+# from $HOME/.aws/config and $HOME/.aws/credentials and calls
+# 'upload-pkg' inside the docker to upload the package.
+# 
+
+sub parsePackage {
+	my ($package) = @_;
+	my $fullpath = `realpath $package`;
+	chomp $fullpath;
+
+	my $pkgPath = `dirname $fullpath`;
+	chomp $pkgPath;
+	my $pkgFilename = `basename $fullpath`;
+	chomp $pkgFilename;
+	return ($pkgPath, $pkgFilename);
+}
+
+sub getDockerCredentials {
+    if (defined($ENV{'DOCKER_USER_NAME'})) {
+        return ($ENV{'DOCKER_USER_NAME'}, $ENV{'DOCKER_ACCESS_KEY'});
+    }
+
+    my $userName = readProperty("~/.docker/cred", "user_name");
+    my $accessKey = readProperty("~/.docker/cred", "access_key");
+    return ($userName, $accessKey);
+}
+
+sub uploadDockerImage {
+    my ($dockerTag) = (@_);
+    print "Uploading docker image with tag coderrect/coderrect:$dockerTag...\n";
+
+    my ($userName, $accessKey) = getDockerCredentials();
+    `echo $accessKey | docker login --username $userName --password-stdin`;
+    `docker push coderrect/coderrect:$dockerTag`;
+    `docker logout`;
+}
+
+#
+# main
+#
+my %opt;
+getopts('hd', \%opt);
+my ($help, $pushDocker) = @opt{ qw(h d) };
+my $package = shift || "";
+my $bucket = shift || "public-installer-pkg";
+if (defined($pushDocker)) {
+    uploadDockerImage($package);
+    exit 0;
+}
+
+if ($help) {
+    print <<EOF
+uploadpkg - upload package
+
+Usage:
+  uploadpkg [options] local-path s3path
+
+  -h - print this message
+  -d - push docker image
+
+Examples:
+  1. upload file to s3
+  \$ uploadpkg build/package s3path
+
+  2. push docker image to hub.docker.com
+  \$ uploadpkg -d linux-hpc-0.9.2
+
+EOF
+;
+    exit 0;
+}
+
+#Specify it explicitly to resolve conflict with AMI confuration.
+my ($pkgPath, $pkgFilename) = parsePackage($package);
+print "Uploading $package to s3://$bucket/$pkgFilename\n";
+`aws s3 cp $package s3://$bucket/$pkgFilename`;
+if ($? != 0) {
+    print STDERR "failed to upload\n";
+    exit(1);
+}
+
+__END__
+
+
+ 

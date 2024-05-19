@@ -1,0 +1,1 @@
+make all -j8 && ./tools/update-bin.sh

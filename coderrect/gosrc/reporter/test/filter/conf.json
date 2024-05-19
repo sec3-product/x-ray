@@ -1,0 +1,18 @@
+{
+    "report": {
+        "filters": [
+            {
+                "node": "function",
+                "name": "taosInitLog"
+            },
+            {
+                "node": "line",
+                "sourceFile": "tlog.c"
+            },
+            {
+                "node": "variable",
+                "name": "tLogBuff"
+            }
+        ]
+    }
+}

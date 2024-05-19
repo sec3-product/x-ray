@@ -1,0 +1,9 @@
+{
+  "logger": {
+    "level": "debug",
+    "logFolder": "logs",
+    "maximumLogFileCount": 2,
+    "maximumLogFileSize": 1,
+    "toStderr": false
+  }
+}
