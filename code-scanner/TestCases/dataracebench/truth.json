@@ -1,0 +1,1833 @@
+{
+    "DRB001-antidep1-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 64,
+                    "col": 10
+                },
+                "access2": {
+                    "line": 64,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "a"
+                }
+            }
+        ]
+    },
+    "DRB002-antidep1-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 67,
+                    "col": 10
+                },
+                "access2": {
+                    "line": 67,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "a"
+                }
+            }
+        ]
+    },
+    "DRB003-antidep2-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 67,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 67,
+                    "col": 18
+                },
+                "sharedObj": {
+                    "name": "a"
+                }
+            }
+        ]
+    },
+    "DRB004-antidep2-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 70,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 70,
+                    "col": 18
+                },
+                "sharedObj": {
+                    "name": "a"
+                }
+            }
+        ]
+    },
+    "DRB005-indirectaccess1-orig-yes": {
+        "note": "We report right side of brackets so col 13 instead of 5",
+        "races": [
+            {
+                "access1": {
+                    "line": 128,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 129,
+                    "col": 13
+                },
+                "sharedObj": {
+                    "name": ""
+                }
+            }
+        ]
+    },
+    "DRB006-indirectaccess2-orig-yes": {
+        "note": "We report right side of brackets so col 13 instead of 5",
+        "races": [
+            {
+                "access1": {
+                    "line": 128,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 129,
+                    "col": 13
+                },
+                "sharedObj": {
+                    "name": ""
+                }
+            }
+        ]
+    },
+    "DRB007-indirectaccess3-orig-yes": {
+        "note": "We report right side of brackets so col 13 instead of 5",
+        "races": [
+            {
+                "access1": {
+                    "line": 128,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 129,
+                    "col": 13
+                },
+                "sharedObj": {
+                    "name": ""
+                }
+            }
+        ]
+    },
+    "DRB008-indirectaccess4-orig-yes": {
+        "note": "We report right side of brackets so col 13 instead of 5",
+        "races": [
+            {
+                "access1": {
+                    "line": 128,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 129,
+                    "col": 13
+                },
+                "sharedObj": {
+                    "name": ""
+                }
+            }
+        ]
+    },
+    "DRB009-lastprivatemissing-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 59,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 59,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "x"
+                }
+            }
+        ]
+    },
+    "DRB010-lastprivatemissing-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 63,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 63,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "x"
+                }
+            }
+        ]
+    },
+    "DRB011-minusminus-orig-yes": {
+        "note": "multiple races w/w, r/w",
+        "races": [
+            {
+                "access1": {
+                    "line": 74,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 74,
+                    "col": 7
+                },
+                "sharedObj": {
+                    "name": "numNodes2"
+                }
+            },
+            {
+                "access1": {
+                    "line": 74,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 74,
+                    "col": 16
+                },
+                "sharedObj": {
+                    "name": "numNodes2"
+                }
+            }
+        ]
+    },
+    "DRB012-minusminus-var-yes": {
+        "note": "multiple races w/w, r/w",
+        "races": [
+            {
+                "access1": {
+                    "line": 74,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 74,
+                    "col": 7
+                },
+                "sharedObj": {
+                    "name": "numNodes2"
+                }
+            },
+            {
+                "access1": {
+                    "line": 74,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 74,
+                    "col": 16
+                },
+                "sharedObj": {
+                    "name": "numNodes2"
+                }
+            }
+        ]
+    },
+    "DRB013-nowait-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 72,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 75,
+                    "col": 13
+                },
+                "sharedObj": {
+                    "name": "a"
+                }
+            }
+        ]
+    },
+    "DRB014-outofbounds-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 75,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 75,
+                    "col": 15
+                },
+                "sharedObj": {
+                    "name": "b"
+                }
+            }
+        ]
+    },
+    "DRB015-outofbounds-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 80,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 80,
+                    "col": 15
+                },
+                "sharedObj": {
+                    "name": "b"
+                }
+            }
+        ]
+    },
+    "DRB016-outputdep-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 73,
+                    "col": 12
+                },
+                "access2": {
+                    "line": 74,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "x"
+                }
+            },
+            {
+                "access1": {
+                    "line": 74,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 74,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "x"
+                }
+            }
+        ]
+    },
+    "DRB017-outputdep-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 71,
+                    "col": 12
+                },
+                "access2": {
+                    "line": 72,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "x"
+                }
+            },
+            {
+                "access1": {
+                    "line": 72,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 72,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "x"
+                }
+            }
+        ]
+    },
+    "DRB018-plusplus-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 72,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 72,
+                    "col": 18
+                },
+                "sharedObj": {
+                    "name": "outLen"
+                }
+            },
+            {
+                "access1": {
+                    "line": 72,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 72,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "output"
+                }
+            }
+        ]
+    },
+    "DRB019-plusplus-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 72,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 72,
+                    "col": 18
+                },
+                "sharedObj": {
+                    "name": "outLen"
+                }
+            },
+            {
+                "access1": {
+                    "line": 72,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 72,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "output"
+                }
+            }
+        ]
+    },
+    "DRB020-privatemissing-var-yes": {
+        "notes": "r/w on tmp is optimized to single access in ir",
+        "races": [
+            {
+                "access1": {
+                    "line": 65,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 65,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "tmp"
+                }
+            }
+        ]
+    },
+    "DRB021-reductionmissing-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 70,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 70,
+                    "col": 7
+                },
+                "sharedObj": {
+                    "name": "sum"
+                }
+            },
+            {
+                "access1": {
+                    "line": 70,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 70,
+                    "col": 13
+                },
+                "sharedObj": {
+                    "name": "sum"
+                }
+            }
+        ]
+    },
+    "DRB022-reductionmissing-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 72,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 72,
+                    "col": 7
+                },
+                "sharedObj": {
+                    "name": "sum"
+                }
+            },
+            {
+                "access1": {
+                    "line": 72,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 72,
+                    "col": 13
+                },
+                "sharedObj": {
+                    "name": "sum"
+                }
+            }
+        ]
+    },
+    "DRB023-sections1-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 58,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 60,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "i"
+                }
+            }
+        ]
+    },
+    "DRB024-simdtruedep-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 66,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 66,
+                    "col": 12
+                },
+                "sharedObj": {
+                    "name": "a"
+                }
+            }
+        ]
+    },
+    "DRB025-simdtruedep-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 68,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 68,
+                    "col": 12
+                },
+                "sharedObj": {
+                    "name": "a"
+                }
+            }
+        ]
+    },
+    "DRB026-targetparallelfor-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 64,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 64,
+                    "col": 10
+                },
+                "sharedObj": {
+                    "name": "a"
+                }
+            }
+        ]
+    },
+    "DRB027-taskdependmissing-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 61,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 63,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "i"
+                }
+            }
+        ]
+    },
+    "DRB028-privatemissing-orig-yes": {
+        "note": "access is optimized to single access in ir",
+        "races": [
+            {
+                "access1": {
+                    "line": 65,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 65,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "tmp"
+                }
+            }
+        ]
+    },
+    "DRB029-truedep1-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 64,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 64,
+                    "col": 12
+                },
+                "sharedObj": {
+                    "name": "a"
+                }
+            }
+        ]
+    },
+    "DRB030-truedep1-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 68,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 68,
+                    "col": 12
+                },
+                "sharedObj": {
+                    "name": "a"
+                }
+            }
+        ]
+    },
+    "DRB031-truedepfirstdimension-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 66,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 66,
+                    "col": 15
+                },
+                "sharedObj": {
+                    "name": "b"
+                }
+            }
+        ]
+    },
+    "DRB032-truedepfirstdimension-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 69,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 69,
+                    "col": 15
+                },
+                "sharedObj": {
+                    "name": "b"
+                }
+            }
+        ]
+    },
+    "DRB033-truedeplinear-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 64,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 64,
+                    "col": 14
+                },
+                "sharedObj": {
+                    "name": "a"
+                }
+            }
+        ]
+    },
+    "DRB034-truedeplinear-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 66,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 66,
+                    "col": 14
+                },
+                "sharedObj": {
+                    "name": "a"
+                }
+            }
+        ]
+    },
+    "DRB035-truedepscalar-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 66,
+                    "col": 12
+                },
+                "access2": {
+                    "line": 67,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "tmp"
+                }
+            },
+            {
+                "access1": {
+                    "line": 67,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 67,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "tmp"
+                }
+            }
+        ]
+    },
+    "DRB036-truedepscalar-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 66,
+                    "col": 12
+                },
+                "access2": {
+                    "line": 67,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "tmp"
+                }
+            },
+            {
+                "access1": {
+                    "line": 67,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 67,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "tmp"
+                }
+            }
+        ]
+    },
+    "DRB037-truedepseconddimension-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 63,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 63,
+                    "col": 15
+                },
+                "sharedObj": {
+                    "name": "b"
+                }
+            }
+        ]
+    },
+    "DRB038-truedepseconddimension-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 65,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 65,
+                    "col": 15
+                },
+                "sharedObj": {
+                    "name": "b"
+                }
+            }
+        ]
+    },
+    "DRB039-truedepsingleelement-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 62,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 62,
+                    "col": 15
+                },
+                "sharedObj": {
+                    "name": "a"
+                }
+            }
+        ]
+    },
+    "DRB040-truedepsingleelement-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 63,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 63,
+                    "col": 15
+                },
+                "sharedObj": {
+                    "name": "a"
+                }
+            }
+        ]
+    },
+    "DRB073-doall2-orig-yes": {
+        "notes": "some accesses on j are optimized out in IR",
+        "races": [
+            {
+                "access1": {
+                    "line": 61,
+                    "col": 21
+                },
+                "access2": {
+                    "line": 61,
+                    "col": 9
+                },
+                "sharedObj": {
+                    "name": "j"
+                }
+            },
+            {
+                "access1": {
+                    "line": 61,
+                    "col": 9
+                },
+                "access2": {
+                    "line": 61,
+                    "col": 9
+                },
+                "sharedObj": {
+                    "name": "j"
+                }
+            }
+        ]
+    },
+    "DRB074-flush-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 71,
+                    "col": 11
+                },
+                "access2": {
+                    "line": 60,
+                    "col": 3
+                },
+                "sharedObj": {
+                    "name": ""
+                }
+            }
+        ]
+    },
+    "DRB075-getthreadnum-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 60,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 64,
+                    "col": 33
+                },
+                "sharedObj": {
+                    "name": "numThreads"
+                }
+            }
+        ]
+    },
+    "DRB080-func-arg-orig-yes": {
+        "notes": "There is an additional r/w race at 59",
+        "races": [
+            {
+                "access1": {
+                    "line": 59,
+                    "col": 3
+                },
+                "access2": {
+                    "line": 59,
+                    "col": 3
+                },
+                "sharedObj": {
+                    "name": "q"
+                }
+            },
+            {
+                "access1": {
+                    "line": 59,
+                    "col": 6
+                },
+                "access2": {
+                    "line": 59,
+                    "col": 3
+                },
+                "sharedObj": {
+                    "name": "q"
+                }
+            }
+        ]
+    },
+    "DRB082-declared-in-func-orig-yes": {
+        "notes": "there is also a r/w race",
+        "races": [
+            {
+                "access1": {
+                    "line": 57,
+                    "col": 3
+                },
+                "access2": {
+                    "line": 57,
+                    "col": 3
+                },
+                "sharedObj": {
+                    "name": "q"
+                }
+            },
+            {
+                "access1": {
+                    "line": 57,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 57,
+                    "col": 3
+                },
+                "sharedObj": {
+                    "name": "q"
+                }
+            }
+        ]
+    },
+    "DRB084-threadprivatemissing-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 61,
+                    "col": 3
+                },
+                "access2": {
+                    "line": 61,
+                    "col": 8
+                },
+                "sharedObj": {
+                    "name": "sum0"
+                }
+            },
+            {
+                "access1": {
+                    "line": 61,
+                    "col": 3
+                },
+                "access2": {
+                    "line": 61,
+                    "col": 3
+                },
+                "sharedObj": {
+                    "name": "sum0"
+                }
+            }
+        ]
+    },
+    "DRB086-static-data-member-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 72,
+                    "col": 4
+                },
+                "access2": {
+                    "line": 72,
+                    "col": 4
+                },
+                "sharedObj": {
+                    "name": "counter"
+                }
+            },
+            {
+                "access1": {
+                    "line": 72,
+                    "col": 4
+                },
+                "access2": {
+                    "line": 72,
+                    "col": 13
+                },
+                "sharedObj": {
+                    "name": "counter"
+                }
+            }
+        ]
+    },
+    "DRB087-static-data-member2-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 74,
+                    "col": 4
+                },
+                "access2": {
+                    "line": 74,
+                    "col": 4
+                },
+                "sharedObj": {
+                    "name": "counter"
+                }
+            },
+            {
+                "access1": {
+                    "line": 74,
+                    "col": 4
+                },
+                "access2": {
+                    "line": 74,
+                    "col": 13
+                },
+                "sharedObj": {
+                    "name": "counter"
+                }
+            }
+        ]
+    },
+    "DRB088-dynamic-storage-orig-yes": {
+        "notes": "also a r/w race",
+        "races": [
+            {
+                "access1": {
+                    "line": 63,
+                    "col": 4
+                },
+                "access2": {
+                    "line": 63,
+                    "col": 4
+                },
+                "sharedObj": {
+                    "name": "counter"
+                }
+            },
+            {
+                "access1": {
+                    "line": 63,
+                    "col": 4
+                },
+                "access2": {
+                    "line": 63,
+                    "col": 14
+                },
+                "sharedObj": {
+                    "name": "counter"
+                }
+            }
+        ]
+    },
+    "DRB089-dynamic-storage2-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 73,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 73,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "counter"
+                }
+            },
+            {
+                "access1": {
+                    "line": 73,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 73,
+                    "col": 15
+                },
+                "sharedObj": {
+                    "name": "counter"
+                }
+            }
+        ]
+    },
+    "DRB090-static-local-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 73,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 73,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "tmp"
+                }
+            },
+            {
+                "access1": {
+                    "line": 73,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 74,
+                    "col": 12
+                },
+                "sharedObj": {
+                    "name": "tmp"
+                }
+            }
+        ]
+    },
+    "DRB092-threadprivatemissing2-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 68,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 68,
+                    "col": 12
+                },
+                "sharedObj": {
+                    "name": "sum0"
+                }
+            },
+            {
+                "access1": {
+                    "line": 68,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 68,
+                    "col": 7
+                },
+                "sharedObj": {
+                    "name": "sum0"
+                }
+            }
+        ]
+    },
+    "DRB095-doall2-taskloop-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 69,
+                    "col": 14
+                },
+                "access2": {
+                    "line": 69,
+                    "col": 21
+                },
+                "sharedObj": {
+                    "name": "j"
+                }
+            },
+            {
+                "access1": {
+                    "line": 69,
+                    "col": 14
+                },
+                "access2": {
+                    "line": 69,
+                    "col": 30
+                },
+                "sharedObj": {
+                    "name": "j"
+                }
+            },
+            {
+                "access1": {
+                    "line": 69,
+                    "col": 14
+                },
+                "access2": {
+                    "line": 70,
+                    "col": 16
+                },
+                "sharedObj": {
+                    "name": "j"
+                }
+            },
+            {
+                "access1": {
+                    "line": 69,
+                    "col": 30
+                },
+                "access2": {
+                    "line": 69,
+                    "col": 21
+                },
+                "sharedObj": {
+                    "name": "j"
+                }
+            },
+            {
+                "access1": {
+                    "line": 69,
+                    "col": 30
+                },
+                "access2": {
+                    "line": 69,
+                    "col": 30
+                },
+                "sharedObj": {
+                    "name": "j"
+                }
+            },
+            {
+                "access1": {
+                    "line": 69,
+                    "col": 30
+                },
+                "access2": {
+                    "line": 70,
+                    "col": 16
+                },
+                "sharedObj": {
+                    "name": "j"
+                }
+            },
+            {
+                "access1": {
+                    "line": 69,
+                    "col": 30
+                },
+                "access2": {
+                    "line": 69,
+                    "col": 14
+                },
+                "sharedObj": {
+                    "name": "j"
+                }
+            }
+        ]
+    },
+    "DRB106-taskwaitmissing-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 61,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 65,
+                    "col": 14
+                },
+                "sharedObj": {
+                    "name": "i"
+                }
+            },
+            {
+                "access1": {
+                    "line": 63,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 65,
+                    "col": 16
+                },
+                "sharedObj": {
+                    "name": "j"
+                }
+            }
+        ]
+    },
+    "DRB109-orderedmissing-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 56,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 56,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "x"
+                }
+            },
+            {
+                "access1": {
+                    "line": 56,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 56,
+                    "col": 6
+                },
+                "sharedObj": {
+                    "name": "x"
+                }
+            }
+        ]
+    },
+    "DRB111-linearmissing-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 68,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 67,
+                    "col": 7
+                },
+                "sharedObj": {
+                    "name": "j"
+                }
+            },
+            {
+                "access1": {
+                    "line": 68,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 68,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "j"
+                }
+            }
+        ]
+    },
+    "DRB114-if-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 66,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 66,
+                    "col": 12
+                },
+                "sharedObj": {
+                    "name": "a"
+                }
+            }
+        ]
+    },
+    "DRB115-forsimd-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 66,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 66,
+                    "col": 12
+                },
+                "sharedObj": {
+                    "name": "a"
+                }
+            }
+        ]
+    },
+    "DRB116-target-teams-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 66,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 66,
+                    "col": 5
+                },
+                "sharedObj": {
+                    "name": "a"
+                }
+            },
+            {
+                "access1": {
+                    "line": 66,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 66,
+                    "col": 10
+                },
+                "sharedObj": {
+                    "name": "a"
+                }
+            }
+        ]
+    },
+    "DRB117-taskwait-waitonlychild-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 41,
+                    "col": 10
+                },
+                "access2": {
+                    "line": 47,
+                    "col": 13
+                }
+            }
+        ]
+    },
+    "DRB119-nestlock-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 32,
+                    "col": 3
+                },
+                "access2": {
+                    "line": 32,
+                    "col": 8
+                }
+            },
+            {
+                "access1": {
+                    "line": 32,
+                    "col": 3
+                },
+                "access2": {
+                    "line": 32,
+                    "col": 3
+                }
+            }
+        ]
+    },
+    "DRB123-taskundeferred-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 30,
+                    "col": 9
+                },
+                "access2": {
+                    "line": 30,
+                    "col": 9
+                }
+            }
+        ]
+    },
+    "DRB124-master-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 33,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 36,
+                    "col": 13
+                }
+            }
+        ]
+    },
+    "DRB129-mergeable-taskwait-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 27,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 27,
+                    "col": 5
+                }
+            }
+        ]
+    },
+    "DRB131-taskdep4-orig-omp45-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 36,
+                    "col": 19
+                },
+                "access2": {
+                    "line": 36,
+                    "col": 19
+                }
+            }
+        ]
+    },
+    "DRB134-taskdep4-orig-omp45-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 34,
+                    "col": 19
+                },
+                "access2": {
+                    "line": 34,
+                    "col": 19
+                }
+            }
+        ]
+    },
+    "DRB136-taskdep-mutexinoutset-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 36,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 36,
+                    "col": 7
+                }
+            }
+        ]
+    },
+    "DRB138-simdsafelen-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 26,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 26,
+                    "col": 12
+                }
+            }
+        ]
+    },
+    "DRB140-reduction-barrier-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 25,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 27,
+                    "col": 33
+                }
+            },
+            {
+                "access1": {
+                    "line": 25,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 27,
+                    "col": 21
+                }
+            }
+        ]
+    },
+    "DRB142-acquirerelease-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 34,
+                    "col": 9
+                },
+                "access2": {
+                    "line": 34,
+                    "col": 9
+                }
+            }
+        ]
+    },
+    "DRB144-critical-missingreduction-orig-gpu-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 26,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 26,
+                    "col": 5
+                }
+            },
+            {
+                "access1": {
+                    "line": 26,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 26,
+                    "col": 8
+                }
+            }
+        ]
+    },
+    "DRB148-critical1-orig-gpu-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 31,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 31,
+                    "col": 8
+                }
+            },
+            {
+                "access1": {
+                    "line": 31,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 34,
+                    "col": 9
+                }
+            },
+            {
+                "access1": {
+                    "line": 31,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 31,
+                    "col": 5
+                }
+            }
+        ]
+    },
+    "DRB150-missinglock1-orig-gpu-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 30,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 30,
+                    "col": 5
+                }
+            },
+            {
+                "access1": {
+                    "line": 30,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 30,
+                    "col": 8
+                }
+            }
+        ]
+    },
+    "DRB151-missinglock3-orig-gpu-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 26,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 26,
+                    "col": 5
+                }
+            },
+            {
+                "access1": {
+                    "line": 26,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 26,
+                    "col": 8
+                }
+            }
+        ]
+    },
+    "DRB153-missinglock2-orig-gpu-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 28,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 28,
+                    "col": 5
+                }
+            },
+            {
+                "access1": {
+                    "line": 28,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 28,
+                    "col": 8
+                }
+            }
+        ]
+    },
+    "DRB156-missingordered-orig-gpu-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 28,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 28,
+                    "col": 12
+                }
+            }
+        ]
+    },
+    "DRB157-missingorderedsimd-orig-gpu-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 33,
+                    "col": 5
+                },
+                "access2": {
+                    "line": 33,
+                    "col": 12
+                }
+            }
+        ]
+    },
+    "DRB160-nobarrier-orig-gpu-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 42,
+                    "col": 19
+                },
+                "access2": {
+                    "line": 47,
+                    "col": 9
+                }
+            },
+            {
+                "access1": {
+                    "line": 42,
+                    "col": 9
+                },
+                "access2": {
+                    "line": 47,
+                    "col": 16
+                }
+            }
+        ]
+    },
+    "DRB161-nolocksimd-orig-gpu-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 33,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 33,
+                    "col": 7
+                }
+            }
+        ]
+    },
+    "DRB164-simdmissinglock1-orig-gpu-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 35,
+                    "col": 7
+                },
+                "access2": {
+                    "line": 35,
+                    "col": 7
+                }
+            }
+        ]
+    },
+    "DRB165-taskdep4-orig-omp50-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 33,
+                    "col": 19
+                },
+                "access2": {
+                    "line": 33,
+                    "col": 19
+                }
+            }
+        ]
+    },
+    "DRB168-taskdep5-orig-omp50-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 33,
+                    "col": 19
+                },
+                "access2": {
+                    "line": 33,
+                    "col": 19
+                }
+            }
+        ]
+    },
+    "DRB169-missingsyncwrite-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 38,
+                    "col": 9
+                },
+                "access2": {
+                    "line": 38,
+                    "col": 9
+                }
+            }
+        ]
+    }
+}

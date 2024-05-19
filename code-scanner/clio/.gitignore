@@ -1,0 +1,10 @@
+clio
+binbuild
+rdiff
+binrunner
+check
+.vscode
+bins/
+reports/
+LLVMRace/
+*.json

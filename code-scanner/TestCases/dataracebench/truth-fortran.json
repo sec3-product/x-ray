@@ -1,0 +1,1468 @@
+{
+    "DRB001-antidep1-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 25,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 25,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB002-antidep1-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 49,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 49,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB003-antidep2-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 29,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 29,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB004-antidep2-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 55,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 55,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB005-indirectaccess1-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 78,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 79,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 78,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 78,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 76,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 76,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 78,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 76,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB006-indirectaccess2-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 80,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 81,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 80,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 80,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 80,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 78,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 78,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 78,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB007-indirectaccess3-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 81,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 82,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 81,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 81,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 81,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 79,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 79,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 79,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB008-indirectaccess4-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 81,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 82,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 79,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 79,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 81,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 81,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 81,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 79,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB009-lastprivatemissing-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 21,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 21,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB010-lastprivatemissing-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 44,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 44,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB011-minusminus-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 32,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 32,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB012-minusminus-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 59,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 59,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB013-nowait-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 41,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 37,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB014-outofbounds-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 41,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 41,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB015-outofbounds-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 67,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 67,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB016-outputdep-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 48,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 49,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 49,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 49,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB017-outputdep-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 50,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 51,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 51,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 51,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB018-plusplus-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 34,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 34,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 33,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 33,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 34,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 33,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB019-plusplus-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 60,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 60,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 59,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 59,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 59,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 60,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB020-privatemissing-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 51,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 52,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 51,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 51,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB021-reductionmissing-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 37,
+                    "col": 13
+                },
+                "access2": {
+                    "line": 37,
+                    "col": 13
+                }
+            },
+            {
+                "access1": {
+                    "line": 37,
+                    "col": 13
+                },
+                "access2": {
+                    "line": 37,
+                    "col": 22
+                }
+            }
+        ]
+    },
+    "DRB022-reductionmissing-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 60,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 60,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB023-sections1-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 20,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 22,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB024-simdtruedep-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 32,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 32,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB025-simdtruedep-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 55,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 55,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB026-targetparallelfor-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 29,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 29,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB027-taskdependmissing-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 22,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 25,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB028-privatemissing-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 28,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 28,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 28,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 29,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB029-truedep1-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 27,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 27,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB030-truedep1-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 51,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 51,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB031-truedepfirstdimension-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 31,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 31,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB032-truedepfirstdimension-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 56,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 56,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB033-truedeplinear-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 27,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 27,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB034-truedeplinear-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 53,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 53,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB035-truedepscalar-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 24,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 25,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 25,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 25,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB036-truedepscalar-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 48,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 49,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 49,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 49,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB037-truedepseconddimension-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 29,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 29,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB038-truedepseconddimension-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 51,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 51,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB039-truedepsingleelement-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 24,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 24,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB040-truedepsingleelement-var-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 49,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 49,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB047-doallchar-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 25,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 24,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB073-doall2-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 28,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 28,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 28,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 29,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB074-flush-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 21,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 38,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB075-getthreadnum-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 22,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 24,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB080-func-arg-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 15,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 15,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB082-declared-in-func-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 19,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 19,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 19,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 20,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB084-threadprivatemissing-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 20,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 20,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB086-static-data-member-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 27,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 27,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB087-static-data-member2-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 37,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 37,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB088-dynamic-storage-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 22,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 22,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB089-dynamic-storage2-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 25,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 25,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB090-static-local-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 38,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 38,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 38,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 39,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB092-threadprivatemissing2-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 34,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 34,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB095-doall2-taskloop-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 36,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 36,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB106-taskwaitmissing-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 29,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 34,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 32,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 34,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB109-orderedmissing-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 21,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 21,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB111-linearmissing-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 36,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 37,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 36,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 36,
+                    "col": 0
+                }
+            },
+            {
+                "access1": {
+                    "line": 37,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 37,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB114-if-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 32,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 32,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB115-forsimd-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 31,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 31,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB116-target-teams-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 24,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 24,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB117-taskwait-waitonlychild-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 36,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 36,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB119-nestlock-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 35,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 35,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB123-taskundeferred-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 21,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 21,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB124-master-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 24,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 26,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB129-mergeable-taskwait-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 22,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 22,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB131-taskdep4-orig-omp45-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 41,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 41,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB134-taskdep5-orig-omp45-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 41,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 41,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB136-taskdep-mutexinoutset-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 35,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 35,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB138-simdsafelen-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 24,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 24,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB140-reduction-barrier-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 21,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 27,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB142-acquirerelease-orig-omp50-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 30,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 30,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB144-critical-missingreduction-orig-gpu-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 22,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 22,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB148-critical1-orig-gpu-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 24,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 24,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB150-missinglock1-orig-gpu-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 25,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 25,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB151-missinglock3-orig-gpu-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 21,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 21,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB153-missinglock2-orig-gpu-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 22,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 22,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB156-missingordered-orig-gpu-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 24,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 24,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB157-missingorderedsimd-orig-gpu-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 25,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 25,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB160-nobarrier-orig-gpu-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 36,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 42,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB161-nolocksimd-orig-gpu-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 29,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 29,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB164-simdmissinglock1-orig-gpu-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 30,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 30,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB165-taskdep4-orig-omp50-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 41,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 41,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB168-taskdep5-orig-omp50-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 41,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 41,
+                    "col": 0
+                }
+            }
+        ]
+    },
+    "DRB169-workshare-orig-yes": {
+        "races": [
+            {
+                "access1": {
+                    "line": 25,
+                    "col": 0
+                },
+                "access2": {
+                    "line": 29,
+                    "col": 0
+                }
+            }
+        ]
+    }
+}
