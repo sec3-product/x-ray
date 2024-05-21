@@ -1,9 +1,9 @@
 
 
 
-########################################
-##             coderrect              ##
-########################################
+################################################
+##            coderrect / scanner             ##
+################################################
 
 # Binaries for programs and plugins
 coderrect/*.exe
@@ -178,39 +178,39 @@ coderrect/.data/
 coderrect/.vs/
 coderrect/.history/
 
-########################################
-##    LLVMRace / code-scanner         ##
-########################################
-code-scanner/TestCases/
-code-scanner/Release*/
-code-scanner/Debug*/
-code-scanner/build/
-code-scanner/build*/
-code-scanner/html/
-code-scanner/cmake-build*/
-code-scanner/Release+Asserts/
-code-scanner/Debug+Asserts/
-code-scanner/autoconf/
-code-scanner/tests/result/
-code-scanner/doxygen/
-code-scanner/.vscode/*
-code-scanner/.*
-code-scanner/*~
-code-scanner/*.o
-code-scanner/*.out
-code-scanner/*.ll
-code-scanner/*.bc
-code-scanner/*.opt
-code-scanner/*.log
-code-scanner/*.status
-code-scanner/*.bc
-code-scanner/*.dot
-code-scanner/log.current
-code-scanner/races.json
+################################################
+##          LLVMRace / code-detector          ##
+################################################
+code-detector/TestCases/
+code-detector/Release*/
+code-detector/Debug*/
+code-detector/build/
+code-detector/build*/
+code-detector/html/
+code-detector/cmake-build*/
+code-detector/Release+Asserts/
+code-detector/Debug+Asserts/
+code-detector/autoconf/
+code-detector/tests/result/
+code-detector/doxygen/
+code-detector/.vscode/*
+code-detector/.*
+code-detector/*~
+code-detector/*.o
+code-detector/*.out
+code-detector/*.ll
+code-detector/*.bc
+code-detector/*.opt
+code-detector/*.log
+code-detector/*.status
+code-detector/*.bc
+code-detector/*.dot
+code-detector/log.current
+code-detector/races.json
 
-########################################
-##    smallrace / code-parser         ##
-########################################
+################################################
+##         smallrace / code-parser            ##
+################################################
 
 code-parser/CLionProjects/
 code-parser/.vscode/
