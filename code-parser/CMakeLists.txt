@@ -19,10 +19,6 @@ set(CMAKE_CXX_EXTENSIONS NO)
 set(LLVM_DIR ~/git/llvm12/build/lib/cmake/llvm/)
 set(MLIR_DIR ~/git/llvm12/build/lib/cmake/mlir/)
 
-# llvm 17.0
-# set(LLVM_DIR /home/jinbin/Solana/llvm-project/build/lib/cmake/llvm/)
-# set(MLIR_DIR /home/jinbin/Solana/llvm-project/build/lib/cmake/mlir/)
-
 if(NOT ENABLE_TEST)
     set(ENABLE_TEST Off) # default disable testing
 endif()

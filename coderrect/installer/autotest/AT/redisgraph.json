@@ -1,9 +1,0 @@
-{
-  "openlib": {
-    "entryPoints": [
-      "AR_ABS",
-      "AR_ADD",
-      "AR_ALL"
-    ]
-  }
-}

@@ -1,5 +1,0 @@
-{
-  "lockUnlockFunctions": {
-    "MySpinLock": "MySpinUnlock"
-  }
-}

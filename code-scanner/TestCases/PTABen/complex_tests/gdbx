@@ -1,3 +1,0 @@
-file /home/rocky/workspace/dvf/Debug+Asserts/bin/dvf
-b main
-r -fdaa -debug-only=dda swap-struct1.c.bc
