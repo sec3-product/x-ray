@@ -1,7 +1,0 @@
-CLionProjects/
-.vscode/
-eclipse-workspace/
-utils/antlr/antlr4cpp/src/antlr4cpp-build/
-utils/antlr/antlr4cpp/build/
-utils/antlr/antlr4cpp-4.9/
-build/
