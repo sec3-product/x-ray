@@ -26,60 +26,6 @@ def pull_components(release, develop, rust):
        subprocess.run("cd build/llvm12 && git pull --all", shell=True, check=True)
    print("Finish updating llvm12")
 
-   # Note: this is project only contains flang driver, not real flang
-   # classic-flang-llvm-project
-   # clone llvm/clang/flang-driver
-   if not os.path.exists("build/classic-flang-llvm-project"):
-       subprocess.run("cd build && git clone --recursive ssh://git@github.com/coderrect-inc/classic-flang-llvm-project.git", shell=True, check=True)
-   # pull llvm/flang/clang
-   else:
-       subprocess.run("cd build/classic-flang-llvm-project && git pull --all", shell=True, check=True)
-   print("Finish updating classic-flang-llvm-project")
-
-   # Note: this is the real flang
-   # clone flang
-   if not os.path.exists("build/flang"):
-       subprocess.run("cd build && git clone --recursive ssh://git@github.com/coderrect-inc/flang.git", shell=True, check=True)
-   # pull flang
-   else:
-       subprocess.run("cd build/flang && git pull --all", shell=True, check=True)
-   print("Finish updating flang")
-
-   # coderrect
-   # clone coderrect
-   if not os.path.exists("build/coderrect"):
-       subprocess.run("cd build && git clone --recursive ssh://git@github.com/coderrect-inc/coderrect.git", shell=True, check=True)
-   # pull coderrect
-   else:
-       subprocess.run("cd build/coderrect && git pull --all", shell=True, check=True)
-   print("Finish updating coderrect")
-
-   # clone smallrace
-   if not os.path.exists("build/smallrace"):
-       subprocess.run("cd build && git clone --recursive ssh://git@github.com/coderrect-inc/smallrace.git", shell=True, check=True)
-   # pull smallrace
-   else:
-       subprocess.run("cd build/smallrace && git pull --all", shell=True, check=True)
-   print("Finish updating smallrace")
-
-   # checkout to correct branches
-   # classic-flang-llvm-project and flang are relatively stable and not changed regularly,
-   # so all changes are directly pushed to develop branch, no need to switch branches for them
-   if release:
-       subprocess.run(f"cd build/LLVMRace && git checkout release-v{pkg_version} && git pull", shell=True, check=True)
-       subprocess.run(f"cd build/coderrect && git checkout release-v{pkg_version} && git pull", shell=True, check=True)
-       print(f"Checkout to the HEAD of release-v{pkg_version} branch")
-   elif rust:
-       subprocess.run("cd build/LLVMRace && git checkout rust && git pull", shell=True, check=True)
-       subprocess.run("cd build/llvm12 && git checkout release/12.x && git pull", shell=True, check=True)
-       subprocess.run("cd build/coderrect && git checkout rust && git pull", shell=True, check=True)
-       subprocess.run("cd build/smallrace && git checkout rust && git pull", shell=True, check=True)
-       print("Checkout to the HEAD of rust branch")
-   else:
-       print("You need to specify build type with either -d, -s, -l, -r <version number>, -x, -m, or -e", file=sys.stderr)
-
-
-
 ###########################################
 #                  docker                 #
 ###########################################
