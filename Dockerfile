@@ -17,14 +17,13 @@ RUN apt-get update && \
     add-apt-repository ppa:longsleep/golang-backports && \
     apt-get update && \
     apt-get install -y \
-    build-essential \        
     golang-go \             
-    git \
-    vim \
     # autotools-dev \
     # automake \
     # ca-certificates \
-    # mpich
+    # mpich \
+    git \
+    vim    
 
 # install c++ depends
 RUN apt-get update && apt-get install --no-install-recommends -y \
