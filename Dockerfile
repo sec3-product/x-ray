@@ -11,18 +11,14 @@ FROM ubuntu:20.04
 # RUN mkdir /src && cd /src
 # WORKDIR /src
 
-# install  necessary packages
+# install necessary packages
 RUN apt-get update && \
     apt-get install -y software-properties-common && \
     add-apt-repository ppa:longsleep/golang-backports && \
     apt-get update && \
     apt-get install -y \
     build-essential \        
-    golang-go \              
-    # g++ \                    # GNU C++ compiler
-
-# install general depends
-RUN apt-get update && apt-get install --no-install-recommends -y \
+    golang-go \             
     git \
     vim \
     # autotools-dev \
@@ -35,6 +31,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     build-essential \
     autoconf \
     cmake \
+    # g++ \                    # GNU C++ compiler
     clang
 
 # install specific
