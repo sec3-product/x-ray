@@ -17,7 +17,8 @@ RUN apt-get update && \
     add-apt-repository ppa:longsleep/golang-backports && \
     apt-get update && \
     apt-get install -y \
-    golang-go \             
+    golang-go \      
+    wget \       
     # autotools-dev \
     # automake \
     # ca-certificates \
@@ -48,38 +49,55 @@ ENV PATH=$PATH:/usr/local/go/bin
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# for LLVM 12.0.1 image
-RUN apt-get update && apt-get install -y \
-    wget \
-    gnupg \
-    software-properties-common \
-    build-essential \
-    cmake \
-    python3 \
-    python3-pip \
-    ninja-build \
-    zlib1g-dev \
-    libtinfo-dev \
-    libncurses5-dev
+# # for LLVM 12.0.1 image
+# RUN apt-get update && apt-get install -y \
+#     gnupg \
+#     software-properties-common \
+#     build-essential \
+#     python3 \
+#     python3-pip \
+#     ninja-build \
+#     zlib1g-dev \
+#     libtinfo-dev \
+#     libncurses5-dev
 
-# pre-compiled LLVM 12.0.1 (with MLIR)
-RUN wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz && \
-    tar -xf clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz && \
-    mv clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu- /usr/local/llvm-12 && \
-    ln -s /usr/local/llvm-12/bin/llvm-config /usr/bin/llvm-config-12 && \
-    ln -s /usr/local/llvm-12/bin/clang /usr/bin/clang-12 && \
-    ln -s /usr/local/llvm-12/bin/clang++ /usr/bin/clang++-12 && \
-    ln -s /usr/local/llvm-12/bin/mlir* /usr/bin/
+# # pre-compiled LLVM 12.0.1 (with MLIR)
+# RUN wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz && \
+#     tar -xf clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz && \
+#     mv clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu- /usr/local/llvm-12 && \
+#     ln -s /usr/local/llvm-12/bin/llvm-config /usr/bin/llvm-config-12 && \
+#     ln -s /usr/local/llvm-12/bin/clang /usr/bin/clang-12 && \
+#     ln -s /usr/local/llvm-12/bin/clang++ /usr/bin/clang++-12 && \
+#     ln -s /usr/local/llvm-12/bin/mlir* /usr/bin/
 
-# Verify the installations
-RUN go version && \
-    cmake --version && \
-    git --version
+# # Verify the installations
+# RUN go version && \
+#     cmake --version && \
+#     git --version
 
-# Verify the installations: LLVM
-RUN clang-12 --version
-RUN llvm-config-12 --version
+# # Verify the installations: LLVM
+# RUN clang-12 --version
+# RUN llvm-config-12 --version
 
+# CMake 3.26
+ARG CMAKE_VERSION=3.26.0
+
+RUN wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.sh \
+    && mkdir /opt/cmake \
+    && sh cmake-${CMAKE_VERSION}-linux-x86_64.sh --prefix=/opt/cmake --skip-license \
+    && ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake \
+    && rm cmake-${CMAKE_VERSION}-linux-x86_64.sh
+
+ARG MAKE_THREADS=32
+
+# build llvm12 from src
+# RUN git clone --branch release/12.x --single-branch https://github.com/llvm/llvm-project.git
+RUN git clone https://github.com/llvm/llvm-project.git \
+    && mkdir -p llvm-project/build \
+    && cd llvm-project/build \
+    && git checkout release/12.x \
+    && cmake -DLLVM_ENABLE_PROJECTS="clang;openmp;compiler-rt;lld;mlir" ../llvm/ -DLLVM_ENABLE_RTTI=ON -DCMAKE_BUILD_TYPE=Release \
+    && make -j${MAKE_THREADS}
 
 # Set the working directory
 WORKDIR /workspace
