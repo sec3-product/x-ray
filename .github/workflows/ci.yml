@@ -10,11 +10,11 @@ on:
 
 jobs:
   build-and-run:
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Build Docker image
         run: docker build -t x-ray:latest .
@@ -23,4 +23,4 @@ jobs:
         run: docker run -d --name x-ray-container x-ray:latest
 
       - name: Verify Docker container is running
-        run: docker ps | grep x-ray-container        
+        run: docker ps | grep x-ray-container
