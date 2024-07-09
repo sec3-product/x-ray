@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - llvm-src
   pull_request:
     branches:
       - main
@@ -21,7 +20,10 @@ jobs:
         run: docker build -t x-ray:latest .
 
       - name: Run Docker container
-        run: docker run -d --name x-ray-container x-ray:latest
+        run: docker run x-ray:latest
 
-      - name: Verify Docker container is running
-        run: docker ps | grep x-ray-container
+      - name: Clean up containers
+        if: always()
+        run: |
+          docker ps --all --quiet --filter ancestor=x-ray:latest | xargs -r docker stop
+          docker ps --all --quiet --filter ancestor=x-ray:latest | xargs -r docker rm
