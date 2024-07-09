@@ -26,18 +26,25 @@ RUN apt-get update && \
     git \
     vim    
 
-#################################################################
-# TEMP: copy ssh key, for downloading private repos
-RUN apt-get update && apt-get install -y \
-    openssh-client
+# #################################################################
+# # TEMP: copy ssh key, for downloading private repos
+# RUN apt-get update && apt-get install -y \
+#     openssh-client
 
-RUN mkdir -p /root/.ssh
-COPY id_rsa /root/.ssh/id_rsa
-COPY id_rsa.pub /root/.ssh/id_rsa.pub
+# RUN mkdir -p /root/.ssh
+# COPY id_rsa /root/.ssh/id_rsa
+# COPY id_rsa.pub /root/.ssh/id_rsa.pub
 
-# RUN chmod 600 /root/.ssh/id_rsa
-# RUN chmod 644 /root/.ssh/id_rsa.pub
-#################################################################
+# # RUN chmod 600 /root/.ssh/id_rsa
+# # RUN chmod 644 /root/.ssh/id_rsa.pub
+# #################################################################
+
+# TEMP: ssh key
+ARG SSH_PRIVATE_KEY
+RUN mkdir -p /root/.ssh && \
+    echo "$SSH_PRIVATE_KEY" > /root/.ssh/id_rsa && \
+    chmod 600 /root/.ssh/id_rsa && \
+    ssh-keyscan github.com >> /root/.ssh/known_hosts
 
 # install c++ depends
 RUN apt-get update && apt-get install --no-install-recommends -y \
@@ -82,11 +89,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 #     ln -s /usr/local/llvm-12/bin/clang /usr/bin/clang-12 && \
 #     ln -s /usr/local/llvm-12/bin/clang++ /usr/bin/clang++-12 && \
 #     ln -s /usr/local/llvm-12/bin/mlir* /usr/bin/
-
-# # Verify the installations
-# RUN go version && \
-#     cmake --version && \
-#     git --version
 
 # # Verify the installations: LLVM
 # RUN clang-12 --version
