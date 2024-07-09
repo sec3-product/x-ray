@@ -17,34 +17,13 @@ RUN apt-get update && \
     add-apt-repository ppa:longsleep/golang-backports && \
     apt-get update && \
     apt-get install -y \
-    golang-go \      
-    wget \       
+    golang-go \
+    wget \
     # autotools-dev \
     # automake \
     # ca-certificates \
     # mpich \
-    git \
-    vim    
-
-# #################################################################
-# # TEMP: copy ssh key, for downloading private repos
-# RUN apt-get update && apt-get install -y \
-#     openssh-client
-
-# RUN mkdir -p /root/.ssh
-# COPY id_rsa /root/.ssh/id_rsa
-# COPY id_rsa.pub /root/.ssh/id_rsa.pub
-
-# # RUN chmod 600 /root/.ssh/id_rsa
-# # RUN chmod 644 /root/.ssh/id_rsa.pub
-# #################################################################
-
-# TEMP: ssh key
-ARG SSH_PRIVATE_KEY
-RUN mkdir -p /root/.ssh && \
-    echo "$SSH_PRIVATE_KEY" > /root/.ssh/id_rsa && \
-    chmod 600 /root/.ssh/id_rsa && \
-    ssh-keyscan github.com >> /root/.ssh/known_hosts
+    git
 
 # install c++ depends
 RUN apt-get update && apt-get install --no-install-recommends -y \
@@ -115,8 +94,8 @@ RUN git clone --branch release/12.x --single-branch https://github.com/llvm/llvm
     && make -j${MAKE_THREADS}
 
 # build x-ray detector
-RUN git clone git@github.com:sec3-product/x-ray-toolchain.git \
-    && mkdir -p x-ray-toolchain/code-detector/build \
+COPY . x-ray-toolchain
+RUN mkdir -p x-ray-toolchain/code-detector/build \
     && cd x-ray-toolchain/code-detector/build \
     && cmake .. \
     && make -j${MAKE_THREADS}

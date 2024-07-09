@@ -17,12 +17,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build Docker image
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_SUSHI }}
         run: |
-          echo "$SSH_PRIVATE_KEY" > id_rsa
-          chmod 600 id_rsa
-          docker build --build-arg SSH_PRIVATE_KEY="$(cat id_rsa)" -t x-ray:latest .
+          docker build -t x-ray:latest .
 
       - name: Run Docker container
         run: docker run x-ray:latest
