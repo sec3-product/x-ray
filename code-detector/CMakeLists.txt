@@ -4,6 +4,10 @@ project(aser_pta)
 option(ENABLE_SPACE_OPT "Whether to apply aggressive memory optimzation (which will make constraint graph harder to understand)" ON)
 option(ENABLE_HEAP_PROFILE "Turn on heap profiling feature by linking to tcmalloc" OFF)
 
+# set to path in Docker
+set(LLVM_DIR /llvm-project/build/lib/cmake/llvm/)
+set(MLIR_DIR /llvm-project/build/lib/cmake/mlir/)
+
 # Do not override manually set LLVM_DIR
 if(NOT DEFINED LLVM_DIR)
     message(STATUS "Searching for LLVM_DIR in default directories")

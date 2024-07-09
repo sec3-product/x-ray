@@ -26,6 +26,19 @@ RUN apt-get update && \
     git \
     vim    
 
+#################################################################
+# TEMP: copy ssh key, for downloading private repos
+RUN apt-get update && apt-get install -y \
+    openssh-client
+
+RUN mkdir -p /root/.ssh
+COPY id_rsa /root/.ssh/id_rsa
+COPY id_rsa.pub /root/.ssh/id_rsa.pub
+
+# RUN chmod 600 /root/.ssh/id_rsa
+# RUN chmod 644 /root/.ssh/id_rsa.pub
+#################################################################
+
 # install c++ depends
 RUN apt-get update && apt-get install --no-install-recommends -y \
     build-essential \
@@ -79,7 +92,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # RUN clang-12 --version
 # RUN llvm-config-12 --version
 
-# CMake 3.26
+# quick install CMake 3.26
 ARG CMAKE_VERSION=3.26.0
 
 RUN wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.sh \
@@ -91,12 +104,19 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cm
 ARG MAKE_THREADS=32
 
 # build llvm12 from src
-# RUN git clone --branch release/12.x --single-branch https://github.com/llvm/llvm-project.git
-RUN git clone https://github.com/llvm/llvm-project.git \
+RUN git clone --branch release/12.x --single-branch https://github.com/llvm/llvm-project.git \
+# RUN git clone https://github.com/llvm/llvm-project.git \
     && mkdir -p llvm-project/build \
     && cd llvm-project/build \
-    && git checkout release/12.x \
+#    && git checkout release/12.x \
     && cmake -DLLVM_ENABLE_PROJECTS="clang;openmp;compiler-rt;lld;mlir" ../llvm/ -DLLVM_ENABLE_RTTI=ON -DCMAKE_BUILD_TYPE=Release \
+    && make -j${MAKE_THREADS}
+
+# build x-ray detector
+RUN git clone git@github.com:sec3-product/x-ray-toolchain.git \
+    && mkdir -p x-ray-toolchain/code-detector/build \
+    && cd x-ray-toolchain/code-detector/build \
+    && cmake .. \
     && make -j${MAKE_THREADS}
 
 # Set the working directory
