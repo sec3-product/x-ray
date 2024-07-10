@@ -58,24 +58,25 @@ RUN wget --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER
     && ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake \
     && rm cmake-${CMAKE_VERSION}-linux-x86_64.sh
 
-COPY . x-ray-toolchain
-
 # Caller can optionally specify # of threads.
 ARG MAKE_THREADS=
 
 # Build x-ray detector.
+COPY code-detector x-ray-toolchain/code-detector
 RUN mkdir -p x-ray-toolchain/code-detector/build \
     && cd x-ray-toolchain/code-detector/build \
     && cmake .. \
     && make -j${MAKE_THREADS}
 
 # Build x-ray parser.
+COPY code-parser x-ray-toolchain/code-parser
 RUN mkdir -p x-ray-toolchain/code-parser/build \
     && cd x-ray-toolchain/code-parser/build \
     && cmake -DCMAKE_BUILD_TYPE=Release .. \
     && make -j${MAKE_THREADS}
 
 # Build coderrect.
+COPY coderrect x-ray-toolchain/coderrect
 RUN cd x-ray-toolchain/coderrect/gosrc \
     && make -j${MAKE_THREADS} all \
     && tools/update-bin.sh
