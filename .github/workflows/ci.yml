@@ -16,12 +16,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Log into DigitalOcean container registry
+        run: doctl registry login --expiry-seconds 600
+
       - name: Build Docker image
         run: |
-          docker build -t x-ray:latest .
+          make build-image
 
       - name: Run Docker container
-        run: docker run x-ray:latest
+        run: |
+          docker run x-ray:latest
 
       - name: Clean up containers
         if: always()
