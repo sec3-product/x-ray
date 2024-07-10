@@ -1,6 +1,6 @@
 FROM ubuntu:22.04
 
-COPY --from=llvm-prebuilt /llvm-project /llvm-project
+COPY --from=llvm-prebuilt /usr/local/llvm /usr/local/llvm
 
 # ARG CODERRECT_LOCAL_PATH=coderrect-linux-develop.tar.gz
 # ARG CODERRECT_LOCAL_FILENAME=coderrect-linux-develop
