@@ -1,4 +1,6 @@
-FROM llvm-prebuilt
+FROM ubuntu:22.04
+
+COPY --from=llvm-prebuilt /llvm-project /llvm-project
 
 # ARG CODERRECT_LOCAL_PATH=coderrect-linux-develop.tar.gz
 # ARG CODERRECT_LOCAL_FILENAME=coderrect-linux-develop
@@ -31,6 +33,29 @@ FROM llvm-prebuilt
 # # Verify the installations: LLVM
 # RUN clang-12 --version
 # RUN llvm-config-12 --version
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Build tools and dependencies.
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:longsleep/golang-backports && \
+    apt-get update && \
+    apt-get install -y \
+    build-essential \
+    clang \
+    golang-go \
+    wget \
+    git \
+    zlib1g-dev
+
+# Use prebuilt CMake binary release.
+ARG CMAKE_VERSION=3.26.0
+RUN wget --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.sh \
+    && mkdir /opt/cmake \
+    && sh cmake-${CMAKE_VERSION}-linux-x86_64.sh --prefix=/opt/cmake --skip-license \
+    && ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake \
+    && rm cmake-${CMAKE_VERSION}-linux-x86_64.sh
 
 ARG MAKE_THREADS=32
 

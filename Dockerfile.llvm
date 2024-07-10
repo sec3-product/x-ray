@@ -2,22 +2,15 @@ FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# install necessary packages
+# Install build tools.
 RUN apt-get update && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository ppa:longsleep/golang-backports && \
-    apt-get update && \
-    apt-get install -y \
-    golang-go \
+    apt-get install --no-install-recommends -y \
+    software-properties-common \
     wget \
-    git
-
-# install c++ depends
-RUN apt-get install --no-install-recommends -y \
+    git \
     build-essential \
     autoconf \
     cmake \
-    # g++ \                    # GNU C++ compiler
     clang
 
 # install specific
