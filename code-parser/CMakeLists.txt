@@ -16,8 +16,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
 
-set(LLVM_DIR ~/git/llvm12/build/lib/cmake/llvm/)
-set(MLIR_DIR ~/git/llvm12/build/lib/cmake/mlir/)
+set(LLVM_DIR /llvm-project/build/lib/cmake/llvm/)
+set(MLIR_DIR /llvm-project/build/lib/cmake/mlir/)
 
 if(NOT ENABLE_TEST)
     set(ENABLE_TEST Off) # default disable testing
