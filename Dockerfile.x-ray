@@ -77,9 +77,8 @@ RUN mkdir -p x-ray-toolchain/code-parser/build \
 
 # Build coderrect.
 RUN cd x-ray-toolchain/coderrect/gosrc \
-    && make -j${MAKE_THREADS} all
-
-# TODO: Install all the built binaries to a specific location.
+    && make -j${MAKE_THREADS} all \
+    && tools/update-bin.sh
 
 # Set the working directory
 WORKDIR /workspace
