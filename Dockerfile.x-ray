@@ -37,17 +37,21 @@ COPY --from=llvm-prebuilt /llvm-project /llvm-project
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Build tools and dependencies.
-RUN apt-get update && \
-    apt-get install -y software-properties-common && \
-    add-apt-repository ppa:longsleep/golang-backports && \
-    apt-get update && \
-    apt-get install -y \
+# Go: Pick up the latest stable (1.22 as of July 2024) via
+# https://go.dev/wiki/Ubuntu#using-ppa.
+RUN apt-get update \
+    && apt-get install -y software-properties-common \
+    && add-apt-repository ppa:longsleep/golang-backports \
+    && apt-get update \
+    && apt-get install -y \
     build-essential \
     clang \
     golang-go \
     wget \
     git \
-    zlib1g-dev
+    zlib1g-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Use prebuilt CMake binary release.
 ARG CMAKE_VERSION=3.26.0
@@ -58,7 +62,9 @@ RUN wget --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER
     && rm cmake-${CMAKE_VERSION}-linux-x86_64.sh
 
 COPY . x-ray-toolchain
-ARG MAKE_THREADS=32
+
+# Caller can optionally specify # of threads.
+ARG MAKE_THREADS=
 
 # Build x-ray detector.
 RUN mkdir -p x-ray-toolchain/code-detector/build \
