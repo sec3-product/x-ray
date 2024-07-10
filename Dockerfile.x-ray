@@ -78,6 +78,12 @@ RUN mkdir -p x-ray-toolchain/code-parser/build \
     && cmake -DCMAKE_BUILD_TYPE=Release .. \
     && make -j${MAKE_THREADS}
 
+# Build coderrect.
+RUN cd x-ray-toolchain/coderrect/gosrc \
+    && make -j${MAKE_THREADS} all
+
+# TODO: Install all the built binaries to a specific location.
+
 # Set the working directory
 WORKDIR /workspace
 
