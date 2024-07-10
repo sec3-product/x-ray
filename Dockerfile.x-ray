@@ -12,12 +12,9 @@ COPY --from=llvm-prebuilt /llvm-project /llvm-project
 # # for LLVM 12.0.1 image
 # RUN apt-get update && apt-get install -y \
 #     gnupg \
-#     software-properties-common \
-#     build-essential \
 #     python3 \
 #     python3-pip \
 #     ninja-build \
-#     zlib1g-dev \
 #     libtinfo-dev \
 #     libncurses5-dev
 
