@@ -1,4 +1,5 @@
-FROM ubuntu:20.04
+# Builder.
+FROM ubuntu:20.04 as builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -33,9 +34,22 @@ RUN wget --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER
 
 ARG MAKE_THREADS=32
 
-# Build llvm12 from source code.
-RUN git clone --branch release/12.x --single-branch https://github.com/llvm/llvm-project.git \
-    && mkdir -p llvm-project/build \
-    && cd llvm-project/build \
-    && cmake -DLLVM_ENABLE_PROJECTS="clang;openmp;compiler-rt;lld;mlir" ../llvm/ -DLLVM_ENABLE_RTTI=ON -DCMAKE_BUILD_TYPE=Release \
-    && make -j${MAKE_THREADS}
+# Build LLVM 12 from source code.
+RUN git clone --branch release/12.x --single-branch https://github.com/llvm/llvm-project.git
+
+WORKDIR /llvm-project/build
+RUN cmake -DLLVM_ENABLE_PROJECTS="clang;openmp;compiler-rt;lld;mlir" \
+    -DLLVM_ENABLE_RTTI=ON \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr/local/llvm \
+    ../llvm \
+    && make -j${MAKE_THREADS} \
+    && make install
+
+
+# Runner.
+FROM ubuntu:20.04
+COPY --from=builder /usr/local/llvm /usr/local/llvm
+ENV PATH=/usr/local/llvm/bin:$PATH
+WORKDIR /workspace
+ENTRYPOINT ["clang"]
