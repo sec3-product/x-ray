@@ -1,35 +1,34 @@
-# Help copy all binareis under gosrc/bin to the PATH where coderrect is located
-# This script must be used under gosrc
+#!/bin/bash
 
-BIN_PATH="/usr/local/bin/sec3"   # x-ray tools path, can be changed as needed
+# Copy all the binaries under `gosrc/bin` to the PATH where `coderrect` is
+# located. This script must be used under `gosrc/`.
+
+INSTALL_PATH="/usr/local/sec3"
 
 if ! which coderrect > /dev/null; then
-    echo "coderrect binary not found, creating directories and file."
+    echo "`coderrect` binary not found, creating directories and file."
 
-    export PATH=$BIN_PATH:$PATH
-    echo 'export PATH=$BIN_PATH:$PATH' >> ~/.bashrc
+    export PATH=$INSTALL_PATH/bin:$PATH
+    echo "export PATH=$INSTALL_PATH/bin:\$PATH" >> ~/.bashrc
 
-    mkdir -p $BIN_PATH
-    touch $BIN_PATH/coderrect
-    chmod 755 $BIN_PATH/coderrect
+    for dir in bin conf data/reporter/artifacts/images; do
+        mkdir -p "$INSTALL_PATH/$dir"
+    done
 fi
 
-CR=$(dirname $(which coderrect))
-
 GOSRC=$(pwd | grep -Eo '.+\/gosrc')
-GOSRC_BIN=$GOSRC/bin
 
-echo "Copying all binaries under $GOSRC_BIN to $CR"
-cp $GOSRC_BIN/* $CR
-cp $GOSRC/../package/conf/coderrect.json $CR/../conf/
-cp $GOSRC/../package/data/reporter/*.html $CR/../data/reporter/
-cp $GOSRC/../package/data/reporter/artifacts/coderrect* $CR/../data/reporter/artifacts/
-cp $GOSRC/../package/data/reporter/artifacts/images/* $CR/../data/reporter/artifacts/images/
+echo "Copying all binaries under $GOSRC/bin to $INSTALL_PATH/bin"
+cp $GOSRC/bin/* $INSTALL_PATH/bin
+cp $GOSRC/../package/conf/coderrect.json $INSTALL_PATH/conf/
+cp $GOSRC/../package/data/reporter/*.html $INSTALL_PATH/data/reporter/
+cp $GOSRC/../package/data/reporter/artifacts/coderrect* $INSTALL_PATH/data/reporter/artifacts/
+cp $GOSRC/../package/data/reporter/artifacts/images/* $INSTALL_PATH/data/reporter/artifacts/images/
 
 if ! which racedetect > /dev/null; then
-ln -s $GOSRC/../../code-detector/build/bin/racedetect $CR/racedetect
+    cp $GOSRC/../../code-detector/build/bin/racedetect $INSTALL_PATH/bin/racedetect
 fi
 
 if ! which sol-racedetect > /dev/null; then
-ln -s $GOSRC/../../code-parser/build/bin/sol-racedetect $CR/sol-racedetect
+    cp $GOSRC/../../code-parser/build/bin/sol-racedetect $INSTALL_PATH/bin/sol-racedetect
 fi
