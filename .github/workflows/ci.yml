@@ -26,11 +26,11 @@ jobs:
 
       - name: Build Docker image
         run: |
-          make build-image
+          make -j build-image
 
-      - name: Run Docker container
+      - name: Test with demo program
         run: |
-          docker run x-ray:latest
+          docker run --rm -v $(pwd)/demo:/workspace/demo x-ray:latest /workspace/demo/jet-v1
 
       - name: Clean up containers
         if: always()
