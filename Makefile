@@ -5,6 +5,12 @@ DOCKER_IMAGE_VERSION = 1.2
 RUST = false
 BINARY_PATH = ~/local/sec3/bin/coderrect
 
+# The default prebuilt image, which is hosted on DigitalOcean (private)
+# registry. Use `doctl registry login` to ensure the access.
+LLVM_PREBUILT_IMAGE ?= registry.digitalocean.com/soteria/llvm-prebuilt:latest
+
+X_RAY_IMAGE ?= x-ray:latest
+
 all: prepare_build_dir pull_llvm build_in_docker compile_go compile_cmake check_go_version add_to_path check_binary
 
 # Prepare the build directory
@@ -78,3 +84,19 @@ check_binary:
 		export PATH="$$HOME/local/sec3/bin:$$PATH"; \
 		echo "Binary directory added to PATH."; \
 	fi
+
+# Build llvm-prebuilt image
+build-llvm-prebuilt-image:
+	@docker build -t $(LLVM_PREBUILT_IMAGE) -f Dockerfile.llvm .
+
+push-llvm-prebuilt-image: build-llvm-prebuilt-image
+	@docker push $(LLVM_PREBUILT_IMAGE)
+
+build-image:
+	@docker pull $(LLVM_PREBUILT_IMAGE) || \
+	  (echo "Error: Failed to pull $(LLVM_PREBUILT_IMAGE)." && \
+	   echo "Please make sure you are logged into the registry with the correct permissions." && \
+	   echo "You can log in with: `doctl registry login` or manually pull the image." && \
+	   exit 1)
+	@docker tag $(LLVM_PREBUILT_IMAGE) llvm-prebuilt
+	@docker build -t $(X_RAY_IMAGE) -f Dockerfile.x-ray .

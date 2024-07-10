@@ -1,0 +1,48 @@
+FROM ubuntu:20.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# install necessary packages
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:longsleep/golang-backports && \
+    apt-get update && \
+    apt-get install -y \
+    golang-go \
+    wget \
+    git
+
+# install c++ depends
+RUN apt-get install --no-install-recommends -y \
+    build-essential \
+    autoconf \
+    cmake \
+    # g++ \                    # GNU C++ compiler
+    clang
+
+# install specific
+RUN apt-get install --no-install-recommends -y \
+    libevent-dev \
+    zlib1g-dev \
+    libssl-dev \
+    libxml2-dev \
+    libbz2-dev \
+    libomp-dev  \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Use prebuilt CMake binary release.
+ARG CMAKE_VERSION=3.26.0
+RUN wget --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.sh \
+    && mkdir /opt/cmake \
+    && sh cmake-${CMAKE_VERSION}-linux-x86_64.sh --prefix=/opt/cmake --skip-license \
+    && ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake \
+    && rm cmake-${CMAKE_VERSION}-linux-x86_64.sh
+
+ARG MAKE_THREADS=32
+
+# Build llvm12 from source code.
+RUN git clone --branch release/12.x --single-branch https://github.com/llvm/llvm-project.git \
+    && mkdir -p llvm-project/build \
+    && cd llvm-project/build \
+    && cmake -DLLVM_ENABLE_PROJECTS="clang;openmp;compiler-rt;lld;mlir" ../llvm/ -DLLVM_ENABLE_RTTI=ON -DCMAKE_BUILD_TYPE=Release \
+    && make -j${MAKE_THREADS}
