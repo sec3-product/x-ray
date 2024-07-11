@@ -11,18 +11,9 @@ RUN apt-get update && \
     git \
     build-essential \
     autoconf \
-    cmake \
-    clang
-
-# install specific
-RUN apt-get install --no-install-recommends -y \
-    libevent-dev \
-    zlib1g-dev \
-    libssl-dev \
-    libxml2-dev \
-    libbz2-dev \
-    libomp-dev  \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    clang \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Use prebuilt CMake binary release.
 ARG CMAKE_VERSION=3.26.0
@@ -35,13 +26,18 @@ RUN wget --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER
 ARG MAKE_THREADS=32
 
 # Build LLVM 12 from source code.
-RUN git clone --branch release/12.x --single-branch https://github.com/llvm/llvm-project.git
+RUN git clone --branch=release/12.x --single-branch --depth=1 https://github.com/llvm/llvm-project.git
 
 WORKDIR /llvm-project/build
-RUN cmake -DLLVM_ENABLE_PROJECTS="clang;openmp;compiler-rt;lld;mlir" \
-    -DLLVM_ENABLE_RTTI=ON \
+RUN cmake \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/usr/local/llvm \
+    -DLLVM_ENABLE_PROJECTS="clang;openmp;compiler-rt;lld;mlir" \
+    -DLLVM_ENABLE_RTTI=ON \
+    -DLLVM_INCLUDE_BENCHMARKS=OFF \
+    -DLLVM_INCLUDE_EXAMPLES=OFF \
+    -DLLVM_INCLUDE_TESTS=OFF \
+    -DLLVM_TARGETS_TO_BUILD=X86 \
     ../llvm \
     && make -j${MAKE_THREADS} \
     && make install
