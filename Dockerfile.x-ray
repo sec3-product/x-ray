@@ -42,10 +42,10 @@ RUN apt-get update \
     && apt-get update \
     && apt-get install -y \
     build-essential \
-    clang \
     golang-go \
     wget \
     git \
+    libxml2-dev \
     zlib1g-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
