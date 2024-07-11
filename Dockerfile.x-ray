@@ -84,6 +84,8 @@ RUN cd x-ray-toolchain/coderrect/gosrc \
 
 FROM ubuntu:22.04
 COPY --from=builder /usr/local/sec3 /usr/local/sec3
+# `libomp.so` is wanted by `racedetector`.
+COPY --from=builder /usr/local/llvm/lib/libomp.so /usr/local/sec3/bin/libomp.so
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
