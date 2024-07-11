@@ -1,5 +1,5 @@
 # Builder.
-FROM ubuntu:20.04 as builder
+FROM ubuntu:22.04 as builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -44,7 +44,7 @@ RUN cmake \
 
 
 # Runner.
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 COPY --from=builder /usr/local/llvm /usr/local/llvm
 ENV PATH=/usr/local/llvm/bin:$PATH
 WORKDIR /workspace
