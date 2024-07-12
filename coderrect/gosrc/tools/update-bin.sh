@@ -6,7 +6,7 @@
 INSTALL_PATH="/usr/local/sec3"
 
 if ! which coderrect > /dev/null; then
-    echo "`coderrect` binary not found, creating directories and file."
+    echo "\`coderrect\` binary not found, creating directories and file."
 
     export PATH=$INSTALL_PATH/bin:$PATH
     echo "export PATH=$INSTALL_PATH/bin:\$PATH" >> ~/.bashrc
