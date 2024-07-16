@@ -5,13 +5,11 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install build tools.
 RUN apt-get update && \
-    apt-get install --no-install-recommends -y \
-    software-properties-common \
-    wget \
-    git \
-    build-essential \
-    autoconf \
-    clang \
+    apt-get install -y \
+        build-essential \
+        git \
+        software-properties-common \
+        wget \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -23,7 +21,8 @@ RUN wget --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER
     && ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake \
     && rm cmake-${CMAKE_VERSION}-linux-x86_64.sh
 
-ARG MAKE_THREADS=32
+# Caller can optionally specify # of threads.
+ARG MAKE_THREADS=
 
 # Build LLVM 12 from source code.
 RUN git clone --branch=release/12.x --single-branch --depth=1 https://github.com/llvm/llvm-project.git
@@ -46,6 +45,6 @@ RUN cmake \
 # Runner.
 FROM ubuntu:22.04
 COPY --from=builder /usr/local/llvm /usr/local/llvm
-ENV PATH=/usr/local/llvm/bin:$PATH
+ENV PATH=/usr/local/llvm/bin:${PATH}
 WORKDIR /workspace
 ENTRYPOINT ["clang"]
