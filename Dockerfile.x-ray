@@ -1,35 +1,14 @@
 FROM ubuntu:22.04 as builder
 
+# Use prebuilt LLVM binaries (currently 12.0.1). Note that not using the
+# package from LLVM release as x-ray (in particular `code-parser`) requires
+# RTTI support which is not enabled in LLVM release build.
 COPY --from=llvm-prebuilt /usr/local/llvm /usr/local/llvm
+ENV PATH=/usr/local/llvm/bin:${PATH}
 
-# ARG CODERRECT_LOCAL_PATH=coderrect-linux-develop.tar.gz
-# ARG CODERRECT_LOCAL_FILENAME=coderrect-linux-develop
-
-# # install coderrect
-# ADD ${CODERRECT_LOCAL_PATH} /opt
-# ENV PATH="/opt/${CODERRECT_LOCAL_FILENAME}/bin:${PATH}"
-
-# # for LLVM 12.0.1 image
-# RUN apt-get update && apt-get install -y \
-#     gnupg \
-#     python3 \
-#     python3-pip \
-#     ninja-build \
-#     libtinfo-dev \
-#     libncurses5-dev
-
-# # pre-compiled LLVM 12.0.1 (with MLIR)
-# RUN wget https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.1/clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz && \
-#     tar -xf clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu-16.04.tar.xz && \
-#     mv clang+llvm-12.0.1-x86_64-linux-gnu-ubuntu- /usr/local/llvm-12 && \
-#     ln -s /usr/local/llvm-12/bin/llvm-config /usr/bin/llvm-config-12 && \
-#     ln -s /usr/local/llvm-12/bin/clang /usr/bin/clang-12 && \
-#     ln -s /usr/local/llvm-12/bin/clang++ /usr/bin/clang++-12 && \
-#     ln -s /usr/local/llvm-12/bin/mlir* /usr/bin/
-
-# # Verify the installations: LLVM
-# RUN clang-12 --version
-# RUN llvm-config-12 --version
+# Assert that LLVM binaries are available.
+RUN clang --version
+RUN llvm-config --version
 
 ENV DEBIAN_FRONTEND=noninteractive
 
