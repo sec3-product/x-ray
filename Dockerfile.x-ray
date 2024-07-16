@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 as builder
+FROM ubuntu:22.04 AS builder
 
 # Use prebuilt LLVM binaries (currently 12.0.1). Note that not using the
 # package from LLVM release as x-ray (in particular `code-parser`) requires
