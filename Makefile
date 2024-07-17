@@ -102,5 +102,4 @@ build-image:
 	else \
 	  echo "$(LLVM_PREBUILT_IMAGE) already exists locally. Skipped pulling."; \
 	fi
-	@docker tag $(LLVM_PREBUILT_IMAGE) llvm-prebuilt
-	@docker build -t $(X_RAY_IMAGE) -f Dockerfile.x-ray .
+	@docker build -t $(X_RAY_IMAGE) --build-arg LLVM_PREBUILT_IMAGE=$(LLVM_PREBUILT_IMAGE) -f Dockerfile.x-ray .

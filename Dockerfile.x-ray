@@ -1,8 +1,11 @@
-FROM ubuntu:22.04 AS builder
-
 # Use prebuilt LLVM binaries (currently 12.0.1). Note that not using the
 # package from LLVM release as x-ray (in particular `code-parser`) requires
 # RTTI support which is not enabled in LLVM release build.
+ARG LLVM_PREBUILT_IMAGE=llvm-prebuilt
+FROM ${LLVM_PREBUILT_IMAGE} AS llvm-prebuilt
+
+# Builder.
+FROM ubuntu:22.04 AS builder
 COPY --from=llvm-prebuilt /usr/local/llvm /usr/local/llvm
 ENV PATH=/usr/local/llvm/bin:${PATH}
 
