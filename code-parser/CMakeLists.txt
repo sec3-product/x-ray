@@ -16,6 +16,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
 
+set(LLVM_VERSION "12.0.1" CACHE STRING "The LLVM version")
 set(LLVM_DIR /usr/local/llvm/lib/cmake/llvm)
 set(MLIR_DIR /usr/local/llvm/lib/cmake/mlir)
 
@@ -51,10 +52,8 @@ if(NOT COMMAND add_llvm_loadable_module)
             set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 ${COMMON_CXX_FLAG}")
         endif()
 
-        find_package(LLVM 12.0.1 REQUIRED CONFIG NO_DEFAULT_PATH)
-        # find_package(LLVM 17.0.0 REQUIRED CONFIG NO_DEFAULT_PATH)
-
-        message("FIND LLVM IN ${LLVM_CMAKE_DIR}")
+        find_package(LLVM ${LLVM_VERSION} REQUIRED CONFIG NO_DEFAULT_PATH)
+        message("Found LLVM in ${LLVM_CMAKE_DIR}")
 
         list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
         include(AddLLVM)
