@@ -9,6 +9,9 @@ BINARY_PATH = ~/local/sec3/bin/coderrect
 # registry. Use `doctl registry login` to ensure the access.
 LLVM_PREBUILT_IMAGE ?= registry.digitalocean.com/soteria/llvm-prebuilt:latest
 
+# The LLVM version to use.
+LLVM_VERSION ?= 12.0.1
+
 X_RAY_IMAGE ?= x-ray:latest
 
 all: prepare_build_dir pull_llvm build_in_docker compile_go compile_cmake check_go_version add_to_path check_binary
@@ -87,7 +90,9 @@ check_binary:
 
 # Build llvm-prebuilt image
 build-llvm-prebuilt-image:
-	@docker build -t $(LLVM_PREBUILT_IMAGE) -f Dockerfile.llvm .
+	@docker build -t $(LLVM_PREBUILT_IMAGE) \
+	  --build-arg LLVM_VERSION=$(LLVM_VERSION) \
+	  -f Dockerfile.llvm .
 
 push-llvm-prebuilt-image: build-llvm-prebuilt-image
 	@docker push $(LLVM_PREBUILT_IMAGE)
@@ -102,4 +107,7 @@ build-image:
 	else \
 	  echo "$(LLVM_PREBUILT_IMAGE) already exists locally. Skipped pulling."; \
 	fi
-	@docker build -t $(X_RAY_IMAGE) --build-arg LLVM_PREBUILT_IMAGE=$(LLVM_PREBUILT_IMAGE) -f Dockerfile.x-ray .
+	@docker build -t $(X_RAY_IMAGE) \
+	  --build-arg LLVM_PREBUILT_IMAGE=$(LLVM_PREBUILT_IMAGE) \
+	  --build-arg LLVM_VERSION=$(LLVM_VERSION) \
+	  -f Dockerfile.x-ray .
