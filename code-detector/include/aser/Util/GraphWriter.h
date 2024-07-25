@@ -238,7 +238,7 @@ void WriteGraphToFile(const std::string &graphName, const GraphType &graph, bool
     llvm::outs() << "Writing '" << fileName << "'...";
 
     std::error_code ErrInfo;
-    llvm::ToolOutputFile F(fileName, ErrInfo, llvm::sys::fs::F_None);
+    llvm::ToolOutputFile F(fileName, ErrInfo, llvm::sys::fs::OF_None);
     if (!ErrInfo) {
         // dump the ValueFlowGraph here
         aser::WriteGraph(F.os(), graph, simple);

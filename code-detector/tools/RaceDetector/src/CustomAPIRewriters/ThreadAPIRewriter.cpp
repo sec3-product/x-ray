@@ -337,7 +337,7 @@ void ThreadAPIInfo::resolveOpParenthesis(StringRef baseClass, const StrVector &p
                 }
 
                 int count = 1;
-                for (int i = idx + 1; i < callsite->getNumArgOperands(); i++) {
+                for (int i = idx + 1; i < callsite->arg_size(); i++) {
                     auto LI = dyn_cast<LoadInst>(callsite->getArgOperand(i));
                     if (LI && LI->getPointerOperand()->stripInBoundsConstantOffsets() == loadTarget) {
                         count ++;
@@ -644,7 +644,7 @@ void ThreadAPIConverter::convertOperatorAsEntryThreadAPI(const ThreadAPIInfo &AP
             op->stripAndAccumulateConstantOffsets(M->getDataLayout(), off, true);
 
             auto curArg = theAPI->arg_begin() + i;
-            auto ptr = builder.CreateConstInBoundsGEP1_64(casted, off.getSExtValue());
+            auto ptr = builder.CreateConstInBoundsGEP1_64(nullptr, casted, off.getSExtValue());
             auto addr = builder.CreateBitCast(ptr, PointerType::getUnqual(curArg->getType()));
             builder.CreateStore(curArg, addr);
         }
@@ -728,7 +728,7 @@ Function *ThreadAPIConverter::getConvertedMemPtrAPI(const ThreadAPIInfo &APIInfo
     // adjust the offset for *this*
     llvm::Value *memptrThis = APIInfo.getArgAtIdx(fun, APIInfo.getArgStartIdx());
     llvm::Value *casted = builder.CreateBitCast(memptrThis, builder.getInt8PtrTy());
-    casted = builder.CreateInBoundsGEP(casted, adj);
+    casted = builder.CreateInBoundsGEP(nullptr, casted, adj);
     memptrThis = builder.CreateBitCast(casted, memptrThis->getType(), "this.adjusted");
 
     // 2nd, create unpack argument thread entry
@@ -742,14 +742,14 @@ Function *ThreadAPIConverter::getConvertedMemPtrAPI(const ThreadAPIInfo &APIInfo
         // 1st, adjust this should points to the vtable
         auto vtableType = builder.getInt8PtrTy();
         auto vtablePtr = builder.CreateBitCast(memptrThis, PointerType::get(vtableType, 0));
-        auto vtable = builder.CreateLoad(vtablePtr);
+        auto vtable = builder.CreateLoad(vtablePtr->getType()->getPointerElementType(), vtablePtr);
 
         Constant *ptrdiff_1 = llvm::ConstantInt::get(ptr->getType(), 1);
         auto vtableOff = builder.CreateSub(ptr, ptrdiff_1);
-        auto vfunPtr = builder.CreateGEP(vtable, vtableOff);
+        auto vfunPtr = builder.CreateGEP(nullptr, vtable, vtableOff);
         vfunPtr = builder.CreateBitCast(vfunPtr,
                                         PointerType::getUnqual(PointerType::getUnqual(APIInfo.getCallableType())));
-        callback = builder.CreateLoad(vfunPtr);
+        callback = builder.CreateLoad(vfunPtr->getType()->getPointerElementType(), vfunPtr);
     } else {
         callback = builder.CreateIntToPtr(ptr, PointerType::getUnqual(APIInfo.getCallableType()));
     }

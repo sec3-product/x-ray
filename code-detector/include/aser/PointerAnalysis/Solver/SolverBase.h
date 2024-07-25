@@ -340,7 +340,7 @@ protected:
 
     void dumpPointsTo() {
         std::error_code ErrInfo;
-        llvm::ToolOutputFile F("PTS.txt", ErrInfo, llvm::sys::fs::F_None);
+        llvm::ToolOutputFile F("PTS.txt", ErrInfo, llvm::sys::fs::OF_None);
         if (!ErrInfo) {
             // dump the points to set
 

@@ -81,7 +81,7 @@ void rewriteIndirectTargets(Module *M, const map<string, vector<string>> &target
 
                     if (aser::isCompatibleCall(theTarget, targetFunction)) {
                         SmallVector<Value *, 8> args;
-                        for (int i = 0; i < theTarget->getNumArgOperands(); i++) {
+                        for (int i = 0; i < theTarget->arg_size(); i++) {
                             if (i < targetFunction->arg_size()) {
                                 Value *actual = theTarget->getArgOperand(i);
                                 Value *formal = targetFunction->arg_begin() + i;

@@ -840,7 +840,7 @@ bool GraphBLASModel::isCompatible(const llvm::Instruction *callsite, const llvm:
         // pthread's callback's return type does not matter.
         return target->arg_begin()->getType() == llvm::Type::getInt8PtrTy(callsite->getContext());
     } else if (threadCreate->getName().startswith(ThreadAPIRewriter::getCanonicalizedAPIPrefix())) {
-        if (target->arg_size() != call->getNumArgOperands() - 2) {
+        if (target->arg_size() != call->arg_size() - 2) {
             return false;
         }
 

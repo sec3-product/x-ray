@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
     //if (ConfigDumpIR) {
 
 //    std::error_code err;
-//    llvm::raw_fd_ostream outfile("modified.ll", err, llvm::sys::fs::F_None);
+//    llvm::raw_fd_ostream outfile("modified.ll", err, llvm::sys::fs::OF_None);
 //    if (err) {
 //        llvm::errs() << "Error dumping IR!\n";
 //    }
