@@ -60,7 +60,7 @@ bool isTupleEqual(const std::tuple<Args...> &tuple1, const std::tuple<Args...> &
 
 // instead of compare pointer value, compare they content of them
 template <typename PtrTy, typename Comparator = std::less<PtrTy>>
-class PtrContentComparator : public std::binary_function<PtrTy *, PtrTy *, bool> {
+class PtrContentComparator {
     using comp = Comparator;
     comp _M_comp;
 
@@ -69,7 +69,7 @@ public:
 };
 
 template <typename PtrTy, typename Comparator = std::less<PtrTy>>
-class UniquePtrContentComparator : public std::binary_function<std::unique_ptr<PtrTy>, std::unique_ptr<PtrTy>, bool> {
+class UniquePtrContentComparator {
     using comp = Comparator;
     comp _M_comp;
 
