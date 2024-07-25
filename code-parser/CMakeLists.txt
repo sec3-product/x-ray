@@ -17,8 +17,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
 
 set(LLVM_VERSION "12.0.1" CACHE STRING "The LLVM version")
-set(LLVM_DIR /usr/local/llvm/lib/cmake/llvm)
-set(MLIR_DIR /usr/local/llvm/lib/cmake/mlir)
+set(LLVM_DIR "/usr/local/llvm/lib/cmake/llvm" CACHE STRING "Path to LLVM")
+set(MLIR_DIR "/usr/local/llvm/lib/cmake/mlir" CACHE STRING "Path to MLIR")
 
 if(NOT ENABLE_TEST)
     set(ENABLE_TEST Off) # default disable testing

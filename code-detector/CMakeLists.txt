@@ -7,8 +7,8 @@ option(ENABLE_HEAP_PROFILE "Turn on heap profiling feature by linking to tcmallo
 set(LLVM_VERSION "12.0.1" CACHE STRING "The LLVM version")
 
 # set to path in Docker
-set(LLVM_DIR /usr/local/llvm/lib/cmake/llvm/)
-set(MLIR_DIR /usr/local/llvm/lib/cmake/mlir/)
+set(LLVM_DIR "/usr/local/llvm/lib/cmake/llvm" CACHE STRING "Path to LLVM")
+set(MLIR_DIR "/usr/local/llvm/lib/cmake/mlir" CACHE STRING "Path to MLIR")
 
 # Do not override manually set LLVM_DIR
 if(NOT DEFINED LLVM_DIR)
