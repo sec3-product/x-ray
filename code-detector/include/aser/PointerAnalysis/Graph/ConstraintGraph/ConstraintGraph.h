@@ -4,6 +4,8 @@
 #ifndef ASER_PTA_CONSTRAINTGRAPH_H
 #define ASER_PTA_CONSTRAINTGRAPH_H
 
+#include <map>
+
 #include "CGObjNode.h"
 #include "CGPtrNode.h"
 #include "aser/PointerAnalysis/Graph/GraphBase/GraphBase.h"

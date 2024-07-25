@@ -71,7 +71,7 @@ public:
     }
 
     [[nodiscard]]
-    unsigned int getNumArgOperands() const { return CB->getNumArgOperands(); }
+    unsigned int getNumArgOperands() const { return CB->arg_size(); }
 
     const llvm::Value* getArgOperand(unsigned int i) const { return CB->getArgOperand(i); }
 

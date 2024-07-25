@@ -39,10 +39,10 @@ void LoweringMemCpyPass::lowerMemCpyForType(Type *type, Value *src, Value *dst, 
             break;
         }
         case llvm::Type::PointerTyID: {
-            auto srcGEP = builder.CreateGEP(src, idx, "");
-            auto dstGEP = builder.CreateGEP(dst, idx, "");
+            auto srcGEP = builder.CreateGEP(nullptr, src, idx, "");
+            auto dstGEP = builder.CreateGEP(nullptr, dst, idx, "");
 
-            auto srcLoad = builder.CreateLoad(srcGEP);
+            auto srcLoad = builder.CreateLoad(srcGEP->getType()->getPointerElementType(), srcGEP);
             builder.CreateStore(srcLoad, dstGEP, false);
             break;
         }

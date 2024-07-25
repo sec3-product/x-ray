@@ -54,7 +54,7 @@ static Function *getCallocFunction(Module &M, Type *retType, Type *para1, Type *
         } else {
             calloc = cast<Function>(tmp.getCallee());
         }
-        calloc->addAttribute(AttributeList::ReturnIndex, Attribute::NoAlias);
+        calloc->setReturnDoesNotAlias();
     }
 
     return calloc;

@@ -66,7 +66,7 @@ static bool splitVariableGEP(Function &F, IRBuilder<NoFolder> &builder) {
                 gep_type_iterator GTI = gep_type_begin(GEP);
                 if (!isa<Constant>(GTI.getOperand())) {
                     // the first idx is not a constant
-                    lastBasePtr = builder.CreateGEP(lastBasePtr, GTI.getOperand());
+                    lastBasePtr = builder.CreateGEP(nullptr, lastBasePtr, GTI.getOperand());
                     LOG_TRACE("{}", *lastBasePtr);
                     // since we skip the first index, we now start from gep 0,
                     consIndices.push_back(zero);
@@ -74,7 +74,7 @@ static bool splitVariableGEP(Function &F, IRBuilder<NoFolder> &builder) {
                 } else if (auto *idx = cast<Constant>(GTI.getOperand()); !idx->isZeroValue()) {
                     // the first index is constant, but is not a zero
                     // getelementptr %ptr, 4, %idx1, ...
-                    lastBasePtr = builder.CreateGEP(lastBasePtr, idx);
+                    lastBasePtr = builder.CreateGEP(nullptr, lastBasePtr, idx);
                     LOG_TRACE("{}", *lastBasePtr);
                     consIndices.push_back(zero);
                     GTI++;
@@ -92,11 +92,11 @@ static bool splitVariableGEP(Function &F, IRBuilder<NoFolder> &builder) {
                         if (consIndices.size() != 1) {
                             // if we have the const index, emit them
                             // we are now handling a variable index, emit all the constant indices
-                            lastBasePtr = builder.CreateGEP(lastBasePtr, consIndices);
+                            lastBasePtr = builder.CreateGEP(nullptr, lastBasePtr, consIndices);
                             LOG_TRACE("{}", *lastBasePtr);
                         }
                         // emit current variable index
-                        lastBasePtr = builder.CreateGEP(lastBasePtr, {zero, op});
+                        lastBasePtr = builder.CreateGEP(nullptr, lastBasePtr, {zero, op});
                         LOG_TRACE("{}", *lastBasePtr);
                         // clear stored indices.
                         consIndices.clear();
@@ -106,7 +106,7 @@ static bool splitVariableGEP(Function &F, IRBuilder<NoFolder> &builder) {
 
                 if (consIndices.size() != 1) {
                     // consIndices.insert(consIndices.begin(), zero);
-                    lastBasePtr = builder.CreateGEP(lastBasePtr, consIndices);
+                    lastBasePtr = builder.CreateGEP(nullptr, lastBasePtr, consIndices);
                     LOG_TRACE("{}", *lastBasePtr);
                 } else {
                     // the first should be a zero
