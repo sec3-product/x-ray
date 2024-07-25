@@ -11,12 +11,11 @@ if(NOT DEFINED LLVM_DIR)
     endif()
 endif()
 
-# use C++14 as llvm-11 does
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
 
-set(LLVM_VERSION "12.0.1" CACHE STRING "The LLVM version")
+set(LLVM_VERSION "14.0.6" CACHE STRING "The LLVM version")
 set(LLVM_DIR "/usr/local/llvm/lib/cmake/llvm" CACHE STRING "Path to LLVM")
 set(MLIR_DIR "/usr/local/llvm/lib/cmake/mlir" CACHE STRING "Path to MLIR")
 

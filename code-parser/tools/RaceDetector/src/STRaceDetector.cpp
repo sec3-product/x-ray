@@ -36,7 +36,8 @@
 #include "mlir/Parser.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Pass/PassManager.h"
-#include "mlir/Target/LLVMIR.h"
+#include "mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h"
+#include "mlir/Target/LLVMIR/Export.h"
 #include "mlir/Transforms/Passes.h"
 
 using namespace antlr4;
@@ -460,7 +461,11 @@ bool initParser(stx::ModuleAST *module) {
   }
   return true;
 }
+
 int dumpLLVMIR(mlir::ModuleOp module) {
+  // Register the translation to LLVM IR with the MLIR context.
+  mlir::registerLLVMDialectTranslation(*module->getContext());
+
   llvm::LLVMContext llvmContext;
   auto llvmModule = mlir::translateModuleToLLVMIR(module, llvmContext);
   if (!llvmModule) {
@@ -507,7 +512,7 @@ void initLLVMIR(stx::ModuleAST *moduleAST) {
   // If we aren't dumping the AST, then we are compiling with/to MLIR.
 
   mlir::MLIRContext context;
-  mlir::OwningModuleRef module;
+  mlir::OwningOpRef<mlir::ModuleOp> module;
   //   //from parse tree to moduleAST
   //   //TODO: add parseModule
   //   ParserWrapper wrapper(parser);
@@ -542,6 +547,7 @@ void initLLVMIR(stx::ModuleAST *moduleAST) {
       if (DEBUG_SOL) llvm::errs() << "Errors in createLowerToLLVMPass.\n";
     }
   }
+
   dumpLLVMIR(*module);
 }
 

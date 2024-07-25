@@ -29,7 +29,7 @@ private:
     // Type-based Alias Analysis
     llvm::TypeBasedAAResult *tbaa;
     // used by tbaa
-    llvm::AAQueryInfo aaqi;
+    llvm::SimpleAAQueryInfo aaqi;
     bool hasFoundThread = false;
     // collection of all static threads
     std::vector<StaticThread *> threadSet;

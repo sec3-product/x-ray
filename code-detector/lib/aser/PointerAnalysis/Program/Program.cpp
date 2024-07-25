@@ -22,7 +22,7 @@ const Function* aser::CallSite::resolveTargetFunction(const Value* calledValue) 
     }
 
     if (auto globalAlias = dyn_cast<GlobalAlias>(calledValue)) {
-        auto globalSymbol = globalAlias->getIndirectSymbol()->stripPointerCasts();
+        auto globalSymbol = globalAlias->getAliasee()->stripPointerCasts();
         if (auto function = dyn_cast<Function>(globalSymbol)) {
             return function;
         }

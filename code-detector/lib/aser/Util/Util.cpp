@@ -6,6 +6,7 @@
 #include <map>
 
 #include <llvm/Demangle/Demangle.h>
+#include <llvm/IR/DebugInfo.h>
 #include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/IR/IntrinsicInst.h>
 #include <llvm/IR/Metadata.h>

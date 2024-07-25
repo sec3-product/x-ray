@@ -18,7 +18,7 @@ llvm_map_components_to_libnames(llvm_libs
         support
         transformutils
         codegen
-        
+
         # needed when link llvm as shared library
         AggressiveInstCombine
         demangle
@@ -97,7 +97,7 @@ target_link_libraries(sol-racedetect
     MLIRParser
     MLIRPass
     MLIRSideEffectInterfaces
-    MLIRTargetLLVMIR
+    MLIRTargetLLVMIRExport
     MLIRTransforms
     )
 

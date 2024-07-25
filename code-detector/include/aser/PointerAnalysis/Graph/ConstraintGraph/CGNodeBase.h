@@ -5,6 +5,7 @@
 #define ASER_PTA_CGNODEBASE_H
 #include <llvm/ADT/SparseBitVector.h>
 #include <llvm/Demangle/Demangle.h>
+#include <llvm/IR/DebugInfo.h>
 #include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/IR/IntrinsicInst.h>
 #include <llvm/IR/Metadata.h>

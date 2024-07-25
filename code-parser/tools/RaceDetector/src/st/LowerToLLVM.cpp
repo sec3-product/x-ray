@@ -17,6 +17,8 @@
 
 #include "llvm/ADT/Sequence.h"
 #include "mlir/Conversion/AffineToStandard/AffineToStandard.h"
+#include "mlir/Conversion/LLVMCommon/ConversionTarget.h"
+#include "mlir/Conversion/LLVMCommon/TypeConverter.h"
 #include "mlir/Conversion/SCFToStandard/SCFToStandard.h"
 #include "mlir/Conversion/StandardToLLVM/ConvertStandardToLLVM.h"
 #include "mlir/Conversion/StandardToLLVM/ConvertStandardToLLVMPass.h"
@@ -48,7 +50,7 @@ void STToLLVMLoweringPass::runOnOperation() {
   // final target for this lowering. For this lowering, we are only targeting
   // the LLVM dialect.
   LLVMConversionTarget target(getContext());
-  target.addLegalOp<ModuleOp, ModuleTerminatorOp>();
+  target.addLegalOp<ModuleOp>();
 
   // During this lowering, we will also be lowering the MemRef types, that are
   // currently being operated on, to a representation in LLVM. To perform this
@@ -68,10 +70,10 @@ void STToLLVMLoweringPass::runOnOperation() {
 
   // OwningRewritePatternList patterns;
   // MLIRContext *context = &getContext();
-  OwningRewritePatternList patterns;
+  RewritePatternSet patterns(&getContext());
 
-  populateAffineToStdConversionPatterns(patterns, &getContext());
-  populateLoopToStdConversionPatterns(patterns, &getContext());
+  populateAffineToStdConversionPatterns(patterns);
+  populateLoopToStdConversionPatterns(patterns);
   populateStdToLLVMConversionPatterns(typeConverter, patterns);
 
   // The only remaining operation to lower from the `toy` dialect, is the

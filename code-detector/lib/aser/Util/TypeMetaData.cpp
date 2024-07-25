@@ -3,6 +3,7 @@
 //
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/BinaryFormat/Dwarf.h>
+#include <llvm/IR/DebugInfo.h>
 #include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/IntrinsicInst.h>

@@ -4,7 +4,7 @@ project(aser_pta)
 option(ENABLE_SPACE_OPT "Whether to apply aggressive memory optimzation (which will make constraint graph harder to understand)" ON)
 option(ENABLE_HEAP_PROFILE "Turn on heap profiling feature by linking to tcmalloc" OFF)
 
-set(LLVM_VERSION "12.0.1" CACHE STRING "The LLVM version")
+set(LLVM_VERSION "14.0.6" CACHE STRING "The LLVM version")
 
 # set to path in Docker
 set(LLVM_DIR "/usr/local/llvm/lib/cmake/llvm" CACHE STRING "Path to LLVM")
