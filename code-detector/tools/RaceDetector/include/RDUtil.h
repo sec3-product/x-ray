@@ -58,8 +58,7 @@ inline std::string &ltrim(std::string &s, const char *t = ws) {
 inline std::string &trim(std::string &s, const char *t = ws) { return ltrim(rtrim(s, t), t); }
 
 inline bool hasNoAliasMD(const llvm::Instruction *inst) {
-    llvm::AAMDNodes AAMD;
-    inst->getAAMetadata(AAMD);
+    auto AAMD = inst->getAAMetadata();
     return AAMD.NoAlias != nullptr;
 }
 

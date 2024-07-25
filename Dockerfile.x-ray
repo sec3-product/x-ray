@@ -1,7 +1,9 @@
-# Use prebuilt LLVM binaries (currently 12.0.1). Note that not using the
-# package from LLVM release as x-ray (in particular `code-parser`) requires
-# RTTI support which is not enabled in LLVM release build.
+# Use prebuilt LLVM binaries. Note that not using the package from LLVM release
+# as x-ray (in particular `code-parser`) requires RTTI support which is not
+# enabled in LLVM release build.
 ARG LLVM_PREBUILT_IMAGE=llvm-prebuilt
+ARG LLVM_VERSION=14.0.6
+
 FROM ${LLVM_PREBUILT_IMAGE} AS llvm-prebuilt
 
 # Builder.
@@ -44,8 +46,6 @@ RUN wget --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER
 
 # Caller can optionally specify # of threads.
 ARG MAKE_THREADS=
-
-ARG LLVM_VERSION=12.0.1
 
 # Build x-ray detector.
 COPY code-detector x-ray-toolchain/code-detector

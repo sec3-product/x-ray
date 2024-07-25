@@ -136,7 +136,7 @@ const Value *FSCanonicalizer::canonicalize(const llvm::Value *V) {
     bool changed = true;
 
     while (changed) {
-        V = V->stripPointerCastsAndInvariantGroups();
+        V = V->stripPointerCastsForAliasAnalysis();
         if (auto gep = dyn_cast<GetElementPtrInst>(V)) {
             if (gep->getNumIndices() == 1 && gep->hasAllConstantIndices()) {
                 if (auto idx = cast<ConstantInt>(gep->getOperand(1))) {

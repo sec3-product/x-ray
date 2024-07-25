@@ -2,16 +2,17 @@
 
 #include <numeric>
 
-#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/ScopedHashTable.h>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/Support/raw_ostream.h>
 #include <mlir/Dialect/LLVMIR/LLVMTypes.h>
 #include <mlir/Dialect/StandardOps/IR/Ops.h>
 #include <mlir/IR/Attributes.h>
 #include <mlir/IR/Builders.h>
-#include <mlir/IR/FunctionSupport.h>
+#include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/MLIRContext.h>
+#include <mlir/IR/OwningOpRef.h>
 #include <mlir/IR/Types.h>
 #include <mlir/IR/Verifier.h>
 
@@ -143,8 +144,8 @@ class MLIRGenImpl {
 };
 
 // The public API for codegen.
-mlir::OwningModuleRef mlirGen(mlir::MLIRContext &context,
-                              ModuleAST &moduleAST) {
+mlir::OwningOpRef<mlir::ModuleOp> mlirGen(mlir::MLIRContext &context,
+                                          ModuleAST &moduleAST) {
   return MLIRGenImpl(context).mlirGen(moduleAST);
 };
 
@@ -257,7 +258,7 @@ class MLIRGenImpl {
     //   "------"
     //                << "\n";
 
-    return builder.getFileLineColLoc(builder.getIdentifier(fileName), loc.line,
+    return mlir::FileLineColLoc::get(builder.getStringAttr(fileName), loc.line,
                                      loc.col);
   }
   /// Helper conversion for a Toy AST location to an MLIR location.
@@ -271,7 +272,7 @@ class MLIRGenImpl {
     //   "------"
     //                << "\n";
 
-    return builder.getFileLineColLoc(builder.getIdentifier(loc.file), loc.line,
+    return mlir::FileLineColLoc::get(builder.getStringAttr(loc.file), loc.line,
                                      loc.col);
   }
   Value getOrCreateGlobalStringX(mlir::Location loc, std::string name,
@@ -317,7 +318,7 @@ class MLIRGenImpl {
 
     auto *context = builder.getContext();
     if (theModule.lookupSymbol<FuncOp>(name))
-      return SymbolRefAttr::get(name, context);
+      return SymbolRefAttr::get(context, name);
 
     if (DEBUG_SOL)
       llvm::outs() << "-----adding UserDefinedSolFunction ------" << name
@@ -334,14 +335,14 @@ class MLIRGenImpl {
     auto func = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // declare only
 
-    return SymbolRefAttr::get(name, context);
+    return SymbolRefAttr::get(context, name);
   }
 
   FlatSymbolRefAttr getOrInsertSuperClassFunctionX() {
     llvm::StringRef name = SOL_BUILT_IN_CLASS_SUPER;
     auto *context = builder.getContext();
     if (theModule.lookupSymbol<FuncOp>(name))
-      return SymbolRefAttr::get(name, context);
+      return SymbolRefAttr::get(context, name);
 
     // Create a function declaration, the signature is:
     //   * `void (i8*,i8*)`
@@ -353,13 +354,13 @@ class MLIRGenImpl {
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
-    return SymbolRefAttr::get(name, context);
+    return SymbolRefAttr::get(context, name);
   }
 
   FlatSymbolRefAttr getOrInsertAssignFunctionX(llvm::StringRef name) {
     auto *context = builder.getContext();
     if (theModule.lookupSymbol<FuncOp>(name))
-      return SymbolRefAttr::get(name, context);
+      return SymbolRefAttr::get(context, name);
 
     // Create a function declaration, the signature is:
     //   * `void (i8*,i8*)`
@@ -371,13 +372,13 @@ class MLIRGenImpl {
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
-    return SymbolRefAttr::get(name, context);
+    return SymbolRefAttr::get(context, name);
   }
 
   FlatSymbolRefAttr getOrInsertForkAtFunctionX(llvm::StringRef name) {
     auto *context = builder.getContext();
     if (theModule.lookupSymbol<FuncOp>(name))
-      return SymbolRefAttr::get(name, context);
+      return SymbolRefAttr::get(context, name);
 
     // Create a function declaration for opaqueObject, the signature is:
     //   * `void (i8*, i32...)`
@@ -393,14 +394,14 @@ class MLIRGenImpl {
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
-    return SymbolRefAttr::get(name, context);
+    return SymbolRefAttr::get(context, name);
   }
 
   FlatSymbolRefAttr getOrInsertBuiltInParentScopeX() {
     auto name = SOL_BUILT_IN_MODEL_PARENT_SCOPE;
     auto *context = builder.getContext();
     if (theModule.lookupSymbol<FuncOp>(name))
-      return SymbolRefAttr::get(name, context);
+      return SymbolRefAttr::get(context, name);
 
     auto mlirFnType = mlir::FunctionType::get(
         context, {llvmI8PtrTy, llvmI8PtrTy}, llvmI8PtrTy);
@@ -411,14 +412,14 @@ class MLIRGenImpl {
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
-    return SymbolRefAttr::get(name, context);
+    return SymbolRefAttr::get(context, name);
   }
 
   FlatSymbolRefAttr getOrInsertBuiltInArgTypeFunctionX() {
     auto name = SOL_BUILT_IN_MODEL_FUNC_ARG;
     auto *context = builder.getContext();
     if (theModule.lookupSymbol<FuncOp>(name))
-      return SymbolRefAttr::get(name, context);
+      return SymbolRefAttr::get(context, name);
 
     auto mlirFnType = mlir::FunctionType::get(
         context, {llvmI8PtrTy, llvmI8PtrTy}, llvmI8PtrTy);
@@ -426,13 +427,13 @@ class MLIRGenImpl {
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
     auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
-    return SymbolRefAttr::get(name, context);
+    return SymbolRefAttr::get(context, name);
   }
   FlatSymbolRefAttr getOrInsertBuiltInNewFunctionX() {
     auto name = SOL_BUILT_IN_MODEL_NEW_TEMP;
     auto *context = builder.getContext();
     if (theModule.lookupSymbol<FuncOp>(name))
-      return SymbolRefAttr::get(name, context);
+      return SymbolRefAttr::get(context, name);
 
     auto mlirFnType =
         mlir::FunctionType::get(context, {llvmI8PtrTy}, llvmI8PtrTy);
@@ -443,13 +444,13 @@ class MLIRGenImpl {
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
-    return SymbolRefAttr::get(name, context);
+    return SymbolRefAttr::get(context, name);
   }
   FlatSymbolRefAttr getOrInsertBuiltInDeclareIdFunctionX() {
     auto name = SOL_BUILT_IN_MODEL_DECLARE_ID;
     auto *context = builder.getContext();
     if (theModule.lookupSymbol<FuncOp>(name))
-      return SymbolRefAttr::get(name, context);
+      return SymbolRefAttr::get(context, name);
 
     auto mlirFnType =
         mlir::FunctionType::get(context, {llvmI8PtrTy}, llvmI8PtrTy);
@@ -457,13 +458,13 @@ class MLIRGenImpl {
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
     auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
-    return SymbolRefAttr::get(name, context);
+    return SymbolRefAttr::get(context, name);
   }
   FlatSymbolRefAttr getOrInsertBuiltInTOMLFunctionX() {
     auto name = SOL_BUILT_IN_MODEL_TOML;
     auto *context = builder.getContext();
     if (theModule.lookupSymbol<FuncOp>(name))
-      return SymbolRefAttr::get(name, context);
+      return SymbolRefAttr::get(context, name);
 
     auto mlirFnType = mlir::FunctionType::get(
         context, {llvmI8PtrTy, llvmI8PtrTy}, llvmI8PtrTy);
@@ -471,13 +472,13 @@ class MLIRGenImpl {
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
     auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
-    return SymbolRefAttr::get(name, context);
+    return SymbolRefAttr::get(context, name);
   }
   FlatSymbolRefAttr getOrInsertBuiltInParentVarFunctionX() {
     auto name = SOL_BUILT_IN_MODEL_PARENT_VAR;
     auto *context = builder.getContext();
     if (theModule.lookupSymbol<FuncOp>(name))
-      return SymbolRefAttr::get(name, context);
+      return SymbolRefAttr::get(context, name);
 
     auto mlirFnType = mlir::FunctionType::get(
         context, {llvmI8PtrTy, llvmI8PtrTy}, llvmI8PtrTy);
@@ -485,13 +486,13 @@ class MLIRGenImpl {
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
     auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
-    return SymbolRefAttr::get(name, context);
+    return SymbolRefAttr::get(context, name);
   }
   FlatSymbolRefAttr getOrInsertBuiltInInstVarFunctionX() {
     auto name = SOL_BUILT_IN_MODEL_INST_VAR;
     auto *context = builder.getContext();
     if (theModule.lookupSymbol<FuncOp>(name))
-      return SymbolRefAttr::get(name, context);
+      return SymbolRefAttr::get(context, name);
 
     auto mlirFnType = mlir::FunctionType::get(
         context, {llvmI8PtrTy, llvmI8PtrTy}, llvmI8PtrTy);
@@ -502,7 +503,7 @@ class MLIRGenImpl {
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
-    return SymbolRefAttr::get(name, context);
+    return SymbolRefAttr::get(context, name);
   }
   FlatSymbolRefAttr getOrInsertBuiltInBlockParamFunctionX(
       std::vector<mlir::Value> &operands) {
@@ -511,7 +512,7 @@ class MLIRGenImpl {
 
     auto *context = builder.getContext();
     if (theModule.lookupSymbol<FuncOp>(name))
-      return SymbolRefAttr::get(name, context);
+      return SymbolRefAttr::get(context, name);
     std::vector<mlir::Type> inputTypes;
     for (auto op : operands) inputTypes.push_back(op.getType());
     auto mlirFnType = mlir::FunctionType::get(context, inputTypes, llvmI8PtrTy);
@@ -519,13 +520,13 @@ class MLIRGenImpl {
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
     auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
-    return SymbolRefAttr::get(name, context);
+    return SymbolRefAttr::get(context, name);
   }
   FlatSymbolRefAttr getOrInsertBuiltInClassVarFunctionX() {
     auto name = SOL_BUILT_IN_MODEL_CLASS_VAR;
     auto *context = builder.getContext();
     if (theModule.lookupSymbol<FuncOp>(name))
-      return SymbolRefAttr::get(name, context);
+      return SymbolRefAttr::get(context, name);
 
     auto mlirFnType =
         mlir::FunctionType::get(context, {llvmI8PtrTy}, llvmI8PtrTy);
@@ -536,13 +537,13 @@ class MLIRGenImpl {
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
-    return SymbolRefAttr::get(name, context);
+    return SymbolRefAttr::get(context, name);
   }
   FlatSymbolRefAttr getOrInsertBuiltInClassMetaFunctionX() {
     auto name = SOL_BUILT_IN_CLASS_METADATA;
     auto *context = builder.getContext();
     if (theModule.lookupSymbol<FuncOp>(name))
-      return SymbolRefAttr::get(name, context);
+      return SymbolRefAttr::get(context, name);
 
     auto mlirFnType =
         mlir::FunctionType::get(context, {llvmI8PtrTy}, llvmI64Ty);
@@ -553,14 +554,14 @@ class MLIRGenImpl {
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
-    return SymbolRefAttr::get(name, context);
+    return SymbolRefAttr::get(context, name);
   }
   FlatSymbolRefAttr getOrInsertBuiltInBinaryOpFunctionX(
       SmallVector<mlir::Value, 3> &operands) {
     auto name = SOL_BUILT_IN_MODEL_BINARY_OP;
     auto *context = builder.getContext();
     if (theModule.lookupSymbol<FuncOp>(name))
-      return SymbolRefAttr::get(name, context);
+      return SymbolRefAttr::get(context, name);
     std::vector<mlir::Type> inputTypes;
     for (auto operand : operands) inputTypes.push_back(operand.getType());
     auto mlirFnType = mlir::FunctionType::get(context, inputTypes, llvmI8PtrTy);
@@ -571,7 +572,7 @@ class MLIRGenImpl {
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
-    return SymbolRefAttr::get(name, context);
+    return SymbolRefAttr::get(context, name);
   }
 
  public:
@@ -600,8 +601,8 @@ class MLIRGenImpl {
       }
 
       // Location loc({classAST->fileName, classAST->line, 0});
-      auto loc = builder.getFileLineColLoc(
-          builder.getIdentifier(classAST->fileName), classAST->line, 0);
+      auto loc = mlir::FileLineColLoc::get(
+          builder.getStringAttr(classAST->fileName), classAST->line, 0);
       // auto value = classAST->inst_vars;
       // auto type = LLVM::LLVMType::getArrayTy(llvmI8PtrTy, value.size());
       // builder.create<LLVM::GlobalOp>(
@@ -999,7 +1000,7 @@ class MLIRGenImpl {
 
     // TODO: insert call to this anonymous func, and return its ret
     // parent->this
-    auto blockRef = SymbolRefAttr::get(funcName, builder.getContext());
+    auto blockRef = SymbolRefAttr::get(builder.getContext(), funcName);
     auto parentFuncName = getCurrentFunctionName();
     auto parent =
         getOrCreateGlobalStringX(locInfo, parentFuncName.str(), parentFuncName);
@@ -1271,8 +1272,8 @@ class MLIRGenImpl {
   }
   mlir::FuncOp mlirGenTomlConfiguration(stx::ModuleAST &moduleAST) {
     auto funcName = SOL_BUILT_IN_MODEL_CARGO_TOML;
-    auto location = builder.getFileLineColLoc(
-        builder.getIdentifier(moduleAST.path_config), 0, 0);
+    auto location = mlir::FileLineColLoc::get(
+        builder.getStringAttr(moduleAST.path_config), 0, 0);
     auto func_type = builder.getFunctionType(llvmI8PtrTy, llvmI64Ty);
     auto function = mlir::FuncOp::create(location, funcName, func_type);
 
@@ -1282,7 +1283,7 @@ class MLIRGenImpl {
 
     for (auto &[key, value] : moduleAST.configMap) {
       auto mlocation =
-          builder.getFileLineColLoc(builder.getIdentifier("Cargo.toml"), 0, 0);
+          mlir::FileLineColLoc::get(builder.getStringAttr("Cargo.toml"), 0, 0);
       SmallVector<mlir::Value, 2> operands;
       Value v1 = getOrCreateGlobalStringX(mlocation, key, key);
       Value v2 = getOrCreateGlobalStringX(mlocation, value, value);
@@ -1300,8 +1301,8 @@ class MLIRGenImpl {
   }
   mlir::FuncOp mlirGenDeclareIdAddresses(stx::ModuleAST &moduleAST) {
     auto funcName = SOL_BUILT_IN_MODEL_DECLARE_ID_ADDRESS;
-    auto location = builder.getFileLineColLoc(
-        builder.getIdentifier(moduleAST.path_config), 0, 0);
+    auto location = mlir::FileLineColLoc::get(
+        builder.getStringAttr(moduleAST.path_config), 0, 0);
     auto func_type = builder.getFunctionType(llvmI8PtrTy, llvmI64Ty);
     auto function = mlir::FuncOp::create(location, funcName, func_type);
 
@@ -1311,7 +1312,7 @@ class MLIRGenImpl {
 
     for (auto addr : declareIdAddresses) {
       auto mlocation =
-          builder.getFileLineColLoc(builder.getIdentifier("lib.rs"), 0, 0);
+          mlir::FileLineColLoc::get(builder.getStringAttr("lib.rs"), 0, 0);
       SmallVector<mlir::Value, 1> operands;
       Value v1 = getOrCreateGlobalStringX(mlocation, addr, addr);
       operands.push_back(v1);
@@ -1332,7 +1333,7 @@ class MLIRGenImpl {
       funcName = funcName + "_" + std::to_string(LOWER_BOUND_ID);
 
     auto location =
-        builder.getFileLineColLoc(builder.getIdentifier(moduleAST.path), 0, 0);
+        mlir::FileLineColLoc::get(builder.getStringAttr(moduleAST.path), 0, 0);
     auto func_type = builder.getFunctionType(llvmI8PtrTy, llvmI64Ty);
     auto function = mlir::FuncOp::create(location, funcName, func_type);
 
@@ -1346,8 +1347,8 @@ class MLIRGenImpl {
 
     // all classes
     for (auto &[className, classAST] : classesInfoMap) {
-      auto mlocation = builder.getFileLineColLoc(
-          builder.getIdentifier(classAST->fileName), classAST->line, 0);
+      auto mlocation = mlir::FileLineColLoc::get(
+          builder.getStringAttr(classAST->fileName), classAST->line, 0);
       SmallVector<mlir::Value, 2> operands;
       // classAST->getName()
       // classAST->getSuperClassName()
@@ -1438,8 +1439,8 @@ class MLIRGenImpl {
   }
 };
 
-mlir::OwningModuleRef mlirGenFull(mlir::MLIRContext &context,
-                                  stx::ModuleAST &moduleAST) {
+mlir::OwningOpRef<mlir::ModuleOp> mlirGenFull(mlir::MLIRContext &context,
+                                              stx::ModuleAST &moduleAST) {
   return MLIRGenImpl(context).mlirGen(moduleAST);
 };
 

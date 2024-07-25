@@ -1,10 +1,9 @@
 #include <llvm/ADT/Triple.h>
-#include <llvm/IR/LegacyPassManager.h>
-#include <llvm/CodeGen/CommandFlags.h>
-//#include <llvm/CodeGen/CommandFlags.inc>
-#include <llvm/Support/TargetRegistry.h>
 #include <llvm/Analysis/TargetLibraryInfo.h>
 #include <llvm/Analysis/TargetTransformInfo.h>
+#include <llvm/CodeGen/CommandFlags.h>
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/MC/TargetRegistry.h>
 #include <llvm/Target/TargetMachine.h>
 
 #include "aser/PreProcessing/IRPreProcessor.h"

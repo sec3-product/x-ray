@@ -70,19 +70,6 @@ bool UnrollThreadCreateLoopPass::runOnLoop(Loop *L, LPPassManager &LPM) {
                     // llvm::outs() << "is the latch also the exiting block?"
                     //              << (L->getLoopLatch() != L->getExitingBlock()) << "\n";
 
-                    // NOTE: The calculation of TripCount is taken from LoopUnrollPass.cpp
-                    unsigned TripCount = 0;
-                    unsigned TripMultiple = 1;
-                    // If there are multiple exiting blocks but one of them is the latch, use the
-                    // latch for the trip count estimation. Otherwise insist on a single exiting
-                    // block for the trip count estimation.
-                    BasicBlock *ExitingBlock = L->getLoopLatch();
-                    if (!ExitingBlock || !L->isLoopExiting(ExitingBlock)) ExitingBlock = L->getExitingBlock();
-                    if (ExitingBlock) {
-                        TripCount = SE->getSmallConstantTripCount(L, ExitingBlock);
-                        TripMultiple = SE->getSmallConstantTripMultiple(L, ExitingBlock);
-                    }
-
                     // NOTE: the peelLoop API seems to have soundness issue
                     // some of the loop will fail the assertion if we turn on the assertions in LLVM
                     // peelLoop(L, 1, LI, SE, DT, AC, true);
@@ -90,8 +77,7 @@ bool UnrollThreadCreateLoopPass::runOnLoop(Loop *L, LPPassManager &LPM) {
                     // NOTE: it seems only if we set ULO.count to 2, the loop unroll will take effect
                     LOG_DEBUG("unroll loop once at: {}", *inst);
                     // NOTE: the options can be more carefully tuned, I don't understand all of them -- yanze
-                    UnrollLoopOptions ULO = {2,    TripCount,    true, false, false, true,
-                                             true, TripMultiple, 0,    false, false};
+                    UnrollLoopOptions ULO = {2, true, false, false, false, false};
                     auto result = UnrollLoop(L, ULO, LI, SE, DT, AC, TTI, &ORE, true);
                     //auto result = UnrollLoop(L, ULO, LI, SE, DT, AC, &ORE, true);
                     if (result == LoopUnrollResult::Unmodified) {

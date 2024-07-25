@@ -5,12 +5,12 @@ DOCKER_IMAGE_VERSION = 1.2
 RUST = false
 BINARY_PATH = ~/local/sec3/bin/coderrect
 
+# The LLVM version to use.
+LLVM_VERSION ?= 14.0.6
+
 # The default prebuilt image, which is hosted on DigitalOcean (private)
 # registry. Use `doctl registry login` to ensure the access.
-LLVM_PREBUILT_IMAGE ?= registry.digitalocean.com/soteria/llvm-prebuilt:latest
-
-# The LLVM version to use.
-LLVM_VERSION ?= 12.0.1
+LLVM_PREBUILT_IMAGE ?= registry.digitalocean.com/soteria/llvm-prebuilt-$(LLVM_VERSION):latest
 
 X_RAY_IMAGE ?= x-ray:latest
 

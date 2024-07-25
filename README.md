@@ -106,9 +106,9 @@ Here's a simplified instruction for manually build and run x-ray tool on your lo
 
 ### Dependencies
 
-- LLVM 12.0.1 (support of higher version is WIP)
+- LLVM 14.0.6 (support of higher version is WIP)
 - Cmake 3.26 or higher
-- Go 1.16 or higher
+- Go 1.22 or higher
 - ANTLR 4.13.1 (only needed for parser development)
 
 ### Update CMake

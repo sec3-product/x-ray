@@ -27,7 +27,7 @@ RUN wget --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER
 ARG MAKE_THREADS=
 
 # Build LLVM from source code.
-ARG LLVM_VERSION=12.0.1
+ARG LLVM_VERSION=14.0.6
 RUN git clone --branch=llvmorg-${LLVM_VERSION} --single-branch --depth=1 https://github.com/llvm/llvm-project.git
 
 WORKDIR /llvm-project/build
