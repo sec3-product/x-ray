@@ -7,7 +7,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y \
         build-essential \
+        gcc-12 \
         git \
+        g++-12 \
         software-properties-common \
         wget \
     && apt-get clean \
@@ -31,6 +33,8 @@ RUN git clone --branch=llvmorg-${LLVM_VERSION} --single-branch --depth=1 https:/
 WORKDIR /llvm-project/build
 RUN cmake \
     -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_C_COMPILER=gcc-12 \
+    -DCMAKE_CXX_COMPILER=g++-12 \
     -DCMAKE_INSTALL_PREFIX=/usr/local/llvm \
     -DLLVM_ENABLE_PROJECTS="clang;openmp;compiler-rt;lld;mlir" \
     -DLLVM_ENABLE_RTTI=ON \
