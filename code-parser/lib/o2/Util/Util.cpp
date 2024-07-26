@@ -1,5 +1,7 @@
 #include "o2/Util/Util.h"
 
+#include <map>
+
 #include <llvm/Demangle/Demangle.h>
 #include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/IR/IntrinsicInst.h>
@@ -408,12 +410,12 @@ static bool isLooslyCompatibleCall(const llvm::CallBase *CS, const llvm::Functio
         return false;
     }
 
-    if (CS->getNumArgOperands() != target->arg_size() && !target->isVarArg()) {
+    if (CS->arg_size() != target->arg_size() && !target->isVarArg()) {
         // two non-vararg function should at have same number of parameters
         return false;
     }
 
-    if (target->isVarArg() && target->arg_size() > CS->getNumArgOperands()) {
+    if (target->isVarArg() && target->arg_size() > CS->arg_size()) {
         // calling a varargs function, the callsite should offer at least the
         // same number of parameters required by var-args
         return false;

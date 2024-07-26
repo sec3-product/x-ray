@@ -15,13 +15,17 @@
 //===----------------------------------------------------------------------===//
 
 #include "LinkModules.h"
-#include "llvm/ADT/SetVector.h"
-#include "llvm/IR/Comdat.h"
-#include "llvm/IR/DiagnosticPrinter.h"
-#include "llvm/IR/GlobalValue.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/Support/Error.h"
+
+#include <map>
+#include <vector>
+
+#include <llvm/ADT/SetVector.h>
+#include <llvm/IR/Comdat.h>
+#include <llvm/IR/DiagnosticPrinter.h>
+#include <llvm/IR/GlobalValue.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+#include <llvm/Support/Error.h>
 
 using namespace llvm;
 using namespace aser;
@@ -30,94 +34,94 @@ namespace {
 
 /// This is an implementation class for the LinkModules function, which is the
 /// entrypoint for this file.
-    class ModuleLinker {
-        IRMover &Mover;
-        std::unique_ptr<llvm::Module> SrcM;
+class ModuleLinker {
+    IRMover &Mover;
+    std::unique_ptr<llvm::Module> SrcM;
 
-        SetVector<GlobalValue *> ValuesToLink;
+    SetVector<GlobalValue *> ValuesToLink;
 
-        /// For symbol clashes, prefer those from Src.
-        unsigned Flags;
+    /// For symbol clashes, prefer those from Src.
+    unsigned Flags;
 
-        /// List of global value names that should be internalized.
-        StringSet<> Internalize;
+    /// List of global value names that should be internalized.
+    StringSet<> Internalize;
 
-        /// Function that will perform the actual internalization. The reason for a
-        /// callback is that the linker cannot call internalizeModule without
-        /// creating a circular dependency between IPO and the linker.
-        std::function<void(llvm::Module &, const StringSet<> &)> InternalizeCallback;
+    /// Function that will perform the actual internalization. The reason for a
+    /// callback is that the linker cannot call internalizeModule without
+    /// creating a circular dependency between IPO and the linker.
+    std::function<void(llvm::Module &, const StringSet<> &)> InternalizeCallback;
 
-        /// Used as the callback for lazy linking.
-        /// The mover has just hit GV and we have to decide if it, and other members
-        /// of the same comdat, should be linked. Every member to be linked is passed
-        /// to Add.
-        void addLazyFor(GlobalValue &GV, const IRMover::ValueAdder &Add);
+    /// Used as the callback for lazy linking.
+    /// The mover has just hit GV and we have to decide if it, and other members
+    /// of the same comdat, should be linked. Every member to be linked is passed
+    /// to Add.
+    void addLazyFor(GlobalValue &GV, const IRMover::ValueAdder &Add);
 
-        bool shouldOverrideFromSrc() { return Flags & Linker::OverrideFromSrc; }
-        bool shouldLinkOnlyNeeded() { return Flags & Linker::LinkOnlyNeeded; }
+    bool shouldOverrideFromSrc() { return Flags & Linker::OverrideFromSrc; }
+    bool shouldLinkOnlyNeeded() { return Flags & Linker::LinkOnlyNeeded; }
 
-        bool shouldLinkFromSource(bool &LinkFromSrc, const GlobalValue &Dest,
-                                  const GlobalValue &Src);
+    bool shouldLinkFromSource(bool &LinkFromSrc, const GlobalValue &Dest,
+                              const GlobalValue &Src);
 
-        /// Should we have mover and linker error diag info?
-        bool emitError(const Twine &Message) {
-            // SrcM->getContext().diagnose(LinkDiagnosticInfo(DS_Error, Message));
-            return true;
-        }
+    /// Should we have mover and linker error diag info?
+    bool emitError(const Twine &Message) {
+        // SrcM->getContext().diagnose(LinkDiagnosticInfo(DS_Error, Message));
+        return true;
+    }
 
-        bool getComdatLeader(Module &M, StringRef ComdatName,
-                             const GlobalVariable *&GVar);
-        bool computeResultingSelectionKind(StringRef ComdatName,
-                                           Comdat::SelectionKind Src,
-                                           Comdat::SelectionKind Dst,
-                                           Comdat::SelectionKind &Result,
-                                           bool &LinkFromSrc);
-        std::map<const Comdat *, std::pair<Comdat::SelectionKind, bool>>
-                ComdatsChosen;
-        bool getComdatResult(const Comdat *SrcC, Comdat::SelectionKind &SK,
-                             bool &LinkFromSrc);
-        // Keep track of the lazy linked global members of each comdat in source.
-        DenseMap<const Comdat *, std::vector<GlobalValue *>> LazyComdatMembers;
+    bool getComdatLeader(Module &M, StringRef ComdatName,
+                         const GlobalVariable *&GVar);
+    bool computeResultingSelectionKind(StringRef ComdatName,
+                                       Comdat::SelectionKind Src,
+                                       Comdat::SelectionKind Dst,
+                                       Comdat::SelectionKind &Result,
+                                       bool &LinkFromSrc);
+    std::map<const Comdat *, std::pair<Comdat::SelectionKind, bool>>
+            ComdatsChosen;
+    bool getComdatResult(const Comdat *SrcC, Comdat::SelectionKind &SK,
+                         bool &LinkFromSrc);
+    // Keep track of the lazy linked global members of each comdat in source.
+    DenseMap<const Comdat *, std::vector<GlobalValue *>> LazyComdatMembers;
 
-        /// Given a global in the source module, return the global in the
-        /// destination module that is being linked to, if any.
-        GlobalValue *getLinkedToGlobal(const GlobalValue *SrcGV) {
-            Module &DstM = Mover.getModule();
-            // If the source has no name it can't link.  If it has local linkage,
-            // there is no name match-up going on.
-            if (!SrcGV->hasName() || GlobalValue::isLocalLinkage(SrcGV->getLinkage()))
-                return nullptr;
+    /// Given a global in the source module, return the global in the
+    /// destination module that is being linked to, if any.
+    GlobalValue *getLinkedToGlobal(const GlobalValue *SrcGV) {
+        Module &DstM = Mover.getModule();
+        // If the source has no name it can't link.  If it has local linkage,
+        // there is no name match-up going on.
+        if (!SrcGV->hasName() || GlobalValue::isLocalLinkage(SrcGV->getLinkage()))
+            return nullptr;
 
-            // Otherwise see if we have a match in the destination module's symtab.
-            GlobalValue *DGV = DstM.getNamedValue(SrcGV->getName());
-            if (!DGV)
-                return nullptr;
+        // Otherwise see if we have a match in the destination module's symtab.
+        GlobalValue *DGV = DstM.getNamedValue(SrcGV->getName());
+        if (!DGV)
+            return nullptr;
 
-            // If we found a global with the same name in the dest module, but it has
-            // internal linkage, we are really not doing any linkage here.
-            if (DGV->hasLocalLinkage())
-                return nullptr;
+        // If we found a global with the same name in the dest module, but it has
+        // internal linkage, we are really not doing any linkage here.
+        if (DGV->hasLocalLinkage())
+            return nullptr;
 
-            // Otherwise, we do in fact link to the destination global.
-            return DGV;
-        }
+        // Otherwise, we do in fact link to the destination global.
+        return DGV;
+    }
 
-        /// Drop GV if it is a member of a comdat that we are dropping.
-        /// This can happen with COFF's largest selection kind.
-        void dropReplacedComdat(GlobalValue &GV,
-                                const DenseSet<const Comdat *> &ReplacedDstComdats);
+    /// Drop GV if it is a member of a comdat that we are dropping.
+    /// This can happen with COFF's largest selection kind.
+    void dropReplacedComdat(GlobalValue &GV,
+                            const DenseSet<const Comdat *> &ReplacedDstComdats);
 
-        bool linkIfNeeded(GlobalValue &GV);
+    bool linkIfNeeded(GlobalValue &GV);
 
-    public:
-        ModuleLinker(IRMover &Mover, std::unique_ptr<Module> SrcM, unsigned Flags,
-                     std::function<void(Module &, const StringSet<> &)>
-                     InternalizeCallback = {})
-                : Mover(Mover), SrcM(std::move(SrcM)), Flags(Flags),
-                  InternalizeCallback(std::move(InternalizeCallback)) {}
+public:
+    ModuleLinker(IRMover &Mover, std::unique_ptr<Module> SrcM, unsigned Flags,
+                 std::function<void(Module &, const StringSet<> &)>
+                 InternalizeCallback = {})
+            : Mover(Mover), SrcM(std::move(SrcM)), Flags(Flags),
+              InternalizeCallback(std::move(InternalizeCallback)) {}
 
-        bool run();
-    };
+    bool run();
+};
 }
 
 static GlobalValue::VisibilityTypes

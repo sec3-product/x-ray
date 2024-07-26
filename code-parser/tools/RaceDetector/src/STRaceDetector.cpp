@@ -276,6 +276,7 @@ void initParserForFile(stx::ModuleAST *module, std::string &fullPathName,
   auto fnBaseName = fullPathName.substr(found1 + 1, found2 - found1 - 1);
   process(fullPathName, fnBaseName, 0, (char *)contents.c_str());
 }
+
 bool handleRustFile(stx::ModuleAST *module, std::string &fullPathName,
                     stx::ThreadPool &pool) {
   // is it a file?
@@ -291,6 +292,7 @@ bool handleRustFile(stx::ModuleAST *module, std::string &fullPathName,
 
   return true;
 }
+
 bool handleDiretory(DIR *dir, stx::ModuleAST *module, std::string &fullPathName,
                     stx::ThreadPool &pool) {
   StringRef pathname_stringref(fullPathName);
@@ -424,19 +426,21 @@ bool handleDiretory(DIR *dir, stx::ModuleAST *module, std::string &fullPathName,
   }
   return true;
 }
+
 bool handleTomlFile(stx::ModuleAST *module, std::string &fullPathName,
                     StringRef &path, stx::ThreadPool &pool) {
   // TODO: toml
   //   [profile.release]
   // overflow-checks = true     # Disable integer overflow checks.
 }
+
 bool initParser(stx::ModuleAST *module) {
   // std::ios::sync_with_stdio(true);
   // if(argc!=3){
   //     llvm::outs() << "Usage: <file in.st> <test file.ws>" << "\n";
   //     return 0;
   // }
-  int COUNT = thread::hardware_concurrency();
+  int COUNT = std::thread::hardware_concurrency();
   if (DEBUG_SOL) COUNT = 1;  // make sure no races
   stx::ThreadPool pool(COUNT);
   LOWER_BOUND_ID = NUM_LOW_BOUND;
@@ -479,7 +483,7 @@ int dumpLLVMIR(mlir::ModuleOp module) {
   //   }
   if (ConfigDumpIR || ConfigOutputFile != "t.ll") {
     std::error_code err;
-    llvm::raw_fd_ostream outfile(ConfigOutputFile, err, llvm::sys::fs::F_None);
+    llvm::raw_fd_ostream outfile(ConfigOutputFile, err, llvm::sys::fs::OF_None);
     if (err) {
       if (DEBUG_SOL) llvm::errs() << "Error dumping IR!\n";
     }
@@ -540,6 +544,7 @@ void initLLVMIR(stx::ModuleAST *moduleAST) {
   }
   dumpLLVMIR(*module);
 }
+
 int testThreadPool() {
   stx::ThreadPool pool(4);
   std::vector<std::future<int>> results;
@@ -558,6 +563,7 @@ int testThreadPool() {
 
   return 0;
 }
+
 int main(int argc, char **argv) {
   // testThreadPool();
   // llvm::outs() << sizeof(std::pair<NodeID, NodeID>) << ", " <<

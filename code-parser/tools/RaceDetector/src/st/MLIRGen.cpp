@@ -1,20 +1,20 @@
 #include "st/MLIRGen.h"
 
-#include <llvm/IR/IRBuilder.h>
-
 #include <numeric>
 
-#include "llvm/ADT/STLExtras.h"
-#include "llvm/ADT/ScopedHashTable.h"
-#include "llvm/Support/raw_ostream.h"
-#include "mlir/Dialect/LLVMIR/LLVMTypes.h"
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
-#include "mlir/IR/Attributes.h"
-#include "mlir/IR/Builders.h"
-#include "mlir/IR/FunctionSupport.h"
-#include "mlir/IR/MLIRContext.h"
-#include "mlir/IR/Types.h"
-#include "mlir/IR/Verifier.h"
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/ScopedHashTable.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/Support/raw_ostream.h>
+#include <mlir/Dialect/LLVMIR/LLVMTypes.h>
+#include <mlir/Dialect/StandardOps/IR/Ops.h>
+#include <mlir/IR/Attributes.h>
+#include <mlir/IR/Builders.h>
+#include <mlir/IR/FunctionSupport.h>
+#include <mlir/IR/MLIRContext.h>
+#include <mlir/IR/Types.h>
+#include <mlir/IR/Verifier.h>
+
 #include "st/ParserWrapper.h"
 #include "st/STParserListener.h"
 #include "st/ScopedHashTableX.h"
@@ -141,11 +141,13 @@ class MLIRGenImpl {
     return nullptr;
   }
 };
+
 // The public API for codegen.
 mlir::OwningModuleRef mlirGen(mlir::MLIRContext &context,
                               ModuleAST &moduleAST) {
   return MLIRGenImpl(context).mlirGen(moduleAST);
 };
+
 }  // namespace st
 
 namespace stx {
@@ -503,7 +505,7 @@ class MLIRGenImpl {
     return SymbolRefAttr::get(name, context);
   }
   FlatSymbolRefAttr getOrInsertBuiltInBlockParamFunctionX(
-      vector<mlir::Value> &operands) {
+      std::vector<mlir::Value> &operands) {
     auto name =
         SOL_BUILT_IN_MODEL_BLOCK_PARAM + "." + std::to_string(ANON_FUNC_INDEX);
 
@@ -881,9 +883,9 @@ class MLIRGenImpl {
     auto retBlock = getOrCreateGlobalStringX(locInfo, funcName, funcName);
     {
       // call st.model.blockParam for out variables
-      vector<mlir::Value> blockOperands;
+      std::vector<mlir::Value> blockOperands;
       blockOperands.push_back(retBlock);
-      vector<string> outerParameterVars;
+      std::vector<string> outerParameterVars;
       for (auto o : block.outerVars) {
         // cout << "finding var to outerscope: " << o << endl;
         if (symbolTableStack.back()->count(o)) {
@@ -1434,7 +1436,8 @@ class MLIRGenImpl {
     popLastFunction(funcName);
     return function;
   }
-};  // namespace stx
+};
+
 mlir::OwningModuleRef mlirGenFull(mlir::MLIRContext &context,
                                   stx::ModuleAST &moduleAST) {
   return MLIRGenImpl(context).mlirGen(moduleAST);
