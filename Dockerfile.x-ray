@@ -28,9 +28,7 @@ RUN apt-get update \
         build-essential \
         golang-go \
         wget \
-        gcc-12 \
         git \
-        g++-12 \
         libxml2-dev \
         zlib1g-dev \
     && apt-get clean \
@@ -52,8 +50,8 @@ COPY code-detector x-ray-toolchain/code-detector
 RUN mkdir -p x-ray-toolchain/code-detector/build \
     && cd x-ray-toolchain/code-detector/build \
     && cmake \
-        -DCMAKE_C_COMPILER=gcc-12 \
-        -DCMAKE_CXX_COMPILER=g++-12 \
+        -DCMAKE_C_COMPILER=/usr/local/llvm/bin/clang \
+        -DCMAKE_CXX_COMPILER=/usr/local/llvm/bin/clang++ \
         -DLLVM_VERSION=${LLVM_VERSION} \
         .. \
     && make -j${MAKE_THREADS}
@@ -64,8 +62,8 @@ RUN mkdir -p x-ray-toolchain/code-parser/build \
     && cd x-ray-toolchain/code-parser/build \
     && cmake \
         -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_C_COMPILER=gcc-12 \
-        -DCMAKE_CXX_COMPILER=g++-12 \
+        -DCMAKE_C_COMPILER=/usr/local/llvm/bin/clang \
+        -DCMAKE_CXX_COMPILER=/usr/local/llvm/bin/clang++ \
         -DLLVM_VERSION=${LLVM_VERSION} \
         .. \
     && make -j${MAKE_THREADS}
@@ -79,13 +77,14 @@ RUN cd x-ray-toolchain/coderrect/gosrc \
 
 FROM ubuntu:22.04
 COPY --from=builder /usr/local/sec3 /usr/local/sec3
-# `libomp.so` is wanted by `racedetector`.
+# `libomp.so` is wanted by `racedetector` (via LD_PRELOAD).
 COPY --from=builder /usr/local/llvm/lib/libomp.so /usr/local/sec3/bin/libomp.so
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y \
         libgomp1 \
+        libxml2-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
