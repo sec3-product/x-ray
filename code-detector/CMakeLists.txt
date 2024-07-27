@@ -24,8 +24,7 @@ if(NOT DEFINED LLVM_DIR)
     endif()
 endif()
 
-# use C++14 as llvm-11 does
-set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ standard to conform to")
+set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to conform to")
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
 
@@ -45,7 +44,7 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSPDLOG_ACTIVE_LEVEL=6")  # log level = warn
 endif()
 
-set(COMMON_CXX_FLAG "-fno-rtti -Wno-c++17-extensions -DSPDLOG_NO_EXCEPTIONS")
+set(COMMON_CXX_FLAG "-fno-rtti -DSPDLOG_NO_EXCEPTIONS")
 
 if (MINGW)
     set(COMMON_CXX_FLAG "${COMMON_CXX_FLAG} -Wa,-mbig-obj")
