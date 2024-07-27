@@ -14,12 +14,13 @@
 
 using namespace std;
 using namespace antlr4;
+
 namespace stx {
 /// Structure definition a location in a file.
 struct Location {
   std::string file;  ///< filename.
-  int line;          ///< line number.
-  int col;           ///< column number.
+  size_t line;       ///< line number.
+  size_t col;        ///< column number.
 };
 
 class BaseAST {
@@ -29,8 +30,8 @@ class BaseAST {
   BaseAST() {}
 
   string Filename = "";
-  int line_number_start = 0, line_number_end = 0, column_start = 0,
-      column_end = 0;
+  size_t line_number_start = 0, line_number_end = 0, column_start = 0,
+         column_end = 0;
   string ASTType = "";
   int level = 0;
   Location loc;

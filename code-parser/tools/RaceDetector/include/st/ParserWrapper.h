@@ -15,15 +15,17 @@ namespace st {
 /// Structure definition a location in a file.
 struct Location {
   std::string file;  ///< filename.
-  int line;          ///< line number.
-  int col;           ///< column number.
+  size_t line;       ///< line number.
+  size_t col;        ///< column number.
 };
+
 /// A variable type with either name or shape information.
 struct VarType {
  public:
   std::string name;
   std::vector<int64_t> shape;
 };
+
 /// Base class for all expression nodes.
 class ExprAST {
  public:
