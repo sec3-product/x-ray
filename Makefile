@@ -111,3 +111,6 @@ build-image:
 	  --build-arg LLVM_PREBUILT_IMAGE=$(LLVM_PREBUILT_IMAGE) \
 	  --build-arg LLVM_VERSION=$(LLVM_VERSION) \
 	  -f Dockerfile.x-ray .
+
+run-test:
+	@docker run --rm -v $(pwd)/demo:/workspace/demo $(X_RAY_IMAGE) /workspace/demo/jet-v1
