@@ -98,14 +98,21 @@ push-llvm-prebuilt-image: build-llvm-prebuilt-image
 	@docker push $(LLVM_PREBUILT_IMAGE)
 
 build-image:
-	@if ! docker inspect --type=image $(LLVM_PREBUILT_IMAGE) > /dev/null 2>&1; then \
+	@if [ "$(CI)" = "true" ]; then \
+	  echo "CI build detected. Pulling $(LLVM_PREBUILT_IMAGE) to ensure using the latest."; \
 	  docker pull $(LLVM_PREBUILT_IMAGE) || \
 	    (echo "Error: Failed to pull $(LLVM_PREBUILT_IMAGE)." && \
-	     echo "Please make sure you are logged into the registry with the correct permissions." && \
-	     echo "You can log in with: `doctl registry login` or manually pull the image." && \
-	     exit 1) \
+	     exit 1); \
 	else \
-	  echo "$(LLVM_PREBUILT_IMAGE) already exists locally. Skipped pulling."; \
+	  if ! docker inspect --type=image $(LLVM_PREBUILT_IMAGE) > /dev/null 2>&1; then \
+	    docker pull $(LLVM_PREBUILT_IMAGE) || \
+	      (echo "Error: Failed to pull $(LLVM_PREBUILT_IMAGE)." && \
+	       echo "Please make sure you are logged into the registry with the correct permissions." && \
+	       echo "You can log in with: `doctl registry login` or manually pull the image." && \
+	       exit 1) \
+	  else \
+	    echo "$(LLVM_PREBUILT_IMAGE) already exists locally. Skipped pulling."; \
+	  fi; \
 	fi
 	@docker build -t $(X_RAY_IMAGE) \
 	  --build-arg LLVM_PREBUILT_IMAGE=$(LLVM_PREBUILT_IMAGE) \

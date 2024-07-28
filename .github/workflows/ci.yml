@@ -11,6 +11,8 @@ on:
 jobs:
   build-and-run:
     runs-on: self-hosted
+    env:
+      X_RAY_IMAGE: x-ray-ci
 
     steps:
       - name: Checkout repository
