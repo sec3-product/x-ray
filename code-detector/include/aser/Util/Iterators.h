@@ -4,6 +4,8 @@
 #ifndef ASER_PTA_ITERATORS_H
 #define ASER_PTA_ITERATORS_H
 
+#include <iterator>
+
 #include <llvm/ADT/iterator.h>
 
 namespace aser {
@@ -115,8 +117,12 @@ struct ConcatIterator : public ConcatIterator<Wrapped, N - 1, ValueT> {
 };
 
 template <typename Wrapped, typename ValueT>
-struct ConcatIterator<Wrapped, 1, ValueT>
-    : public std::iterator<std::forward_iterator_tag, ValueT> {
+struct ConcatIterator<Wrapped, 1, ValueT> {
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = ValueT;
+    using difference_type = std::ptrdiff_t;
+    using pointer = ValueT*;
+    using reference = ValueT&;
 
     using self = ConcatIterator<Wrapped, 1, ValueT>;
     using ReferenceT = ValueT &;
@@ -142,8 +148,6 @@ struct ConcatIterator<Wrapped, 1, ValueT>
 
     inline bool operator!=(const self &rhs) const { return !this->operator==(rhs); }
     inline bool operator==(const self &rhs) const { return cur == rhs.cur; }
-
-    //auto operator-> () -> decltype(cur.operator->()) { return cur.operator->(); }
 };
 
 // ASSUMPTION: E (a enum) and N are convertible
@@ -197,14 +201,15 @@ struct ConcatIteratorWithTag : public ConcatIteratorWithTag<Wrapped, N - 1, E, V
 };
 
 template <typename Wrapped, typename E, typename ValueT>
-struct ConcatIteratorWithTag<Wrapped, 1, E, ValueT>
-    : public std::iterator<std::forward_iterator_tag, const std::pair<E, ValueT>> {
+struct ConcatIteratorWithTag<Wrapped, 1, E, ValueT> {
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = const std::pair<E, ValueT>;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const std::pair<E, ValueT>*;
+    using reference = const std::pair<E, ValueT>&;
 
     using self = ConcatIteratorWithTag<Wrapped, 1, E, ValueT>;
-    // using ValueT = const std::pair<E, typename std::iterator_traits<Wrapped>::value_type>;
-    //using ReferenceT = ValueT &;
     using ReferenceT = std::pair<E, ValueT>;
-    //using PointerT = ValueT;
 
     Wrapped cur;
     Wrapped end;
@@ -285,6 +290,5 @@ public:
 };
 
 }  // namespace aser
-
 
 #endif
