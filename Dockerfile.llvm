@@ -7,9 +7,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y \
         build-essential \
-        gcc-12 \
+        clang-14 \
         git \
-        g++-12 \
         software-properties-common \
         wget \
     && apt-get clean \
@@ -31,13 +30,17 @@ ARG LLVM_VERSION=14.0.6
 RUN git clone --branch=llvmorg-${LLVM_VERSION} --single-branch --depth=1 https://github.com/llvm/llvm-project.git
 
 WORKDIR /llvm-project/build
+# LLVM_ENABLE_TERMINFO=OFF due to
+# https://github.com/llvm/llvm-project/issues/53950, and the feature isn't
+# needed for x-ray.
 RUN cmake \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_C_COMPILER=gcc-12 \
-    -DCMAKE_CXX_COMPILER=g++-12 \
+    -DCMAKE_C_COMPILER=clang-14 \
+    -DCMAKE_CXX_COMPILER=clang++-14 \
     -DCMAKE_INSTALL_PREFIX=/usr/local/llvm \
     -DLLVM_ENABLE_PROJECTS="clang;openmp;compiler-rt;lld;mlir" \
     -DLLVM_ENABLE_RTTI=ON \
+    -DLLVM_ENABLE_TERMINFO=OFF \
     -DLLVM_INCLUDE_BENCHMARKS=OFF \
     -DLLVM_INCLUDE_EXAMPLES=OFF \
     -DLLVM_INCLUDE_TESTS=OFF \
