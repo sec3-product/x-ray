@@ -30,7 +30,7 @@ jobs:
 
       - name: Test with demo program
         run: |
-          docker run --rm -v $(pwd)/demo:/workspace/demo x-ray:latest /workspace/demo/jet-v1
+          make -j run-test
 
       - name: Clean up containers
         if: always()
