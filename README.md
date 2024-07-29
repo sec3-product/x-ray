@@ -1,10 +1,21 @@
-# Solana Static Analysis Tool (X-Ray Toolchain)
+# X-Ray Toolchain: Solana Programs Static Analysis Tool
 
 ## Introduction
 
-TBA
+The X-Ray Toolchain is an open-source, cross-platform command-line interface
+(CLI) tool designed for static analysis of Solana programs and smart contracts
+written in Rust. The tool parses Rust programs, generates an Abstract Syntax
+Tree (AST), converts the AST to an LLVM Intermediate Representation (LLVM-IR)
+format, and applies static analysis over the LLVM-IR to capture potential
+issues.
+
+The toolchain is designed to be extensible, allowing developers to define
+custom rules. Developers can easily describe specific rules to analyze Rust
+applications via the toolchain.
 
 ### Features
+
+TBA
 
 ### Supported Solana Bug Pattern List
 
