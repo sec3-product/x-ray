@@ -8,31 +8,29 @@ import (
 	"fmt"
 	"io/fs"
 	"io/ioutil"
+	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
+	"strings"
 	"syscall"
+	"time"
+
+	"github.com/gookit/color"
+	toml "github.com/pelletier/go-toml"
+	bolt "go.etcd.io/bbolt"
 
 	"github.com/coderrect-inc/coderrect/gllvm/shared"
 	"github.com/coderrect-inc/coderrect/reporter"
 	"github.com/coderrect-inc/coderrect/util"
-	"github.com/coderrect-inc/coderrect/util/platform"
-	"github.com/gookit/color"
-
-	//	"log"
-	"os"
-	"os/exec"
-	"regexp"
-	"strings"
-	"time"
-
 	"github.com/coderrect-inc/coderrect/util/conflib"
 	"github.com/coderrect-inc/coderrect/util/jsonparser"
 	"github.com/coderrect-inc/coderrect/util/logger"
-	toml "github.com/pelletier/go-toml"
-	bolt "go.etcd.io/bbolt"
+	"github.com/coderrect-inc/coderrect/util/platform"
 )
 
 const (
@@ -325,12 +323,10 @@ func getRelativePath(cwd string, myFilepath string) string {
 	}
 }
 
-//
 // binaryPath is the absolute or relative path of a binary like "/home/jsong/project/libmath.a". binaryNameList
 // is a list of single-stage names such as ["libmath.a", "memcached-server", "memcached-benchmark"].
 //
 // if the filename of binaryPath belongs to binaryNameList (case-insensitive), returns true.
-//
 func belongsToList(binaryPath string, binaryNameList []string) bool {
 	_, filename := filepath.Split(binaryPath)
 	for i := 0; i < len(binaryNameList); i++ {
@@ -858,14 +854,15 @@ func addEntryPoints(jsonOptStr string, entryPoints []string) string {
 
 // 	cmdlineOpts.Opts = append(cmdlineOpts.Opts, arg)
 
-// 	if b, err := json.Marshal(&cmdlineOpts); err != nil {
-// 		logger.Warnf("Failed to marshal json. str=%s, err=%v", jsonOptStr, err)
-// 		return jsonOptStr
-// 	} else {
-// 		return string(b)
-// 	}
-// }
-//TODO find bc file from db
+//		if b, err := json.Marshal(&cmdlineOpts); err != nil {
+//			logger.Warnf("Failed to marshal json. str=%s, err=%v", jsonOptStr, err)
+//			return jsonOptStr
+//		} else {
+//			return string(b)
+//		}
+//	}
+//
+// TODO find bc file from db
 func getBCFilePath(execFileName string, coderrectBuildDir string) string {
 	bcFile, _ := shared.FindBCFilePathMapping(execFileName+".bc", coderrectBuildDir, false)
 	// check if bcFile doesn't exist.
@@ -1201,40 +1198,8 @@ func generateSolanaIR(args []string, srcFilePath string, tmpDir string) string {
 
 	return irFilePath
 }
-func checkCRSoteriaL() int {
-	var key1 string
-	var key2 string
-	var key3 string
-	key1 = "2zCz"
-	key2 = "2GgSoSS68eNJENWrYB48dMM1zmH8SZkgYneVDv2G4g"
-	key3 = "D6Es"
-	key := key1 + key2 + "RsVfwu5rNXtK5BKFxn7fSqX9BvrBc1rdPAeBEc" + key3
-	//fmt.Printf("key: %s\n", key)
-	input := os.Getenv("SOTERIA_LICENSE_KEY")
-	//fmt.Printf("input: %s\n", input)
-	if key != input {
-		return 1
-	} else {
-		time_now := time.Now().Unix()
-		//fmt.Printf("time_now: %s\n", time_now)
-		if time_now > 1646779189 {
-			return 2
-		}
-	}
-	return 0
-}
-func main() {
-	error_code := checkCRSoteriaL()
-	error_code = 0
-	if error_code > 0 {
-		if error_code == 1 {
-			fmt.Printf("ERROR: Invalid License Key.\nPlease set correct environment variable with your license key by:\nexport SOTERIA_LICENSE_KEY=your_valid_license_key\n")
-		} else {
-			fmt.Printf("ERROR: License Expired. Please contact soteria.dev\n")
-		}
-		os.Exit(error_code)
-	}
 
+func main() {
 	if len(os.Args) == 1 {
 		fmt.Printf("%s\n", usage)
 		return
