@@ -1260,21 +1260,6 @@ func main() {
 		os.Setenv("CODERRECT_BC_PATHS", bcPaths)
 	}
 
-	// set env variables for user specified libear intercepts
-	//   - CR_INTERCEPT_C_COMPILERS
-	//   - CR_INTERCEPT_CXX_COMPILERS
-	//   - CR_INTERCEPT_FORTRAN_COMPILERS
-	//   - CR_INTERCEPT_AR_LINKERS
-	//   - CR_INTERCEPT_LD_LINKERS
-	//   - CR_INTERCEPT_FILE_OPERATORS
-
-	os.Setenv("CR_INTERCEPT_C_COMPILERS", strings.Join(conflib.GetStrings("buildTools.cCompiler"), " "))
-	os.Setenv("CR_INTERCEPT_CXX_COMPILERS", strings.Join(conflib.GetStrings("buildTools.cxxCompiler"), " "))
-	os.Setenv("CR_INTERCEPT_FORTRAN_COMPILERS", strings.Join(conflib.GetStrings("buildTools.fortranCompiler"), " "))
-	os.Setenv("CR_INTERCEPT_AR_LINKERS", strings.Join(conflib.GetStrings("buildTools.archiver"), " "))
-	os.Setenv("CR_INTERCEPT_LD_LINKERS", strings.Join(conflib.GetStrings("buildTools.linker"), " "))
-	os.Setenv("CR_INTERCEPT_FILE_OPERATORS", strings.Join(conflib.GetStrings("buildTools.fileOp"), " "))
-
 	// Per COD-665, we add (or replace) "-logger.logFolder" in the cmdline opts
 	//
 	cmdlineOpts := addOrReplaceCommandline(conflib.GetCmdlineOpts(), "logger.logFolder", logger.GetLogFolder())

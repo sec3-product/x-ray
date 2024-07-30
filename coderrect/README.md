@@ -11,7 +11,6 @@ Since most components are small, we would like to manage them all in this single
   - `/tool`: Some frequently used tools/scripts (?)
   - `/util`: Utility libraries, including our conflib, jsonparser, and logger
 - `/installer`: Scripts for building Coderrect installation package
-- `/libear`: Coderrect's preload library to capture compilation commands
 
 # Quick start
 - Install Golang:
