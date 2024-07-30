@@ -3,7 +3,6 @@ This repo contains almost all components (except the LLVMRace and our customized
 Since most components are small, we would like to manage them all in this single repo.
 
 # What components are involved?
-- `/coderrect-exec`: Coderrect's exec wrapper
 - `/gosrc`: All executables written in Golang
   - `/cmd`: Main entries for go executables
   - `/gllvm`: Coderrect's customized gllvm
