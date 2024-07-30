@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,7 +12,6 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"syscall"
@@ -109,45 +107,6 @@ To automate the API analysis, please read the tutorial https://coderrect.com/ana
 type ExecutableInfo = reporter.ExecutableInfo
 type IndexInfo = reporter.IndexInfo
 
-/**
- * Checks if "path" is a file.
- */
-func isFile(path string) bool {
-	fi, err := os.Stat(path)
-	if err != nil {
-		return false
-	}
-
-	return fi.Mode().IsRegular()
-}
-
-func isDir(path string) bool {
-	fi, err := os.Stat(path)
-	if err != nil {
-		return false
-	}
-
-	return fi.Mode().IsDir()
-}
-
-func isSourceFile(sourceFile string) bool {
-	lcSourceFile := strings.ToLower(sourceFile)
-	sourceCodeSuffix := [...]string{
-		".c", ".cpp", ".cc", ".cxx", ".c++", ".cu",
-		".h", ".hxx", ".hh", ".hpp",
-		".swift", ".m",
-		".f", ".f90", ".f03", ".f68", ".f77", ".f95",
-	}
-
-	for _, s := range sourceCodeSuffix {
-		if strings.HasSuffix(lcSourceFile, s) {
-			return true
-		}
-	}
-
-	return false
-}
-
 func normalizeCmdlineArg(arg string) string {
 	tokens := strings.SplitN(arg, "=", 2)
 	if len(tokens) == 1 {
@@ -163,241 +122,6 @@ func normalizeCmdlineArg(arg string) string {
 			return arg
 		}
 	}
-}
-
-/**
- * we call the custom build command to build project rather than CLANG for the single-file
- * project and 'make' for a makefile-based project.
- *
- * the custom command line is stored in args. args[0] is the command, and args[1:] are
- * command-line arguments
- */
-func sortFoundExecutables(executables []string) []string {
-	sl := []string{}
-	testsl := []string{}
-
-	var m map[string]int
-	m = make(map[string]int)
-
-	i := len(executables) - 1
-	for i >= 0 {
-		// _, filename := path.Split(executables[i])
-		// tmp := strings.ToLower(filename)
-		tmp := strings.ToLower(executables[i])
-		if _, ok := m[tmp]; ok {
-			i--
-			continue
-		}
-		m[tmp] = 1
-		if strings.Contains(tmp, "test") || strings.Contains(tmp, "util") || strings.HasSuffix(tmp, "a.out") || strings.Contains(tmp, "/lib") {
-			// if strings.HasSuffix(tmp, "test") || strings.HasPrefix(tmp, "test") {
-			testsl = append(testsl, executables[i])
-		} else {
-			sl = append(sl, executables[i])
-		}
-		i--
-	}
-	logger.Infof("Generate the executable list. sl=%v, testsl=%v", sl, testsl)
-
-	maxCount := int(conflib.GetInt("maximumExecutablesCount", 99)) //default 99
-
-	if len(sl) < maxCount {
-		diff := maxCount - len(sl)
-		i = 0
-		for diff > 0 && i < len(testsl) {
-			sl = append(sl, testsl[i])
-			diff--
-			i++
-		}
-	} else {
-		// we pickup executable first, then .so file; ".a" files have lowest priorities.
-		sort.Slice(sl, func(i, j int) bool {
-			_, filename1 := filepath.Split(sl[i])
-			_, filename2 := filepath.Split(sl[j])
-
-			if strings.HasSuffix(filename1, ".a") {
-				if strings.HasSuffix(filename2, ".a") {
-					return filename1 <= filename2
-				} else {
-					return false
-				}
-			} else if strings.HasSuffix(filename1, ".so") {
-				if strings.HasSuffix(filename2, ".a") {
-					return true
-				} else if strings.HasSuffix(filename2, ".so") {
-					return filename1 <= filename2
-				} else {
-					return false
-				}
-			} else {
-				if strings.HasSuffix(filename2, ".a") || strings.HasSuffix(filename2, ".so") {
-					return true
-				} else {
-					return filename1 <= filename2
-				}
-			}
-		})
-		sl = sl[0:maxCount]
-	}
-
-	return sl
-}
-
-func getRelativePath(cwd string, myFilepath string) string {
-	cwdTokens := strings.Split(cwd, string(filepath.Separator))
-	filepathTokens := strings.Split(myFilepath, string(filepath.Separator))
-
-	cwdTokensIdx := 0
-	filepathTokensIdx := 0
-	for cwdTokensIdx < len(cwdTokens) {
-		if cwdTokens[cwdTokensIdx] == filepathTokens[filepathTokensIdx] {
-			cwdTokensIdx++
-			filepathTokensIdx++
-		} else {
-			break
-		}
-	}
-
-	remainingFilepath := strings.Join(filepathTokens[filepathTokensIdx:], string(filepath.Separator))
-	if cwdTokensIdx == len(cwdTokens) {
-		return remainingFilepath
-	} else {
-		parentPath := ""
-		for cwdTokensIdx < len(cwdTokens) {
-			parentPath += (".." + string(filepath.Separator))
-			cwdTokensIdx++
-		}
-		return parentPath + remainingFilepath
-	}
-}
-
-// binaryPath is the absolute or relative path of a binary like "/home/jsong/project/libmath.a". binaryNameList
-// is a list of single-stage names such as ["libmath.a", "memcached-server", "memcached-benchmark"].
-//
-// if the filename of binaryPath belongs to binaryNameList (case-insensitive), returns true.
-func belongsToList(binaryPath string, binaryNameList []string) bool {
-	_, filename := filepath.Split(binaryPath)
-	for i := 0; i < len(binaryNameList); i++ {
-		if strings.ToLower(filename) == strings.ToLower(binaryNameList[i]) {
-			return true
-		}
-	}
-	return false
-}
-
-func getAllExecFromDB() []string {
-	logger.Debugf("Find all the executable file path from bolt db.")
-
-	var execPathList []string
-	boltDbPath := os.Getenv("CODERRECT_BOLD_DB_PATH")
-	boltDb, err := bolt.Open(boltDbPath, 0666, nil)
-	if err != nil {
-		logger.Warnf("Failed to open bolt db. boltDbPath=%s, err=%v", boltDbPath, err)
-		return execPathList
-	}
-
-	boltDb.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(shared.BucketNameExecFile))
-		c := b.Cursor()
-
-		for k, _ := c.First(); k != nil; k, _ = c.Next() {
-			execPathList = append(execPathList, string(k))
-		}
-		return nil
-	})
-	boltDb.Close()
-
-	return execPathList
-}
-
-func getAllExecFromCargoBuild(buildDir string) []string {
-	logger.Debugf("Find all the executable file path from cargo build.")
-
-	var execPathList []string
-	// binDir := filepath.Join(buildDir, "debug")
-	// UPDATE: exetuables generated for tests won't be under debug library,
-	// so we have directly go to deps.
-	//
-	binDir := filepath.Join(buildDir, "bpfel-unknown-unknown", "release", "deps")
-	files, err := ioutil.ReadDir(binDir)
-	if err != nil {
-		logger.Warnf("Failed to open build directory. binDir=%s, err=%v", binDir, err)
-		// return execPathList
-	}
-	var bcFiles []string
-	for _, file := range files {
-		// if file.Mode().IsRegular() &&
-		// 	!strings.HasPrefix(file.Name(), ".") &&
-		// 	!strings.HasSuffix(file.Name(), ".d") &&
-		// 	!strings.HasSuffix(file.Name(), ".rlib") {
-		// 	execPathList = append(execPathList, filepath.Join(binDir, file.Name()))
-		// }
-		if strings.HasSuffix(file.Name(), ".ll") {
-			fullName := filepath.Join(binDir, file.Name())
-			bcFiles = append(bcFiles, fullName)
-			execPathList = append(execPathList, fullName)
-			//fmt.Println("DEBUG adding ll file: %", fullName)
-		}
-	}
-	if conflib.GetBool("analyzeAll", false) {
-		releaseDir := filepath.Join(buildDir, "bpfel-unknown-unknown", "release")
-		outputFile := filepath.Join(releaseDir, "all.ll")
-		var linkArgs []string
-		linkArgs = append(linkArgs, "-o", outputFile)
-		linkArgs = append(linkArgs, bcFiles...)
-
-		success := shared.LinkSolanaBCFiles(linkArgs)
-		if !success {
-			return execPathList
-		}
-		var execPathList0 []string
-		execPathList0 = append(execPathList0, outputFile)
-		return execPathList0
-	}
-
-	exampleDir := filepath.Join(buildDir, "bpfel-unknown-unknown", "release")
-	files, err = ioutil.ReadDir(exampleDir)
-	if err != nil {
-		logger.Warnf("Failed to open build directory. exampleDir=%s, err=%v", exampleDir, err)
-		//return execPathList
-	}
-	// Binary in Rust has versions alias
-	// e.g., crossbeam_tail_index and crossbeam_tail_index-ce4dd1fbc9d180b5
-	// the latter has corresponding crossbeam_tail_index-ce4dd1fbc9d180b5.ll
-	// we use that heuristics to pick only the versioned binary
-	cacheNames := make(map[string]struct{})
-	var exampleBins []string
-	for _, file := range files {
-		if file.Mode().IsRegular() &&
-			!strings.HasPrefix(file.Name(), ".") &&
-			!strings.HasSuffix(file.Name(), ".bc") &&
-			!strings.HasSuffix(file.Name(), ".d") &&
-			!strings.HasSuffix(file.Name(), ".o") {
-			fullName := filepath.Join(exampleDir, file.Name())
-			if strings.HasSuffix(file.Name(), ".ll") {
-				cacheNames[fullName] = struct{}{}
-			} else {
-				exampleBins = append(exampleBins, fullName)
-
-			}
-		}
-	}
-	re := regexp.MustCompile("(?P<exe>.*)-[0-9a-z]+$")
-	for _, exampleBin := range exampleBins {
-		correspondingIRName := exampleBin + ".ll"
-		_, ok := cacheNames[correspondingIRName]
-		if ok {
-			match := re.FindStringSubmatch(exampleBin)
-			if len(match) != 2 || re.SubexpNames()[1] != "exe" {
-				logger.Warnf("Failed to find unversioned example binary for: %s", exampleBin)
-				continue
-			}
-			exeName := match[1]
-			execPathList = append(execPathList, exeName)
-		}
-	}
-
-	return execPathList
 }
 
 func searchFile(targetDir string, g *regexp.Regexp) (bool, string) {
@@ -437,170 +161,6 @@ func getCargoTargetBcFile(buildDir string, exeName string) string {
 	}
 	logger.Warnf("Failed to find IR file for binary: %s in directory %s", exeName, buildDir)
 	return ""
-}
-
-/**
- * Returns a list of executable/library generated by a project and a boolean vairable
- * that determines if user input contains executable name that does not exist, return
- * true, if there is input executables that don't exist, otherwise return false.
- *
- * If the user specifies the configuration of "executable" that is a comma-separated list,
- * getExecutablePathList() returns the list of executables whose name belong to "executable" list
- * (note that we compare filename case-insensitively).
- *
- * If the project generates only one executable/library this function return it immediately.
- *
- * Otherwise, getExecutablePathList() asks the user to pick up several executables interactively.
- *
- * Only the binary whose names statisfy the following criteria will be considered
- *   1. the name isn't end with ".o"
- *   2. the file is executable
- *   3. the file isn't a hidden file
- *
- */
-func getExecutablePathList(token string, buildDir string, isCargoBuild bool) ([]string, bool) {
-	var execPathList []string
-	// FIXME: For custom build that contains cargo, it may contain both C++ targets and rust targets
-	if isCargoBuild {
-		execPathList = getAllExecFromCargoBuild(buildDir)
-	} else {
-		execPathList = getAllExecFromDB()
-	}
-
-	inputExecutableNames := conflib.GetString("analyzeBinaries", "")
-	inputExecutableNameList := strings.Split(inputExecutableNames, ",")
-	var foundExecutableList []string
-	var inputFoundExecutaleList []string
-	for i := 0; i < len(execPathList); i++ {
-		exePath := execPathList[i]
-		if strings.HasSuffix(exePath, ".ll") { //for ll file directly
-			//foundExecutableList = append(foundExecutableList, exePath)
-		} else {
-			if strings.HasSuffix(exePath, ".o") ||
-				strings.HasSuffix(exePath, "conftest") ||
-				strings.HasSuffix(exePath, "libgtest_main.a") ||
-				strings.HasSuffix(exePath, "libgmock_main.a") ||
-				strings.HasSuffix(exePath, "libgtest.a") ||
-				strings.HasSuffix(exePath, "libgmock.a") ||
-				(!platform.IsExecutable(exePath) && !platform.IsLibrary(exePath)) {
-				continue
-			}
-		}
-		// check if user has specified exe to analyze
-		if len(inputExecutableNames) > 0 && belongsToList(exePath, inputExecutableNameList) {
-			inputFoundExecutaleList = append(inputFoundExecutaleList, exePath)
-		} else {
-			_, filename := path.Split(exePath)
-			// ignore all hidden files
-			if !strings.HasPrefix(filename, ".") {
-				foundExecutableList = append(foundExecutableList, exePath)
-			}
-		}
-	}
-	// if user has specified exes to analyze, return the list of exes found
-	if len(inputExecutableNames) > 0 {
-		if len(inputFoundExecutaleList) > 0 {
-			if len(inputExecutableNameList) == len(inputFoundExecutaleList) {
-				return inputFoundExecutaleList, false
-			}
-		}
-		// failed to find some specified input executables, return the boolean as true.
-		return inputFoundExecutaleList, true
-	}
-
-	// If user doesn't specify exe names to analyze
-	// Use interactive mode for user to select exes they want to analyze
-	foundExecutableCnt := len(foundExecutableList)
-	if foundExecutableCnt == 0 {
-		return nil, false
-	} else if foundExecutableCnt == 1 {
-		// it's the only choice, let's return it immediately
-		return foundExecutableList, false
-	}
-
-	// the project does generate multiple executables or libaries.
-	if conflib.GetBool("analyzeAll", false) {
-		return foundExecutableList, false
-	}
-
-	// we show the list to screen and allow the user to pick up.
-	// in case there are too many executables, the following rules are
-	// used to display executables
-	//
-	//   1. sort executables in the reverse order when they were generated
-	//   2. name with "test" ad suffix or prefix will have lowest priority
-	//   3. display at most 20
-	//
-	var selectedExe []string
-
-	// print the executable list with ord numbers
-	cwd, _ := os.Getwd()
-	foundExecutableList = sortFoundExecutables(foundExecutableList)
-	fmt.Println(multipleExecutableMsg)
-	for i, s := range foundExecutableList {
-		ord := i + 1
-		relativePath := getRelativePath(cwd, s)
-		fmt.Printf("%2d) %s\n", ord, relativePath)
-	}
-	fmt.Println("")
-
-	// parse user's input
-	reader := bufio.NewReader(os.Stdin)
-	for true {
-		selectedExe = nil
-		fmt.Print("Please select binaries by entering their ordinal numbers (e.g. 1,2,6):")
-		text, _ := reader.ReadString('\n')
-		text = strings.TrimSpace(strings.Replace(text, "\n", "", -1))
-		if len(text) == 0 {
-			continue
-		}
-
-		tmpTokens := strings.Split(text, ",")
-		validInput := true
-		for i := 0; i < len(tmpTokens); i++ {
-			if ord, err := strconv.Atoi(tmpTokens[i]); err != nil || ord <= 0 || ord > foundExecutableCnt {
-				fmt.Println("Invalid input")
-				validInput = false
-				break
-			} else {
-				selectedExe = append(selectedExe, foundExecutableList[ord-1])
-			}
-		}
-		if !validInput {
-			continue
-		}
-
-		return selectedExe, false
-	}
-
-	panic("Unreachable code")
-}
-
-// Find all exetuable paths
-// Used for `-XbcOnly`
-func getAllExecutablePath(token string) []string {
-	execPaths := getAllExecFromDB()
-
-	var foundExes []string
-	for i := 0; i < len(execPaths); i++ {
-		exePath := execPaths[i]
-		if strings.HasSuffix(exePath, ".o") ||
-			strings.HasSuffix(exePath, "conftest") ||
-			strings.HasSuffix(exePath, "libgtest_main.a") ||
-			strings.HasSuffix(exePath, "libgmock_main.a") ||
-			strings.HasSuffix(exePath, "libgtest.a") ||
-			strings.HasSuffix(exePath, "libgmock.a") ||
-			(!platform.IsExecutable(exePath) && !platform.IsLibrary(exePath)) {
-			continue
-		}
-
-		_, filename := path.Split(exePath)
-		// ignore all hidden files
-		if !strings.HasPrefix(filename, ".") {
-			foundExes = append(foundExes, exePath)
-		}
-	}
-	return foundExes
 }
 
 func panicGracefully(msg string, err error, tmpDir string) {
@@ -664,77 +224,6 @@ func checkResults() (bool, bool) {
 	return false, false
 }
 
-/**
- * See https://coderrect.atlassian.net/browse/COD-558
- *
- * We check if "msg" contains the keyword "libtinfo.so.5" and show more user-friendly
- * messages if there is.
- */
-func onLibtinfoIssue(msg []byte) bool {
-	msgstr := string(msg)
-	matched, err := regexp.MatchString(`libtinfo.so.5:\s+cannot open shared objec`, msgstr)
-	if err != nil || !matched {
-		return false
-	}
-
-	fmt.Printf("\nClang 9 requires libtinfo.so.5 that isn't found in your system. Please check %s to fix this issue.\n\n",
-		"http://docs.coderrect.com/fix-libtinfo-so-5-issue/")
-	return true
-}
-
-type BufferedStderr struct {
-	buffer *bytes.Buffer
-}
-
-func (bs BufferedStderr) Write(data []byte) (n int, err error) {
-	max := 32 * 1024
-	nleft := max - bs.buffer.Len()
-	if len(data) > nleft {
-		bs.buffer.Reset()
-		nleft = max
-	} // no choice, just returns the only one
-
-	if len(data) <= nleft {
-		bs.buffer.Write(data)
-	}
-
-	return os.Stderr.Write(data)
-}
-
-// func addOrReplaceLogFolder(jsonOptStr string, logFolder string) string {
-// 	type CmdlineOpts struct {
-// 		Opts []string
-// 	}
-// 	var cmdlineOpts CmdlineOpts
-// 	if err := json.Unmarshal([]byte(jsonOptStr), &cmdlineOpts); err != nil {
-// 		logger.Warnf("Failed to unmarshal cmdlineopt json. str=%s, err=%v", jsonOptStr, err)
-// 		return jsonOptStr
-// 	}
-
-// 	tmp := cmdlineOpts.Opts[:0]
-// 	replaced := false
-// 	for _, item := range cmdlineOpts.Opts {
-// 		if strings.HasPrefix(item, "-logger.logFolder=") {
-// 			replaced = true
-// 			tmp = append(tmp, "-logger.logFolder="+logFolder)
-// 		} else {
-// 			tmp = append(tmp, item)
-// 		}
-// 	}
-
-// 	if !replaced {
-// 		tmp = append(tmp, "-logger.logFolder="+logFolder)
-// 	}
-
-// 	cmdlineOpts.Opts = tmp
-// 	if b, err := json.Marshal(&cmdlineOpts); err != nil {
-// 		logger.Warnf("Failed to marshal json. str=%s, err=%v", jsonOptStr, err)
-// 		return jsonOptStr
-// 	} else {
-// 		return string(b)
-// 	}
-// }
-
 func addOrReplaceCommandline(jsonOptStr string, key string, value string) string {
 	type CmdlineOpts struct {
 		Opts []string
@@ -788,40 +277,6 @@ func addEntryPoints(jsonOptStr string, entryPoints []string) string {
 	} else {
 		return string(b)
 	}
-}
-
-// func addArg(jsonOptStr string, arg string) string {
-// 	type CmdlineOpts struct {
-// 		Opts []string
-// 	}
-// 	var cmdlineOpts CmdlineOpts
-// 	if err := json.Unmarshal([]byte(jsonOptStr), &cmdlineOpts); err != nil {
-// 		logger.Warnf("Failed to unmarshal cmdlineopt json. str=%s, err=%v", jsonOptStr, err)
-// 		return jsonOptStr
-// 	}
-
-// 	cmdlineOpts.Opts = append(cmdlineOpts.Opts, arg)
-
-//		if b, err := json.Marshal(&cmdlineOpts); err != nil {
-//			logger.Warnf("Failed to marshal json. str=%s, err=%v", jsonOptStr, err)
-//			return jsonOptStr
-//		} else {
-//			return string(b)
-//		}
-//	}
-//
-// TODO find bc file from db
-func getBCFilePath(execFileName string, coderrectBuildDir string) string {
-	bcFile, _ := shared.FindBCFilePathMapping(execFileName+".bc", coderrectBuildDir, false)
-	// check if bcFile doesn't exist.
-	if !util.FileExists(bcFile) && !util.LinkFileExists(bcFile) {
-		dir, file := filepath.Split(bcFile)
-		if !strings.HasPrefix(file, ".") {
-			file = "." + file
-		}
-		bcFile = filepath.Join(dir, file)
-	}
-	return bcFile
 }
 
 func getPackageVersion() string {
@@ -968,7 +423,6 @@ func convertToList(list []string, input string) ([]string, error) {
 var skip_over_flow_checks bool
 
 func findAllXargoTomlDirectory(rootPath string) []string {
-
 	//targetName := "Xargo.toml";
 	var pathList []string
 	var ignorePaths []string
@@ -1087,6 +541,7 @@ func findAllXargoTomlDirectory(rootPath string) []string {
 	//fmt.Println("pathList: ", pathList)
 	return pathList
 }
+
 func generateSolanaIR(args []string, srcFilePath string, tmpDir string) string {
 	coderrectHome := os.Getenv("CODERRECT_HOME")
 	exePath := filepath.Join(coderrectHome, "bin", "sol-racedetect")
