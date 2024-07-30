@@ -1,0 +1,43 @@
+name: Presubmit on PRs
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: self-hosted
+    env:
+      X_RAY_IMAGE: x-ray-ci-presubmit-${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.22
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Log into DigitalOcean container registry
+        run: doctl registry login --expiry-seconds 600
+
+      - name: Build Docker image
+        run: |
+          make -j build-image
+
+      - name: Test with demo program
+        run: |
+          make -j run-test
+
+      - name: Clean up containers
+        if: always()
+        run: |
+          docker ps --all --quiet --filter ancestor=x-ray:latest | xargs -r docker stop
+          docker ps --all --quiet --filter ancestor=x-ray:latest | xargs -r docker rm

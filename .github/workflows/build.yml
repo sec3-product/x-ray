@@ -1,15 +1,16 @@
-name: X-ray CI
+name: Build X-ray
+
+# Avoid having multiple builds simultaneously.
+concurrency:
+  group: build-x-ray
 
 on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 
 jobs:
-  build-and-run:
+  build-and-test:
     runs-on: self-hosted
     env:
       X_RAY_IMAGE: x-ray-ci
