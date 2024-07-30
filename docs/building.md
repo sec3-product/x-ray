@@ -2,7 +2,7 @@
 
 ## Building Docker Images
 
-### Building or Fetching LLVM
+### Building or Using Pre-Built LLVM Image
 
 TBA
 
@@ -28,59 +28,59 @@ docker run --rm -v $(pwd)/demo:/workspace/demo /workspace/demo/jet-v1
 
 ## Buidling Binaries
 
+Here is a simplified instruction for manually building and running the x-ray
+tool in your local environment.
+
+1. Build [LLVM](https://github.com/llvm/llvm-project/tree/llvmorg-14.0.6)
+   locally.
+2. Compile `code-parser` and `code-detector`, our analysis tools specifically for
+   the Rust language.
+3. Compile `coderrect` and update your `PATH` environment variable accordingly.
+
 ### Prerequisites
 
-- LLVM 14.0.6 (support of higher version is WIP)
-- Cmake 3.26 or higher
+- CMake 3.27 or higher
 - Go 1.22 or higher
 - ANTLR 4.13.1 (only needed for parser development)
+- Clang compiler 14.0.6
 
-### Steps
+#### Update CMake
 
-Here's a simplified instruction for manually build and run x-ray tool on your local environment:
+You may need to install CMake manually because the CMake version from APT
+repository is likely lower than the required one.
 
-1. Build [LLVM](https://github.com/llvm/llvm-project/tree/release/12.x)
-   locally, and set $LLVM_DIR and $MLIR_DIR
-2. Compile `code-parser` and `code-detector`, our analysis tool specified for Rust language
-3. Compile `coderrect`, and set $PATH
+Follow the CMake download guide [here](https://cmake.org/download/) to install
+the latest CMake version.
 
-### Update CMake
+For Ubuntu, you can follow [this guide](https://apt.kitware.com/) to install
+the latest CMake via APT. A short version of the guide is as follows, which
+adds the Kitware APT repository and installs the latest CMake version.
 
-You may need to install CMake manually because CMake version from apt-get is lower than `code-detector` required.
-
-If CMake is already installed with apt-get, remove it first:
-
-```
-apt remove cmake
-```
-
-Download CMake source code and build:
-
-```
-wget https://github.com/Kitware/CMake/releases/download/v3.26.0-rc1/cmake-3.26.0-rc1.tar.gz
-tar xzvf cmake*.gz
-cd cmake-3.26.0-rc1
-./bootstrap
-make
-make install
+```sh
+curl -sSf https://apt.kitware.com/kitware-archive.sh | sudo sh
+sudo apt install cmake
 ```
 
-If it notifies `missing OpenSSL`:
+#### Install Clang Compiler
 
-```
-apt install libssl-dev
-```
+TODO: Update the doc to include Clang installation instructions. And this
+should be optional as developers can use the prebuilt LLVM.
 
-### Build a local LLVM
+#### Install Go
 
-The current Coderrect toolchain is based on LLVM version of 12.x.
+Follow the official Go installation guide [here](https://golang.org/doc/install).
 
-```
+
+### Build a local LLVM for X-Ray
+
+The current Coderrect toolchain is based on LLVM version of 14.x.
+
+```sh
 git clone https://github.com/llvm/llvm-project.git
 mkdir -p llvm-project/build && cd llvm-project/build
-git checkout release/12.x
+git checkout tags/llvmorg-14.0.6
 cmake -DLLVM_ENABLE_PROJECTS="clang;openmp;compiler-rt;lld;mlir" ../llvm/ -DLLVM_ENABLE_RTTI=ON -DCMAKE_BUILD_TYPE=Release
-make -j $(nproc)
+make -j
 ```
 
 If CMAKE output shows `"Could NOT find ZLIB"`
