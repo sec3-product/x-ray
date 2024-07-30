@@ -106,7 +106,6 @@ set(ANTLR4CPP_LOCAL_DIR ${CMAKE_SOURCE_DIR}/utils/antlr/antlr4cpp)
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}/include
-    utils/jsoncons/include
     utils)
 
 add_subdirectory(lib)
