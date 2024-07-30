@@ -13,7 +13,6 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -173,57 +172,6 @@ func normalizeCmdlineArg(arg string) string {
  * the custom command line is stored in args. args[0] is the command, and args[1:] are
  * command-line arguments
  */
-func doCustomBuild(args []string, isCargoBuild bool) (*exec.Cmd, string) {
-	coderrectHome := os.Getenv("CODERRECT_HOME")
-	if runtime.GOOS == "windows" {
-		exePath := filepath.Join(coderrectHome, "bin", "libear-win.exe")
-		libPath := filepath.Join(coderrectHome, "bin", "libear64.dll")
-		libOption := fmt.Sprintf("-d:%s ", libPath)
-
-		cmdline := fmt.Sprintf("%s %s ", exePath, libOption)
-		for _, s := range args {
-			cmdline = cmdline + normalizeCmdlineArg(s) + " "
-		}
-
-		data := append([]string{libOption}, args...)
-		cmd := exec.Command(exePath, data...)
-		return cmd, cmdline
-	}
-
-	// Set these ENV variables not matter if it's a cargo build
-	// This is to handle cargo command called inside custom script
-	//-Zsymbol-mangling-version=v0
-	os.Setenv("RUSTFLAGS", "--emit=llvm-ir -g -C opt-level=0")
-	os.Setenv("CARGO_PROFILE_DEV_LTO", "true")
-	os.Setenv("CARGO_TARGET_DIR", os.Getenv("CODERRECT_BUILD_DIR"))
-	// For Rust build, we do not need those libear stuff
-	// if isCargoBuild {
-	// 	exePath := filepath.Join(coderrectHome, "bin", "coderrect-exec")
-	// 	cmdLine := exePath + " "
-	// 	for _, s := range args {
-	// 		cmdLine = cmdLine + normalizeCmdlineArg(s) + " "
-	// 	}
-	// 	cmd := platform.Command(cmdLine)
-	// 	return cmd, cmdLine
-	// }
-
-	exePath := filepath.Join(coderrectHome, "bin", "coderrect-exec")
-	libPath := filepath.Join(coderrectHome, "bin", "libear.so")
-	cmdline := fmt.Sprintf("export LD_PRELOAD=%s; %s ", libPath, exePath)
-	for _, s := range args {
-		cmdline = cmdline + normalizeCmdlineArg(s) + " "
-	}
-
-	// support multiple command in oneline,
-	// coderrect "./autogen.sh;./configure;make"
-	//
-	// sub process, env var inherited from parent, but new env var not affected parent
-	// https://stackoverflow.com/questions/14024798/setting-environment-variables-for-multiple-commands-in-bash-one-liner
-	cmdline = "(" + cmdline + ")"
-	cmd := platform.Command(cmdline)
-	return cmd, cmdline
-}
-
 func sortFoundExecutables(executables []string) []string {
 	sl := []string{}
 	testsl := []string{}
@@ -1266,8 +1214,6 @@ func main() {
 		panicGracefully("Failed to obtain the current working directory", err, "")
 	}
 
-	directBCFile := conflib.GetString("Xbc", "")
-
 	// create the coderrect working directory
 	fi, _ := os.Stat(cwd)
 	coderrectWorkingDir := filepath.Join(cwd, ".coderrect")
@@ -1490,112 +1436,36 @@ func main() {
 	//logger.Infof("remainingArgs =%v", remainingArgs)
 	isCargoBuild := false // This is c direct Cargo Build
 	var executablePathList []string
-	var executablesInCmdlineNotExist bool
 	cmdline := ""
 
-	if len(directBCFile) == 0 {
-		if conflib.GetBool("solana.on", false) && len(remainingArgs) > 0 {
-			//for solana, invoke sol-racedetect to generate IR first
-			logger.Infof("Execute sol-racedetect command to generate IR files. cmdline=%v", remainingArgs)
-			srcFilePath, _ := filepath.Abs(remainingArgs[0])
-			var args []string
-			if len(remainingArgs) > 1 {
-				args = remainingArgs[1:]
-			}
-			//find all directories with the Xargo.toml file
-			solanaProgramDirectories := findAllXargoTomlDirectory(srcFilePath)
-			if len(solanaProgramDirectories) == 0 {
-				fmt.Println("No Xargo.toml or Cargo.toml file found in:", srcFilePath)
-				os.Exit(0)
-			}
-			for _, programPath := range solanaProgramDirectories {
-				directBCFile = generateSolanaIR(args, programPath, tmpDir)
-				executablePathList = append(executablePathList, directBCFile)
-			}
-			//then invoke coderrect -Xbc=path-to-ir
+	if conflib.GetBool("solana.on", false) && len(remainingArgs) > 0 {
+		//for solana, invoke sol-racedetect to generate IR first
+		logger.Infof("Execute sol-racedetect command to generate IR files. cmdline=%v", remainingArgs)
+		srcFilePath, _ := filepath.Abs(remainingArgs[0])
+		var args []string
+		if len(remainingArgs) > 1 {
+			args = remainingArgs[1:]
+		}
+		// Step 1. Find all directories with the Xargo.toml file
+		solanaProgramDirectories := findAllXargoTomlDirectory(srcFilePath)
+		if len(solanaProgramDirectories) == 0 {
+			fmt.Println("No Xargo.toml or Cargo.toml file found in:", srcFilePath)
+			os.Exit(0)
+		}
+		// Step 2. Generate IR files for each program
+		for _, programPath := range solanaProgramDirectories {
+			generated := generateSolanaIR(args, programPath, tmpDir)
+			executablePathList = append(executablePathList, generated)
 		}
 	}
+
 	if len(executablePathList) == 0 {
-		//something is wrong - need to exit
-		if len(directBCFile) == 0 {
-			// step 1. Compile the project to generate executables
-			//
-			logger.Infof("Execute the build command to generate BC files. cmdline=%v", remainingArgs)
-			var cmd, cmdline = doCustomBuild(remainingArgs, isCargoBuild)
-			var outBuf bytes.Buffer
-			cmd.Stderr = BufferedStderr{
-				buffer: &outBuf,
-			}
-
-			cmd.Stdout = os.Stdout
-			logger.Infof("Execute command line with coderrect-exec: %s", cmdline)
-			path := os.Getenv("PATH")
-			logger.Infof("Path env: %s", path)
-			if err := cmd.Run(); err != nil {
-				// cargo build does not requite such error message check
-				if !isCargoBuild && !onLibtinfoIssue(outBuf.Bytes()) {
-					os.Stderr.WriteString("Failed to build the project\n")
-					logger.Errorf("Failed to build the project. cmdline=%s", cmdline)
-				}
-				//if users add -continueIfBuildErrorPresents in cmd, we let the program continue to analyze
-				//otherwise, we terminate the process
-				if !conflib.GetBool("continueIfBuildErrorPresents", false) {
-					exitGracefully(1, tmpDir)
-				}
-				logger.Warnf("Fail to build the project but still conitnue analyzing. cmdline=%v, err=%v", cmdline, err)
-			}
-			logger.Infof("Finish the build of the project. cmdline=%v", cmdline)
-
-			// Check if the custom build contains any cargo command
-			if !isCargoBuild {
-				// For now we only check bins and examples
-				cargoTargetDirs := [2]string{
-					filepath.Join(coderrectBuildDir, "target", "debug", "deps"),
-					filepath.Join(coderrectBuildDir, "target", "debug", "examples"),
-				}
-				for _, cargoTargetDir := range cargoTargetDirs {
-					files, err := ioutil.ReadDir(cargoTargetDir)
-					if err == nil && len(files) != 0 {
-						// isCargoCustomBuild = true
-						isCargoBuild = true
-						break
-					}
-				}
-			}
-
-			// only generate bc files, not doing any analysis
-			if conflib.GetBool("XbcOnly", false) {
-				allExes := getAllExecutablePath(token)
-				fmt.Println("Generate the BC file only.")
-
-				for _, exe := range allExes {
-					fmt.Printf("Generating bitcode for %s ...\n", exe)
-					logger.Infof("On-demand link BC file. bcFile=%s.bc", exe)
-					// on-demand linking
-					shared.LinkBitcode(exe, coderrectBuildDir)
-				}
-
-				logger.Infof("End the session with BC files only")
-				// No need to proceed to analysis phase
-				exitGracefully(0, tmpDir)
-			}
-
-			executablePathList, executablesInCmdlineNotExist = getExecutablePathList(token, coderrectBuildDir, isCargoBuild)
-			if executablesInCmdlineNotExist {
-				fmt.Println("Unable to find executables specified in the command line.")
-				exitGracefully(1, tmpDir)
-			}
-
-			if len(executablePathList) == 0 {
-				fmt.Println("")
-				fmt.Println("Unable to find any executable or library to analyze.")
-				exitGracefully(0, tmpDir)
-			}
-		} else { // if len(directBCFile) > 0
-			executablePathList = append(executablePathList, directBCFile)
-		}
+		fmt.Println("")
+		fmt.Println("Unable to find any executable or library to analyze.")
+		exitGracefully(0, tmpDir)
 	}
-	//
+	fmt.Printf("executablePathList: %v\n", executablePathList)
+
 	// Assume the user picks up 3 binaries "prog1", "prog2", and "prog3". The code below
 	// run racedetect against them one by one. For each binary, we generate a json file containing
 	// race data. For example, we genarete prog1.json for "prog1" under .coderrect/build.
@@ -1630,7 +1500,7 @@ func main() {
 
 		bcFile := ""
 		fmt.Printf("\nAnalyzing %s ...\n", executablePathList[i])
-		directBCFile = executablePathList[i]
+		directBCFile := executablePathList[i]
 		if len(directBCFile) == 0 {
 			if isCargoBuild {
 				bcFile = executablePathList[i]
