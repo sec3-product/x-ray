@@ -4,7 +4,6 @@ Since most components are small, we would like to manage them all in this single
 
 # What components are involved?
 - `/coderrect-exec`: Coderrect's exec wrapper
-- `/feedback`: Email service for sending user feedbacks
 - `/gosrc`: All executables written in Golang
   - `/cmd`: Main entries for go executables
   - `/gllvm`: Coderrect's customized gllvm
