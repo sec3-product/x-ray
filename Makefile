@@ -120,4 +120,7 @@ build-image:
 	  -f Dockerfile.x-ray .
 
 run-test:
-	@docker run --rm -v $$(pwd)/demo:/workspace/demo $(X_RAY_IMAGE) /workspace/demo/jet-v1
+	@cd coderrect/gosrc && \
+	  WORKING_DIR=$$(pwd)/e2e \
+	  X_RAY_IMAGE=$(X_RAY_IMAGE) \
+	  go test -v ./e2e/...
