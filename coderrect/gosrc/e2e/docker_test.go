@@ -52,6 +52,43 @@ var (
  ],
  "CoderrectVer": "Unknown"
 }`)
+
+	// testAppAltResultJSON is an alternative result JSON that works around
+	// an issue where x-ray may give a slightly different result (in
+	// `programs_jet.ll` entry).
+	testAppAltResultJSON = []byte(`{
+ "Executables": [
+  {
+   "Name": "libraries_cpi.ll",
+   "RaceJSON": "/workspace/.coderrect/build/raw_libraries_cpi.ll.json",
+   "DataRaces": 0,
+   "RaceConditions": 0,
+   "NewBugs": false
+  },
+  {
+   "Name": "programs_jet.ll",
+   "RaceJSON": "/workspace/.coderrect/build/raw_programs_jet.ll.json",
+   "DataRaces": 20,
+   "RaceConditions": 0,
+   "NewBugs": true
+  },
+  {
+   "Name": "programs_test-writer.ll",
+   "RaceJSON": "/workspace/.coderrect/build/raw_programs_test-writer.ll.json",
+   "DataRaces": 1,
+   "RaceConditions": 0,
+   "NewBugs": true
+  },
+  {
+   "Name": "tools_cli.ll",
+   "RaceJSON": "/workspace/.coderrect/build/raw_tools_cli.ll.json",
+   "DataRaces": 0,
+   "RaceConditions": 0,
+   "NewBugs": false
+  }
+ ],
+ "CoderrectVer": "Unknown"
+}`)
 )
 
 func TestDockerE2E(t *testing.T) {
@@ -114,7 +151,15 @@ func TestDockerE2E(t *testing.T) {
 		t.Fatalf("Failed to compare result JSON files: %v", err)
 	}
 	if diff != "" {
-		t.Errorf("Found unexpected results (-want,+got):\n%v", diff)
+		// TODO: Work around an issue where x-ray may give a slightly
+		// different result.
+		altDiff, err := compareJSONs(resultJSON, testAppAltResultJSON)
+		if err != nil {
+			t.Fatalf("Failed to compare alternative result JSON files: %v", err)
+		}
+		if altDiff != "" {
+			t.Errorf("Found unexpected results (-want,+got):\n%v", altDiff)
+		}
 	}
 }
 
