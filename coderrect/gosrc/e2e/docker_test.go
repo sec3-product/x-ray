@@ -112,9 +112,13 @@ func TestDockerE2E(t *testing.T) {
 			t.Fatalf("Failed to remove E2E working directory: %v", err)
 		}
 	}
-	t.Cleanup(func() {
-		_ = os.RemoveAll(e2eDir)
-	})
+	if os.Getenv("KEEP_E2E_DIR") == "" {
+		t.Cleanup(func() {
+			_ = os.RemoveAll(e2eDir)
+		})
+	} else {
+		t.Logf("Will keep E2E working directory: %v", e2eDir)
+	}
 
 	if err := cp.Copy(testAppDir, e2eDir); err != nil {
 		t.Fatalf("Failed to copy test app to working directory: %v", err)

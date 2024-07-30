@@ -121,6 +121,6 @@ build-image:
 
 run-test:
 	@cd coderrect/gosrc && \
-	  WORKING_DIR=$$(pwd)/e2e \
+	  WORKING_DIR=$(CURDIR)/e2e \
 	  X_RAY_IMAGE=$(X_RAY_IMAGE) \
 	  go test -v -count=1 ./e2e/...
