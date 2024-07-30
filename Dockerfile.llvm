@@ -38,7 +38,7 @@ RUN cmake \
     -DCMAKE_C_COMPILER=clang-14 \
     -DCMAKE_CXX_COMPILER=clang++-14 \
     -DCMAKE_INSTALL_PREFIX=/usr/local/llvm \
-    -DLLVM_ENABLE_PROJECTS="clang;openmp;compiler-rt;lld;mlir" \
+    -DLLVM_ENABLE_PROJECTS="clang;openmp;compiler-rt;mlir" \
     -DLLVM_ENABLE_RTTI=ON \
     -DLLVM_ENABLE_TERMINFO=OFF \
     -DLLVM_INCLUDE_BENCHMARKS=OFF \
