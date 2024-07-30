@@ -19,9 +19,7 @@ import (
 
 	"github.com/gookit/color"
 	toml "github.com/pelletier/go-toml"
-	bolt "go.etcd.io/bbolt"
 
-	"github.com/coderrect-inc/coderrect/gllvm/shared"
 	"github.com/coderrect-inc/coderrect/reporter"
 	"github.com/coderrect-inc/coderrect/util"
 	"github.com/coderrect-inc/coderrect/util/conflib"
@@ -549,38 +547,22 @@ func generateSolanaIR(args []string, srcFilePath string, tmpDir string) string {
 	if len(irFileName) == 0 {
 		srcFolder, irFileName = filepath.Split(strings.TrimSuffix(srcFolder, "/"))
 	}
-	//if irFileName == "program"
 	{
-		//add more info
 		_, name := filepath.Split(strings.TrimSuffix(srcFolder, "/"))
-		//srcFolder2, _ := filepath.Split(strings.TrimSuffix(srcFolder2, "/"))
 		if len(name) > 0 {
 			irFileName = name + "_" + irFileName
 		}
 	}
-	//fmt.Printf("srcFilePath: %v\n", srcFilePath)
 
 	fileInfo, err := os.Stat(srcFilePath)
 	if err != nil {
 		// error handling
 	}
 
-	// IsDir is short for fileInfo.Mode().IsDir()
 	if fileInfo.IsDir() {
-		// file is a directory
 		srcFolder = srcFilePath
-	} else {
-		// file is not a directory
 	}
-
-	//fmt.Printf("path: %v ir: %v.ll\n", srcFolder, irFileName)
-
-	// cwd, err := os.Getwd()
-	// if err != nil {
-	// 	panicGracefully("Failed to obtain the current working directory for smalltalk IR", err, "")
-	// }
 	irFilePath := filepath.Join(srcFolder, irFileName+".ll")
-	//irFilePath := "t.ll"
 
 	cmdline := fmt.Sprintf("%s --dump-ir -o %s ", exePath, irFilePath)
 	cmdline = cmdline + normalizeCmdlineArg(srcFilePath) + " "
@@ -588,9 +570,6 @@ func generateSolanaIR(args []string, srcFilePath string, tmpDir string) string {
 		cmdline = cmdline + normalizeCmdlineArg(s) + " "
 	}
 
-	//fmt.Printf("cmdline: %v\n", cmdline)
-
-	//cmd = exec.Command(racedetect, cmdArgument...)
 	cmdline = "(" + cmdline + ")"
 	cmd := platform.Command(cmdline)
 	cmd.Stderr = os.Stderr
@@ -792,29 +771,6 @@ func main() {
 		}
 	}
 
-	// FIXME: now we always keep boltdb, will this cause problem?
-	// remove last boltdb, creat new boltdb
-	if !util.FileExists(boldDbFilePath) {
-		// os.Remove(boldDbFilePath)
-		boltDb, err := bolt.Open(boldDbFilePath, 0666, nil)
-		if err != nil {
-			panicGracefully("Failed to to create db.", err, "")
-		}
-		err = boltDb.Update(func(tx *bolt.Tx) error {
-			_, err = tx.CreateBucket([]byte(shared.BucketNameBcFile))
-			if err != nil {
-				return err
-			}
-			_, err = tx.CreateBucket([]byte(shared.BucketNameExecFile))
-			_, err = tx.CreateBucket([]byte(shared.BucketNameMoveFile))
-			return err
-		})
-		if err != nil {
-			panicGracefully("Failed to create a bucket in the db.", err, "")
-		}
-		boltDb.Close()
-	}
-
 	// upload report to remote host, used for CI/CD integration
 	host := conflib.GetString("publish.cloud", "")
 	if conflib.GetBool("publish", false) {
@@ -874,7 +830,6 @@ func main() {
 
 	//fmt.Println("remainingArgs: ", remainingArgs)
 	//logger.Infof("remainingArgs =%v", remainingArgs)
-	isCargoBuild := false // This is c direct Cargo Build
 	var executablePathList []string
 	cmdline := ""
 
@@ -932,31 +887,21 @@ func main() {
 	totalRaceCnt := 0
 	time_start := time.Now()
 	//default 480min = 8h
-	//support --h--m--s
 	timeout, _ := time.ParseDuration(conflib.GetString("timeout", "8h"))
 
 	for i := 0; i < len(executablePathList); i++ {
 		var executableInfo ExecutableInfo
 
-		bcFile := ""
 		fmt.Printf("\nAnalyzing %s ...\n", executablePathList[i])
 		directBCFile := executablePathList[i]
 		if len(directBCFile) == 0 {
-			if isCargoBuild {
-				bcFile = executablePathList[i]
-				if !strings.HasSuffix(bcFile, ".ll") {
-					bcFile = getCargoTargetBcFile(coderrectBuildDir, executablePathList[i])
-				}
-			} else {
-				logger.Infof("On-demand link BC file. bcFile=%s.bc", executablePathList[i])
-				// on-demand linking
-				bcFile, _ = shared.LinkBitcode(executablePathList[i], coderrectBuildDir)
-			}
-		} else {
-			bcFile, _ = filepath.Abs(directBCFile)
+			logger.Errorf("Invalid path to the executable. path=%s", directBCFile)
+			panicGracefully("Invalid path to the executable", nil, tmpDir)
 		}
+
+		bcFile, _ := filepath.Abs(directBCFile)
 		if bcFile == "" || !util.FileExists(bcFile) {
-			continue //skip if BC file does not exist
+			continue // skip if BC file does not exist
 		}
 		logger.Infof("Analyzing BC file to detect races. bcFile=%s.bc", bcFile)
 
@@ -1064,10 +1009,6 @@ func main() {
 		}
 		if len(displayFlag) > 0 {
 			cmdArgument = append(cmdArgument, displayFlag)
-		}
-		if isCargoBuild {
-			// enable atomicity violation by default for Rust
-			cmdArgument = append(cmdArgument, "-include-atomics")
 		}
 		cmdArgument = append(cmdArgument, "-o", tmpJsonPath, bcFile)
 		omplibPath := filepath.Join(coderrectHome, "bin", "libomp.so")
