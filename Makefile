@@ -1,4 +1,4 @@
-.PHONY: all prepare_build_dir pull_llvm build_in_docker compile_go compile_cmake check_go_version add_to_path check_binary
+.PHONY: all prepare_build_dir check_go_version add_to_path check_binary
 
 # Variables
 DOCKER_IMAGE_VERSION = 1.2
@@ -21,47 +21,6 @@ prepare_build_dir:
 	@echo "Checking and creating build directory..."
 	@mkdir -p build
 	@echo "Build directory created."
-
-# Clone or pull LLVM 12
-pull_llvm: prepare_build_dir
-	@if [ ! -d "build/llvm12" ]; then \
-		echo "Cloning llvm12..."; \
-		cd build && git clone --recursive ssh://git@github.com/coderrect-inc/llvm12.git; \
-	else \
-		echo "Updating llvm12..."; \
-		cd build/llvm12 && git pull --all; \
-	fi
-	@echo "Finished updating llvm12."
-
-# Build in Docker
-build_in_docker:
-	@echo "Checking Docker image presence..."
-	@if [ `docker images | grep 'coderrect/installer' | grep $(DOCKER_IMAGE_VERSION) | wc -l` != "1" ]; then \
-		echo "Docker image coderrect/installer:$(DOCKER_IMAGE_VERSION) not installed, please run build-coderrect-installer-1.1-docker.sh first"; \
-		exit 1; \
-	fi
-	@echo "Building in Docker..."
-	@if [ $(RUST) = true ]; then \
-		docker run --rm -v $(PWD)/build:/build -v $(PWD)/dockerstuff/scripts:/scripts --user=$$(id -u):$$(id -g) coderrect/installer:$(DOCKER_IMAGE_VERSION) /scripts/build-components-llvm12-rust.sh; \
-	else \
-		docker run --rm -v $(PWD)/build:/build -v $(PWD)/dockerstuff/scripts:/scripts --user=$$(id -u):$$(id -g) coderrect/installer:1.1 /scripts/build-components.sh; \
-	fi
-
-# Compile using Go
-compile_go:
-	@echo "Compiling coderrect with Go..."
-	@cd coderrect && cd gosrc && ./run && cd ../..
-
-# Compile using CMake
-compile_cmake: compile_parser compile_detector
-
-compile_parser:
-	@echo "Compiling code-parser with CMake..."
-	@cd code-parser && mkdir -p build && cd build && cmake .. && make && cd ../..
-
-compile_detector:
-	@echo "Compiling code-detector with CMake..."
-	@cd code-detector && mkdir -p build && cd build && cmake .. && make && cd ../..
 
 # Check Go version
 check_go_version:
@@ -120,7 +79,20 @@ build-image:
 	  -f Dockerfile.x-ray .
 
 run-test:
-	@cd coderrect/gosrc && \
-	  WORKING_DIR=$(CURDIR)/e2e \
+	@WORKING_DIR=$(CURDIR)/e2e \
 	  X_RAY_IMAGE=$(X_RAY_IMAGE) \
 	  go test -v -count=1 ./e2e/...
+
+coderrect:
+	go build -o bin/coderrect cmd/coderrect/main.go
+
+reporter:
+	go build -o bin/reporter cmd/reporter/main.go
+
+reporter-server:
+	go build -o bin/reporter-server cmd/reporter-server/main.go
+
+clean:
+	rm -f bin/*
+
+cli: clean coderrect reporter reporter-server

@@ -46,10 +46,9 @@ RUN wget --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER
 ARG MAKE_THREADS=
 
 # Build x-ray detector.
-COPY code-detector x-ray-toolchain/code-detector
-RUN mkdir -p x-ray-toolchain/code-detector/build \
-    && cd x-ray-toolchain/code-detector/build \
-    && cmake \
+COPY code-detector /x-ray-toolchain/code-detector
+WORKDIR /x-ray-toolchain/code-detector/build
+RUN cmake \
         -DCMAKE_C_COMPILER=/usr/local/llvm/bin/clang \
         -DCMAKE_CXX_COMPILER=/usr/local/llvm/bin/clang++ \
         -DLLVM_VERSION=${LLVM_VERSION} \
@@ -57,10 +56,9 @@ RUN mkdir -p x-ray-toolchain/code-detector/build \
     && make -j${MAKE_THREADS}
 
 # Build x-ray parser.
-COPY code-parser x-ray-toolchain/code-parser
-RUN mkdir -p x-ray-toolchain/code-parser/build \
-    && cd x-ray-toolchain/code-parser/build \
-    && cmake \
+COPY code-parser /x-ray-toolchain/code-parser
+WORKDIR /x-ray-toolchain/code-parser/build
+RUN cmake \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_C_COMPILER=/usr/local/llvm/bin/clang \
         -DCMAKE_CXX_COMPILER=/usr/local/llvm/bin/clang++ \
@@ -68,10 +66,11 @@ RUN mkdir -p x-ray-toolchain/code-parser/build \
         .. \
     && make -j${MAKE_THREADS}
 
-# Build coderrect.
-COPY coderrect x-ray-toolchain/coderrect
-RUN cd x-ray-toolchain/coderrect/gosrc \
-    && make -j${MAKE_THREADS} all \
+# Build x-ray CLI. Note that it intentionally copies `code-detector` and
+# `code-parser` explicitly to avoid invalidating the cache.
+WORKDIR /x-ray-toolchain
+COPY . .
+RUN make -j${MAKE_THREADS} cli \
     && tools/update-bin.sh
 
 

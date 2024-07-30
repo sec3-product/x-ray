@@ -17,8 +17,9 @@ const (
 )
 
 var (
-	// testAppDir requires running E2E from the root of the Go module.
-	testAppDir        = filepath.Join("..", "..", "..", "demo", "jet-v1")
+	// testAppDir indicates the path in relative to the test app (i.e.
+	// starting from the `e2e/` dir).
+	testAppDir        = filepath.Join("..", "demo", "jet-v1")
 	testAppResultJSON = []byte(`{
  "Executables": [
   {
