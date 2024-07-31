@@ -30,13 +30,12 @@ if (ENABLE_SPACE_OPT)
 endif()
 
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSPDLOG_ACTIVE_LEVEL=2 -DRACE_DETECT_DEBUG ")  # log level = debug
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSPDLOG_ACTIVE_LEVEL=2 -DRACE_DETECT_DEBUG")  # log level = debug
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSPDLOG_ACTIVE_LEVEL=6")  # log level = warn
 endif()
 
-#-fno-rtti 
-set(COMMON_CXX_FLAG "-Wno-c++17-extensions -DSPDLOG_NO_EXCEPTIONS")
+set(COMMON_CXX_FLAG "-DSPDLOG_NO_EXCEPTIONS")
 
 # To support both in- and out-of-source builds,
 # we check for the presence of the add_llvm_loadable_module command.
