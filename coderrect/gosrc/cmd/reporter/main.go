@@ -16,11 +16,11 @@ import (
 	"time"
 
 	crserver "github.com/coderrect-inc/coderrect/cmd/reporter-service"
-	"github.com/coderrect-inc/coderrect/reporter"
-	"github.com/coderrect-inc/coderrect/util/conflib"
-	"github.com/coderrect-inc/coderrect/util/jsonparser"
-	"github.com/coderrect-inc/coderrect/util/logger"
-	"github.com/coderrect-inc/coderrect/util/platform"
+	"github.com/coderrect-inc/coderrect/pkg/reporter"
+	"github.com/coderrect-inc/coderrect/pkg/util/conflib"
+	"github.com/coderrect-inc/coderrect/pkg/util/jsonparser"
+	"github.com/coderrect-inc/coderrect/pkg/util/logger"
+	"github.com/coderrect-inc/coderrect/pkg/util/platform"
 )
 
 const (
@@ -417,7 +417,7 @@ line %d, column %d in %s AND line %d, column %d in %s
 	fmt.Println("\033[0m")
 }
 
-//check if there is any race for given executable file
+// check if there is any race for given executable file
 func raceExist(raceJsonPath string, reportDir string, executableName string) bool {
 	numOfOMP := 0
 	numOfNormalDataRaces := 0
@@ -909,7 +909,7 @@ func getGitLog() string {
 	return log
 }
 
-//clean old base, create new base
+// clean old base, create new base
 func buildBase(execInfo []ExecutableInfo) (isRebuilt bool, err error) {
 	var tmpBaseDirPath string
 	tmpBaseDirPath, err = ioutil.TempDir(getWorkingDirPath(), "report-tmp")

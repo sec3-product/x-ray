@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/coderrect-inc/coderrect/util"
-	"github.com/coderrect-inc/coderrect/util/logger"
+	"github.com/coderrect-inc/coderrect/pkg/util"
+	"github.com/coderrect-inc/coderrect/pkg/util/logger"
 )
 
 // WriteIndexJSON write the `iinfo` back into index.json

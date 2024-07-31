@@ -21,8 +21,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/coderrect-inc/coderrect/util/conflib"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/coderrect-inc/coderrect/pkg/util/conflib"
 )
 
 func stringToLogLevel(levelStr string) log.Level {

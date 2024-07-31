@@ -9,12 +9,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/coderrect-inc/coderrect/util/platform"
 	"github.com/google/uuid"
+
+	"github.com/coderrect-inc/coderrect/pkg/util/platform"
 )
 
 // NOTE: This is only used for our own Jenkins task.
-//  The assumption is that our Jenkins server and upload server are hosted in the same machine
+//
+//	The assumption is that our Jenkins server and upload server are hosted in the same machine
 const localHost = "http://127.0.0.1:8080"
 const defaultHost = "http://cloud.coderrect.com"
 const devHost = "http://cloud.coderrect.com:8081"

@@ -9,8 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/coderrect-inc/coderrect/util"
 	"github.com/gobwas/glob"
+
+	"github.com/coderrect-inc/coderrect/pkg/util"
 )
 
 // data structures for deserializing report config json
@@ -79,7 +80,7 @@ func (filter *Filters) size() int {
 	return len(filter.Lines) + len(filter.Vars) + len(filter.Functions)
 }
 
-//NOTE: This is not used, because we will use conflib to read configuration file
+// NOTE: This is not used, because we will use conflib to read configuration file
 func readConf(path string) Config {
 	confData, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -221,7 +222,8 @@ func filterStackTrace(traces []*trace, functions []Function) bool {
 // TODO: could there be more?
 // keywords that could go before a type
 // for example:
-//  static item *heads[LARGEST_ID];
+//
+//	static item *heads[LARGEST_ID];
 var keywords = []string{"static"}
 
 // Parse the type information and name of the shared obj

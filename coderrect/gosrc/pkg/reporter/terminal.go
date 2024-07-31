@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/coderrect-inc/coderrect/reporter/datatypes"
+	"github.com/coderrect-inc/coderrect/pkg/reporter/datatypes"
 )
 
 func readRacesJSON(path ...string) []datatypes.DataRace {

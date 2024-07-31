@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/coderrect-inc/coderrect/util/jsonparser"
+	"github.com/coderrect-inc/coderrect/pkg/util/jsonparser"
 )
 
 const _ENV_INSTALLATION_DIRECTORY = "CODERRECT_HOME"
