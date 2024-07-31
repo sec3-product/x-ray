@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.27.0)
+cmake_minimum_required(VERSION 3.22.0)
 project(smalltalk)
 
 option(ENABLE_HEAP_PROFILE "Turn on heap profiling feature by linking to tcmalloc" OFF)

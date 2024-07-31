@@ -15,14 +15,14 @@ X_RAY_IMAGE ?= x-ray:latest
 BUILD_DIR ?= build
 INSTALL_DIR ?= $(BUILD_DIR)/dist
 
-.PHONY: all build-xray build-cli install extract-llvm check-llvm \
+.PHONY: all build-x-ray build-cli install extract-llvm check-llvm \
   build-detector build-parser \
-  build-llvm-prebuilt-image push-llvm-prebuilt-image \
-  build-image run-test clean
+  build-container-image run-container-e2e run-native-e2e \
+  build-llvm-prebuilt-image push-llvm-prebuilt-image
 
-all: build-xray build-image
+all: build-x-ray build-image
 
-build-xray: clean build-detector build-parser build-cli
+build-x-ray: build-detector build-parser build-cli
 
 check-llvm:
 	@if [ -z "$(LLVM_PREBUILT_PATH)" ]; then \
@@ -72,6 +72,7 @@ build-cli:
 
 install:
 	@echo "Installing X-Ray to $(INSTALL_DIR)..."
+	@rm -rf $(INSTALL_DIR)
 	@for dir in bin conf data/reporter/artifacts/images; do \
 	  echo "Creating directory $(INSTALL_DIR)/$${dir}..."; \
 	  mkdir -p "$(INSTALL_DIR)/$${dir}"; \
@@ -84,9 +85,6 @@ install:
 	@cp package/data/reporter/artifacts/coderrect* $(INSTALL_DIR)/data/reporter/artifacts/
 	@cp package/data/reporter/artifacts/images/* $(INSTALL_DIR)/data/reporter/artifacts/images/
 	@echo "Done. X-Ray has been installed to $(INSTALL_DIR)."
-
-clean:
-	rm -f bin/*
 
 build-llvm-prebuilt-image:
 	@docker build -t $(LLVM_PREBUILT_IMAGE) \
@@ -102,9 +100,9 @@ extract-llvm:
 	@CONTAINER_ID=$$(docker create $(LLVM_PREBUILT_IMAGE)) && \
 	  docker cp $$CONTAINER_ID:/usr/local/llvm $(BUILD_DIR)/llvm && \
 	  docker rm $$CONTAINER_ID
-	@echo "Done. Now you can set LLVM_PREBUILT_PATH=$$(pwd)/$(BUILD_DIR)/llvm to use the prebuilt LLVM."
+	@echo "Done. Now you can set LLVM_PREBUILT_PATH=$$(realpath $(BUILD_DIR)/llvm) to use the prebuilt LLVM."
 
-build-image:
+build-container-image:
 	@if [ "$(CI)" = "true" ]; then \
 	  echo "CI build detected. Pulling $(LLVM_PREBUILT_IMAGE) to ensure using the latest."; \
 	  docker pull $(LLVM_PREBUILT_IMAGE) || \
@@ -126,7 +124,12 @@ build-image:
 	  --build-arg LLVM_VERSION=$(LLVM_VERSION) \
 	  -f Dockerfile.x-ray .
 
-run-test:
+run-native-e2e:
+	@X_RAY_EXECUTABLE=$$(realpath $(INSTALL_DIR)/bin/coderrect) \
+	  go test -v -run=TestNativeE2E -count=1 ./e2e/...
+
+run-container-e2e:
 	@WORKING_DIR=$(CURDIR)/e2e \
 	  X_RAY_IMAGE=$(X_RAY_IMAGE) \
-	  go test -v -count=1 ./e2e/...
+	  go test -v -run=TestContainerE2E -count=1 ./e2e/...
+
