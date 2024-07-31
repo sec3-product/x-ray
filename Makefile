@@ -1,10 +1,3 @@
-.PHONY: all prepare_build_dir check_go_version add_to_path check_binary
-
-# Variables
-DOCKER_IMAGE_VERSION = 1.2
-RUST = false
-BINARY_PATH = ~/local/sec3/bin/coderrect
-
 # The LLVM version to use.
 LLVM_VERSION ?= 14.0.6
 
@@ -12,42 +5,89 @@ LLVM_VERSION ?= 14.0.6
 # registry. Use `doctl registry login` to ensure the access.
 LLVM_PREBUILT_IMAGE ?= registry.digitalocean.com/soteria/llvm-prebuilt-$(LLVM_VERSION):latest
 
+# The path to prebuilt LLVM files. It expects `clang++` to be available under
+# `$(LLVM_PREBUILT_PATH)/bin`. One can use `make extract-llvm` to extract the
+# prebuilt files from the prebuilt image to the specified directory.
+LLVM_PREBUILT_PATH ?=
+
 X_RAY_IMAGE ?= x-ray:latest
 
-all: prepare_build_dir pull_llvm build_in_docker compile_go compile_cmake check_go_version add_to_path check_binary
+BUILD_DIR ?= build
+INSTALL_DIR ?= $(BUILD_DIR)/dist
 
-# Prepare the build directory
-prepare_build_dir:
-	@echo "Checking and creating build directory..."
-	@mkdir -p build
-	@echo "Build directory created."
+.PHONY: all build-xray build-cli install extract-llvm check-llvm \
+  build-detector build-parser \
+  build-llvm-prebuilt-image push-llvm-prebuilt-image \
+  build-image run-test clean
 
-# Check Go version
-check_go_version:
-	@echo "Checking Go version..."
-	@go version
+all: build-xray build-image
 
-# Add to PATH
-add_to_path:
-	@echo "Adding LLVMRace to PATH"
-	@export PATH=$(PATH):$(CURDIR)/LLVMRace
+build-xray: clean build-detector build-parser build-cli
 
-# Check binary and add to PATH if needed
-check_binary:
-	@if [ ! -f $(BINARY_PATH) ]; then \
-		echo "Binary file does not exist, creating..."; \
-		mkdir -p ~/local/sec3/bin/; \
-		touch $(BINARY_PATH); \
-		chmod 755 $(BINARY_PATH); \
-	fi
-	@echo "Checking if binary directory is in PATH..."
-	@if [[ ":$$PATH:" != *":$$HOME/local/sec3/bin:"* ]]; then \
-		echo "Adding binary directory to PATH..."; \
-		export PATH="$$HOME/local/sec3/bin:$$PATH"; \
-		echo "Binary directory added to PATH."; \
+check-llvm:
+	@if [ -z "$(LLVM_PREBUILT_PATH)" ]; then \
+	  echo "LLVM_PREBUILT_PATH is not defined. Please set LLVM_PREBUILT_PATH to the directory containing LLVM."; \
+	  exit 1; \
+	else \
+	  if [ ! -f "$(LLVM_PREBUILT_PATH)/bin/clang++" ] || [ ! -f "$(LLVM_PREBUILT_PATH)/bin/clang" ]; then \
+	    echo "Error: bin/clang or bin/clang++ not found under $(LLVM_PREBUILT_PATH)/bin."; \
+	    exit 1; \
+	  else \
+	    echo "LLVM_PREBUILT_PATH is defined and bin/clang++ is present."; \
+	  fi; \
 	fi
 
-# Build llvm-prebuilt image
+build-detector: check-llvm
+	@mkdir -p $(BUILD_DIR)/detector
+	@cd $(BUILD_DIR)/detector && \
+	  cmake \
+	    -DCMAKE_BUILD_TYPE=Release \
+	    -DCMAKE_C_COMPILER=$(LLVM_PREBUILT_PATH)/bin/clang \
+	    -DCMAKE_CXX_COMPILER=$(LLVM_PREBUILT_PATH)/bin/clang++ \
+	    -DLLVM_DIR=$(LLVM_PREBUILT_PATH)/lib/cmake/llvm \
+	    -DMLIR_DIR=$(LLVM_PREBUILT_PATH)/lib/cmake/mlir \
+	    -DLLVM_VERSION=$(LLVM_VERSION) \
+	    ../../code-detector && \
+	  make -j
+
+build-parser: check-llvm
+	@mkdir -p $(BUILD_DIR)/parser
+	@cd $(BUILD_DIR)/parser && \
+	  cmake \
+	    -DCMAKE_BUILD_TYPE=Release \
+	    -DCMAKE_C_COMPILER=$(LLVM_PREBUILT_PATH)/bin/clang \
+	    -DCMAKE_CXX_COMPILER=$(LLVM_PREBUILT_PATH)/bin/clang++ \
+	    -DLLVM_DIR=$(LLVM_PREBUILT_PATH)/lib/cmake/llvm \
+	    -DMLIR_DIR=$(LLVM_PREBUILT_PATH)/lib/cmake/mlir \
+	    -DLLVM_VERSION=$(LLVM_VERSION) \
+	    ../../code-parser && \
+	  make -j
+
+build-cli:
+	@echo "Building X-Ray CLI..."
+	@mkdir -p $(BUILD_DIR)/cli/bin
+	@go build -o $(BUILD_DIR)/cli/bin/coderrect cmd/coderrect/main.go
+	@go build -o $(BUILD_DIR)/cli/bin/reporter cmd/reporter/main.go
+	@go build -o $(BUILD_DIR)/bin/reporter-server cmd/reporter-server/main.go
+
+install:
+	@echo "Installing X-Ray to $(INSTALL_DIR)..."
+	@for dir in bin conf data/reporter/artifacts/images; do \
+	  echo "Creating directory $(INSTALL_DIR)/$${dir}..."; \
+	  mkdir -p "$(INSTALL_DIR)/$${dir}"; \
+	done
+	@cp $(BUILD_DIR)/detector/bin/racedetect $(INSTALL_DIR)/bin/
+	@cp $(BUILD_DIR)/parser/bin/sol-racedetect $(INSTALL_DIR)/bin/
+	@cp $(BUILD_DIR)/cli/bin/* $(INSTALL_DIR)/bin/
+	@cp package/conf/coderrect.json $(INSTALL_DIR)/conf/
+	@cp package/data/reporter/*.html $(INSTALL_DIR)/data/reporter/
+	@cp package/data/reporter/artifacts/coderrect* $(INSTALL_DIR)/data/reporter/artifacts/
+	@cp package/data/reporter/artifacts/images/* $(INSTALL_DIR)/data/reporter/artifacts/images/
+	@echo "Done. X-Ray has been installed to $(INSTALL_DIR)."
+
+clean:
+	rm -f bin/*
+
 build-llvm-prebuilt-image:
 	@docker build -t $(LLVM_PREBUILT_IMAGE) \
 	  --build-arg LLVM_VERSION=$(LLVM_VERSION) \
@@ -55,6 +95,14 @@ build-llvm-prebuilt-image:
 
 push-llvm-prebuilt-image: build-llvm-prebuilt-image
 	@docker push $(LLVM_PREBUILT_IMAGE)
+
+extract-llvm:
+	@echo "Extracting LLVM prebuilt files from $(LLVM_PREBUILT_IMAGE) to $(BUILD_DIR)/llvm..."
+	@mkdir -p $(BUILD_DIR)
+	@CONTAINER_ID=$$(docker create $(LLVM_PREBUILT_IMAGE)) && \
+	  docker cp $$CONTAINER_ID:/usr/local/llvm $(BUILD_DIR)/llvm && \
+	  docker rm $$CONTAINER_ID
+	@echo "Done. Now you can set LLVM_PREBUILT_PATH=$$(pwd)/$(BUILD_DIR)/llvm to use the prebuilt LLVM."
 
 build-image:
 	@if [ "$(CI)" = "true" ]; then \
@@ -82,17 +130,3 @@ run-test:
 	@WORKING_DIR=$(CURDIR)/e2e \
 	  X_RAY_IMAGE=$(X_RAY_IMAGE) \
 	  go test -v -count=1 ./e2e/...
-
-coderrect:
-	go build -o bin/coderrect cmd/coderrect/main.go
-
-reporter:
-	go build -o bin/reporter cmd/reporter/main.go
-
-reporter-server:
-	go build -o bin/reporter-server cmd/reporter-server/main.go
-
-clean:
-	rm -f bin/*
-
-cli: clean coderrect reporter reporter-server

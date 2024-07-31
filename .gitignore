@@ -1,4 +1,3 @@
-
 !.gitignore
 *~
 *.o
@@ -10,6 +9,9 @@
 *.status
 *.bc
 *.dot
+
+# Build artifacts.
+build/
 
 ################################################
 ##            coderrect / scanner             ##
