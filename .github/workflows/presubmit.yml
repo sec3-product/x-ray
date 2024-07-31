@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  build-and-test:
+  build-container:
     runs-on: self-hosted
     env:
       X_RAY_IMAGE: x-ray-ci-presubmit-${{ github.run_id }}-${{ github.run_attempt }}
@@ -28,16 +28,45 @@ jobs:
       - name: Log into DigitalOcean container registry
         run: doctl registry login --expiry-seconds 600
 
-      - name: Build Docker image
+      - name: Build container image
         run: |
-          make -j build-image
+          make build-container-image
 
-      - name: Test with demo program
+      - name: Run container E2E tests
         run: |
-          make -j run-test
+          make -j run-container-e2e
 
-      - name: Clean up containers
-        if: always()
+  build-native:
+    runs-on: self-hosted
+    env:
+      BUILD_DIR: ${{ github.workspace }}/build
+      LLVM_PREBUILT_PATH: ${{ github.workspace }}/build/llvm
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.22
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Log into DigitalOcean container registry
+        run: doctl registry login --expiry-seconds 600
+
+      - name: Extract LLVM prebuilt binaries
         run: |
-          docker ps --all --quiet --filter ancestor=x-ray:latest | xargs -r docker stop
-          docker ps --all --quiet --filter ancestor=x-ray:latest | xargs -r docker rm
+          make extract-llvm
+
+      - name: Build and install x-ray binaries
+        run: |
+          make -j build-x-ray
+          make install
+
+      - name: Run E2E tests
+        run: |
+          make run-native-e2e
