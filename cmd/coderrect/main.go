@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
@@ -11,8 +9,6 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"regexp"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -36,32 +32,29 @@ var usage = `
 usage: soteria [option]... <your build command line>
 
 Options:
-  -h, -help              
+  -h, -help
 		Display this information.
 
-  -v, -version           
+  -v, -version
 		Display versions of all components.
 
-  -showconf              
+  -showconf
 		Display effective value of all configurations.
 
-  -o <report_dir>, -report.outputDir=<report_dir>        
+  -o <report_dir>, -report.outputDir=<report_dir>
 		Specify the report folder.
 
   -e <executable1,executable2,...>, -analyzeBinaries=<executable1,executable2,...>
 		Specify a list of executable names you want to analyze.
 
-  -analyzeAll
-        Let soteria analyze all qualified projects under a given path.
-
   -t, -report.enableTerminal
 		Generate the terminal-based report.
 
   -c, -cleanBuild
-		Delete all intermediate files. 
+		Delete all intermediate files.
 
   -plan=free|build|scale
-		Specify the plan. "free" analyzes a subset of vulnerabilities; 
+		Specify the plan. "free" analyzes a subset of vulnerabilities;
 		"scale" aims to all vulnerabilities; and the default plan "build"
 		tries to detect all vulnerabilities while balancing speed and accuracy.
 
@@ -80,7 +73,7 @@ Examples:
 $ cd path/to/examples/helloworld && soteria .
 
 2. Detect vulnerabilities in all solana-program-library projects
-$ soteria -analyzeAll path/to/solana-program-library
+$ soteria path/to/solana-program-library
 `
 
 // -solPaths=path1,path2
@@ -120,45 +113,6 @@ func normalizeCmdlineArg(arg string) string {
 			return arg
 		}
 	}
-}
-
-func searchFile(targetDir string, g *regexp.Regexp) (bool, string) {
-	files, err := ioutil.ReadDir(targetDir)
-	if err != nil {
-		logger.Warnf("Failed to open build directory. targetDir=%s, err=%v", targetDir, err)
-		return false, ""
-	}
-	for _, file := range files {
-		if file.Mode().IsRegular() && strings.HasSuffix(file.Name(), ".ll") {
-			if g.MatchString(file.Name()) {
-				return true, filepath.Join(targetDir, file.Name())
-			}
-		}
-	}
-	return false, ""
-}
-
-func getCargoTargetBcFile(buildDir string, exeName string) string {
-	_, exeName = filepath.Split(exeName)
-	// Rust will replace - to _ for the name of the IR file
-	// ignore the last - since it's used for the version hash
-	cnt := strings.Count(exeName, "-")
-	if cnt > 1 {
-		exeName = strings.Replace(exeName, "-", "_", cnt-1)
-	}
-	binPattern := fmt.Sprintf("^%s(-[0-9a-z]+)?.ll$", exeName)
-	// examplePattern := fmt.Sprintf("%s/examples/%s.ll", buildDir, exeName)
-	g := regexp.MustCompile(binPattern)
-	matched, llPath := searchFile(filepath.Join(buildDir, "bpfel-unknown-unknown", "release", "deps"), g)
-	if matched {
-		return llPath
-	}
-	matched, llPath = searchFile(filepath.Join(buildDir, "bpfel-unknown-unknown", "release"), g)
-	if matched {
-		return llPath
-	}
-	logger.Warnf("Failed to find IR file for binary: %s in directory %s", exeName, buildDir)
-	return ""
 }
 
 func panicGracefully(msg string, err error, tmpDir string) {
@@ -288,138 +242,6 @@ func getPackageVersion() string {
 	}
 }
 
-/**
- * Calls racedetect to generate a API file under $CODERRECT_TMPDIR/api.json and
- * show a selected list of APIs to the screen and let the user choose from.
- */
-func getAPIList(bcFilePath string) ([]string, error) {
-	// run racedetect --print-api to generate the api list
-	coderrectHome, _ := conflib.GetCoderrectHome()
-	racedetect := filepath.Join(coderrectHome, "bin", "racedetect")
-	noprogress := conflib.GetBool("noprogress", false)
-
-	var cmdArgument []string
-	cmdArgument = append(cmdArgument, "--print-api")
-	if noprogress {
-		cmdArgument = append(cmdArgument, "--no-progress")
-	}
-	cmdArgument = append(cmdArgument, bcFilePath)
-	omplibPath := filepath.Join(coderrectHome, "bin", "libomp.so")
-	cmdline := fmt.Sprintf("export LD_PRELOAD=%s; %s ", omplibPath, racedetect)
-	for _, s := range cmdArgument {
-		cmdline = cmdline + normalizeCmdlineArg(s) + " "
-	}
-	cmdline = "(" + cmdline + ")"
-	cmd := platform.Command(cmdline)
-	//cmd := exec.Command(racedetect, cmdArgument...)
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-	if err := cmd.Run(); err != nil {
-		logger.Errorf("Failed to generate the api list. cmd=%s %s, err=%v", racedetect, cmdArgument, err)
-		return nil, err
-	}
-
-	// unmarshall the json to get the complete api list
-	tmpDir := os.Getenv("CODERRECT_TMPDIR")
-	apiJsonPath := filepath.Join(tmpDir, "api.json")
-	jsonBytes, err := ioutil.ReadFile(apiJsonPath)
-	if err != nil {
-		logger.Errorf("Failed to read api.json. apiJsonPath=%s, err=%v", apiJsonPath, err)
-		return nil, err
-	}
-
-	type ApiList struct {
-		Apis []string
-	}
-	var apiListJson ApiList
-	if err := json.Unmarshal(jsonBytes, &apiListJson); err != nil {
-		logger.Errorf("Failed to unmarshal cmdlineopt json. str=%s, err=%v", string(jsonBytes), err)
-		return nil, err
-	}
-	if len(apiListJson.Apis) == 0 {
-		return nil, nil
-	}
-
-	// show the list and list the customer to pick up
-	maxWidth := 0
-	for _, name := range apiListJson.Apis {
-		if len(name) > maxWidth {
-			maxWidth = len(name)
-		}
-	}
-	maxWidth += 10
-
-	col := 3
-	var startIdx []int
-	if len(apiListJson.Apis) >= 3 {
-		for i := 0; i < col; i++ {
-			startIdx = append(startIdx, int(len(apiListJson.Apis)*i/col))
-		}
-	} else {
-		startIdx = append(startIdx, 0)
-		startIdx = append(startIdx, 1)
-		startIdx = append(startIdx, 0)
-	}
-	maxLoop := startIdx[1]
-	for i := 0; i < maxLoop; i++ {
-		for c := 0; c < col && c < len(apiListJson.Apis); c++ {
-			pos := startIdx[c]
-			if pos < len(apiListJson.Apis) {
-				fmt.Printf("%4d) %s", pos+1, apiListJson.Apis[pos])
-				spaces := maxWidth - (len(apiListJson.Apis[pos]) + 6)
-				for k := 0; k < spaces; k++ {
-					fmt.Print(" ")
-				}
-				startIdx[c]++
-			}
-		}
-		fmt.Println("")
-	}
-	fmt.Println("")
-
-	reader := bufio.NewReader(os.Stdin)
-	for true {
-		fmt.Print("Please select APIs by entering their numbers or names (e.g. 1,2,leveldb::SharedLRUCache,22): ")
-		text, _ := reader.ReadString('\n')
-		text = strings.Replace(text, "\n", "", -1)
-
-		selectedList, err := convertToList(apiListJson.Apis, text)
-		if err != nil {
-			fmt.Printf("Invalid input - %v. \n", err)
-			continue
-		}
-
-		return selectedList, nil
-	}
-
-	return nil, nil
-}
-
-func convertToList(list []string, input string) ([]string, error) {
-	var rs []string
-	tokens := strings.Split(input, ",")
-	for _, token := range tokens {
-		token = strings.Trim(token, " ")
-		i, err := strconv.Atoi(token)
-		if err == nil {
-			i--
-			if i >= len(list) {
-				return nil, errors.New("Index is out of range")
-			}
-			rs = append(rs, list[i])
-		} else {
-			rs = append(rs, token)
-		}
-	}
-
-	if len(rs) == 0 {
-		return nil, errors.New("Empty result list")
-	}
-	return rs, nil
-}
-
-var skip_over_flow_checks bool
-
 func findAllXargoTomlDirectory(rootPath string) []string {
 	//targetName := "Xargo.toml";
 	var pathList []string
@@ -498,15 +320,6 @@ func findAllXargoTomlDirectory(rootPath string) []string {
 						pathList = append(pathList, strings.TrimSuffix(srcFolder, "/"))
 						fmt.Println("Program found in: ", srcFolder)
 						//fmt.Println("solana-program: ", solana)
-					}
-					overflow := config.Get("profile.release.overflow-checks")
-					if overflow != nil {
-						if overflow == true {
-							//fmt.Println("overflow-checks true: ", overflow)
-							skip_over_flow_checks = true
-						} else {
-							//fmt.Println("overflow-checks false: ", overflow)
-						}
 					}
 				}
 			}
@@ -697,12 +510,7 @@ func main() {
 	// Per COD-665, we add (or replace) "-logger.logFolder" in the cmdline opts
 	//
 	cmdlineOpts := addOrReplaceCommandline(conflib.GetCmdlineOpts(), "logger.logFolder", logger.GetLogFolder())
-	// FIXME: the below addOrReplaceCommandline seems redundant
-	// if conflib.GetBool("publish.jenkins", false) {
-	// 	cmdlineOpts = addOrReplaceCommandline(cmdlineOpts, "reporter.terminalReportOnly", "true")
-	// }
-	customConfigPath := conflib.GetString("conf", "")
-	if len(customConfigPath) > 0 {
+	if customConfigPath := conflib.GetString("conf", ""); len(customConfigPath) > 0 {
 		// cod1974, replace relative path to abs, and pass to next
 		customConfigPath, _ = filepath.Abs(customConfigPath)
 		cmdlineOpts = addOrReplaceCommandline(cmdlineOpts, "conf", customConfigPath)
@@ -880,13 +688,11 @@ func main() {
 	//
 	var rawJsonPathList []string
 	var outputDir string
-	var interactiveOpenAPI bool
 	var cmd *exec.Cmd
 
 	var executableInfoList []ExecutableInfo
 	totalRaceCnt := 0
 	time_start := time.Now()
-	//default 480min = 8h
 	timeout, _ := time.ParseDuration(conflib.GetString("timeout", "8h"))
 
 	for i := 0; i < len(executablePathList); i++ {
@@ -905,52 +711,13 @@ func main() {
 		}
 		logger.Infof("Analyzing BC file to detect races. bcFile=%s.bc", bcFile)
 
-		// Step 3. If the executable is a library and configuration doesn't specify entry points,
-		// and user does not specify analyzeAll or openlib.analyzeAPI or openlib.optimal
-		// we let the user choose APIs
-		interactiveOpenAPI = false
-		if platform.IsLibrary(executablePathList[i]) {
-			apiList := conflib.GetStrings("openlib.entryPoints")
-			logger.Infof("Get entry points from conf. apiList=%v", apiList)
-
-			if len(apiList) == 0 && !conflib.GetBool("analyzeAll", false) && !conflib.GetBool("openlib.analyzeAPI", false) && !conflib.GetBool("openlib.optimal", false) {
-				if apiList, err = getAPIList(bcFile); err != nil {
-					logger.Errorf("Failed to get a list of APIs for analysis. err=%v", err)
-					panicGracefully("Failed to get a list of APIs for analysis", err, tmpDir)
-				}
-				logger.Infof("The user chooses a list of APIs. apiList=%v", apiList)
-				if apiList == nil {
-					fmt.Println("We didn't detect public APIs for the given library.")
-					continue
-					//exitGracefully(1, tmpDir)
-				}
-
-				envCmdlineOpts := os.Getenv("CODERRECT_CMDLINE_OPTS")
-				logger.Infof("Prepare to add entry points into env cmdline. envCmdlineOpts=%s", envCmdlineOpts)
-				os.Setenv("CODERRECT_CMDLINE_OPTS", addEntryPoints(envCmdlineOpts, apiList))
-				interactiveOpenAPI = true
-			}
-		}
-
-		// Step 4. Call racedetect
+		// Step 3. Call racedetect
 		executablePath := executablePathList[i]
 		_, executableName := filepath.Split(executablePath)
 		executableInfo.Name = executableName
 		tmpJsonPath := filepath.Join(tmpDir, fmt.Sprintf("coderrect_%s_report.json", executableName))
 		logger.Infof("Generating the json file. jsonPath=%s", tmpJsonPath)
 		racedetect := filepath.Join(coderrectHome, "bin", "racedetect")
-		analyzeAPIFlag := ""
-		if conflib.GetBool("openlib.analyzeAPI", false) {
-			analyzeAPIFlag = "--analyze-api"
-		}
-		analyzeAPIOnceFlag := ""
-		if conflib.GetBool("openlib.once", false) {
-			analyzeAPIOnceFlag = "--openlib-once"
-		}
-		analyzeAPIOptimalFlag := ""
-		if conflib.GetBool("openlib.optimal", false) {
-			analyzeAPIOptimalFlag = "--openlib-optimal"
-		}
 		detectModeFlag := ""
 		switch mode := conflib.GetString("mode", "normal"); mode {
 		case "fast":
@@ -989,23 +756,11 @@ func main() {
 		}
 
 		var cmdArgument []string
-		if len(analyzeAPIFlag) > 0 {
-			cmdArgument = append(cmdArgument, analyzeAPIFlag)
-		}
-		if len(analyzeAPIOnceFlag) > 0 {
-			cmdArgument = append(cmdArgument, analyzeAPIOnceFlag)
-		}
-		if len(analyzeAPIOptimalFlag) > 0 {
-			cmdArgument = append(cmdArgument, analyzeAPIOptimalFlag)
-		}
 		if len(detectModeFlag) > 0 {
 			cmdArgument = append(cmdArgument, detectModeFlag)
 		}
 		if len(detectPlanFlag) > 0 {
 			cmdArgument = append(cmdArgument, detectPlanFlag)
-		}
-		if skip_over_flow_checks {
-			cmdArgument = append(cmdArgument, "--skip-overflow")
 		}
 		if len(displayFlag) > 0 {
 			cmdArgument = append(cmdArgument, displayFlag)
@@ -1077,7 +832,7 @@ func main() {
 		panicGracefully("Failed to create configuration.json", err, tmpDir)
 	}
 
-	// step 5. call reporter to generate the report if there are races
+	// Step 4. call reporter to generate the report if there are races
 	reporterBin := filepath.Join(coderrectHome, "bin", "reporter")
 	outputDir = conflib.GetString("report.outputDir", filepath.Join(coderrectWorkingDir, "report"))
 	os.RemoveAll(outputDir)
@@ -1097,10 +852,6 @@ func main() {
 		}
 	} else {
 		exitCode = 0
-	}
-
-	if interactiveOpenAPI {
-		fmt.Println(openAPIMsg)
 	}
 
 	for i := 0; i < len(rawJsonPathList); i++ {
