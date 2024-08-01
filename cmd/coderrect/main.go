@@ -408,7 +408,6 @@ func main() {
 		"p":  "bcPaths",
 		"t:": "report.enableTerminal",
 		"c:": "cleanBuild",
-		"s:": "startServer",
 	}
 
 	remainingArgs, err := conflib.Initialize(argAlias)
@@ -516,13 +515,6 @@ func main() {
 		cmdlineOpts = addOrReplaceCommandline(cmdlineOpts, "conf", customConfigPath)
 	}
 
-	// start the code server for reporter
-	if conflib.GetBool("startServer", false) || conflib.GetBool("-startServer", false) {
-		cmdlineOpts = addOrReplaceCommandline(cmdlineOpts, "startServer", "true")
-		// Only set this to let racedetect output full path for project source code
-		// when we do use the code server
-		// cmdlineOpts = addOrReplaceCommandline(cmdlineOpts, "cwd", cwd)
-	}
 	cmdlineOpts = addOrReplaceCommandline(cmdlineOpts, "cwd", cwd)
 
 	os.Setenv("CODERRECT_CMDLINE_OPTS", cmdlineOpts)

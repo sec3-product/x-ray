@@ -15,7 +15,6 @@ import (
 	"strings"
 	"time"
 
-	crserver "github.com/coderrect-inc/coderrect/cmd/reporter-service"
 	"github.com/coderrect-inc/coderrect/pkg/reporter"
 	"github.com/coderrect-inc/coderrect/pkg/util/conflib"
 	"github.com/coderrect-inc/coderrect/pkg/util/jsonparser"
@@ -1067,7 +1066,6 @@ func main() {
 	argAlias := map[string]string{
 		"v": "version",
 		"h": "help",
-		"s": "startServer",
 	}
 	_, err := conflib.InitializeWithEnvCmdline(argAlias)
 	if err != nil {
@@ -1290,12 +1288,6 @@ func main() {
 		}
 	} else {
 		//fmt.Println("No vulnerabilities detected")
-	}
-
-	if conflib.GetBool("startServer", false) {
-		fmt.Println("Start the service server for loading source code to the report page.")
-		// TODO: make the host and ip configuable
-		crserver.StartServer("localhost", 8887)
 	}
 
 	logger.Infof("Reporter exit gracefully")

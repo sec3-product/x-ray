@@ -68,7 +68,6 @@ build-cli:
 	@mkdir -p $(BUILD_DIR)/cli/bin
 	@go build -o $(BUILD_DIR)/cli/bin/coderrect cmd/coderrect/main.go
 	@go build -o $(BUILD_DIR)/cli/bin/reporter cmd/reporter/main.go
-	@go build -o $(BUILD_DIR)/bin/reporter-server cmd/reporter-server/main.go
 
 install:
 	@echo "Installing X-Ray to $(INSTALL_DIR)..."
