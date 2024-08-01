@@ -14,6 +14,7 @@ import (
 )
 
 const (
+	xrayExecutable   = "coderrect"
 	defaultImageName = "x-ray:latest"
 
 	// The container uses `/workspace` as the working directory, where it
@@ -137,10 +138,11 @@ func TestContainerE2E(t *testing.T) {
 }
 
 func TestNativeE2E(t *testing.T) {
-	execName := os.Getenv("X_RAY_EXECUTABLE")
-	if execName == "" {
-		t.Fatal("X_RAY_EXECUTABLE must be set")
+	execPath, err := exec.LookPath(xrayExecutable)
+	if err != nil {
+		t.Fatalf("Failed to find %v executable: %v", xrayExecutable, err)
 	}
+	t.Logf("Found %v executable at %v", xrayExecutable, execPath)
 
 	workingDir := os.Getenv("WORKING_DIR")
 	if workingDir == "" {
@@ -149,7 +151,7 @@ func TestNativeE2E(t *testing.T) {
 	}
 
 	e2eDir := prepareTestApp(t, workingDir, "e2e-app-native")
-	cmd := exec.Command(execName, e2eDir)
+	cmd := exec.Command(execPath, e2eDir)
 	cmd.Dir = e2eDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

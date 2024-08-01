@@ -125,7 +125,7 @@ build-container-image:
 	  -f Dockerfile.x-ray .
 
 run-native-e2e:
-	@X_RAY_EXECUTABLE=$$(realpath $(INSTALL_DIR)/bin/coderrect) \
+	@PATH=$$(realpath ${INSTALL_DIR}/bin):$${PATH} \
 	  go test -v -run=TestNativeE2E -count=1 ./e2e/...
 
 run-container-e2e:
