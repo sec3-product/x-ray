@@ -1,3 +1,6 @@
+BUILD_DIR ?= build
+INSTALL_DIR ?= $(BUILD_DIR)/dist
+
 # The LLVM version to use.
 LLVM_VERSION ?= 14.0.6
 
@@ -8,12 +11,9 @@ LLVM_PREBUILT_IMAGE ?= registry.digitalocean.com/soteria/llvm-prebuilt-$(LLVM_VE
 # The path to prebuilt LLVM files. It expects `clang++` to be available under
 # `$(LLVM_PREBUILT_PATH)/bin`. One can use `make extract-llvm` to extract the
 # prebuilt files from the prebuilt image to the specified directory.
-LLVM_PREBUILT_PATH ?=
+LLVM_PREBUILT_PATH ?= $(realpath $(BUILD_DIR)/llvm)
 
 X_RAY_IMAGE ?= x-ray:latest
-
-BUILD_DIR ?= build
-INSTALL_DIR ?= $(BUILD_DIR)/dist
 
 .PHONY: all build-x-ray build-cli install extract-llvm check-llvm \
   build-detector build-parser \
@@ -33,7 +33,7 @@ check-llvm:
 	    echo "Error: bin/clang or bin/clang++ not found under $(LLVM_PREBUILT_PATH)/bin."; \
 	    exit 1; \
 	  else \
-	    echo "LLVM_PREBUILT_PATH is defined and bin/clang++ is present."; \
+	    echo "LLVM_PREBUILT_PATH resolves to $(LLVM_PREBUILT_PATH)."; \
 	  fi; \
 	fi
 
