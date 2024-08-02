@@ -82,19 +82,11 @@ Please set this to environment variable to point to the LLVM build directory\
 (e.g. on linux: export MLIR_DIR=/path/to/mlir/build/dir)")
     endif()
 else()
-        set(IN_SOURCE_BUILD 1)
+    set(IN_SOURCE_BUILD 1)
 endif()
 
-# set(ANTLR4CPP_LOCAL_DIR ${CMAKE_SOURCE_DIR}/utils/antlr/antlr4cpp)
-#     list(APPEND ANTLR4CPP_INCLUDE_DIRS ${ANTLR4CPP_LOCAL_DIR}/include/antlr4-runtime)
-#     foreach(src_path misc atn dfa tree support)
-#         list(APPEND ANTLR4CPP_INCLUDE_DIRS ${ANTLR4CPP_LOCAL_DIR}/include/antlr4-runtime/${src_path})
-#     endforeach(src_path)
-#     include_directories( ${ANTLR4CPP_INCLUDE_DIRS} )
-#     message(STATUS "Found antlr4cpp includes: ${ANTLR4CPP_INCLUDE_DIRS} ")
-    
 # ANTLR 4.13.1
-set(ANTLR4CPP_LOCAL_DIR ${CMAKE_SOURCE_DIR}/utils/antlr/antlr4cpp)
+set(ANTLR4CPP_LOCAL_DIR ${CMAKE_SOURCE_DIR}/external/antlr/antlr4cpp)
     list(APPEND ANTLR4CPP_INCLUDE_DIRS ${ANTLR4CPP_LOCAL_DIR}/src)
     foreach(src_path misc atn dfa internal tree support)
         list(APPEND ANTLR4CPP_INCLUDE_DIRS ${ANTLR4CPP_LOCAL_DIR}/src/${src_path})
@@ -105,9 +97,14 @@ set(ANTLR4CPP_LOCAL_DIR ${CMAKE_SOURCE_DIR}/utils/antlr/antlr4cpp)
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}/include
-    utils)
+    utils
+)
 
-add_subdirectory(lib)
-add_subdirectory(tools)
+# Marking as SYSTEM to suppress their warnings (e.g. `-Wsuggest-override`).
+include_directories(SYSTEM
+    external/jsoncons/include
+)
+
+add_subdirectory(src)
 add_subdirectory(utils/conflib)
 add_subdirectory(utils/parser)
