@@ -1,3 +1,0 @@
-/home/jinbin/Solana/smallrace/tools/RaceDetector/CMakeFiles/sol-racedetect.dir
-/home/jinbin/Solana/smallrace/tools/RaceDetector/CMakeFiles/edit_cache.dir
-/home/jinbin/Solana/smallrace/tools/RaceDetector/CMakeFiles/rebuild_cache.dir

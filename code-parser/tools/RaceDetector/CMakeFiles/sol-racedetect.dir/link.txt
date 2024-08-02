@@ -1,1 +1,0 @@
-/usr/bin/c++ -rdynamic CMakeFiles/sol-racedetect.dir/src/st/MLIRGen.o CMakeFiles/sol-racedetect.dir/src/STRaceDetector.o -o bin/sol-racedetect  -lsol-racedetect-lib -lo2 -lconflib -lstparserlib -lxml2 -lMLIRAnalysis -lMLIRCallInterfaces -lMLIRExecutionEngine -lMLIRIR -lMLIRParser -lMLIRPass -lMLIRSideEffectInterfaces -lMLIRTargetLLVMIR -lMLIRTransforms 
