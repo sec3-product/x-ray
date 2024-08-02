@@ -9,6 +9,7 @@
 *.status
 *.bc
 *.dot
+**/.DS_Store
 
 # Build artifacts.
 build/
@@ -42,7 +43,6 @@ coderrect/cmake-build*/
 coderrect/Output/
 coderrect/Cargo.lock
 coderrect/target/
-coderrect/.DS_Store
 
 # installer
 coderrect/*/build/*
