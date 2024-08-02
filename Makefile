@@ -79,6 +79,7 @@ install:
 	@cp $(BUILD_DIR)/detector/bin/racedetect $(INSTALL_DIR)/bin/
 	@cp $(BUILD_DIR)/parser/bin/sol-racedetect $(INSTALL_DIR)/bin/
 	@cp $(BUILD_DIR)/cli/bin/* $(INSTALL_DIR)/bin/
+	@cp $(LLVM_PREBUILT_PATH)/lib/libomp.so $(INSTALL_DIR)/bin/
 	@cp package/conf/coderrect.json $(INSTALL_DIR)/conf/
 	@cp package/data/reporter/*.html $(INSTALL_DIR)/data/reporter/
 	@cp package/data/reporter/artifacts/coderrect* $(INSTALL_DIR)/data/reporter/artifacts/
