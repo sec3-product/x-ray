@@ -605,8 +605,9 @@ void ThreadAPIConverter::convertOperatorAsEntryThreadAPI(const ThreadAPIInfo &AP
     size_t idx = APIInfo.getArgStartIdxInIRFunc(); // -1 will give include
     for (int i = 1; i < callback->arg_size(); i ++) { // start from 1 to skip *this*
         if ((callback->arg_begin() + i)->getType() != (theAPI->arg_begin() + idx)->getType()) {
-            LOG_ERROR("Unmatched API, Lambda Type:{}, API Type:{}", callback->getFunctionType(),
-                      theAPI->getFunctionType());
+            LOG_ERROR("Unmatched API, Lambda Type:{}, API Type:{}",
+                      static_cast<void *>(callback->getFunctionType()),
+                      static_cast<void *>(theAPI->getFunctionType()));
             return;
         }
         idx ++;

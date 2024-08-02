@@ -99,9 +99,10 @@ include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}/include
 )
 
-# Marking as SYSTEM to suppress their warnings (e.g. `-Wsuggest-override`).
+# Marking SYSTEM to suppress their warnings (e.g. `-Wsuggest-override`).
 include_directories(SYSTEM
     external/jsoncons/include
+    external/spdlog/include
 )
 
 add_subdirectory(src)
