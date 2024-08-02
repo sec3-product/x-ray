@@ -76,25 +76,6 @@ $ cd path/to/examples/helloworld && soteria .
 $ soteria path/to/solana-program-library
 `
 
-// -solPaths=path1,path2
-// Specify a list of comma separated directories where soteria searchs
-// for projects containing Xargo.toml files.
-
-var multipleExecutableMsg = `
-The project creates multiple executables. Please select one from the list below
-to detect races. 
-
-In the future, you can specify the executable using the option "-e" if you know 
-which ones you want to analyze. 
-
-    coderrect -e executable_name1,executable_name2 your_build_command_line
-`
-
-var openAPIMsg = `
-To automate the API analysis, please read the tutorial https://coderrect.com/analyzing-static-dynamic-library-code/.	
-`
-
-// type aliases
 type ExecutableInfo = reporter.ExecutableInfo
 type IndexInfo = reporter.IndexInfo
 
@@ -203,26 +184,6 @@ func addOrReplaceCommandline(jsonOptStr string, key string, value string) string
 	}
 
 	cmdlineOpts.Opts = tmp
-	if b, err := json.Marshal(&cmdlineOpts); err != nil {
-		logger.Warnf("Failed to marshal json. str=%s, err=%v", jsonOptStr, err)
-		return jsonOptStr
-	} else {
-		return string(b)
-	}
-}
-
-func addEntryPoints(jsonOptStr string, entryPoints []string) string {
-	type CmdlineOpts struct {
-		Opts []string
-	}
-	var cmdlineOpts CmdlineOpts
-	if err := json.Unmarshal([]byte(jsonOptStr), &cmdlineOpts); err != nil {
-		logger.Warnf("Failed to unmarshal cmdlineopt json. str=%s, err=%v", jsonOptStr, err)
-		return jsonOptStr
-	}
-
-	cmdlineOpts.Opts = append(cmdlineOpts.Opts, "@openlib.entryPoints="+strings.Join(entryPoints, ","))
-
 	if b, err := json.Marshal(&cmdlineOpts); err != nil {
 		logger.Warnf("Failed to marshal json. str=%s, err=%v", jsonOptStr, err)
 		return jsonOptStr
@@ -469,9 +430,6 @@ func main() {
 	logger.Infof("Check cleanBuild flag. cleanBuild=%v", cleanBuild)
 	coderrectBuildDir := filepath.Join(coderrectWorkingDir, "build")
 
-	// Find the bold db path
-	boldDbFilePath := filepath.Join(coderrectBuildDir, "bold.db")
-
 	// set the following environment variables
 	//   - PATH - make sure coderrect_home/bin in the front of other folders
 	//   - CODERRECT_HOME
@@ -497,7 +455,6 @@ func main() {
 	}
 
 	os.Setenv("CODERRECT_TOKEN", token)
-	os.Setenv("CODERRECT_BOLD_DB_PATH", boldDbFilePath)
 	os.Setenv("CODERRECT_BUILD_DIR", coderrectBuildDir)
 	os.Setenv("CODERRECT_CWD", coderrectWorkingDir)
 
