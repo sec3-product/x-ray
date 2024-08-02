@@ -30,7 +30,6 @@ RUN apt-get update \
         golang-go \
         wget \
         git \
-        libxml2-dev \
         zlib1g-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -72,7 +71,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y \
         libgomp1 \
-        libxml2-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

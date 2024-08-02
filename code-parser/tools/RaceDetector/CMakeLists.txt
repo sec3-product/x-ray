@@ -44,11 +44,6 @@ ${sol-racedetect-component}
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/)
 
-#set(CMAKE_CXX_STANDARD_LIBRARIES "-lxml2" )
-#include_directories("/usr/include/libxml2/")
-#link_libraries(libxml2.so)
-
-
 if (ENABLE_BUILD_ANTLR)
     set(ANTLR4CPP_JAR_LOCATION ${CMAKE_SOURCE_DIR}/utils/antlr/antlr-4.13.1-complete.jar)
     LIST( APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
@@ -83,7 +78,6 @@ target_link_libraries(sol-racedetect o2)
 target_link_libraries(sol-racedetect conflib)
 target_link_libraries(sol-racedetect stparserlib)
 target_link_libraries(sol-racedetect ${llvm_libs})
-target_link_libraries(sol-racedetect xml2)
 
 get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 get_property(conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
