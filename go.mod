@@ -3,6 +3,7 @@ module github.com/coderrect-inc/coderrect
 go 1.22
 
 require (
+	github.com/buger/jsonparser v1.1.1
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-cmp v0.5.5
 	github.com/google/uuid v1.6.0

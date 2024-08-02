@@ -15,9 +15,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/buger/jsonparser"
+
 	"github.com/coderrect-inc/coderrect/pkg/reporter"
 	"github.com/coderrect-inc/coderrect/pkg/util/conflib"
-	"github.com/coderrect-inc/coderrect/pkg/util/jsonparser"
 	"github.com/coderrect-inc/coderrect/pkg/util/logger"
 	"github.com/coderrect-inc/coderrect/pkg/util/platform"
 )

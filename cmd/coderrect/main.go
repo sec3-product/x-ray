@@ -13,13 +13,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/buger/jsonparser"
 	"github.com/gookit/color"
 	toml "github.com/pelletier/go-toml"
 
 	"github.com/coderrect-inc/coderrect/pkg/reporter"
 	"github.com/coderrect-inc/coderrect/pkg/util"
 	"github.com/coderrect-inc/coderrect/pkg/util/conflib"
-	"github.com/coderrect-inc/coderrect/pkg/util/jsonparser"
 	"github.com/coderrect-inc/coderrect/pkg/util/logger"
 	"github.com/coderrect-inc/coderrect/pkg/util/platform"
 )
