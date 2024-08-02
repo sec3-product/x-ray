@@ -27,20 +27,20 @@ set(sol-racedetect-component
     src/st/LowerToLLVM.cpp
 )
 
-include_directories(
-    ${INSTALL_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
 add_llvm_library(sol-racedetect-lib
     ${sol-racedetect-component}
 )
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/)
+target_include_directories(sol-racedetect-lib PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(sol-racedetect-lib
+    conflib
+)
 
 if (ENABLE_BUILD_ANTLR)
-    set(ANTLR4CPP_JAR_LOCATION ${CMAKE_SOURCE_DIR}/utils/antlr/antlr-4.13.1-complete.jar)
+    set(ANTLR4CPP_JAR_LOCATION ${CMAKE_SOURCE_DIR}/external/antlr/antlr-4.13.1-complete.jar)
     LIST( APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
     # add external build for antlrcpp
     include( ExternalAntlr4Cpp )
@@ -52,15 +52,15 @@ if (ENABLE_BUILD_ANTLR)
     # Call macro to add lexer and grammar to your build dependencies.
     # NOTE: Here, we define "antlrcpp" as our project's namespace
     antlr4cpp_process_grammar(demo antlrcpp
-        ${CMAKE_SOURCE_DIR}/utils/parser/SmalltalkLexer.g4
-        ${CMAKE_SOURCE_DIR}/utils/parser/SmalltalkParser.g4)
+        ${CMAKE_SOURCE_DIR}/src/parser/SmalltalkLexer.g4
+        ${CMAKE_SOURCE_DIR}/src/parser/SmalltalkParser.g4)
     #  ${CMAKE_CURRENT_SOURCE_DIR}/TLexer.g4
-    #  ${CMAKE_CURRENT_SOURCE_DIR}/TParser.g4    
+    #  ${CMAKE_CURRENT_SOURCE_DIR}/TParser.g4
     # include generated files in project environment
     include_directories(${antlr4cpp_include_dirs_antlrcpp})
 else()
     message(STATUS "antlr4cpp built already")
-    set(ANTLR4CPP_PARSER_DIR ${CMAKE_SOURCE_DIR}/utils/parser/)
+    set(ANTLR4CPP_PARSER_DIR ${CMAKE_SOURCE_DIR}/src/parser)
     include_directories(${ANTLR4CPP_PARSER_DIR})
 endif()
 
@@ -74,7 +74,6 @@ add_executable(sol-racedetect
 get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 get_property(conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
 
-# the sol-racedetect needs to be linked before o2
 target_link_libraries(sol-racedetect
     sol-racedetect-lib
     o2

@@ -97,7 +97,6 @@ set(ANTLR4CPP_LOCAL_DIR ${CMAKE_SOURCE_DIR}/external/antlr/antlr4cpp)
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}/include
-    utils
 )
 
 # Marking as SYSTEM to suppress their warnings (e.g. `-Wsuggest-override`).
@@ -106,5 +105,3 @@ include_directories(SYSTEM
 )
 
 add_subdirectory(src)
-add_subdirectory(utils/conflib)
-add_subdirectory(utils/parser)

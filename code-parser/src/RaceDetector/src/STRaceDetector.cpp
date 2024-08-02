@@ -1,4 +1,3 @@
-#include <conflib/conflib.h>
 #include <dirent.h>
 #include <llvm/Analysis/AssumptionCache.h>
 #include <llvm/Analysis/TypeBasedAliasAnalysis.h>
@@ -16,7 +15,6 @@
 #include <llvm/Support/Signals.h>    // signal for command line
 #include <llvm/Support/SourceMgr.h>  // for SMDiagnostic
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
-#include <o2/Util/Log.h>
 
 #include "RustLexer.h"
 #include "RustParser.h"
@@ -39,6 +37,9 @@
 #include "mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h"
 #include "mlir/Target/LLVMIR/Export.h"
 #include "mlir/Transforms/Passes.h"
+
+#include "conflib/conflib.h"
+#include "o2/Util/Log.h"
 
 using namespace antlr4;
 using namespace antlrcpp;
