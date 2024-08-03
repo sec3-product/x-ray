@@ -103,6 +103,7 @@ include_directories(
 include_directories(SYSTEM
     external/jsoncons/include
     external/spdlog/include
+    external/toml
 )
 
 add_subdirectory(src)
