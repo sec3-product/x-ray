@@ -357,61 +357,79 @@ bool handleDiretory(DIR *dir, stx::ModuleAST *module, std::string &fullPathName,
         }
 
         if (data.contains("dependencies")) {
+          // The following version values have two valid forms:
+          //
+          //   - simple string
+          // anchor-lang = "0.18.2"
+          //
+          //   - detailed table format
+          // anchor-lang = { version = "0.18.2", features = ["derive"] }
+          //
           if (data.at("dependencies").count("spl-token") != 0) {
             const auto spl_token =
                 toml::find(data, "dependencies", "spl-token");
             std::string version = "";
-            if (spl_token.contains("version")) {
-              version = toml::get_or(spl_token.at("version"), "");
-
-              // auto features =
-              //     toml::get_or(spl_token.at("default-features"), false);
-              // llvm::outs() << dname << ": spl-token version: " << version
-              //              << " default-features: " << features << "\n";
-            } else {
+            if (spl_token.is_string()) {
               version = toml::get_or(spl_token, "");
+            } else if (spl_token.is_table()) {
+              if (spl_token.contains("version")) {
+                version = toml::get_or(spl_token.at("version"), "");
+              }
             }
-            if (!version.empty())
+            // auto features =
+            //     toml::get_or(spl_token.at("default-features"), false);
+            // llvm::outs() << dname << ": spl-token version: " << version
+            //              << " default-features: " << features << "\n";
+            if (!version.empty()) {
               module->configMap["dependencies.spl-token.version"] = version;
+            }
           }
 
           if (data.at("dependencies").count("anchor-lang") != 0) {
             const auto anchor_lang =
                 toml::find(data, "dependencies", "anchor-lang");
             std::string version = "";
-            if (anchor_lang.contains("version")) {
-              version = toml::get_or(anchor_lang.at("version"), "");
-            } else
+            if (anchor_lang.is_string()) {
               version = toml::get_or(anchor_lang, "");
-
-            if (!version.empty())
+            } else if (anchor_lang.is_table()) {
+              if (anchor_lang.contains("version")) {
+                version = toml::get_or(anchor_lang.at("version"), "");
+              }
+            }
+            if (!version.empty()) {
               module->configMap["dependencies.anchor-lang.version"] = version;
+            }
           }
 
           if (data.at("dependencies").count("anchor-spl") != 0) {
             const auto anchor_spl =
                 toml::find(data, "dependencies", "anchor-spl");
             std::string version = "";
-            if (anchor_spl.contains("version")) {
-              version = toml::get_or(anchor_spl.at("version"), "");
-            } else
+            if (anchor_spl.is_string()) {
               version = toml::get_or(anchor_spl, "");
-
-            if (!version.empty())
+            } else if (anchor_spl.is_table()) {
+              if (anchor_spl.contains("version")) {
+                version = toml::get_or(anchor_spl.at("version"), "");
+              }
+            }
+            if (!version.empty()) {
               module->configMap["dependencies.anchor-spl.version"] = version;
+            }
           }
           if (data.at("dependencies").count("solana-program") != 0) {
             const auto solana_program =
                 toml::find(data, "dependencies", "solana-program");
             std::string version = "";
-            if (solana_program.contains("version")) {
-              version = toml::get_or(solana_program.at("version"), "");
-            } else
+            if (solana_program.is_string()) {
               version = toml::get_or(solana_program, "");
-
-            if (!version.empty())
-              module->configMap["dependencies.solana_program.version"] =
-                  version;
+            } else if (solana_program.is_table()) {
+              if (solana_program.contains("version")) {
+                version = toml::get_or(solana_program.at("version"), "");
+              }
+            }
+            if (!version.empty()) {
+              module->configMap["dependencies.solana_program.version"] = version;
+            }
           }
         }
       }

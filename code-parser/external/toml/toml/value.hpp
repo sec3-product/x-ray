@@ -1759,8 +1759,8 @@ class basic_value {
 
   bool contains(const key_type& k) const {
     if (!this->is_table()) {
-      // detail::throw_bad_cast<value_t::table>(
-      //     "toml::value::contains(key): ", this->type_, *this);
+      detail::throw_bad_cast<value_t::table>(
+          "toml::value::contains(key): ", this->type_, *this);
       return false;
     }
     return (this->as_table(std::nothrow).count(k) != 0);
