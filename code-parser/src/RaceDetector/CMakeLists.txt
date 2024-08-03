@@ -20,10 +20,6 @@ llvm_map_components_to_libnames(llvm_libs
 )
 
 set(sol-racedetect-component
-    src/CustomAPIRewriters/ThreadAPIRewriter.cpp
-    src/CustomAPIRewriters/LockUnlockRewriter.cpp
-    src/CustomAPIRewriters/HeapAllocAPIRewriter.cpp
-    src/CustomAPIRewriters/ThreadProfileRewriter.cpp
     src/st/LowerToLLVM.cpp
 )
 
