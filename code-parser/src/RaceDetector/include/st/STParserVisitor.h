@@ -15,7 +15,6 @@ std::map<std::string, uint> functionAnonNamesMap;
 std::set<std::string> declareIdAddresses;
 class STParserVisitor : public RustParserBaseVisitor {
  private:
-  const size_t MAX_TEXT_LENGTH = 20;
   std::string fileName;
   std::string fnBaseName;
   std::string curFuncName;

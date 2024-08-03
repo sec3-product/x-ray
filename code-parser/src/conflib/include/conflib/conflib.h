@@ -54,24 +54,23 @@ T Get(const std::string &key, T defaultValue) {
     }
     else {
         // this a merge key.
-        int i = confs_.size() - 1;
-        for (; i >= 0; --i) {
-            if (confs_[i].contains(first_stage)) {
-                break;
-            }
-        }
-        if (i < 0) {
+        auto rit = std::find_if(confs_.rbegin(), confs_.rend(), [&](const auto& conf) {
+            return conf.contains(first_stage);
+        });
+        if (rit == confs_.rend()) {
             return defaultValue;
         }
 
         std::string jpath = "$." + first_stage;
-        jsoncons::json j = jsoncons::jsonpath::json_query(confs_[i], jpath)[0];
-        i++;
-        for (; i < confs_.size(); i++) {
+        jsoncons::json j = jsoncons::jsonpath::json_query(*rit, jpath)[0];
+
+        auto it = rit.base();
+        for (++it; it != confs_.end(); ++it) {
             jpath = "$.@" + first_stage;
-            auto r = jsoncons::jsonpath::json_query(confs_[i], jpath);
-            if (!r.empty())
-                MergeJson_(j, r[0]);            
+            auto r = jsoncons::jsonpath::json_query(*it, jpath);
+            if (!r.empty()) {
+                MergeJson_(j, r[0]);
+            }
         }
 
         jsoncons::json j1;

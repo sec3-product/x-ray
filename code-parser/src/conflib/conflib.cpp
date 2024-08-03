@@ -145,7 +145,7 @@ static inline void AssignValues_(jsoncons::json& j, const std::string& key, cons
 }
 
 
-static inline void ReplaceValue_(jsoncons::json& j, const std::string& jpath, const std::string& value) {
+[[maybe_unused]] static inline void ReplaceValue_(jsoncons::json& j, const std::string& jpath, const std::string& value) {
     if (value == "true") {
         jsoncons::jsonpath::json_replace(j, jpath, true);
     }
@@ -182,7 +182,7 @@ static inline void InsertConfiguration_(jsoncons::json& j, const std::string& s)
     std::vector<std::string> values;
     if (is_array) {
         int b = 0;
-        for (int e = 0; e < value.length(); e++) {
+        for (size_t e = 0; e < value.length(); e++) {
             char ch = value[e];
             if (ch == ',') {
                 std::string subs = value.substr(b, e-b);
@@ -437,7 +437,7 @@ std::vector<std::string> Initialize(const std::map<std::string, std::string>& sh
 }
 
 
-static inline std::vector<std::string> ParseArray_(jsoncons::json& j) {
+[[maybe_unused]] static inline std::vector<std::string> ParseArray_(jsoncons::json& j) {
     std::vector<std::string> r;
     for (const auto& item : j.array_range())
     {

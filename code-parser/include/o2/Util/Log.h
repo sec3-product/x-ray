@@ -73,13 +73,13 @@ void init(LoggingConfig cfg);
 #define LOG_ERROR(...) LOG_INTERNAL(spdlog::level::err, __VA_ARGS__)
 
 // Example usage
-namespace {
-void example() {
-    LOG_DEBUG("Parsing the source code. file={}", "somefile.c");
-    LOG_ERROR("Unexpected file type. file={}", "program.exe");
-}
-
-}  // namespace
+// namespace {
+// void example() {
+//     LOG_DEBUG("Parsing the source code. file={}", "somefile.c");
+//     LOG_ERROR("Unexpected file type. file={}", "program.exe");
+// }
+//
+// }  // namespace
 
 #else
 

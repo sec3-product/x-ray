@@ -158,10 +158,10 @@ private:
     std::string functionName;
 public:
     ThreadCreateAPI(std::string name, int entryIdx, int argIdx, int cbArgIdx)
-        : functionName(std::move(name)), argIdx(argIdx), entryIdx(entryIdx), cbArgIdx(cbArgIdx), nonStaticAPI(false) {}
+        : argIdx(argIdx), entryIdx(entryIdx), cbArgIdx(cbArgIdx), nonStaticAPI(false), functionName(std::move(name)) {}
 
     ThreadCreateAPI(std::string name, int entryIdx, int argIdx, bool isNonStatic)
-        : functionName(std::move(name)), argIdx(argIdx), entryIdx(entryIdx), cbArgIdx(-1), nonStaticAPI(isNonStatic) {}
+        : argIdx(argIdx), entryIdx(entryIdx), cbArgIdx(-1), nonStaticAPI(isNonStatic), functionName(std::move(name)) {}
 
     int getArgIdx() const { return argIdx; }
     int getEntryIdx() const { return entryIdx; }
