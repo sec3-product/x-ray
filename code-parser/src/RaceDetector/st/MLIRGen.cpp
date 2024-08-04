@@ -332,7 +332,7 @@ class MLIRGenImpl {
     auto mlirFnType = mlir::FunctionType::get(context, inputTypes, llvmI8PtrTy);
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    auto func = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto func = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // declare only
 
     return SymbolRefAttr::get(context, name);
@@ -350,7 +350,7 @@ class MLIRGenImpl {
         context, {llvmI8PtrTy, llvmI8PtrTy}, llvmVoidTy);
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    auto func = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto func = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
@@ -368,7 +368,7 @@ class MLIRGenImpl {
         context, {llvmI8PtrTy, llvmI8PtrTy}, llvmVoidTy);
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    auto func = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto func = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
@@ -390,7 +390,7 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    auto func = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto func = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
@@ -408,7 +408,7 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
@@ -426,7 +426,7 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     return SymbolRefAttr::get(context, name);
   }
   FlatSymbolRefAttr getOrInsertBuiltInNewFunctionX() {
@@ -440,7 +440,7 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
@@ -457,7 +457,7 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     return SymbolRefAttr::get(context, name);
   }
   FlatSymbolRefAttr getOrInsertBuiltInTOMLFunctionX() {
@@ -471,7 +471,7 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     return SymbolRefAttr::get(context, name);
   }
   FlatSymbolRefAttr getOrInsertBuiltInParentVarFunctionX() {
@@ -485,7 +485,7 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     return SymbolRefAttr::get(context, name);
   }
   FlatSymbolRefAttr getOrInsertBuiltInInstVarFunctionX() {
@@ -499,7 +499,7 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
@@ -519,7 +519,7 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     return SymbolRefAttr::get(context, name);
   }
   FlatSymbolRefAttr getOrInsertBuiltInClassVarFunctionX() {
@@ -533,7 +533,7 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
@@ -550,7 +550,7 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
@@ -568,7 +568,7 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
@@ -601,7 +601,7 @@ class MLIRGenImpl {
       }
 
       // Location loc({classAST->fileName, classAST->line, 0});
-      auto loc = mlir::FileLineColLoc::get(
+      [[maybe_unused]] auto loc = mlir::FileLineColLoc::get(
           builder.getStringAttr(classAST->fileName), classAST->line, 0);
       // auto value = classAST->inst_vars;
       // auto type = LLVM::LLVMType::getArrayTy(llvmI8PtrTy, value.size());
@@ -901,8 +901,8 @@ class MLIRGenImpl {
       }
       // cout << "blockparam size: " << blockOperands.size() << endl;
       auto blockRef = getOrInsertBuiltInBlockParamFunctionX(blockOperands);
-      auto tmp = builder.create<LLVM::CallOp>(locInfo, llvmI8PtrTy, blockRef,
-                                              blockOperands);
+      [[maybe_unused]] auto tmp = builder.create<LLVM::CallOp>(
+              locInfo, llvmI8PtrTy, blockRef, blockOperands);
 
       // Create a scope in the symbol table to hold variable declarations.
       // SymbolTableScopeT2 var_scope(symbolTable2);
@@ -1031,9 +1031,7 @@ class MLIRGenImpl {
   // Codegen a list of expression, return failure if one of them hit an error.
   // return the last value
   void mlirGen(ExprASTList &exprList) {
-    auto size = exprList.size();
-    for (int k = 0; k < size; k++) {
-      auto expr = exprList[k];
+    for (const auto &expr : exprList) {
       if (auto *ret = dyn_cast<ReturnExprAST>(expr)) {
         if (DEBUG_SOL)
           llvm::outs() << "-----mlirGen ExprASTList expr------ReturnExprAST"
@@ -1205,7 +1203,7 @@ class MLIRGenImpl {
     auto funcArgRef = getOrInsertBuiltInArgTypeFunctionX();
     Value v1 = getOrCreateGlobalStringX(locProto, name, name);
     Value v2 = getOrCreateGlobalStringX(locProto, type, type);
-    auto callOp = builder.create<LLVM::CallOp>(
+    [[maybe_unused]] auto callOp = builder.create<LLVM::CallOp>(
         locProto, llvmI8PtrTy, funcArgRef, ArrayRef<Value>({v1, v2}));
     // auto value = callOp.getResult(0);
   }

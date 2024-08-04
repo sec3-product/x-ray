@@ -1101,7 +1101,7 @@ class STParserVisitor : public RustParserBaseVisitor {
 
     if (blockExpr) {
       auto index1 = functions.size();
-      auto arg = visitBlockExpressionX(blockExpr);
+      [[maybe_unused]] auto arg = visitBlockExpressionX(blockExpr);
       auto index2 = functions.size();
       if (index2 > index1) {
         auto funcName = functions[index2 - 1]->getName();
@@ -1292,7 +1292,7 @@ class STParserVisitor : public RustParserBaseVisitor {
       auto leftVar = assignmentExpressionCtx->expression(0)->getText();
       auto var = new VariableExprAST(getLoc(assignmentExpressionCtx), leftVar);
 
-      auto leftExpr = visitExpressionX(assignmentExpressionCtx->expression(0));
+      [[maybe_unused]] auto leftExpr = visitExpressionX(assignmentExpressionCtx->expression(0));
       auto rightExpr = visitExpressionX(assignmentExpressionCtx->expression(1));
       // make sure leftExpr and leftExpr rightExpr are not null
       if (rightExpr != nullptr) {
@@ -1972,8 +1972,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     fcall->callee = "match";
     std::vector<ExprAST *> args;
     auto size = ctx->matchArms()->matchArmExpression().size();
-
-    for (auto i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
       auto matchArm = ctx->matchArms()->matchArm()[i];
       auto matchArmExpression = ctx->matchArms()->matchArmExpression()[i];
 

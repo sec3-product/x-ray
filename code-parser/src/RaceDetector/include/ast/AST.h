@@ -509,7 +509,7 @@ class BlockExprAST : public ExprAST {
   static bool classof(const ExprAST* c) { return c->getKind() == Expr_Block; }
 };
 
-typedef struct {
+struct SEM {
   int anonFuncCount = 0;
   int blockNum = 0;  // indicator for block nesting
   int indentLevel = 0;
@@ -518,7 +518,8 @@ typedef struct {
   vector<FunctionAST*> Scopes;
   vector<string> curScopeName;
   antlrcpp::Any lastUnary;  // last unary message
-} SEM;
+};
+
 }  // namespace stx
 
 #endif  // SMALLTALK_AST_H

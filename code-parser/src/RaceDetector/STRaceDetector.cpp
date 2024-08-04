@@ -1,58 +1,65 @@
 #include <dirent.h>
+
+#include <any>
+#include <fstream>
+#include <memory>
+#include <set>
+#include <string>
+#include <vector>
+
+#include <llvm/ADT/StringRef.h>
 #include <llvm/Analysis/AssumptionCache.h>
 #include <llvm/Analysis/TypeBasedAliasAnalysis.h>
 #include <llvm/IR/IRPrintingPasses.h>
 #include <llvm/IR/LLVMContext.h>  // for llvm LLVMContext
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Mangler.h>
+#include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/IRReader/IRReader.h>  // IR reader for bit file
 #include <llvm/Support/CommandLine.h>
+#include <llvm/Support/ErrorOr.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/InitLLVM.h>
+#include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/Regex.h>
 #include <llvm/Support/Signals.h>    // signal for command line
 #include <llvm/Support/SourceMgr.h>  // for SMDiagnostic
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Support/raw_ostream.h>
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
+#include <mlir/ExecutionEngine/ExecutionEngine.h>
+#include <mlir/ExecutionEngine/OptUtils.h>
+#include <mlir/IR/AsmState.h>
+#include <mlir/IR/MLIRContext.h>
+#include <mlir/IR/Verifier.h>
+#include <mlir/InitAllDialects.h>
+#include <mlir/Parser.h>
+#include <mlir/Pass/Pass.h>
+#include <mlir/Pass/PassManager.h>
+#include <mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h>
+#include <mlir/Target/LLVMIR/Export.h>
+#include <mlir/Transforms/Passes.h>
 
-#include "RustLexer.h"
-#include "RustParser.h"
-#include "antlr4-runtime.h"
-#include "llvm/ADT/StringRef.h"
-#include "llvm/IR/Module.h"
-#include "llvm/Support/ErrorOr.h"
-#include "llvm/Support/MemoryBuffer.h"
-#include "llvm/Support/TargetSelect.h"
-#include "llvm/Support/raw_ostream.h"
-#include "mlir/ExecutionEngine/ExecutionEngine.h"
-#include "mlir/ExecutionEngine/OptUtils.h"
-#include "mlir/IR/AsmState.h"
-#include "mlir/IR/MLIRContext.h"
-#include "mlir/IR/Verifier.h"
-#include "mlir/InitAllDialects.h"
-#include "mlir/Parser.h"
-#include "mlir/Pass/Pass.h"
-#include "mlir/Pass/PassManager.h"
-#include "mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h"
-#include "mlir/Target/LLVMIR/Export.h"
-#include "mlir/Transforms/Passes.h"
+#include <conflib/conflib.h>
+#include <o2/Util/Log.h>
+#include <antlr4-runtime.h>
+#include <RustLexer.h>
+#include <RustParser.h>
+#include <toml.hpp>
 
-#include "conflib/conflib.h"
-#include "o2/Util/Log.h"
-
-using namespace antlr4;
-using namespace antlrcpp;
-using namespace llvm;
-using namespace o2;
-#include "ThreadPool.h"
 #include "st/MLIRGen.h"
 #include "st/ParserWrapper.h"
 #include "st/Passes.h"
 #include "st/STParserListener.h"
 #include "st/STParserVisitor.h"
-#include "toml.hpp"
+#include "ThreadPool.h"
 
+using namespace antlr4;
+using namespace antlrcpp;
+using namespace llvm;
+using namespace o2;
 using namespace st;
 
 std::vector<stx::FunctionAST *> processResults;
@@ -71,6 +78,7 @@ int LOWER_BOUND_ID = 0;
 cl::opt<int> NUM_UP_BOUND(
     "ub", cl::desc("set upper bound of the number of functions"),
     cl::value_desc("number"), cl::init(1000000));
+
 logger::LoggingConfig initLoggingConf() {
   logger::LoggingConfig config;
 
@@ -143,6 +151,7 @@ void initUnexploredFunctions(Module *module) {
     }
   }
 }
+
 void computeUnexploredFunctions() {
   if (unExploredFunctions.size() > 0) {
     llvm::outs() << "\n============= unexplored function ==========\n";
@@ -152,6 +161,7 @@ void computeUnexploredFunctions() {
     // no caller
   }
 }
+
 void initRaceDetect() {
   LOG_INFO("Loading IR From File: {}", TargetModulePath);
   auto module = loadFile(TargetModulePath, *(new LLVMContext()), true);
@@ -181,35 +191,7 @@ void initRaceDetect() {
 st::ModuleAST moduleAST;
 
 void process(std::string filename, std::string methodname, size_t line,
-             char *s) {
-  std::string s2(s);
-
-  /*  auto found = s2.find("//\n");
-    if (found == string::npos)
-      found = s2.find("//\r\n");
-    if (found != string::npos)
-    {
-      s2.insert(found + 2, "//x");
-  */
-  /*
-    {  // strip //\n
-      auto found = s2.find("//\n");
-      // if (found == string::npos) found = s2.find("//\r");
-      while (found != string::npos) {
-        s2.insert(found + 2, "x");
-        found = s2.find("//\n");
-        // s = s2.c_str();
-        // llvm::outs() << "after s-----------" << s2 << "\n";
-        // llvm::outs() << "fixed //\\n: \n" << s2 << "\n";
-      }
-    }
-    {  // strip //\r
-      auto found = s2.find("//\r");
-      while (found != string::npos) {
-        s2.insert(found + 2, "x");
-        found = s2.find("//\r");
-      }
-  }*/
+             std::string s2) {
   std::replace(s2.begin(), s2.end(), '\t', ' ');
   auto *input = new ANTLRInputStream(s2);
 
@@ -276,7 +258,7 @@ void initParserForFile(stx::ModuleAST *module, std::string &fullPathName,
   auto found1 = fullPathName.find_last_of("/");
   auto found2 = fullPathName.find_last_of(".");
   auto fnBaseName = fullPathName.substr(found1 + 1, found2 - found1 - 1);
-  process(fullPathName, fnBaseName, 0, (char *)contents.c_str());
+  process(fullPathName, fnBaseName, 0, contents);
 }
 
 bool handleRustFile(stx::ModuleAST *module, std::string &fullPathName,
@@ -339,8 +321,8 @@ bool handleDiretory(DIR *dir, stx::ModuleAST *module, std::string &fullPathName,
           const toml::value answer2 =
               toml::get<toml::table>(answer1).at("release");
           if (answer2.count("overflow-checks")) {
-            auto line = answer2.location().line();
-            auto column = answer2.location().column();
+            // auto line = answer2.location().line();
+            // auto column = answer2.location().column();
             const auto hasOverFlowCheck =
                 toml::find<bool>(data, "profile", "release", "overflow-checks");
             llvm::outs() << dname << ": hasOverFlowCheck: " << hasOverFlowCheck
@@ -447,19 +429,7 @@ bool handleDiretory(DIR *dir, stx::ModuleAST *module, std::string &fullPathName,
   return true;
 }
 
-bool handleTomlFile(stx::ModuleAST *module, std::string &fullPathName,
-                    StringRef &path, stx::ThreadPool &pool) {
-  // TODO: toml
-  //   [profile.release]
-  // overflow-checks = true     # Disable integer overflow checks.
-}
-
 bool initParser(stx::ModuleAST *module) {
-  // std::ios::sync_with_stdio(true);
-  // if(argc!=3){
-  //     llvm::outs() << "Usage: <file in.st> <test file.ws>" << "\n";
-  //     return 0;
-  // }
   int COUNT = std::thread::hardware_concurrency();
   if (DEBUG_SOL) COUNT = 1;  // make sure no races
   stx::ThreadPool pool(COUNT);

@@ -102,7 +102,7 @@ class AssignExprData {
 
  public:
   AssignExprData(mlir::Value v, llvm::StringRef name, int level)
-      : v(v), name(name), level(level) {}
+      : name(name), v(v), level(level) {}
 
   llvm::StringRef getVarName() { return name; }
   mlir::Value getValue() { return v; }
@@ -139,7 +139,7 @@ class BlockExprAST : public ExprAST {
 
  public:
   BlockExprAST(Location loc, const std::string &text, int level)
-      : ExprAST(Expr_Block, loc), text(text), level(level) {}
+      : ExprAST(Expr_Block, loc), level(level), text(text) {}
 
   int getLevel() { return level; }
   ExprASTList getBlockAST() { return blockAST; }
