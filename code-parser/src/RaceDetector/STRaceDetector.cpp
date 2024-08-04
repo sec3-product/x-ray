@@ -54,7 +54,6 @@
 #include "st/Passes.h"
 #include "st/STParserListener.h"
 #include "st/STParserVisitor.h"
-#include "ThreadPool.h"
 
 using namespace antlr4;
 using namespace antlrcpp;
@@ -223,8 +222,7 @@ void process(std::string filename, std::string methodname, size_t line,
 
 // c++17 only
 // using std::filesystem::directory_iterator;
-void initParserForFile(stx::ModuleAST *module, std::string &fullPathName,
-                       stx::ThreadPool &pool) {
+void initParserForFile(stx::ModuleAST *module, std::string &fullPathName) {
   // for (const auto & entry : directory_iterator(path)){
   //     StringRef name(entry.path());
   llvm::outs() << "  source file: " << fullPathName << "\n";
@@ -245,24 +243,13 @@ void initParserForFile(stx::ModuleAST *module, std::string &fullPathName,
       llvm::outs() << "=== Rust Source End ===\n";
     }
   }
-  // processResults.emplace_back(
-  //                     pool.enqueue([fullPathName, methodName, methodpt] {
-  //                       stx::FunctionAST *funcAst = process(
-  //                           fullPathName, methodName,
-  //                           xmlGetLineNo(methodpt) - 1,
-  //                           (char
-  //                           *)XML_GET_CONTENT(methodpt->xmlChildrenNode));
-
-  //                       return funcAst;
-  //                     }));
   auto found1 = fullPathName.find_last_of("/");
   auto found2 = fullPathName.find_last_of(".");
   auto fnBaseName = fullPathName.substr(found1 + 1, found2 - found1 - 1);
   process(fullPathName, fnBaseName, 0, contents);
 }
 
-bool handleRustFile(stx::ModuleAST *module, std::string &fullPathName,
-                    stx::ThreadPool &pool) {
+bool handleRustFile(stx::ModuleAST *module, std::string &fullPathName) {
   // is it a file?
   FILE *fptr = fopen(fullPathName.c_str(), "r");
   if (fptr == NULL) {
@@ -272,13 +259,12 @@ bool handleRustFile(stx::ModuleAST *module, std::string &fullPathName,
   }
   // File exists hence close file
   fclose(fptr);
-  initParserForFile(module, fullPathName, pool);
+  initParserForFile(module, fullPathName);
 
   return true;
 }
 
-bool handleDiretory(DIR *dir, stx::ModuleAST *module, std::string &fullPathName,
-                    stx::ThreadPool &pool) {
+bool handleDiretory(DIR *dir, stx::ModuleAST *module, std::string &fullPathName) {
   StringRef pathname_stringref(fullPathName);
   if (pathname_stringref.endswith("/src")) {
     // ends with /src
@@ -310,7 +296,7 @@ bool handleDiretory(DIR *dir, stx::ModuleAST *module, std::string &fullPathName,
     DIR *dir2 = opendir(fullPathName2.c_str());
     if (dir2 == NULL) {
       if (dname.endswith(".rs"))
-        handleRustFile(module, fullPathName2, pool);
+        handleRustFile(module, fullPathName2);
       else if (dname.endswith("argo.toml")) {
         module->path_config = fullPathName2;
         auto data = toml::parse(fullPathName2);
@@ -422,7 +408,7 @@ bool handleDiretory(DIR *dir, stx::ModuleAST *module, std::string &fullPathName,
                !dname.equals("services") &&
                !dname.equals("proptest-regressions")) {
       // nested diretory
-      handleDiretory(dir2, module, fullPathName2, pool);
+      handleDiretory(dir2, module, fullPathName2);
       closedir(dir2);
     }
   }
@@ -430,9 +416,6 @@ bool handleDiretory(DIR *dir, stx::ModuleAST *module, std::string &fullPathName,
 }
 
 bool initParser(stx::ModuleAST *module) {
-  int COUNT = std::thread::hardware_concurrency();
-  if (DEBUG_SOL) COUNT = 1;  // make sure no races
-  stx::ThreadPool pool(COUNT);
   LOWER_BOUND_ID = NUM_LOW_BOUND;
   StringRef path(TargetModulePath);
   std::string fullPathName = realpath(path.data(), NULL);
@@ -440,9 +423,9 @@ bool initParser(stx::ModuleAST *module) {
 
   DIR *dir = opendir(path.data());
   if (dir == NULL) {
-    if (path.endswith(".rs")) handleRustFile(module, fullPathName, pool);
+    if (path.endswith(".rs")) handleRustFile(module, fullPathName);
   } else {
-    handleDiretory(dir, module, fullPathName, pool);
+    handleDiretory(dir, module, fullPathName);
     closedir(dir);
   }
   for (auto functionAst : processResults) {
@@ -540,30 +523,7 @@ void initLLVMIR(stx::ModuleAST *moduleAST) {
   dumpLLVMIR(*module);
 }
 
-int testThreadPool() {
-  stx::ThreadPool pool(4);
-  std::vector<std::future<int>> results;
-
-  for (int i = 0; i < 8; ++i) {
-    results.emplace_back(pool.enqueue([i] {
-      std::cout << "hello " << i << std::endl;
-      std::this_thread::sleep_for(std::chrono::seconds(1));
-      std::cout << "world " << i << std::endl;
-      return i * i;
-    }));
-  }
-
-  for (auto &&result : results) std::cout << result.get() << ' ';
-  std::cout << std::endl;
-
-  return 0;
-}
-
 int main(int argc, char **argv) {
-  // testThreadPool();
-  // llvm::outs() << sizeof(std::pair<NodeID, NodeID>) << ", " <<
-  // sizeof(std::pair<void *, void *>); return 1;
-
   // InitLLVM will setup signal handler to print stack trace when the program
   // crashes.
   InitLLVM x(argc, argv);
