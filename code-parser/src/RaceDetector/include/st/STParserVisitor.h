@@ -88,7 +88,7 @@ class STParserVisitor : public RustParserBaseVisitor {
   }
   stx::SEM sem;
 
-  virtual antlrcpp::Any visitCrate(RustParser::CrateContext *ctx) override {
+  virtual std::any visitCrate(RustParser::CrateContext *ctx) override {
     if (DEBUG_SOL) std::cout << "visitCrate path: " << fileName << std::endl;
     // TODO: collect all functions and
     visitChildren(ctx);
@@ -96,8 +96,8 @@ class STParserVisitor : public RustParserBaseVisitor {
     return functions;
   }
 
-  virtual antlrcpp::Any visitItem(RustParser::ItemContext *ctx) override {
-    antlrcpp::Any result = nullptr;
+  virtual std::any visitItem(RustParser::ItemContext *ctx) override {
+    std::any result = nullptr;
     if (DEBUG_SOL)
       std::cout << SPACE << "visitItem begin: " << ctx->getText() << std::endl;
     indentMore();
@@ -108,9 +108,8 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  antlrcpp::Any visitItemX(std::string fnBaseName,
-                           RustParser::ItemContext *ctx) {
-    antlrcpp::Any result = nullptr;
+  std::any visitItemX(std::string fnBaseName, RustParser::ItemContext *ctx) {
+    std::any result = nullptr;
     if (DEBUG_SOL)
       std::cout << SPACE << "visitItemX begin: " << ctx->getText() << std::endl;
     indentMore();
@@ -513,7 +512,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitStruct_(RustParser::Struct_Context *ctx) override {
+  virtual std::any visitStruct_(RustParser::Struct_Context *ctx) override {
     // if (DEBUG_SOL) std::cout << "visitStruct_ begin: " << ctx->getText() << std::endl;
     auto result = visitChildren(ctx);
     // if (DEBUG_SOL) std::cout << "visitStruct_ end " << std::endl;
@@ -591,7 +590,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return func;
   }
 
-  virtual antlrcpp::Any visitTupleStruct(
+  virtual std::any visitTupleStruct(
       RustParser::TupleStructContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitTupleStruct begin: " << ctx->getText() << std::endl;
@@ -603,7 +602,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitModule(RustParser::ModuleContext *ctx) override {
+  virtual std::any visitModule(RustParser::ModuleContext *ctx) override {
     //(module mod (identifier ddca_operating_account)
 
     if (DEBUG_SOL)
@@ -615,13 +614,13 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitVisItem(RustParser::VisItemContext *ctx) override {
+  virtual std::any visitVisItem(RustParser::VisItemContext *ctx) override {
     // if (DEBUG_SOL) std::cout << "visitVisItem begin: " << ctx->getText() << std::endl;
     auto result = visitChildren(ctx->module());
     // if (DEBUG_SOL) std::cout << "visitVisItem end " << std::endl;
     return result;
   }
-  virtual antlrcpp::Any visitUseDeclaration(
+  virtual std::any visitUseDeclaration(
       RustParser::UseDeclarationContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitUseDeclaration begin: " << ctx->getText() << std::endl;
@@ -631,7 +630,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     if (DEBUG_SOL) std::cout << SPACE << "visitUseDeclaration end " << std::endl;
     return result;
   }
-  virtual antlrcpp::Any visitMacroInvocationSemi(
+  virtual std::any visitMacroInvocationSemi(
       RustParser::MacroInvocationSemiContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitMacroInvocationSemi begin: " << ctx->getText()
@@ -642,7 +641,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     if (DEBUG_SOL) std::cout << SPACE << "visitMacroInvocationSemi end " << std::endl;
     return result;
   }
-  virtual antlrcpp::Any visitConstantItem(
+  virtual std::any visitConstantItem(
       RustParser::ConstantItemContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitConstantItem begin: " << ctx->getText() << std::endl;
@@ -653,7 +652,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     if (DEBUG_SOL) std::cout << SPACE << "visitConstantItem end " << std::endl;
     return result;
   }
-  virtual antlrcpp::Any visitOuterAttribute(
+  virtual std::any visitOuterAttribute(
       RustParser::OuterAttributeContext *ctx) override {
     //(outerAttribute # [ (attr (simplePath (simplePathSegment (identifier
     // program)))) ])
@@ -667,7 +666,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitStaticItem(
+  virtual std::any visitStaticItem(
       RustParser::StaticItemContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitStaticItem begin: " << ctx->getText() << std::endl;
@@ -741,7 +740,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     if (DEBUG_SOL) std::cout << SPACE << "visitImplementation_X end " << std::endl;
     return result;
   }
-  virtual antlrcpp::Any visitInherentImpl(
+  virtual std::any visitInherentImpl(
       RustParser::InherentImplContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitInherentImpl begin: " << ctx->getText() << std::endl;
@@ -752,7 +751,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     if (DEBUG_SOL) std::cout << SPACE << "visitInherentImpl end " << std::endl;
     return result;
   }
-  virtual antlrcpp::Any visitTraitImpl(
+  virtual std::any visitTraitImpl(
       RustParser::TraitImplContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitTraitImpl begin: " << ctx->getText() << std::endl;
@@ -763,7 +762,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     if (DEBUG_SOL) std::cout << SPACE << "visitTraitImpl end " << std::endl;
     return result;
   }
-  virtual antlrcpp::Any visitGenericParams(
+  virtual std::any visitGenericParams(
       RustParser::GenericParamsContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitGenericParams begin: " << ctx->getText() << std::endl;
@@ -774,7 +773,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     if (DEBUG_SOL) std::cout << SPACE << "visitGenericParams end " << std::endl;
     return result;
   }
-  virtual antlrcpp::Any visitAssociatedItem(
+  virtual std::any visitAssociatedItem(
       RustParser::AssociatedItemContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitAssociatedItem begin: " << ctx->getText() << std::endl;
@@ -786,7 +785,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitFunction_(
+  virtual std::any visitFunction_(
       RustParser::Function_Context *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitFunction_ begin: " << ctx->getText() << std::endl;
@@ -829,9 +828,9 @@ class STParserVisitor : public RustParserBaseVisitor {
     return func;
   }
 
-  virtual antlrcpp::Any visitFunctionReturnType(
+  virtual std::any visitFunctionReturnType(
       RustParser::FunctionReturnTypeContext *ctx) override {
-    antlrcpp::Any result = nullptr;
+    std::any result = nullptr;
     if (DEBUG_SOL)
       std::cout << SPACE << "visitFunctionReturnType begin: " << ctx->getText()
            << std::endl;
@@ -846,7 +845,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     std::vector<stx::VarDeclExprAST> args;
     auto loc = getLoc(ctx);
 
-    antlrcpp::Any result = nullptr;
+    std::any result = nullptr;
     if (DEBUG_SOL)
       std::cout << SPACE << "visitFunctionParameters begin: " << ctx->getText()
            << std::endl;
@@ -885,7 +884,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     if (DEBUG_SOL) std::cout << SPACE << "visitFunctionParameters end " << std::endl;
     return args;
   }
-  virtual antlrcpp::Any visitFunctionQualifiers(
+  virtual std::any visitFunctionQualifiers(
       RustParser::FunctionQualifiersContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitFunctionQualifiers begin: " << ctx->getText()
@@ -898,7 +897,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitIdentifier(
+  virtual std::any visitIdentifier(
       RustParser::IdentifierContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitIdentifier begin: " << ctx->getText() << std::endl;
@@ -909,7 +908,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitBlockExpression(
+  virtual std::any visitBlockExpression(
       RustParser::BlockExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitBlockExpression begin: " << ctx->getText() << std::endl;
@@ -947,7 +946,6 @@ class STParserVisitor : public RustParserBaseVisitor {
   }
 
   std::vector<stx::ExprAST *> visitStatementsX(RustParser::StatementsContext *ctx) {
-    antlrcpp::Any result = nullptr;
     std::vector<stx::ExprAST *> ret;
     if (!ctx) return ret;  // empty block
     if (DEBUG_SOL)
@@ -966,16 +964,14 @@ class STParserVisitor : public RustParserBaseVisitor {
         auto expr = visitExpressionX(ctx->expression());
         if (expr) ret.push_back(expr);
       }
-      // result = visitChildren(ctx->expression());
     }
     indentLess();
     if (DEBUG_SOL) std::cout << SPACE << "visitStatementsX end " << std::endl;
     return ret;
-    // return result;
   }
 
   stx::ExprAST *visitStatementX(RustParser::StatementContext *ctx) {
-    antlrcpp::Any result = nullptr;
+    std::any result = nullptr;
     stx::ExprAST *expr = nullptr;
 
     if (DEBUG_SOL)
@@ -1869,7 +1865,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return expr;
   }
 
-  virtual antlrcpp::Any visitIfExpression(
+  virtual std::any visitIfExpression(
       RustParser::IfExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitIfExpression begin: " << ctx->getText() << std::endl;
@@ -1881,7 +1877,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitIfLetExpression(
+  virtual std::any visitIfLetExpression(
       RustParser::IfLetExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitIfLetExpression begin: " << ctx->getText() << std::endl;
@@ -2062,7 +2058,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return expr;
   }
 
-  virtual antlrcpp::Any visitMatchExpression(
+  virtual std::any visitMatchExpression(
       RustParser::MatchExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitMatchExpression begin: " << ctx->getText() << std::endl;
@@ -2073,7 +2069,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     if (DEBUG_SOL) std::cout << SPACE << "visitMatchExpression end " << std::endl;
     return result;
   }
-  virtual antlrcpp::Any visitContinueExpression(
+  virtual std::any visitContinueExpression(
       RustParser::ContinueExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitContinueExpression begin: " << ctx->getText()
@@ -2086,7 +2082,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitAssignmentExpression(
+  virtual std::any visitAssignmentExpression(
       RustParser::AssignmentExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitAssignmentExpression begin: " << ctx->getText()
@@ -2099,7 +2095,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitMethodCallExpression(
+  virtual std::any visitMethodCallExpression(
       RustParser::MethodCallExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitMethodCallExpression begin: " << ctx->getText()
@@ -2112,7 +2108,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitLiteralExpression_(
+  virtual std::any visitLiteralExpression_(
       RustParser::LiteralExpression_Context *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitLiteralExpression_ begin: " << ctx->getText()
@@ -2124,7 +2120,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     if (DEBUG_SOL) std::cout << SPACE << "visitLiteralExpression_ end " << std::endl;
     return result;
   }
-  virtual antlrcpp::Any visitReturnExpression(
+  virtual std::any visitReturnExpression(
       RustParser::ReturnExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitReturnExpression begin: " << ctx->getText()
@@ -2137,7 +2133,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitExpressionStatement(
+  virtual std::any visitExpressionStatement(
       RustParser::ExpressionStatementContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitExpressionStatement begin: " << ctx->getText()
@@ -2149,7 +2145,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     if (DEBUG_SOL) std::cout << SPACE << "visitExpressionStatement end " << std::endl;
     return result;
   }
-  virtual antlrcpp::Any visitTypeCastExpression(
+  virtual std::any visitTypeCastExpression(
       RustParser::TypeCastExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitTypeCastExpression begin: " << ctx->getText()
@@ -2162,7 +2158,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitPathExpression_(
+  virtual std::any visitPathExpression_(
       RustParser::PathExpression_Context *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitPathExpression_ begin: " << ctx->getText() << std::endl;
@@ -2174,7 +2170,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitTupleExpression(
+  virtual std::any visitTupleExpression(
       RustParser::TupleExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitTupleExpression begin: " << ctx->getText() << std::endl;
@@ -2186,7 +2182,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitIndexExpression(
+  virtual std::any visitIndexExpression(
       RustParser::IndexExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitIndexExpression begin: " << ctx->getText() << std::endl;
@@ -2198,7 +2194,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitRangeExpression(
+  virtual std::any visitRangeExpression(
       RustParser::RangeExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitRangeExpression begin: " << ctx->getText() << std::endl;
@@ -2209,7 +2205,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     if (DEBUG_SOL) std::cout << SPACE << "visitRangeExpression end " << std::endl;
     return result;
   }
-  virtual antlrcpp::Any visitStructExpression_(
+  virtual std::any visitStructExpression_(
       RustParser::StructExpression_Context *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitStructExpression_ begin: " << ctx->getText()
@@ -2221,7 +2217,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     if (DEBUG_SOL) std::cout << SPACE << "visitStructExpression_ end " << std::endl;
     return result;
   }
-  virtual antlrcpp::Any visitTupleIndexingExpression(
+  virtual std::any visitTupleIndexingExpression(
       RustParser::TupleIndexingExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitTupleIndexingExpression begin: " << ctx->getText()
@@ -2234,7 +2230,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitNegationExpression(
+  virtual std::any visitNegationExpression(
       RustParser::NegationExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitNegationExpression begin: " << ctx->getText()
@@ -2247,7 +2243,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitCallExpression(
+  virtual std::any visitCallExpression(
       RustParser::CallExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitCallExpression begin: " << ctx->getText() << std::endl;
@@ -2259,7 +2255,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitLazyBooleanExpression(
+  virtual std::any visitLazyBooleanExpression(
       RustParser::LazyBooleanExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitLazyBooleanExpression begin: " << ctx->getText()
@@ -2272,7 +2268,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitDereferenceExpression(
+  virtual std::any visitDereferenceExpression(
       RustParser::DereferenceExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitDereferenceExpression begin: " << ctx->getText()
@@ -2284,7 +2280,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     if (DEBUG_SOL) std::cout << SPACE << "visitDereferenceExpression end " << std::endl;
     return result;
   }
-  virtual antlrcpp::Any visitExpressionWithBlock_(
+  virtual std::any visitExpressionWithBlock_(
       RustParser::ExpressionWithBlock_Context *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitExpressionWithBlock_ begin: " << ctx->getText()
@@ -2296,7 +2292,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitGroupedExpression(
+  virtual std::any visitGroupedExpression(
       RustParser::GroupedExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitGroupedExpression begin: " << ctx->getText()
@@ -2308,7 +2304,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitBreakExpression(
+  virtual std::any visitBreakExpression(
       RustParser::BreakExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitBreakExpression begin: " << ctx->getText() << std::endl;
@@ -2319,7 +2315,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitArithmeticOrLogicalExpression(
+  virtual std::any visitArithmeticOrLogicalExpression(
       RustParser::ArithmeticOrLogicalExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE
@@ -2333,7 +2329,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitFieldExpression(
+  virtual std::any visitFieldExpression(
       RustParser::FieldExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitFieldExpression begin: " << ctx->getText() << std::endl;
@@ -2344,7 +2340,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitEnumerationVariantExpression_(
+  virtual std::any visitEnumerationVariantExpression_(
       RustParser::EnumerationVariantExpression_Context *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE
@@ -2358,7 +2354,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitComparisonExpression(
+  virtual std::any visitComparisonExpression(
       RustParser::ComparisonExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitComparisonExpression begin: " << ctx->getText()
@@ -2370,7 +2366,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitAttributedExpression(
+  virtual std::any visitAttributedExpression(
       RustParser::AttributedExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitAttributedExpression begin: " << ctx->getText()
@@ -2382,7 +2378,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitBorrowExpression(
+  virtual std::any visitBorrowExpression(
       RustParser::BorrowExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitBorrowExpression begin: " << ctx->getText()
@@ -2394,7 +2390,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitCompoundAssignmentExpression(
+  virtual std::any visitCompoundAssignmentExpression(
       RustParser::CompoundAssignmentExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE
@@ -2408,7 +2404,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitClosureExpression_(
+  virtual std::any visitClosureExpression_(
       RustParser::ClosureExpression_Context *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitClosureExpression_ begin: " << ctx->getText()
@@ -2420,7 +2416,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitArrayExpression(
+  virtual std::any visitArrayExpression(
       RustParser::ArrayExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitArrayExpression begin: " << ctx->getText() << std::endl;
@@ -2431,7 +2427,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitComparisonOperator(
+  virtual std::any visitComparisonOperator(
       RustParser::ComparisonOperatorContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitComparisonOperator begin: " << ctx->getText()
@@ -2443,7 +2439,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitCompoundAssignOperator(
+  virtual std::any visitCompoundAssignOperator(
       RustParser::CompoundAssignOperatorContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitCompoundAssignOperator begin: " << ctx->getText()
@@ -2455,7 +2451,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitMatchArmGuard(
+  virtual std::any visitMatchArmGuard(
       RustParser::MatchArmGuardContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << "visitMatchArmGuard begin: " << ctx->getText() << std::endl;
@@ -2466,7 +2462,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitPattern(RustParser::PatternContext *ctx) override {
+  virtual std::any visitPattern(RustParser::PatternContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitPattern begin: " << ctx->getText() << std::endl;
     indentMore();
@@ -2476,7 +2472,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitPatternWithoutRange(
+  virtual std::any visitPatternWithoutRange(
       RustParser::PatternWithoutRangeContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitPatternWithoutRange begin: " << ctx->getText()
@@ -2488,7 +2484,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitLiteralPattern(
+  virtual std::any visitLiteralPattern(
       RustParser::LiteralPatternContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitLiteralPattern begin: " << ctx->getText() << std::endl;
@@ -2499,7 +2495,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitIdentifierPattern(
+  virtual std::any visitIdentifierPattern(
       RustParser::IdentifierPatternContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitIdentifierPattern begin: " << ctx->getText()
@@ -2511,7 +2507,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitWildcardPattern(
+  virtual std::any visitWildcardPattern(
       RustParser::WildcardPatternContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitWildcardPattern begin: " << ctx->getText() << std::endl;
@@ -2522,7 +2518,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitRestPattern(
+  virtual std::any visitRestPattern(
       RustParser::RestPatternContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitRestPattern begin: " << ctx->getText() << std::endl;
@@ -2532,7 +2528,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     if (DEBUG_SOL) std::cout << SPACE << "visitRestPattern end " << std::endl;
     return result;
   }
-  virtual antlrcpp::Any visitObsoleteRangePattern(
+  virtual std::any visitObsoleteRangePattern(
       RustParser::ObsoleteRangePatternContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitObsoleteRangePattern begin: " << ctx->getText()
@@ -2544,7 +2540,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitRangePatternBound(
+  virtual std::any visitRangePatternBound(
       RustParser::RangePatternBoundContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitRangePatternBound begin: " << ctx->getText()
@@ -2556,7 +2552,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitReferencePattern(
+  virtual std::any visitReferencePattern(
       RustParser::ReferencePatternContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitReferencePattern begin: " << ctx->getText()
@@ -2568,7 +2564,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitStructPattern(
+  virtual std::any visitStructPattern(
       RustParser::StructPatternContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitStructPattern begin: " << ctx->getText() << std::endl;
@@ -2579,7 +2575,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitStructPatternElements(
+  virtual std::any visitStructPatternElements(
       RustParser::StructPatternElementsContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitStructPatternElements begin: " << ctx->getText()
@@ -2591,7 +2587,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitStructPatternFields(
+  virtual std::any visitStructPatternFields(
       RustParser::StructPatternFieldsContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitStructPatternFields begin: " << ctx->getText()
@@ -2603,7 +2599,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitStructPatternField(
+  virtual std::any visitStructPatternField(
       RustParser::StructPatternFieldContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitStructPatternField begin: " << ctx->getText()
@@ -2615,7 +2611,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitStructPatternEtCetera(
+  virtual std::any visitStructPatternEtCetera(
       RustParser::StructPatternEtCeteraContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitStructPatternEtCetera begin: " << ctx->getText()
@@ -2627,7 +2623,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitTupleStructPattern(
+  virtual std::any visitTupleStructPattern(
       RustParser::TupleStructPatternContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitTupleStructPattern begin: " << ctx->getText()
@@ -2639,7 +2635,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitTupleStructItems(
+  virtual std::any visitTupleStructItems(
       RustParser::TupleStructItemsContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << "visitTupleStructItems begin: " << ctx->getText() << std::endl;
@@ -2650,7 +2646,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitTuplePattern(
+  virtual std::any visitTuplePattern(
       RustParser::TuplePatternContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitTuplePattern begin: " << ctx->getText() << std::endl;
@@ -2661,7 +2657,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitTuplePatternItems(
+  virtual std::any visitTuplePatternItems(
       RustParser::TuplePatternItemsContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitTuplePatternItems begin: " << ctx->getText()
@@ -2673,7 +2669,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitGroupedPattern(
+  virtual std::any visitGroupedPattern(
       RustParser::GroupedPatternContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitGroupedPattern begin: " << ctx->getText() << std::endl;
@@ -2684,7 +2680,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitSlicePattern(
+  virtual std::any visitSlicePattern(
       RustParser::SlicePatternContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitSlicePattern begin: " << ctx->getText() << std::endl;
@@ -2695,7 +2691,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitSlicePatternItems(
+  virtual std::any visitSlicePatternItems(
       RustParser::SlicePatternItemsContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitSlicePatternItems begin: " << ctx->getText()
@@ -2707,7 +2703,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  virtual antlrcpp::Any visitPathPattern(
+  virtual std::any visitPathPattern(
       RustParser::PathPatternContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitPathPattern begin: " << ctx->getText() << std::endl;
