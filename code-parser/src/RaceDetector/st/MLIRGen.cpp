@@ -714,7 +714,7 @@ class MLIRGenImpl {
   mlir::Value mlirGen(FunctionCallAST &call) {
     auto callee = call.getCallee();
     // Processor::<{TOKEN_COUNT}>::process.3
-    if (callee.find("::<") != string::npos) {
+    if (callee.find("::<") != std::string::npos) {
       auto found1 = callee.find("::<");
       auto found2 = callee.find(">");
       callee = callee.substr(0, found1) + callee.substr(found2 + 1);
@@ -886,7 +886,7 @@ class MLIRGenImpl {
       // call st.model.blockParam for out variables
       std::vector<mlir::Value> blockOperands;
       blockOperands.push_back(retBlock);
-      std::vector<string> outerParameterVars;
+      std::vector<std::string> outerParameterVars;
       for (auto o : block.outerVars) {
         // cout << "finding var to outerscope: " << o << endl;
         if (symbolTableStack.back()->count(o)) {

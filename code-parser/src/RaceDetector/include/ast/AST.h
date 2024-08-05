@@ -5,15 +5,16 @@
 #ifndef SMALLTALK_AST_H
 #define SMALLTALK_AST_H
 
-#include "antlr4-runtime.h"
+#include <any>
+#include <set>
+#include <string>
+#include <vector>
+
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Casting.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
-
-using namespace std;
-using namespace antlr4;
 
 namespace stx {
 /// Structure definition a location in a file.
@@ -25,14 +26,14 @@ struct Location {
 
 class BaseAST {
  public:
-  BaseAST(string ASTType) { this->ASTType = ASTType; }
+  BaseAST(std::string ASTType) { this->ASTType = ASTType; }
 
   BaseAST() {}
 
-  string Filename = "";
+  std::string Filename;
   size_t line_number_start = 0, line_number_end = 0, column_start = 0,
          column_end = 0;
-  string ASTType = "";
+  std::string ASTType;
   int level = 0;
   Location loc;
 };
@@ -50,19 +51,21 @@ class VarAST : public BaseAST {
  public:
   VarAST() : BaseAST("VarAST") {}
 };
+
 class BinaryAST : public BaseAST {
  public:
   BinaryAST() : BaseAST("BinaryAST") {}
   VarAST* LHS = NULL;
   VarAST* RHS = NULL;
-  string Operator = "";
+  std::string Operator = "";
 };
+
 class VarDeclAST : public BaseAST {
  public:
   VarDeclAST() : BaseAST("VarDeclAST") {}
-  string varname = "";
-  string var_type = "";
-  string initial_value = "";
+  std::string varname = "";
+  std::string var_type = "";
+  std::string initial_value = "";
 };
 
 struct VarType {
@@ -118,18 +121,18 @@ class ExprAST : public BaseAST {
 
   const Location& loc() { return location; }
 
-  string object_type = "";
-  string source = "";
+  std::string object_type = "";
+  std::string source = "";
   ExprASTKind ASTType = Default;
   //    FunctionCallAST * Expression = NULL;
   //    AssignAST * assignStmt = NULL;
   //    BlockAST * blockAst = NULL;
-  string ParsetimeLiteral = "";
-  string primitive = "";
-  string reference;
+  std::string ParsetimeLiteral = "";
+  std::string primitive = "";
+  std::string reference;
   bool valid() { return ASTType != ExprASTKind::Default; }
 
-  string getName() {
+  std::string getName() {
     // todo: implement this
     return ParsetimeLiteral;
   }
@@ -146,7 +149,7 @@ class VariableExprAST : public ExprAST {
   VariableExprAST(Location loc, llvm::StringRef name)
       : ExprAST(Expr_Var, loc), name(name) {}
 
-  string getName() { return name; }
+  std::string getName() { return name; }
 
   /// LLVM style RTTI
   static bool classof(const ExprAST* c) { return c->getKind() == Expr_Var; }
@@ -161,11 +164,12 @@ class LiteralExprAST : public ExprAST {
   LiteralExprAST(Location loc, llvm::StringRef name)
       : ExprAST(Expr_Literal, loc), name(name) {}
 
-  string getName() { return name; }
+  std::string getName() { return name; }
 
   /// LLVM style RTTI
   static bool classof(const ExprAST* c) { return c->getKind() == Expr_Literal; }
 };
+
 class StringExprAST : public ExprAST {
   std::string name;
 
@@ -173,7 +177,7 @@ class StringExprAST : public ExprAST {
   StringExprAST(Location loc, llvm::StringRef name)
       : ExprAST(Expr_String, loc), name(name) {}
 
-  string getName() { return name; }
+  std::string getName() { return name; }
 
   /// LLVM style RTTI
   static bool classof(const ExprAST* c) { return c->getKind() == Expr_String; }
@@ -185,7 +189,7 @@ class SymbolExprAST : public ExprAST {
   SymbolExprAST(Location loc, llvm::StringRef name)
       : ExprAST(Expr_Symbol, loc), name(name) {}
 
-  string getSymbol() { return name; }
+  std::string getSymbol() { return name; }
 
   /// LLVM style RTTI
   static bool classof(const ExprAST* c) { return c->getKind() == Expr_Symbol; }
@@ -197,7 +201,7 @@ class ReservedKeywordExprAST : public ExprAST {
   ReservedKeywordExprAST(Location loc, llvm::StringRef name)
       : ExprAST(Expr_Reserved, loc), name(name) {}
 
-  string getName() { return name; }
+  std::string getName() { return name; }
 
   /// LLVM style RTTI
   static bool classof(const ExprAST* c) {
@@ -251,7 +255,7 @@ class PrimitiveExprAST : public ExprAST {
   PrimitiveExprAST(Location loc, llvm::StringRef name)
       : ExprAST(Expr_Primitive, loc), name(name) {}
 
-  string getName() { return name; }
+  std::string getName() { return name; }
 
   /// LLVM style RTTI
   static bool classof(const ExprAST* c) {
@@ -266,7 +270,7 @@ class ParserErrorAST : public ExprAST {
   ParserErrorAST(Location loc, llvm::StringRef name)
       : ExprAST(Expr_Error, loc), name(name) {}
 
-  string getName() { return name; }
+  std::string getName() { return name; }
 
   /// LLVM style RTTI
   static bool classof(const ExprAST* c) { return c->getKind() == Expr_Error; }
@@ -309,7 +313,7 @@ class AssignExprAST : public ExprAST {
   AssignExprAST(Location loc, ExprAST* var, ExprAST* valueExpr)
       : ExprAST(Expr_Assign, loc), var(var), valueExpr(valueExpr) {}
 
-  string getVarName() { return var->getName(); }
+  std::string getVarName() { return var->getName(); }
   ExprAST* getValueExpr() { return valueExpr; }
   ExprAST* getLHS() { return var; };
   ExprAST* getRHS() { return valueExpr; };
@@ -330,7 +334,7 @@ class VarDeclExprAST : public ExprAST {
     // llvm::outs() << "-----VarDeclExprAST ------varName: " << name << "\n";
   }
   llvm::StringRef getNameStringRef() const { return name; }
-  string getName() const { return name; }
+  std::string getName() const { return name; }
   ExprAST* getInitVal() { return initVal; }
   const VarType& getType() { return type; }
 
@@ -350,7 +354,7 @@ class PrototypeAST : public BaseAST {
       : location(location), name(name), args(args), ret(ret) {}
 
   const Location& loc() { return location; }
-  string getName() { return name; }
+  std::string getName() { return name; }
   ExprAST* getRet() { return ret; };
   std::vector<VarDeclExprAST>& getArgs() { return args; }
 };
@@ -361,37 +365,37 @@ class FunctionAST : public BaseAST {
 
  public:
   FunctionAST(Location loc) : loc(loc) {}
-  string function_name;
+  std::string function_name;
   PrototypeAST* proto;
-  vector<VarDeclExprAST> temp_vars;
-  set<string> writeVars;
-  set<string> usedVars;
+  std::vector<VarDeclExprAST> temp_vars;
+  std::set<std::string> writeVars;
+  std::set<std::string> usedVars;
   void addUsedVar(std::string& name) { usedVars.insert(name); }
-  vector<ExprAST*> body;
-  string source = "";
+  std::vector<ExprAST*> body;
+  std::string source = "";
   ExprAST* return_val = NULL;
   PrototypeAST* getProto() { return proto; }
-  vector<VarDeclExprAST>& getLocals() { return temp_vars; }
+  std::vector<VarDeclExprAST>& getLocals() { return temp_vars; }
   VarDeclExprAST& getLocal(int k) { return temp_vars[k]; }
   ExprASTList* getBody() { return &body; }
-  string getName() { return function_name; }
+  std::string getName() { return function_name; }
 };
 
 class ClassAST : public BaseAST {
  public:
   ClassAST() : BaseAST("ClassAST") {}
-  vector<FunctionAST*> functions;
+  std::vector<FunctionAST*> functions;
   bool valid = false;
   int line;
-  string fileName = "";
-  string class_name = "", environment = "", super_class = "", privateinfo = "",
+  std::string fileName = "";
+  std::string class_name = "", environment = "", super_class = "", privateinfo = "",
          indexed_type = "";
-  set<std::string> inst_vars;
-  set<std::string> class_inst_vars;
-  string imports = "";
-  string category = "";
-  string getName() { return class_name; }
-  string getSuperClassName() { return super_class; }
+  std::set<std::string> inst_vars;
+  std::set<std::string> class_inst_vars;
+  std::string imports = "";
+  std::string category = "";
+  std::string getName() { return class_name; }
+  std::string getSuperClassName() { return super_class; }
 };
 class ModuleAST : public BaseAST {
  private:
@@ -401,10 +405,10 @@ class ModuleAST : public BaseAST {
   ModuleAST() : BaseAST("ModuleAST") {}
 
   FunctionAST* entry_point = NULL;
-  string path = "";
-  string path_config = "";
-    std::map<string, string> configMap;
-  std::map<string, ClassAST*> classesMap;
+  std::string path = "";
+  std::string path_config = "";
+    std::map<std::string, std::string> configMap;
+  std::map<std::string, ClassAST*> classesMap;
   void addFunctionAST(FunctionAST* funcAst) { functions.push_back(funcAst); }
   // TODO: if same class name is added multiple times, merge
   void addClassAST(ClassAST* classAst) {
@@ -419,7 +423,7 @@ class ModuleAST : public BaseAST {
     }
   }
   std::vector<FunctionAST*> getFunctions() { return functions; }
-  std::map<string, ClassAST*>& getClassesMap() { return classesMap; }
+  std::map<std::string, ClassAST*>& getClassesMap() { return classesMap; }
   uint getClassesMapSize() { return classesMap.size(); }
 };
 
@@ -432,12 +436,12 @@ class FunctionCallAST : public ExprAST {
   std::string callee;
   std::vector<ExprAST*> args;
 
-  string function_name = "";
-  //    string parameters;
-  string params = "";
+  std::string function_name = "";
+  //    std::string parameters;
+  std::string params = "";
   ExprAST* syn = NULL;
 
-  string getCallee() { return callee; }
+  std::string getCallee() { return callee; }
   void setCallee(std::string str) { callee = str; }
   llvm::ArrayRef<ExprAST*> getArgs() { return args; }
   void addArg(ExprAST* arg) { args.push_back(arg); }
@@ -452,13 +456,13 @@ class FunctionCallAST : public ExprAST {
 /// Expression class for code blocks, like "[Transcript show: race]".
 class BlockExprAST : public ExprAST {
   const std::string source;
-  vector<VarDeclExprAST> params;
-  vector<VarDeclExprAST> locals;
+  std::vector<VarDeclExprAST> params;
+  std::vector<VarDeclExprAST> locals;
 
  public:
   FunctionAST* parentScope = nullptr;
   FunctionAST* func = nullptr;
-  set<string> outerVars;
+  std::set<std::string> outerVars;
   BlockExprAST(Location loc, const std::string& source)
       : ExprAST(Expr_Block, loc), source(source) {}
 
@@ -496,11 +500,11 @@ class BlockExprAST : public ExprAST {
     }
     return false;
   }
-  vector<VarDeclExprAST>& getBlockParams() { return params; }
+  std::vector<VarDeclExprAST>& getBlockParams() { return params; }
   // block has its only locals
-  vector<VarDeclExprAST>& getLocals() { return locals; }
+  std::vector<VarDeclExprAST>& getLocals() { return locals; }
 
-  string getName() {
+  std::string getName() {
     if (!func) return "emptyblock";
     return func->function_name;
   }
@@ -515,9 +519,9 @@ struct SEM {
   int indentLevel = 0;
   FunctionAST* curScope;  // current function being processed
 
-  vector<FunctionAST*> Scopes;
-  vector<string> curScopeName;
-  antlrcpp::Any lastUnary;  // last unary message
+  std::vector<FunctionAST*> Scopes;
+  std::vector<std::string> curScopeName;
+  std::any lastUnary;  // last unary message
 };
 
 }  // namespace stx

@@ -1,6 +1,9 @@
 #ifndef MLIR_ST_PARSER_WRAPPER_H_
 #define MLIR_ST_PARSER_WRAPPER_H_
 
+#include <string>
+#include <vector>
+
 #include "RustParser.h"
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringRef.h"

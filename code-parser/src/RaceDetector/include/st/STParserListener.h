@@ -75,6 +75,7 @@ class ModuleAST {
     records.push_back(std::move(record));
   }
 };
+
 void dump(ModuleAST &);
 
 }  // namespace st
