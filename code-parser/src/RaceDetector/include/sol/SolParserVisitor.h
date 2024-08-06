@@ -1,25 +1,26 @@
-#ifndef MLIR_ST_PARSER_VISITOR_H_
-#define MLIR_ST_PARSER_VISITOR_H_
+#pragma once
 
+#include <any>
 #include <iostream>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
 #include "ast/AST.h"
 #include "RustParserBaseVisitor.h"
 
-using namespace stx;
+using namespace sol;
 
 bool DEBUG_SOL = false;
 
 const std::string ANON_NAME = ".anon.";
-std::map<std::string, stx::FunctionAST *> allFunctionMap;
+std::map<std::string, sol::FunctionAST *> allFunctionMap;
 std::map<std::string, uint> functionNamesMap;
 std::map<std::string, uint> functionAnonNamesMap;
 std::set<std::string> declareIdAddresses;
 
-class STParserVisitor : public RustParserBaseVisitor {
+class SolParserVisitor : public RustParserBaseVisitor {
  private:
   std::string fileName;
   std::string fnBaseName;
@@ -27,11 +28,11 @@ class STParserVisitor : public RustParserBaseVisitor {
   size_t line_base;
   std::string entryName;
 
-  std::vector<stx::FunctionAST *> functions;
+  std::vector<sol::FunctionAST *> functions;
 
-  void addNewFunction(stx::Location &loc, std::string fname,
-                      std::vector<stx::VarDeclExprAST> &args,
-                      stx::FunctionAST *func) {
+  void addNewFunction(sol::Location &loc, std::string fname,
+                      std::vector<sol::VarDeclExprAST> &args,
+                      sol::FunctionAST *func) {
     // if a previous function with the same name exists, append $k to this name
     // if (DEBUG_SOL) std::cout << "addNewFunction ->fname: " << fname << std::endl;
     auto k = functionNamesMap[fname];
@@ -47,18 +48,18 @@ class STParserVisitor : public RustParserBaseVisitor {
     functions.push_back(func);
   }
 
-  stx::Location getLoc(antlr4::ParserRuleContext *ctx) {
+  sol::Location getLoc(antlr4::ParserRuleContext *ctx) {
     size_t line = 0;
     size_t pos = 0;
     if (ctx) {
       line = ctx->getStart()->getLine();
       pos = ctx->getStart()->getCharPositionInLine();
     }
-    stx::Location loc({fileName, line + line_base, pos});
+    sol::Location loc({fileName, line + line_base, pos});
     return loc;
   }
 
-  bool existInCurScope(stx::FunctionAST *scope, std::string name) {
+  bool existInCurScope(sol::FunctionAST *scope, std::string name) {
     if (scope->temp_vars.size() == 0) return false;
     for (auto it = scope->temp_vars.begin(); it < scope->temp_vars.end();
          ++it) {
@@ -82,11 +83,11 @@ class STParserVisitor : public RustParserBaseVisitor {
   }
 
  public:
-  STParserVisitor(std::string fileName, std::string funcName, size_t line)
+  SolParserVisitor(std::string fileName, std::string funcName, size_t line)
       : fileName(fileName), fnBaseName(funcName), line_base(line) {
     // llvm::outs() << "----visitor filename: " << fileName << "-------"<< "\n";
   }
-  stx::SEM sem;
+  sol::SEM sem;
 
   virtual std::any visitCrate(RustParser::CrateContext *ctx) override {
     if (DEBUG_SOL) std::cout << "visitCrate path: " << fileName << std::endl;
@@ -114,7 +115,7 @@ class STParserVisitor : public RustParserBaseVisitor {
       std::cout << SPACE << "visitItemX begin: " << ctx->getText() << std::endl;
     indentMore();
 
-    stx::FunctionAST *funcAST_single = nullptr;
+    sol::FunctionAST *funcAST_single = nullptr;
     if (ctx->visItem()) {
       for (auto outerAttribute : ctx->outerAttribute()) {
         auto attr = outerAttribute->getText();
@@ -151,10 +152,10 @@ class STParserVisitor : public RustParserBaseVisitor {
             if (auto moduleCtx = ctx->visItem()->module()) {
               auto loc = getLoc(ctx);
               auto name = moduleCtx->identifier()->getText();
-              stx::FunctionAST *func = new stx::FunctionAST(loc);
+              sol::FunctionAST *func = new sol::FunctionAST(loc);
               auto fnName = "model.anchor.program." + name;
               func->function_name = "sol." + fnName;
-              std::vector<stx::ExprAST *> callInsts;
+              std::vector<sol::ExprAST *> callInsts;
 
               for (auto itemCtx : moduleCtx->item()) {
                 if (auto visItemCtx = itemCtx->visItem()) {
@@ -173,8 +174,8 @@ class STParserVisitor : public RustParserBaseVisitor {
                       // std::cout << SPACE << "  attrCtx: " << attrCtx_str << std::endl;
                       if (attrCtx->attr()->simplePath()->getText() ==
                           "access_control") {
-                        stx::FunctionCallAST *fcall =
-                            new stx::FunctionCallAST(getLoc(attrCtx));
+                        sol::FunctionCallAST *fcall =
+                            new sol::FunctionCallAST(getLoc(attrCtx));
                         fcall->callee = "model.access_control";
                         // ctx.accounts.validate
                         auto calleeName = attrCtx_str.substr(
@@ -183,7 +184,7 @@ class STParserVisitor : public RustParserBaseVisitor {
                           std::cout << SPACE
                                << "  access_control callee: " << calleeName
                                << std::endl;
-                        std::vector<stx::ExprAST *> args;
+                        std::vector<sol::ExprAST *> args;
                         auto arg = new LiteralExprAST(getLoc(attrCtx->attr()),
                                                       calleeName);
                         args.push_back(arg);
@@ -204,7 +205,7 @@ class STParserVisitor : public RustParserBaseVisitor {
                       if (DEBUG_SOL)
                         std::cout << SPACE << "  fcall->callee: " << fcall->callee
                              << std::endl;
-                      std::vector<stx::ExprAST *> args;
+                      std::vector<sol::ExprAST *> args;
                       for (auto declareExpr : funcAST->getProto()->getArgs()) {
                         auto literal = declareExpr.getName() + ":" +
                                        declareExpr.getType().name;
@@ -220,14 +221,14 @@ class STParserVisitor : public RustParserBaseVisitor {
               }
 
               func->body = callInsts;
-              std::vector<stx::VarDeclExprAST> args;
+              std::vector<sol::VarDeclExprAST> args;
               addNewFunction(loc, func->function_name, args, func);
               // create main to call func
               auto main = allFunctionMap["main"];
               if (!main) {
-                stx::FunctionAST *main = new FunctionAST(loc);
+                sol::FunctionAST *main = new FunctionAST(loc);
                 main->function_name = "main";
-                std::vector<stx::ExprAST *> res;
+                std::vector<sol::ExprAST *> res;
                 auto program_id = new LiteralExprAST(getLoc(ctx), "program_id");
                 // auto accounts = new LiteralExprAST(getLoc(ctx), "accounts");
                 // auto instruction_data =
@@ -240,13 +241,13 @@ class STParserVisitor : public RustParserBaseVisitor {
                   if (DEBUG_SOL)
                     std::cout << SPACE << "  fcall->callee: " << fcall->callee
                          << std::endl;
-                  std::vector<stx::ExprAST *> args;
+                  std::vector<sol::ExprAST *> args;
                   args.push_back(program_id);
                   fcall->args = args;
                   res.push_back(fcall);
                 }
                 main->body = res;
-                std::vector<stx::VarDeclExprAST> args;
+                std::vector<sol::VarDeclExprAST> args;
                 auto protoAST =
                     new PrototypeAST(loc, main->function_name, args);
                 main->proto = protoAST;
@@ -257,7 +258,7 @@ class STParserVisitor : public RustParserBaseVisitor {
                 fcall->callee = fnName;
                 if (DEBUG_SOL)
                   std::cout << SPACE << "  fcall->callee: " << fcall->callee << std::endl;
-                std::vector<stx::ExprAST *> args;
+                std::vector<sol::ExprAST *> args;
                 auto program_id = new LiteralExprAST(getLoc(ctx), "program_id");
                 args.push_back(program_id);
                 fcall->args = args;
@@ -310,7 +311,7 @@ class STParserVisitor : public RustParserBaseVisitor {
               if (DEBUG_SOL)
                 std::cout << SPACE << "  access_control callee: " << calleeName
                      << std::endl;
-              std::vector<stx::ExprAST *> args;
+              std::vector<sol::ExprAST *> args;
               auto arg = new LiteralExprAST(getLoc(outerAttribute->attr()),
                                             calleeName);
               args.push_back(arg);
@@ -347,11 +348,11 @@ class STParserVisitor : public RustParserBaseVisitor {
               // create a main function that calls "entryName"
               {
                 auto loc = getLoc(ctx);
-                stx::FunctionAST *func = new stx::FunctionAST(loc);
+                sol::FunctionAST *func = new sol::FunctionAST(loc);
                 std::string fnName = "main";
                 func->function_name = fnName;
 
-                std::vector<stx::ExprAST *> res;
+                std::vector<sol::ExprAST *> res;
                 auto program_id = new LiteralExprAST(getLoc(ctx), "program_id");
                 auto accounts = new LiteralExprAST(getLoc(ctx), "accounts");
                 auto instruction_data =
@@ -365,7 +366,7 @@ class STParserVisitor : public RustParserBaseVisitor {
                   if (DEBUG_SOL)
                     std::cout << SPACE << "  fcall->callee: " << fcall->callee
                          << std::endl;
-                  std::vector<stx::ExprAST *> args;
+                  std::vector<sol::ExprAST *> args;
                   args.push_back(program_id);
                   args.push_back(accounts);
                   args.push_back(instruction_data);
@@ -378,7 +379,7 @@ class STParserVisitor : public RustParserBaseVisitor {
                 }
 
                 func->body = res;
-                std::vector<stx::VarDeclExprAST> args;
+                std::vector<sol::VarDeclExprAST> args;
                 auto protoAST =
                     new PrototypeAST(loc, func->function_name, args);
                 func->proto = protoAST;
@@ -397,10 +398,10 @@ class STParserVisitor : public RustParserBaseVisitor {
             // special treatment:
 
             auto loc = getLoc(ctx);
-            stx::FunctionAST *func = new stx::FunctionAST(loc);
+            sol::FunctionAST *func = new sol::FunctionAST(loc);
             std::string fnName = "main";
             func->function_name = fnName;
-            std::vector<stx::ExprAST *> res, res2;
+            std::vector<sol::ExprAST *> res, res2;
             std::string para0 = "ExecutionContext";
             std::string para1, para2, fname;
             for (auto tokenTreeCtx : macroInvocationSemi->tokenTree()) {
@@ -424,7 +425,7 @@ class STParserVisitor : public RustParserBaseVisitor {
                   fcall->callee = fname;
                   // if (DEBUG_SOL) std::cout << SPACE << "  fcall->callee: " <<
                   // fcall->callee << std::endl;
-                  std::vector<stx::ExprAST *> args;
+                  std::vector<sol::ExprAST *> args;
                   args.push_back(arg0);
                   args.push_back(arg1);
                   args.push_back(arg2);
@@ -451,7 +452,7 @@ class STParserVisitor : public RustParserBaseVisitor {
             res2.push_back(fmatch);
 
             func->body = res2;
-            std::vector<stx::VarDeclExprAST> args;
+            std::vector<sol::VarDeclExprAST> args;
             auto protoAST = new PrototypeAST(loc, func->function_name, args);
             func->proto = protoAST;
             functions.push_back(func);
@@ -519,7 +520,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  stx::FunctionAST *visitStructStructX(RustParser::StructStructContext *ctx,
+  sol::FunctionAST *visitStructStructX(RustParser::StructStructContext *ctx,
                                        bool isAnchor) {
     // TODO: create a model function for each struct
     auto name = ctx->identifier()->getText();
@@ -528,14 +529,14 @@ class STParserVisitor : public RustParserBaseVisitor {
 
     indentMore();
     auto loc = getLoc(ctx);
-    stx::FunctionAST *func = new stx::FunctionAST(loc);
+    sol::FunctionAST *func = new sol::FunctionAST(loc);
     auto fnName = "sol.model.struct." + name;
     if (isAnchor) fnName = "sol.model.struct.anchor." + name;
 
     func->function_name = fnName;
     auto fieldCallFunc = "model.struct.field";
     auto constraintCallFunc = "model.struct.constraint";
-    std::vector<stx::ExprAST *> callInsts;
+    std::vector<sol::ExprAST *> callInsts;
     if (ctx->structFields())
       for (auto fieldCtx : ctx->structFields()->structField()) {
         if (fieldCtx->outerAttribute().size() == 1) {
@@ -554,7 +555,7 @@ class STParserVisitor : public RustParserBaseVisitor {
             auto cons = attrText.substr(8);
             cons.pop_back();
             auto arg0 = new LiteralExprAST(getLoc(attr), cons);
-            std::vector<stx::ExprAST *> args;
+            std::vector<sol::ExprAST *> args;
             args.push_back(arg0);
             fcall->args = args;
             callInsts.push_back(fcall);
@@ -573,7 +574,7 @@ class STParserVisitor : public RustParserBaseVisitor {
           std::cout << SPACE << "  fcall->callee: " << fcall->callee << std::endl;
         auto arg0 = new LiteralExprAST(getLoc(fieldCtx), field);
         auto arg1 = new LiteralExprAST(getLoc(fieldCtx), type);
-        std::vector<stx::ExprAST *> args;
+        std::vector<sol::ExprAST *> args;
         args.push_back(arg0);
         args.push_back(arg1);
         fcall->args = args;
@@ -581,7 +582,7 @@ class STParserVisitor : public RustParserBaseVisitor {
       }
 
     func->body = callInsts;
-    std::vector<stx::VarDeclExprAST> args;
+    std::vector<sol::VarDeclExprAST> args;
     addNewFunction(loc, func->function_name, args, func);
 
     // auto result = visitChildren(ctx);
@@ -678,12 +679,12 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  stx::FunctionAST *visitTrait_X(std::string fnBaseName_tmp,
+  sol::FunctionAST *visitTrait_X(std::string fnBaseName_tmp,
                                  RustParser::Trait_Context *ctx) {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitTrait_X begin: " << ctx->getText() << std::endl;
     indentMore();
-    stx::FunctionAST *result = nullptr;
+    sol::FunctionAST *result = nullptr;
     std::string typeName = ctx->identifier()->getText();
     std::vector<RustParser::AssociatedItemContext *> associatedItems =
         ctx->associatedItem();
@@ -704,13 +705,13 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  stx::FunctionAST *visitImplementation_X(std::string fnBaseName_tmp,
+  sol::FunctionAST *visitImplementation_X(std::string fnBaseName_tmp,
                                           RustParser::ImplementationContext *ctx) {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitImplementation_X begin: " << ctx->getText()
            << std::endl;
     indentMore();
-    stx::FunctionAST *result = nullptr;
+    sol::FunctionAST *result = nullptr;
     std::string typeName;
     std::vector<RustParser::AssociatedItemContext *> associatedItems;
     if (ctx->inherentImpl()) {
@@ -796,15 +797,15 @@ class STParserVisitor : public RustParserBaseVisitor {
     if (DEBUG_SOL) std::cout << SPACE << "visitFunction_ end " << std::endl;
     return result;
   }
-  stx::FunctionAST *visitFunction_X(std::string fnBaseName,
+  sol::FunctionAST *visitFunction_X(std::string fnBaseName,
                                RustParser::Function_Context *ctx) {
     curFuncName = ctx->identifier()->getText();
     auto fnName = fnBaseName + "::" + curFuncName;
     auto loc = getLoc(ctx);
-    stx::FunctionAST *func = new stx::FunctionAST(loc);
+    sol::FunctionAST *func = new sol::FunctionAST(loc);
     func->function_name = fnName;
 
-    std::vector<stx::VarDeclExprAST> args;
+    std::vector<sol::VarDeclExprAST> args;
 
     if (DEBUG_SOL) std::cout << SPACE << "visitFunction_X: " << fnName << std::endl;
     indentMore();
@@ -815,7 +816,7 @@ class STParserVisitor : public RustParserBaseVisitor {
       visitFunctionReturnType(ctx->functionReturnType());
 
     // result = visitStatements(ctx->blockExpression()->statements());
-    std::vector<stx::ExprAST *> res;
+    std::vector<sol::ExprAST *> res;
     if (ctx->blockExpression())
       res = visitStatementsX(ctx->blockExpression()->statements());
     func->body = res;
@@ -840,9 +841,9 @@ class STParserVisitor : public RustParserBaseVisitor {
     if (DEBUG_SOL) std::cout << SPACE << "visitFunctionReturnType end " << std::endl;
     return result;
   }
-  std::vector<stx::VarDeclExprAST> visitFunctionParametersX(
+  std::vector<sol::VarDeclExprAST> visitFunctionParametersX(
       RustParser::FunctionParametersContext *ctx) {
-    std::vector<stx::VarDeclExprAST> args;
+    std::vector<sol::VarDeclExprAST> args;
     auto loc = getLoc(ctx);
 
     std::any result = nullptr;
@@ -855,7 +856,7 @@ class STParserVisitor : public RustParserBaseVisitor {
       auto paramName = ctx->selfParam()->getText();
       VarType type;
       type.name = paramName;
-      auto arg = new stx::VarDeclExprAST(loc, paramName, type);
+      auto arg = new sol::VarDeclExprAST(loc, paramName, type);
       if (DEBUG_SOL) std::cout << SPACE << "param: " << paramName << std::endl;
       args.push_back(*arg);
     }
@@ -873,7 +874,7 @@ class STParserVisitor : public RustParserBaseVisitor {
         auto typeName = param->functionParamPattern()->type_()->getText();
         VarType type;
         type.name = typeName;
-        auto arg = new stx::VarDeclExprAST(loc, paramName, type);
+        auto arg = new sol::VarDeclExprAST(loc, paramName, type);
         // if (DEBUG_SOL) std::cout << SPACE << "arg paramName: " << paramName << "
         // type: " << typeName << std::endl;
         args.push_back(*arg);
@@ -920,12 +921,12 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 
-  stx::ExprAST *visitBlockExpressionX(RustParser::BlockExpressionContext *ctx) {
+  sol::ExprAST *visitBlockExpressionX(RustParser::BlockExpressionContext *ctx) {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitBlockExpressionX begin: " << ctx->getText()
            << std::endl;
     indentMore();
-    stx::ExprAST *res = nullptr;
+    sol::ExprAST *res = nullptr;
 
     if (ctx->statements()) {
       if (auto lastExpr = ctx->statements()->expression()) {
@@ -945,8 +946,8 @@ class STParserVisitor : public RustParserBaseVisitor {
     return res;
   }
 
-  std::vector<stx::ExprAST *> visitStatementsX(RustParser::StatementsContext *ctx) {
-    std::vector<stx::ExprAST *> ret;
+  std::vector<sol::ExprAST *> visitStatementsX(RustParser::StatementsContext *ctx) {
+    std::vector<sol::ExprAST *> ret;
     if (!ctx) return ret;  // empty block
     if (DEBUG_SOL)
       std::cout << SPACE << "visitStatementsX begin: " << ctx->getText() << std::endl;
@@ -970,9 +971,9 @@ class STParserVisitor : public RustParserBaseVisitor {
     return ret;
   }
 
-  stx::ExprAST *visitStatementX(RustParser::StatementContext *ctx) {
+  sol::ExprAST *visitStatementX(RustParser::StatementContext *ctx) {
     std::any result = nullptr;
-    stx::ExprAST *expr = nullptr;
+    sol::ExprAST *expr = nullptr;
 
     if (DEBUG_SOL)
       std::cout << SPACE << "visitStatementX begin: " << ctx->getText() << std::endl;
@@ -1020,18 +1021,18 @@ class STParserVisitor : public RustParserBaseVisitor {
     // return result;
   }
 
-  stx::ExprAST *visitMacroInvocationSemiX(
+  sol::ExprAST *visitMacroInvocationSemiX(
       RustParser::MacroInvocationSemiContext *ctx) {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitMacroInvocationSemiX: " << ctx->getText() << std::endl;
 
-    stx::ExprAST *expr = nullptr;
+    sol::ExprAST *expr = nullptr;
     {
       FunctionCallAST *fcall = new FunctionCallAST(getLoc(ctx));
       fcall->callee = ctx->simplePath()->getText();
       if (DEBUG_SOL)
         std::cout << SPACE << "  fcall->callee: " << fcall->callee << std::endl;
-      std::vector<stx::ExprAST *> args;
+      std::vector<sol::ExprAST *> args;
       std::vector<std::string> paraNames;
       std::string paraName = "";
       // require!(
@@ -1085,15 +1086,15 @@ class STParserVisitor : public RustParserBaseVisitor {
     return expr;
   }
 
-  stx::ExprAST *visitLoopExpressionX(RustParser::LoopExpressionContext *ctx) {
+  sol::ExprAST *visitLoopExpressionX(RustParser::LoopExpressionContext *ctx) {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitLoopExpression begin: " << ctx->getText() << std::endl;
     indentMore();
-    stx::ExprAST *res = nullptr;
+    sol::ExprAST *res = nullptr;
     // auto result = visitChildren(ctx);
 
     FunctionCallAST *fcall = new FunctionCallAST(getLoc(ctx));
-    std::vector<stx::ExprAST *> args;
+    std::vector<sol::ExprAST *> args;
     std::string loopCallFunc = "model.loop";
     RustParser::BlockExpressionContext *blockExpr = nullptr;
     if (ctx->iteratorLoopExpression()) {
@@ -1130,12 +1131,12 @@ class STParserVisitor : public RustParserBaseVisitor {
     return res;
   }
 
-  stx::ExprAST *visitExpressionWithBlockX(
+  sol::ExprAST *visitExpressionWithBlockX(
       RustParser::ExpressionWithBlockContext *ctx) {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitExpressionWithBlockX: " << ctx->getText() << std::endl;
     indentMore();
-    stx::ExprAST *res = nullptr;
+    sol::ExprAST *res = nullptr;
     if (ctx->ifExpression()) {
       res = visitIfExpressionX(ctx->ifExpression());
     } else if (ctx->ifLetExpression()) {
@@ -1153,8 +1154,8 @@ class STParserVisitor : public RustParserBaseVisitor {
     return res;
   }
 
-  stx::ExprAST *visitExpressionX(RustParser::ExpressionContext *ctx) {
-    stx::ExprAST *expr = nullptr;
+  sol::ExprAST *visitExpressionX(RustParser::ExpressionContext *ctx) {
+    sol::ExprAST *expr = nullptr;
     if (DEBUG_SOL)
       std::cout << SPACE << "visitExpressionX: " << ctx->getText() << std::endl;
 
@@ -1178,7 +1179,7 @@ class STParserVisitor : public RustParserBaseVisitor {
       if (DEBUG_SOL)
         std::cout << SPACE << "  fcall->callee: " << fcall->callee << std::endl;
 
-      std::vector<stx::ExprAST *> args;
+      std::vector<sol::ExprAST *> args;
       if (callExpressionCtx->callParams()) {
         for (auto paramCtx : callExpressionCtx->callParams()->expression()) {
           auto varName = paramCtx->getText();
@@ -1209,7 +1210,7 @@ class STParserVisitor : public RustParserBaseVisitor {
       if (DEBUG_SOL)
         std::cout << SPACE << "  fcall->callee: " << fcall->callee << std::endl;
 
-      std::vector<stx::ExprAST *> args;
+      std::vector<sol::ExprAST *> args;
       auto baseExpr = visitExpressionX(methodCallExpressionCtx->expression());
       if (baseExpr != nullptr) args.push_back(baseExpr);
       if (methodCallExpressionCtx->callParams()) {
@@ -1255,7 +1256,7 @@ class STParserVisitor : public RustParserBaseVisitor {
       if (DEBUG_SOL)
         std::cout << SPACE << "  fcall->callee: " << fcall->callee << std::endl;
 
-      std::vector<stx::ExprAST *> args;
+      std::vector<sol::ExprAST *> args;
       if (compareExpressionCtx->expression().size() > 1) {
         for (auto paramCtx : compareExpressionCtx->expression()) {
           auto varName = paramCtx->getText();
@@ -1285,7 +1286,7 @@ class STParserVisitor : public RustParserBaseVisitor {
       if (DEBUG_SOL)
         std::cout << SPACE << "  fcall->callee: " << fcall->callee << std::endl;
 
-      std::vector<stx::ExprAST *> args;
+      std::vector<sol::ExprAST *> args;
       for (auto paramCtx : compoundAssignmentExpressionCtx->expression()) {
         auto var = visitExpressionX(paramCtx);
         if (var != nullptr) args.push_back(var);
@@ -1360,7 +1361,7 @@ class STParserVisitor : public RustParserBaseVisitor {
       if (DEBUG_SOL)
         std::cout << SPACE << "  fcall->callee: " << fcall->callee << std::endl;
 
-      std::vector<stx::ExprAST *> args;
+      std::vector<sol::ExprAST *> args;
       auto var = visitExpressionX(negationExpressionCtx->expression());
       if (var != nullptr) args.push_back(var);
       fcall->args = args;
@@ -1383,7 +1384,7 @@ class STParserVisitor : public RustParserBaseVisitor {
         if (DEBUG_SOL)
           std::cout << SPACE << "  fcall->callee: " << fcall->callee << std::endl;
 
-        std::vector<stx::ExprAST *> args;
+        std::vector<sol::ExprAST *> args;
         // auto structExpr = new LiteralExprAST(getLoc(ctx), structName);
         // args.push_back(structExpr);
         if (structExprStructCtx->structExprFields()) {
@@ -1469,7 +1470,7 @@ class STParserVisitor : public RustParserBaseVisitor {
       FunctionCallAST *fcall =
           new FunctionCallAST(getLoc(macroInvokeExpressionCtx));
 
-      std::vector<stx::ExprAST *> args;
+      std::vector<sol::ExprAST *> args;
       args.push_back(literal);
       fcall->args = args;
       auto macroCallFunc = "model.macro.";
@@ -1557,7 +1558,7 @@ class STParserVisitor : public RustParserBaseVisitor {
              << std::endl;
       FunctionCallAST *fcall = new FunctionCallAST(getLoc(ctx));
       fcall->callee = "return";  // special
-      std::vector<stx::ExprAST *> args;
+      std::vector<sol::ExprAST *> args;
       //    'return' expression?
       if (returnExpressionCtx->expression()) {
         auto res = visitExpressionX(returnExpressionCtx->expression());
@@ -1585,7 +1586,7 @@ class STParserVisitor : public RustParserBaseVisitor {
       if (DEBUG_SOL)
         std::cout << SPACE << "  fcall->callee: " << fcall->callee << std::endl;
 
-      std::vector<stx::ExprAST *> args;
+      std::vector<sol::ExprAST *> args;
       auto from = visitExpressionX(typeCastExpressionCtx->expression());
       if (from != nullptr) {
         auto toVar = typeCastExpressionCtx->typeNoBounds()->getText();
@@ -1663,7 +1664,7 @@ class STParserVisitor : public RustParserBaseVisitor {
       if (DEBUG_SOL)
         std::cout << SPACE << "  fcall->callee: " << fcall->callee << std::endl;
 
-      std::vector<stx::ExprAST *> args;
+      std::vector<sol::ExprAST *> args;
       auto expr0 = visitExpressionX(arithLogicExpressionCtx->expression(0));
       auto expr1 = visitExpressionX(arithLogicExpressionCtx->expression(1));
 
@@ -1700,7 +1701,7 @@ class STParserVisitor : public RustParserBaseVisitor {
       if (DEBUG_SOL)
         std::cout << SPACE << "  fcall->callee: " << fcall->callee << std::endl;
 
-      std::vector<stx::ExprAST *> args;
+      std::vector<sol::ExprAST *> args;
       auto expr0 = visitExpressionX(lazyBoolExpressionCtx->expression(0));
       auto expr1 = visitExpressionX(lazyBoolExpressionCtx->expression(1));
 
@@ -1735,7 +1736,7 @@ class STParserVisitor : public RustParserBaseVisitor {
         std::cout << SPACE << "  BreakExpressionContext: " << ctx->getText() << std::endl;
       FunctionCallAST *fcall = new FunctionCallAST(getLoc(ctx));
       fcall->callee = "model.break";
-      std::vector<stx::ExprAST *> args;
+      std::vector<sol::ExprAST *> args;
       fcall->args = args;
       return fcall;
     } else if (auto callExpressionCtx = dynamic_cast<
@@ -1758,24 +1759,24 @@ class STParserVisitor : public RustParserBaseVisitor {
     return expr;
   }
 
-  stx::ExprAST *visitLetStatementX(RustParser::LetStatementContext *ctx) {
+  sol::ExprAST *visitLetStatementX(RustParser::LetStatementContext *ctx) {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitLetStatement begin: " << ctx->getText() << std::endl;
     indentMore();
-    stx::ExprAST *expr = nullptr;
+    sol::ExprAST *expr = nullptr;
     auto varName = ctx->patternNoTopAlt()->getText();
     if (auto patternCtx = ctx->patternNoTopAlt()->patternWithoutRange()) {
       if (patternCtx->slicePattern()) {
         auto patternItemsCtx = patternCtx->slicePattern()->slicePatternItems();
         if (patternItemsCtx && patternItemsCtx->pattern().size() > 0) {
           FunctionCallAST *fcall = new FunctionCallAST(getLoc(patternItemsCtx));
-          std::vector<stx::ExprAST *> args;
+          std::vector<sol::ExprAST *> args;
           for (auto item : patternItemsCtx->pattern()) {
             // TODO: handle mango [...]
             FunctionCallAST *fcall2 = new FunctionCallAST(getLoc(item));
             {
               auto literal = new LiteralExprAST(getLoc(item), item->getText());
-              std::vector<stx::ExprAST *> args2;
+              std::vector<sol::ExprAST *> args2;
               args2.push_back(literal);
               fcall2->args = args2;
               auto sliceItemCallFunc = "model.slice.item.";
@@ -1797,7 +1798,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     }
     auto result = visitChildren(ctx);  // debug
     if (ctx->expression()) {
-        stx::ExprAST *valueExpr = visitExpressionX(ctx->expression());
+        sol::ExprAST *valueExpr = visitExpressionX(ctx->expression());
       // make sure valueExpr is not null
       if (valueExpr == nullptr) return expr;
 
@@ -1809,17 +1810,17 @@ class STParserVisitor : public RustParserBaseVisitor {
     return expr;
   }
 
-  stx::ExprAST *visitIfExpressionX(RustParser::IfExpressionContext *ctx) {
+  sol::ExprAST *visitIfExpressionX(RustParser::IfExpressionContext *ctx) {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitIfExpressionX begin: " << ctx->getText() << std::endl;
     indentMore();
-    stx::ExprAST *expr = nullptr;
+    sol::ExprAST *expr = nullptr;
     // if(left,right)
     FunctionCallAST *fcall = new FunctionCallAST(getLoc(ctx));
     // expr
     // callParams
     fcall->callee = "if";
-    std::vector<stx::ExprAST *> args;
+    std::vector<sol::ExprAST *> args;
     auto condExpr = visitExpressionX(ctx->expression());
     if (condExpr != nullptr)
       args.push_back(condExpr);
@@ -1843,7 +1844,7 @@ class STParserVisitor : public RustParserBaseVisitor {
           FunctionCallAST *fcall2 =
               new FunctionCallAST(getLoc(ctx->ifExpression()));
           fcall2->callee = "ifTrueFalse" + ANON_NAME;
-          std::vector<stx::ExprAST *> args2;
+          std::vector<sol::ExprAST *> args2;
           args2.push_back(ifBlockExpr);
           args2.push_back(elseIfExpr);
           fcall2->args = args2;
@@ -1890,19 +1891,19 @@ class STParserVisitor : public RustParserBaseVisitor {
   }
 
   // customized
-  stx::ExprAST *visitCustomizedIfBlockExpressionX(
-      RustParser::BlockExpressionContext *ctx, stx::ExprAST *expr, bool isTrue) {
+  sol::ExprAST *visitCustomizedIfBlockExpressionX(
+      RustParser::BlockExpressionContext *ctx, sol::ExprAST *expr, bool isTrue) {
     auto stmts = ctx->statements();
     auto loc = getLoc(ctx);
-    stx::FunctionAST *func = new stx::FunctionAST(loc);
+    sol::FunctionAST *func = new sol::FunctionAST(loc);
     auto fname = fnBaseName + "::" + curFuncName + ANON_NAME;
     auto k = functionAnonNamesMap[fname];
     k++;
     func->function_name = fname + std::to_string(k);
     functionAnonNamesMap[fname] = k;
 
-    std::vector<stx::VarDeclExprAST> args;
-    std::vector<stx::ExprAST *> res = visitStatementsX(stmts);
+    std::vector<sol::VarDeclExprAST> args;
+    std::vector<sol::ExprAST *> res = visitStatementsX(stmts);
     func->body = res;
     // ok - function names can collide - we need to append parameter count
     // func->function_name =
@@ -1912,7 +1913,7 @@ class STParserVisitor : public RustParserBaseVisitor {
     // create call anon
     FunctionCallAST *fcall = new FunctionCallAST(loc);
     fcall->callee = func->function_name;
-    std::vector<stx::ExprAST *> args1;
+    std::vector<sol::ExprAST *> args1;
     args1.push_back(expr);
     fcall->args = args1;
 
@@ -1922,19 +1923,19 @@ class STParserVisitor : public RustParserBaseVisitor {
       fcall2->callee = "ifTrue" + ANON_NAME;
     else
       fcall2->callee = "ifFalse" + ANON_NAME;
-    std::vector<stx::ExprAST *> args2;
+    std::vector<sol::ExprAST *> args2;
     // args2.push_back(expr);
     args2.push_back(fcall);
     fcall2->args = args2;
     return fcall2;
   }
 
-  stx::ExprAST *visitIfLetExpressionX(RustParser::IfLetExpressionContext *ctx) {
+  sol::ExprAST *visitIfLetExpressionX(RustParser::IfLetExpressionContext *ctx) {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitIfLetExpressionX begin: " << ctx->getText()
            << std::endl;
     indentMore();
-    stx::ExprAST *expr = nullptr;
+    sol::ExprAST *expr = nullptr;
 
     if (ctx->expression()) {
       // TODO: let Some(x) = y
@@ -1974,25 +1975,25 @@ class STParserVisitor : public RustParserBaseVisitor {
     return expr;
   }
 
-  stx::ExprAST *visitMatchExpressionX(RustParser::MatchExpressionContext *ctx) {
+  sol::ExprAST *visitMatchExpressionX(RustParser::MatchExpressionContext *ctx) {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitMatchExpressionX begin: " << ctx->getText()
            << std::endl;
     indentMore();
 
-    stx::ExprAST *expr = nullptr;
+    sol::ExprAST *expr = nullptr;
     // if(left,right)
     FunctionCallAST *fcall = new FunctionCallAST(getLoc(ctx));
     // expr
     // callParams
     fcall->callee = "match";
-    std::vector<stx::ExprAST *> args;
+    std::vector<sol::ExprAST *> args;
     auto size = ctx->matchArms()->matchArmExpression().size();
     for (size_t i = 0; i < size; i++) {
       auto matchArm = ctx->matchArms()->matchArm()[i];
       auto matchArmExpression = ctx->matchArms()->matchArmExpression()[i];
 
-      stx::ExprAST *matchExpr = nullptr;
+      sol::ExprAST *matchExpr = nullptr;
       std::string debugExprText = "";
       if (matchArmExpression->expression()) {
         debugExprText = matchArmExpression->expression()->getText();
@@ -2714,5 +2715,3 @@ class STParserVisitor : public RustParserBaseVisitor {
     return result;
   }
 };
-
-#endif  // MLIR_ST_PARSER_VISITOR_H_

@@ -1,6 +1,12 @@
-#include "st/MLIRGen.h"
+#include "sol/MLIRGen.h"
 
+#include <atomic>
+#include <map>
 #include <numeric>
+#include <set>
+#include <string>
+#include <variant>
+#include <vector>
 
 #include <llvm/ADT/ScopedHashTable.h>
 #include <llvm/ADT/STLExtras.h>
@@ -16,7 +22,8 @@
 #include <mlir/IR/Types.h>
 #include <mlir/IR/Verifier.h>
 
-#include "st/ScopedHashTableX.h"
+#include "ast/AST.h"
+#include "sol/ScopedHashTableX.h"
 
 using llvm::ArrayRef;
 using llvm::cast;
@@ -77,7 +84,7 @@ mlir::Type llvmVoidTy, llvmI32Ty, llvmI64Ty;
 /// A mapping for the functions that have been code generated to MLIR.
 llvm::StringMap<mlir::FuncOp> functionMap;
 
-namespace stx {
+namespace sol {
 
 class MLIRGenImpl {
  private:
@@ -514,7 +521,7 @@ class MLIRGenImpl {
     llvmI64Ty = builder.getI64Type();
   }
 
-  mlir::ModuleOp mlirGen(stx::ModuleAST &moduleAST) {
+  mlir::ModuleOp mlirGen(sol::ModuleAST &moduleAST) {
     // all classes
     classesInfoMap = moduleAST.getClassesMap();
     for (auto &[className, classAST] : classesInfoMap) {
@@ -1194,7 +1201,7 @@ class MLIRGenImpl {
     auto func_type = builder.getFunctionType(argTypes, returnType);
     return mlir::FuncOp::create(location, proto.getName(), func_type);
   }
-  mlir::FuncOp mlirGenTomlConfiguration(stx::ModuleAST &moduleAST) {
+  mlir::FuncOp mlirGenTomlConfiguration(sol::ModuleAST &moduleAST) {
     auto funcName = SOL_BUILT_IN_MODEL_CARGO_TOML;
     auto location = mlir::FileLineColLoc::get(
         builder.getStringAttr(moduleAST.path_config), 0, 0);
@@ -1223,7 +1230,7 @@ class MLIRGenImpl {
 
     return function;
   }
-  mlir::FuncOp mlirGenDeclareIdAddresses(stx::ModuleAST &moduleAST) {
+  mlir::FuncOp mlirGenDeclareIdAddresses(sol::ModuleAST &moduleAST) {
     auto funcName = SOL_BUILT_IN_MODEL_DECLARE_ID_ADDRESS;
     auto location = mlir::FileLineColLoc::get(
         builder.getStringAttr(moduleAST.path_config), 0, 0);
@@ -1251,7 +1258,7 @@ class MLIRGenImpl {
     return function;
   }
 
-  mlir::FuncOp mlirGenClassesMetadata(stx::ModuleAST &moduleAST) {
+  mlir::FuncOp mlirGenClassesMetadata(sol::ModuleAST &moduleAST) {
     auto funcName = SOL_BUILT_IN_CLASS_METADATA + "$" + moduleAST.path;
     if (LOWER_BOUND_ID > 0)
       funcName = funcName + "_" + std::to_string(LOWER_BOUND_ID);
@@ -1364,8 +1371,8 @@ class MLIRGenImpl {
 };
 
 mlir::OwningOpRef<mlir::ModuleOp> mlirGenFull(mlir::MLIRContext &context,
-                                              stx::ModuleAST &moduleAST) {
+                                              sol::ModuleAST &moduleAST) {
   return MLIRGenImpl(context).mlirGen(moduleAST);
 };
 
-}  // namespace stx
+}  // namespace sol

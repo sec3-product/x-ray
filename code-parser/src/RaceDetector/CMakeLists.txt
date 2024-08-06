@@ -1,21 +1,21 @@
 set(SOURCE_FILES
-    st/MLIRGen.cpp
-    st/LowerToLLVM.cpp
+    sol/MLIRGen.cpp
+    sol/LowerToLLVM.cpp
 )
 
-add_library(sol-racedetect_lib STATIC ${SOURCE_FILES})
+add_library(SolRaceDetect STATIC ${SOURCE_FILES})
 
-target_include_directories(sol-racedetect_lib PUBLIC
+target_include_directories(SolRaceDetect PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(sol-racedetect_lib
+target_link_libraries(SolRaceDetect
     conflib
 )
 
-# Enable exceptions for sol-racedetect_lib target, introduced via
+# Enable exceptions for SolRaceDetect target, introduced via
 # external/antlr/antlr4cpp.
-target_compile_options(sol-racedetect_lib PRIVATE -fexceptions)
+target_compile_options(SolRaceDetect PRIVATE -fexceptions)
 
 if (ENABLE_BUILD_ANTLR)
     set(ANTLR4CPP_JAR_LOCATION ${CMAKE_SOURCE_DIR}/external/antlr/antlr-4.13.1-complete.jar)
@@ -30,8 +30,8 @@ if (ENABLE_BUILD_ANTLR)
     # Call macro to add lexer and grammar to your build dependencies.
     # NOTE: Here, we define "antlrcpp" as our project's namespace
     antlr4cpp_process_grammar(demo antlrcpp
-        ${CMAKE_SOURCE_DIR}/src/parser/SmalltalkLexer.g4
-        ${CMAKE_SOURCE_DIR}/src/parser/SmalltalkParser.g4)
+        ${CMAKE_SOURCE_DIR}/src/parser/RustLexer.g4
+        ${CMAKE_SOURCE_DIR}/src/parser/RustParser.g4)
     # include generated files in project environment
     include_directories(${antlr4cpp_include_dirs_antlrcpp})
 else()
@@ -62,19 +62,19 @@ llvm_map_components_to_libnames(LLVM_LIBS
     mc
 )
 
-add_executable(sol-racedetect
-    STRaceDetector.cpp
+add_executable(SolRaceDetectExe
+    SolRaceDetector.cpp
     ${antlr4cpp_src_files_antlrcpp}
 )
 
 get_property(DIALECT_LIBS GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 get_property(CONVERSION_LIBS GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
 
-target_link_libraries(sol-racedetect
-    sol-racedetect_lib
+target_link_libraries(SolRaceDetectExe
+    SolRaceDetect
+    SolParser
     o2
     conflib
-    stparserlib
     ${LLVM_LIBS}
     ${DIALECT_LIBS}
     ${CONVERSION_LIBS}
@@ -91,16 +91,17 @@ target_link_libraries(sol-racedetect
 
 if (ENABLE_HEAP_PROFILE)
     message("Heap Profiling using tcmalloc enabled")
-    target_link_libraries(sol-racedetect tcmalloc)
+    target_link_libraries(SolRaceDetectExe tcmalloc)
 endif()
 
 if (ENABLE_CPU_PROFILE)
     message("CPU Profiling using profiler enabled")
-    target_link_libraries(sol-racedetect profiler)
+    target_link_libraries(SolRaceDetectExe profiler)
 endif()
 
 if(CMAKE_BUILD_TYPE MATCHES "Release")
-    target_link_libraries(sol-racedetect -static-libstdc++)
+    target_link_libraries(SolRaceDetectExe -static-libstdc++)
 endif()
 
-set_target_properties(sol-racedetect PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set_target_properties(SolRaceDetectExe PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set_target_properties(SolRaceDetectExe PROPERTIES OUTPUT_NAME "sol-racedetect")

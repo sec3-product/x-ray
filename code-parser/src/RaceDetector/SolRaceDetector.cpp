@@ -30,16 +30,16 @@
 #include <RustParser.h>
 #include <toml.hpp>
 
-#include "st/MLIRGen.h"
-#include "st/Passes.h"
-#include "st/STParserVisitor.h"
+#include "sol/MLIRGen.h"
+#include "sol/Passes.h"
+#include "sol/SolParserVisitor.h"
 
 using namespace antlr4;
 using namespace antlrcpp;
 using namespace llvm;
 using namespace o2;
 
-std::vector<stx::FunctionAST *> processResults;
+std::vector<sol::FunctionAST *> processResults;
 uint numOfFunctions = 0;
 
 cl::opt<std::string> TargetModulePath(cl::Positional,
@@ -99,10 +99,10 @@ static void process(const std::string &filename, const std::string &method,
 
   // Parse the tokens.
   auto *parser = new RustParser(tokens);
-  STParserVisitor visitor(filename, method, line);
+  SolParserVisitor visitor(filename, method, line);
   auto any_res = visitor.visitCrate(parser->crate());
-  std::vector<stx::FunctionAST *> res(
-      std::any_cast<std::vector<stx::FunctionAST *>>(std::move(any_res)));
+  std::vector<sol::FunctionAST *> res(
+      std::any_cast<std::vector<sol::FunctionAST *>>(std::move(any_res)));
   processResults.insert(processResults.end(), res.begin(), res.end());
 }
 
@@ -130,7 +130,7 @@ static bool handleRustFile(const std::string &full_path) {
   return true;
 }
 
-static bool handleDiretory(stx::ModuleAST *mod, const std::filesystem::path &dir_path) {
+static bool handleDiretory(sol::ModuleAST *mod, const std::filesystem::path &dir_path) {
   std::string dir_path_str(dir_path.string());
   llvm::StringRef pathname(dir_path_str);
   if (pathname.endswith("/src")) {
@@ -270,7 +270,7 @@ static bool handleDiretory(stx::ModuleAST *mod, const std::filesystem::path &dir
   return true;
 }
 
-static bool initParser(stx::ModuleAST *mod) {
+static bool initParser(sol::ModuleAST *mod) {
   LOWER_BOUND_ID = NUM_LOW_BOUND;
 
   llvm::StringRef path(TargetModulePath);
@@ -323,21 +323,21 @@ static int dumpLLVMIR(mlir::ModuleOp module) {
   return 0;
 }
 
-static void initLLVMIR(stx::ModuleAST *moduleAST) {
+static void initLLVMIR(sol::ModuleAST *moduleAST) {
   // Register any command line options.
   mlir::registerAsmPrinterCLOptions();
   mlir::registerMLIRContextCLOptions();
   mlir::registerPassManagerCLOptions();
 
   mlir::MLIRContext context;
-  mlir::OwningOpRef<mlir::ModuleOp> mod = stx::mlirGenFull(context, *moduleAST);
+  mlir::OwningOpRef<mlir::ModuleOp> mod = sol::mlirGenFull(context, *moduleAST);
 
   mlir::PassManager pm(&context);
   // Apply any generic pass manager command line options and run the pipeline.
   applyPassManagerCLOptions(pm);
 
   // Finish lowering the IR to the LLVM dialect.
-  pm.addPass(mlir::st::createLowerToLLVMPass());
+  pm.addPass(mlir::sol::createLowerToLLVMPass());
   if (mlir::failed(pm.run(*mod))) {
     if (DEBUG_SOL) llvm::errs() << "Errors in createLowerToLLVMPass.\n";
   }
@@ -358,7 +358,7 @@ int main(int argc, char **argv) {
   auto logConfig = initLoggingConf();
   logger::init(logConfig);
 
-  stx::ModuleAST *mod = new stx::ModuleAST();
+  sol::ModuleAST *mod = new sol::ModuleAST();
   bool success = initParser(mod);
   if (success) initLLVMIR(mod);
   return 0;

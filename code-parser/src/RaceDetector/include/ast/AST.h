@@ -2,8 +2,7 @@
 // Created by jncsw on 3/11/21.
 //
 
-#ifndef SMALLTALK_AST_H
-#define SMALLTALK_AST_H
+#pragma once
 
 #include <any>
 #include <set>
@@ -16,7 +15,8 @@
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 
-namespace stx {
+namespace sol {
+
 /// Structure definition a location in a file.
 struct Location {
   std::string file;  ///< filename.
@@ -524,6 +524,4 @@ struct SEM {
   std::any lastUnary;  // last unary message
 };
 
-}  // namespace stx
-
-#endif  // SMALLTALK_AST_H
+}  // namespace sol

@@ -28,7 +28,8 @@
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Transforms/DialectConversion.h"
-#include "st/Passes.h"
+
+#include "sol/Passes.h"
 
 using namespace mlir;
 
@@ -37,14 +38,14 @@ using namespace mlir;
 //===----------------------------------------------------------------------===//
 
 namespace {
-struct STToLLVMLoweringPass
-    : public PassWrapper<STToLLVMLoweringPass, OperationPass<ModuleOp>> {
+struct SolToLLVMLoweringPass
+    : public PassWrapper<SolToLLVMLoweringPass, OperationPass<ModuleOp>> {
   void runOnOperation() final;
 };
 }  // end anonymous namespace
 
-void STToLLVMLoweringPass::runOnOperation() {
-  // llvm::outs() << "in STToLLVMLoweringPass\n";
+void SolToLLVMLoweringPass::runOnOperation() {
+  // llvm::outs() << "in SolToLLVMLoweringPass\n";
 
   // The first thing to define is the conversion target. This will define the
   // final target for this lowering. For this lowering, we are only targeting
@@ -94,6 +95,6 @@ void STToLLVMLoweringPass::runOnOperation() {
 
 /// Create a pass for lowering operations the remaining `Toy` operations, as
 /// well as `Affine` and `Std`, to the LLVM dialect for codegen.
-std::unique_ptr<mlir::Pass> mlir::st::createLowerToLLVMPass() {
-  return std::make_unique<STToLLVMLoweringPass>();
+std::unique_ptr<mlir::Pass> mlir::sol::createLowerToLLVMPass() {
+  return std::make_unique<SolToLLVMLoweringPass>();
 }
