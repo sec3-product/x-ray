@@ -1,5 +1,4 @@
-//===- ScopedHashTableX.h - A simple scoped hash table -----------*- C++
-//-*-===//
+//===- ScopedHashTableX.h - A simple scoped hash table -----------*- C++ -*-===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -27,6 +26,8 @@
 // return 0.
 //
 //===----------------------------------------------------------------------===//
+//
+// NOTE: A fork of LLVM ScopedHashTable.
 
 #ifndef LLVM_ADT_ScopedHashTableX_H
 #define LLVM_ADT_ScopedHashTableX_H
@@ -173,6 +174,7 @@ class ScopedHashTableX {
   ScopedHashTableX &operator=(const ScopedHashTableX &) = delete;
 
   ~ScopedHashTableX() {
+    // NOTE: Looks like one of the reasons to have this fork.
     // assert(!CurScope && TopLevelMap.empty() && "Scope imbalance!");
     TopLevelMap.clear();
   }
