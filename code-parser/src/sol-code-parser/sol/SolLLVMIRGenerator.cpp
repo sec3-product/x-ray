@@ -1,3 +1,5 @@
+#include "sol/SolLLVMIRGenerator.h"
+
 #include <any>
 #include <filesystem>
 #include <fstream>
@@ -23,8 +25,6 @@
 #include <mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h>
 #include <mlir/Target/LLVMIR/Export.h>
 
-#include <conflib/conflib.h>
-#include <o2/Util/Log.h>
 #include <antlr4-runtime.h>
 #include <RustLexer.h>
 #include <RustParser.h>
@@ -37,17 +37,18 @@
 using namespace antlr4;
 using namespace antlrcpp;
 using namespace llvm;
-using namespace o2;
 
 std::vector<sol::FunctionAST *> processResults;
 uint numOfFunctions = 0;
 
+// CLI options.
 cl::opt<std::string> TargetModulePath(cl::Positional,
                                       cl::desc("path to input bitcode file"));
 cl::opt<bool> ConfigDumpIR("dump-ir", cl::desc("Dump the generated IR file"));
 cl::opt<bool> ConfigDebugSol("d", cl::desc("single-threaded parser for debug"));
 cl::opt<std::string> ConfigOutputFile("o", cl::desc("IR output file name"),
                                       cl::init("t.ll"));
+
 cl::opt<int> NUM_LOW_BOUND(
     "lb", cl::desc("set lower bound of the number of functions"),
     cl::value_desc("number"), cl::init(0));
@@ -56,35 +57,14 @@ cl::opt<int> NUM_UP_BOUND(
     "ub", cl::desc("set upper bound of the number of functions"),
     cl::value_desc("number"), cl::init(1000000));
 
-static logger::LoggingConfig initLoggingConf() {
-  logger::LoggingConfig config;
+namespace sol {
 
-  config.enableProgress = conflib::Get<bool>("XenableProgress", true);
-  auto conflevel = conflib::Get<std::string>("logger.level", "debug");
-  if (conflevel == "trace") {
-    config.level = spdlog::level::trace;
-  } else if (conflevel == "debug") {
-    config.level = spdlog::level::debug;
-  } else if (conflevel == "info") {
-    config.level = spdlog::level::info;
-  } else if (conflevel == "warn") {
-    config.level = spdlog::level::warn;
-  } else if (conflevel == "error") {
-    config.level = spdlog::level::err;
-  } else {
-    // TODO: Print warning. How to log error about setting up logger?
-    config.level = spdlog::level::trace;
-  }
-
-  config.enableTerminal = conflib::Get<bool>("logger.toStderr", false);
-  config.terminalLevel = config.level;
-
-  config.enableFile = true;
-  config.logFolder = conflib::Get<std::string>("logger.logFolder", "./");
-  config.logFile = "log.current";
-  config.fileLevel = config.level;
-
-  return config;
+SolLLVMIRGenerator::SolLLVMIRGenerator(int argc, char** argv) {
+  // InitLLVM will setup signal handler to print stack trace when the program
+  // crashes.
+  llvm::InitLLVM x(argc, argv);
+  cl::ParseCommandLineOptions(argc, argv);
+  DEBUG_SOL = ConfigDebugSol;
 }
 
 static void process(const std::string &filename, const std::string &method,
@@ -270,7 +250,7 @@ static bool handleDiretory(sol::ModuleAST *mod, const std::filesystem::path &dir
   return true;
 }
 
-static bool initParser(sol::ModuleAST *mod) {
+bool SolLLVMIRGenerator::InitParser(sol::ModuleAST *mod) {
   LOWER_BOUND_ID = NUM_LOW_BOUND;
 
   llvm::StringRef path(TargetModulePath);
@@ -323,7 +303,7 @@ static int dumpLLVMIR(mlir::ModuleOp module) {
   return 0;
 }
 
-static void initLLVMIR(sol::ModuleAST *moduleAST) {
+void SolLLVMIRGenerator::InitLLVMIR(sol::ModuleAST *moduleAST) {
   // Register any command line options.
   mlir::registerAsmPrinterCLOptions();
   mlir::registerMLIRContextCLOptions();
@@ -345,21 +325,10 @@ static void initLLVMIR(sol::ModuleAST *moduleAST) {
   dumpLLVMIR(*mod);
 }
 
-int main(int argc, char **argv) {
-  // InitLLVM will setup signal handler to print stack trace when the program
-  // crashes.
-  InitLLVM x(argc, argv);
-  cl::ParseCommandLineOptions(argc, argv);
-  DEBUG_SOL = ConfigDebugSol;
-  // We don't use args in conflib for now
-  std::map<std::string, std::string> args;
-  conflib::Initialize(args, true);
-
-  auto logConfig = initLoggingConf();
-  logger::init(logConfig);
-
-  sol::ModuleAST *mod = new sol::ModuleAST();
-  bool success = initParser(mod);
-  if (success) initLLVMIR(mod);
+int SolLLVMIRGenerator::Run(sol::ModuleAST *mod) {
+  bool success = InitParser(mod);
+  if (success) InitLLVMIR(mod);
   return 0;
 }
+
+}; // namespace sol

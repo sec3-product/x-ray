@@ -397,6 +397,7 @@ class ClassAST : public BaseAST {
   std::string getName() { return class_name; }
   std::string getSuperClassName() { return super_class; }
 };
+
 class ModuleAST : public BaseAST {
  private:
   std::vector<FunctionAST*> functions;

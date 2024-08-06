@@ -1,21 +1,24 @@
 set(SOURCE_FILES
-    sol/MLIRGen.cpp
     sol/LowerToLLVM.cpp
+    sol/MLIRGen.cpp
+    sol/SolLLVMIRGenerator.cpp
 )
 
-add_library(SolRaceDetect STATIC ${SOURCE_FILES})
+add_library(SolCodeParser STATIC ${SOURCE_FILES})
 
-target_include_directories(SolRaceDetect PUBLIC
+target_include_directories(SolCodeParser PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(SolRaceDetect
+target_link_libraries(SolCodeParser
+    AntlrRust
     conflib
+    o2
 )
 
-# Enable exceptions for SolRaceDetect target, introduced via
+# Enable exceptions for SolCodeParser target, introduced via
 # external/antlr/antlr4cpp.
-target_compile_options(SolRaceDetect PRIVATE -fexceptions)
+target_compile_options(SolCodeParser PRIVATE -fexceptions)
 
 if (ENABLE_BUILD_ANTLR)
     set(ANTLR4CPP_JAR_LOCATION ${CMAKE_SOURCE_DIR}/external/antlr/antlr-4.13.1-complete.jar)
@@ -62,19 +65,16 @@ llvm_map_components_to_libnames(LLVM_LIBS
     mc
 )
 
-add_executable(SolRaceDetectExe
-    SolRaceDetector.cpp
+add_executable(SolCodeParserExe
+    main.cpp
     ${antlr4cpp_src_files_antlrcpp}
 )
 
 get_property(DIALECT_LIBS GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 get_property(CONVERSION_LIBS GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
 
-target_link_libraries(SolRaceDetectExe
-    SolRaceDetect
-    AntlrRust
-    o2
-    conflib
+target_link_libraries(SolCodeParserExe
+    SolCodeParser
     ${LLVM_LIBS}
     ${DIALECT_LIBS}
     ${CONVERSION_LIBS}
@@ -91,17 +91,17 @@ target_link_libraries(SolRaceDetectExe
 
 if (ENABLE_HEAP_PROFILE)
     message("Heap Profiling using tcmalloc enabled")
-    target_link_libraries(SolRaceDetectExe tcmalloc)
+    target_link_libraries(SolCodeParserExe tcmalloc)
 endif()
 
 if (ENABLE_CPU_PROFILE)
     message("CPU Profiling using profiler enabled")
-    target_link_libraries(SolRaceDetectExe profiler)
+    target_link_libraries(SolCodeParserExe profiler)
 endif()
 
 if(CMAKE_BUILD_TYPE MATCHES "Release")
-    target_link_libraries(SolRaceDetectExe -static-libstdc++)
+    target_link_libraries(SolCodeParserExe -static-libstdc++)
 endif()
 
-set_target_properties(SolRaceDetectExe PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-set_target_properties(SolRaceDetectExe PROPERTIES OUTPUT_NAME "sol-racedetect")
+set_target_properties(SolCodeParserExe PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set_target_properties(SolCodeParserExe PROPERTIES OUTPUT_NAME "sol-code-parser")

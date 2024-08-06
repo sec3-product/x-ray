@@ -316,7 +316,7 @@ func findAllXargoTomlDirectory(rootPath string) []string {
 
 func generateSolanaIR(args []string, srcFilePath string, tmpDir string) string {
 	coderrectHome := os.Getenv("CODERRECT_HOME")
-	exePath := filepath.Join(coderrectHome, "bin", "sol-racedetect")
+	exePath := filepath.Join(coderrectHome, "bin", "sol-code-parser")
 	srcFolder, irFileName := filepath.Split(srcFilePath)
 	if len(irFileName) == 0 {
 		srcFolder, irFileName = filepath.Split(strings.TrimSuffix(srcFolder, "/"))

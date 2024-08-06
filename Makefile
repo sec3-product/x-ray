@@ -77,7 +77,7 @@ install:
 	  mkdir -p "$(INSTALL_DIR)/$${dir}"; \
 	done
 	@cp $(BUILD_DIR)/detector/bin/racedetect $(INSTALL_DIR)/bin/
-	@cp $(BUILD_DIR)/parser/bin/sol-racedetect $(INSTALL_DIR)/bin/
+	@cp $(BUILD_DIR)/parser/bin/sol-code-parser $(INSTALL_DIR)/bin/
 	@cp $(BUILD_DIR)/cli/bin/* $(INSTALL_DIR)/bin/
 	@cp $(LLVM_PREBUILT_PATH)/lib/libomp.so $(INSTALL_DIR)/bin/
 	@cp package/conf/coderrect.json $(INSTALL_DIR)/conf/
