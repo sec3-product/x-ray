@@ -79,7 +79,7 @@ static bool isTypeEqual(const llvm::Type *T1, const llvm::Type *T2, const DataLa
             // has a anonmyous structure
             // make sure every element is the same
             if (ST1->getNumElements() == ST2->getNumElements()) {
-                for (int i = 0; i < ST1->getNumElements(); i++) {
+                for (unsigned i = 0; i < ST1->getNumElements(); i++) {
                     if (!isTypeEqual(ST1->getElementType(i), ST2->getElementType(i), DL)) {
                         return false;
                     }
@@ -98,7 +98,7 @@ bool o2::isZeroOffsetTypeInRootType(const Type *rootType, const Type *elemType, 
         // JEFF: should return false for null??
         return true;
     }
-    
+
     // quick path
     if (isTypeEqual(rootType, elemType, DL)) {
         return true;
@@ -157,7 +157,7 @@ const Type* o2::getTypeAtOffset(const Type *ctype, size_t offset,
     Type *type = const_cast<Type *>(ctype);
     if (auto ST = dyn_cast<StructType>(type)) {
         const StructLayout *SL = DL.getStructLayout(ST);
-        for (int i = 0; i < ST->getNumElements(); i++) {
+        for (unsigned i = 0; i < ST->getNumElements(); i++) {
             auto elemType = ST->getElementType(i);
             size_t elemOff = SL->getElementOffset(i);
 
@@ -464,7 +464,7 @@ llvm::StructType *o2::getConvertedFlexibleArrayType(const llvm::StructType *ST, 
     // then it is a structure type with flexible array element at the end?
     // TODO: there also might be a optional padding at the end of the structure as well
     SmallVector<Type *, 8> fieldTy;
-    for (int i = 0; i < ST->getNumElements() - 1; i++) {
+    for (unsigned i = 0; i < ST->getNumElements() - 1; i++) {
         fieldTy.push_back(ST->getStructElementType(i));
     }
     fieldTy.push_back(getUnboundedArrayTy(flexibleArrayElem));
