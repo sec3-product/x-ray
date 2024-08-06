@@ -33,7 +33,6 @@
 #include "st/MLIRGen.h"
 #include "st/ParserWrapper.h"
 #include "st/Passes.h"
-#include "st/STParserListener.h"
 #include "st/STParserVisitor.h"
 
 using namespace antlr4;
