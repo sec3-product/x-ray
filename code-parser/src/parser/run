@@ -1,3 +1,0 @@
-java -jar /Users/jeffhuang/git/LAM/Smalltalk/utils/antlr/antlr-4.9-complete.jar -visitor -Dlanguage=Cpp Rust*er.g4
-#java -jar /Users/jeffhuang/git/LAM/Smalltalk/utils/antlr/antlr-4.9-complete.jar -visitor -Dlanguage=Cpp Smalltalk.g4
-

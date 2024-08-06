@@ -30,13 +30,13 @@ if (ENABLE_BUILD_ANTLR)
     # Call macro to add lexer and grammar to your build dependencies.
     # NOTE: Here, we define "antlrcpp" as our project's namespace
     antlr4cpp_process_grammar(demo antlrcpp
-        ${CMAKE_SOURCE_DIR}/src/parser/RustLexer.g4
-        ${CMAKE_SOURCE_DIR}/src/parser/RustParser.g4)
+        ${CMAKE_SOURCE_DIR}/src/antlr-rust/RustLexer.g4
+        ${CMAKE_SOURCE_DIR}/src/antlr-rust/RustParser.g4)
     # include generated files in project environment
     include_directories(${antlr4cpp_include_dirs_antlrcpp})
 else()
     message(STATUS "antlr4cpp built already")
-    set(ANTLR4CPP_PARSER_DIR ${CMAKE_SOURCE_DIR}/src/parser)
+    set(ANTLR4CPP_PARSER_DIR ${CMAKE_SOURCE_DIR}/src/antlr-rust)
     include_directories(${ANTLR4CPP_PARSER_DIR})
 endif()
 
@@ -72,7 +72,7 @@ get_property(CONVERSION_LIBS GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
 
 target_link_libraries(SolRaceDetectExe
     SolRaceDetect
-    SolParser
+    AntlrRust
     o2
     conflib
     ${LLVM_LIBS}
