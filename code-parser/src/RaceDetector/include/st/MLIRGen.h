@@ -9,15 +9,6 @@ namespace mlir {
 class MLIRContext;
 }  // namespace mlir
 
-namespace st {
-class ModuleAST;
-
-/// Emit IR for the given moduleAST, returns a newly created MLIR module / or
-//nullptr on failure.
-mlir::OwningOpRef<mlir::ModuleOp> mlirGen(mlir::MLIRContext &context, ModuleAST &moduleAST);
-
-}  // namespace st
-
 namespace stx {
 class ModuleAST;
 
