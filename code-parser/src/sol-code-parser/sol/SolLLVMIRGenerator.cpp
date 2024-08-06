@@ -48,10 +48,10 @@ cl::opt<std::string> ConfigOutputFile("o", cl::desc("IR output file name"),
 cl::opt<int>
     NUM_LOW_BOUND("lb", cl::desc("set lower bound of the number of functions"),
                   cl::value_desc("number"), cl::init(0));
-int LOWER_BOUND_ID = 0;
 cl::opt<int>
     NUM_UP_BOUND("ub", cl::desc("set upper bound of the number of functions"),
                  cl::value_desc("number"), cl::init(1000000));
+int LOWER_BOUND_ID = 0;
 
 namespace sol {
 
@@ -61,12 +61,13 @@ SolLLVMIRGenerator::SolLLVMIRGenerator(int argc, char **argv) {
   llvm::InitLLVM x(argc, argv);
   cl::ParseCommandLineOptions(argc, argv);
   DEBUG_SOL = ConfigDebugSol;
+  LOWER_BOUND_ID = NUM_LOW_BOUND;
 }
 
-std::vector<sol::FunctionAST *>
-SolLLVMIRGenerator::process(const std::string &filename,
-                            const std::string &method, size_t line,
-                            std::string contents) {
+static std::vector<sol::FunctionAST *> process(const std::string &filename,
+                                               const std::string &method,
+                                               size_t line,
+                                               std::string contents) {
   std::replace(contents.begin(), contents.end(), '\t', ' ');
 
   // Process file contents via ANTLR lexer.
@@ -245,19 +246,17 @@ bool SolLLVMIRGenerator::handleDirectory(
   return true;
 }
 
-bool SolLLVMIRGenerator::generateAST(sol::ModuleAST *mod) {
-  LOWER_BOUND_ID = NUM_LOW_BOUND;
+bool SolLLVMIRGenerator::generateAST(sol::ModuleAST *mod,
+                                     llvm::StringRef path) {
+  std::string FullPath = std::filesystem::canonical(path.str()).string();
+  mod->path = FullPath;
 
-  llvm::StringRef path(TargetModulePath);
-  std::string full_path = std::filesystem::canonical(path.str()).string();
-  mod->path = full_path;
-
-  if (std::filesystem::is_regular_file(full_path)) {
+  if (std::filesystem::is_regular_file(FullPath)) {
     if (path.endswith(".rs")) {
-      handleRustFile(full_path);
+      handleRustFile(FullPath);
     }
-  } else if (std::filesystem::is_directory(full_path)) {
-    handleDirectory(mod, full_path);
+  } else if (std::filesystem::is_directory(FullPath)) {
+    handleDirectory(mod, FullPath);
   }
   for (auto functionAst : processResults) {
     mod->addFunctionAST(functionAst);
@@ -265,18 +264,7 @@ bool SolLLVMIRGenerator::generateAST(sol::ModuleAST *mod) {
   return true;
 }
 
-static int dumpLLVMIR(mlir::ModuleOp mod) {
-  // Register the translation to LLVM IR with the MLIR context.
-  mlir::registerLLVMDialectTranslation(*mod->getContext());
-
-  llvm::LLVMContext llvmContext;
-  auto llvmModule = mlir::translateModuleToLLVMIR(mod, llvmContext);
-  if (!llvmModule) {
-    if (DEBUG_SOL)
-      llvm::errs() << "Failed to emit LLVM IR\n";
-    return -1;
-  }
-
+static bool dumpLLVMIR(const llvm::Module *llvmModule) {
   if (ConfigDumpIR || ConfigOutputFile != "t.ll") {
     std::error_code err;
     llvm::raw_fd_ostream outfile(ConfigOutputFile, err, llvm::sys::fs::OF_None);
@@ -284,6 +272,7 @@ static int dumpLLVMIR(mlir::ModuleOp mod) {
       if (DEBUG_SOL) {
         llvm::errs() << "Error dumping IR!\n";
       }
+      return false;
     }
 
     llvmModule->print(outfile, nullptr);
@@ -292,19 +281,19 @@ static int dumpLLVMIR(mlir::ModuleOp mod) {
     llvm::outs() << "IR file: " << fullPathName << "\n";
   }
 
-  if (DEBUG_SOL) {
-    llvm::errs() << *llvmModule << "\n";
-  }
-  return 0;
+  return true;
 }
 
-void SolLLVMIRGenerator::generateLLVMIR(sol::ModuleAST *moduleAST) {
+std::unique_ptr<llvm::Module>
+SolLLVMIRGenerator::generateLLVMIR(sol::ModuleAST *moduleAST,
+                                   llvm::LLVMContext &llvmContext) {
   // Register any command line options.
   mlir::registerMLIRContextCLOptions();
   mlir::registerPassManagerCLOptions();
 
   mlir::MLIRContext context;
-  mlir::OwningOpRef<mlir::ModuleOp> mod = sol::mlirGenFull(context, *moduleAST);
+  mlir::OwningOpRef<mlir::ModuleOp> mlirIR =
+      sol::mlirGenFull(context, *moduleAST);
 
   mlir::PassManager pm(&context);
   // Apply any generic pass manager command line options and run the pipeline.
@@ -312,20 +301,31 @@ void SolLLVMIRGenerator::generateLLVMIR(sol::ModuleAST *moduleAST) {
 
   // Finish lowering the IR to the LLVM dialect.
   pm.addPass(mlir::sol::createLowerToLLVMPass());
-  if (mlir::failed(pm.run(*mod))) {
+  if (mlir::failed(pm.run(*mlirIR))) {
     if (DEBUG_SOL) {
       llvm::errs() << "Errors in createLowerToLLVMPass.\n";
     }
   }
 
-  dumpLLVMIR(*mod);
+  // Register the translation to LLVM IR with the MLIR context.
+  mlir::registerLLVMDialectTranslation(context);
+
+  auto llvmModule = mlir::translateModuleToLLVMIR(*mlirIR, llvmContext);
+  if (!llvmModule) {
+    llvm::errs() << "Failed to emit LLVM IR\n";
+    return nullptr;
+  }
+  dumpLLVMIR(llvmModule.get());
+
+  return llvmModule;
 }
 
 void SolLLVMIRGenerator::run() {
   sol::ModuleAST mod;
-  bool success = generateAST(&mod);
+  bool success = generateAST(&mod, TargetModulePath);
   if (success) {
-    generateLLVMIR(&mod);
+    llvm::LLVMContext llvmContext;
+    generateLLVMIR(&mod, llvmContext);
   }
 }
 

@@ -69,6 +69,7 @@ target_link_libraries(SolCodeParser
     ${LLVM_LIBS}
     ${DIALECT_LIBS}
     ${CONVERSION_LIBS}
+    GTest::gtest_main
 )
 
 # Executable.

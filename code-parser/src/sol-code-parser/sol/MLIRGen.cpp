@@ -84,6 +84,7 @@ extern std::set<std::string> declareIdAddresses;
 
 extern int LOWER_BOUND_ID;
 extern bool DEBUG_SOL;
+
 /// A "module" matches a Toy source file: containing a list of functions.
 mlir::ModuleOp theModule;
 LLVM::LLVMPointerType llvmI8PtrTy;
@@ -202,6 +203,7 @@ private:
     return mlir::FileLineColLoc::get(builder.getStringAttr(fileName), loc.line,
                                      loc.col);
   }
+
   /// Helper conversion for a Toy AST location to an MLIR location.
   mlir::Location loc(mlir::OpBuilder &builder, Location loc) {
     if (loc.file.empty())
@@ -401,6 +403,7 @@ private:
 
     return SymbolRefAttr::get(context, name);
   }
+
   FlatSymbolRefAttr getOrInsertBuiltInDeclareIdFunctionX() {
     auto name = SOL_BUILT_IN_MODEL_DECLARE_ID;
     auto *context = builder.getContext();
@@ -416,6 +419,7 @@ private:
         builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     return SymbolRefAttr::get(context, name);
   }
+
   FlatSymbolRefAttr getOrInsertBuiltInTOMLFunctionX() {
     auto name = SOL_BUILT_IN_MODEL_TOML;
     auto *context = builder.getContext();
@@ -431,6 +435,7 @@ private:
         builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     return SymbolRefAttr::get(context, name);
   }
+
   FlatSymbolRefAttr getOrInsertBuiltInParentVarFunctionX() {
     auto name = SOL_BUILT_IN_MODEL_PARENT_VAR;
     auto *context = builder.getContext();
@@ -446,6 +451,7 @@ private:
         builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     return SymbolRefAttr::get(context, name);
   }
+
   FlatSymbolRefAttr getOrInsertBuiltInInstVarFunctionX() {
     auto name = SOL_BUILT_IN_MODEL_INST_VAR;
     auto *context = builder.getContext();
@@ -464,6 +470,7 @@ private:
 
     return SymbolRefAttr::get(context, name);
   }
+
   FlatSymbolRefAttr
   getOrInsertBuiltInBlockParamFunctionX(std::vector<mlir::Value> &operands) {
     auto name =
@@ -483,6 +490,7 @@ private:
         builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     return SymbolRefAttr::get(context, name);
   }
+
   FlatSymbolRefAttr getOrInsertBuiltInClassVarFunctionX() {
     auto name = SOL_BUILT_IN_MODEL_CLASS_VAR;
     auto *context = builder.getContext();
@@ -501,6 +509,7 @@ private:
 
     return SymbolRefAttr::get(context, name);
   }
+
   FlatSymbolRefAttr getOrInsertBuiltInClassMetaFunctionX() {
     auto name = SOL_BUILT_IN_CLASS_METADATA;
     auto *context = builder.getContext();
@@ -519,6 +528,7 @@ private:
 
     return SymbolRefAttr::get(context, name);
   }
+
   FlatSymbolRefAttr
   getOrInsertBuiltInBinaryOpFunctionX(SmallVector<mlir::Value, 3> &operands) {
     auto name = SOL_BUILT_IN_MODEL_BINARY_OP;
@@ -662,6 +672,7 @@ public:
 
     return mlir::success();
   }
+
   mlir::LogicalResult declareX(StringRef varName, mlir::Value value,
                                StringRef funcName) {
     if (symbolTable2.count(varName)) {
@@ -678,6 +689,7 @@ public:
 
     return mlir::success();
   }
+
   mlir::Value mlirGen(FunctionCallAST &call) {
     auto callee = call.getCallee();
     // Processor::<{TOKEN_COUNT}>::process.3
@@ -848,6 +860,7 @@ public:
     }
     return getOrCreateGlobalStringX(loc(expr.loc()), varName, varName);
   }
+
   // JEFF: invariant - should never return NULL
   mlir::Value mlirGen(BlockExprAST &block) {
     std::string funcName = SOL_ANON_FUNC_NAME +
@@ -1001,6 +1014,7 @@ public:
     // auto value = callOp.getResult(0);
     return v2;
   }
+
   // Codegen a list of expression, return failure if one of them hit an error.
   // return the last value
   void mlirGen(ExprASTList &exprList) {
