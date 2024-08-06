@@ -31,7 +31,6 @@
 #include <toml.hpp>
 
 #include "st/MLIRGen.h"
-#include "st/ParserWrapper.h"
 #include "st/Passes.h"
 #include "st/STParserVisitor.h"
 
@@ -39,7 +38,6 @@ using namespace antlr4;
 using namespace antlrcpp;
 using namespace llvm;
 using namespace o2;
-using namespace st;
 
 std::vector<stx::FunctionAST *> processResults;
 uint numOfFunctions = 0;
@@ -332,27 +330,19 @@ static void initLLVMIR(stx::ModuleAST *moduleAST) {
   mlir::registerPassManagerCLOptions();
 
   mlir::MLIRContext context;
-  mlir::OwningOpRef<mlir::ModuleOp> module;
-  //   //from parse tree to moduleAST
-  //   //TODO: add parseModule
-  //   ParserWrapper wrapper(parser);
-  //   std::unique_ptr<st::ModuleAST> moduleAST = wrapper.parseModule();
-  // module = mlirGen(context, moduleAST);
-
-  module = stx::mlirGenFull(context, *moduleAST);
+  mlir::OwningOpRef<mlir::ModuleOp> mod = stx::mlirGenFull(context, *moduleAST);
 
   mlir::PassManager pm(&context);
-  // Apply any generic pass manager command line options and run the
-  // pipeline.
+  // Apply any generic pass manager command line options and run the pipeline.
   applyPassManagerCLOptions(pm);
 
   // Finish lowering the IR to the LLVM dialect.
   pm.addPass(mlir::st::createLowerToLLVMPass());
-  if (mlir::failed(pm.run(*module))) {
+  if (mlir::failed(pm.run(*mod))) {
     if (DEBUG_SOL) llvm::errs() << "Errors in createLowerToLLVMPass.\n";
   }
 
-  dumpLLVMIR(*module);
+  dumpLLVMIR(*mod);
 }
 
 int main(int argc, char **argv) {

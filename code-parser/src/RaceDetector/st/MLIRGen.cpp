@@ -16,7 +16,6 @@
 #include <mlir/IR/Types.h>
 #include <mlir/IR/Verifier.h>
 
-#include "st/ParserWrapper.h"
 #include "st/ScopedHashTableX.h"
 
 using llvm::ArrayRef;
