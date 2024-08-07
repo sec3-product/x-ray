@@ -1116,35 +1116,44 @@ public:
       std::vector<std::string> paraNames;
       std::string paraName = "";
       for (auto tokenCtx : ctx->tokenTree()) {
-        auto varName = tokenCtx->getText();
-        if (DEBUG_SOL)
-          std::cout << SPACE << "  varName: " << varName << std::endl;
+        auto text = tokenCtx->getText();
+        if (DEBUG_SOL) {
+          std::cout << SPACE << "  text: " << text << std::endl;
+        }
+
+        // Check for string literals.
+        if (text.front() == '"' && text.back() == '"') {
+          auto value = text.substr(1, text.size() - 2);
+          auto literal = new StringExprAST(getLoc(ctx), value);
+          args.push_back(literal);
+          continue;
+        }
 
         // concatenate until startswith ','
-        if (varName.front() == ',') {
+        if (text.front() == ',') {
           // add paraName
           paraNames.push_back(paraName);
-          paraName = varName.substr(1);
-        } else if (varName.front() == '(') {
+          paraName = text.substr(1);
+        } else if (text.front() == '(') {
           // add func call
-          paraName = paraName + varName;
+          paraName = paraName + text;
         } else {
-          auto found = varName.find(',');
+          auto found = text.find(',');
           if (found != std::string::npos) {
-            paraName = paraName + varName.substr(0, found);
+            paraName = paraName + text.substr(0, found);
             paraNames.push_back(paraName);
-            paraName = varName.substr(found + 1);
+            paraName = text.substr(found + 1);
           } else
-            paraName = paraName + varName;
+            paraName = paraName + text;
         }
       }
       if (!paraName.empty())
         paraNames.push_back(paraName);
-      for (auto varName : paraNames) {
-        auto *var = new VariableExprAST(getLoc(ctx), varName);
+      for (auto text : paraNames) {
+        auto *var = new VariableExprAST(getLoc(ctx), text);
         args.push_back(var);
         if (DEBUG_SOL)
-          std::cout << SPACE << "  fcall->args: " << varName << std::endl;
+          std::cout << SPACE << "  fcall->args: " << text << std::endl;
       }
 
       // ok - function names can collide - we need to append parameter count
