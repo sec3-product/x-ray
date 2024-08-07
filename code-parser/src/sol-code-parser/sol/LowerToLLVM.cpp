@@ -15,7 +15,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/ADT/Sequence.h"
 #include "mlir/Conversion/AffineToStandard/AffineToStandard.h"
 #include "mlir/Conversion/LLVMCommon/ConversionTarget.h"
 #include "mlir/Conversion/LLVMCommon/TypeConverter.h"
@@ -28,6 +27,7 @@
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Transforms/DialectConversion.h"
+#include "llvm/ADT/Sequence.h"
 
 #include "sol/Passes.h"
 
@@ -42,7 +42,7 @@ struct SolToLLVMLoweringPass
     : public PassWrapper<SolToLLVMLoweringPass, OperationPass<ModuleOp>> {
   void runOnOperation() final;
 };
-}  // end anonymous namespace
+} // end anonymous namespace
 
 void SolToLLVMLoweringPass::runOnOperation() {
   // llvm::outs() << "in SolToLLVMLoweringPass\n";

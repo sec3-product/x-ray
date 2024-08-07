@@ -8,8 +8,8 @@
 #include <variant>
 #include <vector>
 
-#include <llvm/ADT/ScopedHashTable.h>
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/ScopedHashTable.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/Support/raw_ostream.h>
 #include <mlir/Dialect/LLVMIR/LLVMTypes.h>
@@ -45,11 +45,11 @@ const std::string SOL_NEW = "sol.new";
 std::atomic<int> ANON_FUNC_INDEX{0};
 const std::string MAIN_FUNC_NAME = "main";
 const std::string GLOBAL_VAR_NAME = "global_";
-const std::string LOCAL_VAR_NAME = "";  //"local_";
+const std::string LOCAL_VAR_NAME = ""; //"local_";
 const std::string GLOBAL_OP_NAME = "global_op_";
 
 const std::string SOL_BUILT_IN_NAME =
-    "sol.";  // for all the built-in st function
+    "sol."; // for all the built-in st function
 const std::string SOL_BUILT_IN_MODEL_NAME = "sol.model.";
 
 const std::string SOL_BUILT_IN_MODEL_CARGO_TOML = "sol.model.cargo.toml";
@@ -87,7 +87,7 @@ llvm::StringMap<mlir::FuncOp> functionMap;
 namespace sol {
 
 class MLIRGenImpl {
- private:
+private:
   /// The builder is a helper class to create IR inside a function. The builder
   /// is stateful, in particular it keeps an "insertion point": this is where
   /// the next operations will be introduced.
@@ -155,12 +155,13 @@ class MLIRGenImpl {
     if (size > 0) {
       for (int i = size - 1; i >= 0; i--) {
         auto name = functionStack[i];
-        if (!name.startswith(SOL_ANON_FUNC_NAME)) return name.str();
+        if (!name.startswith(SOL_ANON_FUNC_NAME))
+          return name.str();
       }
       if (DEBUG_SOL)
         llvm::outs() << "-----getCurrentNonAnonFunctionName error------all "
                         "functions are anonymous!!\n";
-      return functionStack.back().str();  // if we get here, something is wrong
+      return functionStack.back().str(); // if we get here, something is wrong
     } else {
       if (DEBUG_SOL)
         llvm::outs() << "-----getCurrentNonAnonFunctionName error------empty "
@@ -212,7 +213,8 @@ class MLIRGenImpl {
                                  StringRef value) {
     if (name == "local_self") {
       auto v = getValueFromSymbolTable("this");
-      if (v) return v;
+      if (v)
+        return v;
     }
 
     // Create the global at the entry of the module.
@@ -239,9 +241,10 @@ class MLIRGenImpl {
     return builder.create<LLVM::GEPOp>(loc, llvmI8PtrTy, globalPtr,
                                        ArrayRef<Value>({cst0, cst0}));
   }
-  FlatSymbolRefAttr getOrInsertUserDefinedFunctionX(
-      mlir::Location mlocation, llvm::StringRef name,
-      SmallVector<mlir::Value, 4> operands) {
+  FlatSymbolRefAttr
+  getOrInsertUserDefinedFunctionX(mlir::Location mlocation,
+                                  llvm::StringRef name,
+                                  SmallVector<mlir::Value, 4> operands) {
     // special call: st.new
     if (name.str() == SOL_NEW) {
       name = SOL_BUILT_IN_MODEL_NEW_OBJECT;
@@ -260,12 +263,14 @@ class MLIRGenImpl {
     // Create a function declaration for opaqueObject, the signature is:
     //   * `i32 (i8*, ...)`
     std::vector<mlir::Type> inputTypes;
-    for (auto operand : operands) inputTypes.push_back(operand.getType());
+    for (auto operand : operands)
+      inputTypes.push_back(operand.getType());
 
     auto mlirFnType = mlir::FunctionType::get(context, inputTypes, llvmI8PtrTy);
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    [[maybe_unused]] auto func = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto func =
+        builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // declare only
 
     return SymbolRefAttr::get(context, name);
@@ -283,7 +288,8 @@ class MLIRGenImpl {
         context, {llvmI8PtrTy, llvmI8PtrTy}, llvmVoidTy);
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    [[maybe_unused]] auto func = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto func =
+        builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
@@ -301,7 +307,8 @@ class MLIRGenImpl {
         context, {llvmI8PtrTy, llvmI8PtrTy}, llvmVoidTy);
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    [[maybe_unused]] auto func = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto func =
+        builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
@@ -323,7 +330,8 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    [[maybe_unused]] auto func = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto func =
+        builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
@@ -341,7 +349,8 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc =
+        builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
@@ -359,7 +368,8 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc =
+        builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     return SymbolRefAttr::get(context, name);
   }
   FlatSymbolRefAttr getOrInsertBuiltInNewFunctionX() {
@@ -373,7 +383,8 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc =
+        builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
@@ -390,7 +401,8 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc =
+        builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     return SymbolRefAttr::get(context, name);
   }
   FlatSymbolRefAttr getOrInsertBuiltInTOMLFunctionX() {
@@ -404,7 +416,8 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc =
+        builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     return SymbolRefAttr::get(context, name);
   }
   FlatSymbolRefAttr getOrInsertBuiltInParentVarFunctionX() {
@@ -418,7 +431,8 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc =
+        builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     return SymbolRefAttr::get(context, name);
   }
   FlatSymbolRefAttr getOrInsertBuiltInInstVarFunctionX() {
@@ -432,14 +446,15 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc =
+        builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
     return SymbolRefAttr::get(context, name);
   }
-  FlatSymbolRefAttr getOrInsertBuiltInBlockParamFunctionX(
-      std::vector<mlir::Value> &operands) {
+  FlatSymbolRefAttr
+  getOrInsertBuiltInBlockParamFunctionX(std::vector<mlir::Value> &operands) {
     auto name =
         SOL_BUILT_IN_MODEL_BLOCK_PARAM + "." + std::to_string(ANON_FUNC_INDEX);
 
@@ -447,12 +462,14 @@ class MLIRGenImpl {
     if (theModule.lookupSymbol<FuncOp>(name))
       return SymbolRefAttr::get(context, name);
     std::vector<mlir::Type> inputTypes;
-    for (auto op : operands) inputTypes.push_back(op.getType());
+    for (auto op : operands)
+      inputTypes.push_back(op.getType());
     auto mlirFnType = mlir::FunctionType::get(context, inputTypes, llvmI8PtrTy);
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc =
+        builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     return SymbolRefAttr::get(context, name);
   }
   FlatSymbolRefAttr getOrInsertBuiltInClassVarFunctionX() {
@@ -466,7 +483,8 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc =
+        builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
@@ -483,32 +501,35 @@ class MLIRGenImpl {
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc =
+        builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
     return SymbolRefAttr::get(context, name);
   }
-  FlatSymbolRefAttr getOrInsertBuiltInBinaryOpFunctionX(
-      SmallVector<mlir::Value, 3> &operands) {
+  FlatSymbolRefAttr
+  getOrInsertBuiltInBinaryOpFunctionX(SmallVector<mlir::Value, 3> &operands) {
     auto name = SOL_BUILT_IN_MODEL_BINARY_OP;
     auto *context = builder.getContext();
     if (theModule.lookupSymbol<FuncOp>(name))
       return SymbolRefAttr::get(context, name);
     std::vector<mlir::Type> inputTypes;
-    for (auto operand : operands) inputTypes.push_back(operand.getType());
+    for (auto operand : operands)
+      inputTypes.push_back(operand.getType());
     auto mlirFnType = mlir::FunctionType::get(context, inputTypes, llvmI8PtrTy);
 
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(theModule.getBody());
-    [[maybe_unused]] auto newFunc = builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
+    [[maybe_unused]] auto newFunc =
+        builder.create<FuncOp>(theModule.getLoc(), name, mlirFnType);
     // store into functionMap
     // functionMap.insert({func.getName(), func});
 
     return SymbolRefAttr::get(context, name);
   }
 
- public:
+public:
   MLIRGenImpl(mlir::MLIRContext &context) : builder(&context) {
     // We create an empty MLIR module and codegen functions one at a time and
     // add them to the module.
@@ -602,7 +623,8 @@ class MLIRGenImpl {
     // }
 
     // theModule.dump();
-    if (DEBUG_SOL) llvm::outs() << "\n-----MLIR-GEN-DONE------\n\n";
+    if (DEBUG_SOL)
+      llvm::outs() << "\n-----MLIR-GEN-DONE------\n\n";
 
     return theModule;
   }
@@ -610,7 +632,8 @@ class MLIRGenImpl {
   mlir::LogicalResult declareX2(std::string varName, mlir::Value value,
                                 StringRef funcName) {
     if (symbolTableStack.size() == 0) {
-      if (DEBUG_SOL) llvm::outs() << "-----empty symbolTableStack---\n";
+      if (DEBUG_SOL)
+        llvm::outs() << "-----empty symbolTableStack---\n";
       return mlir::failure();
     }
     if (symbolTableStack.back()->count(varName)) {
@@ -691,7 +714,8 @@ class MLIRGenImpl {
                      << " value: " << value << "\n";
 
       // make sure the function name match
-      if (matchCurrentScopeFunction(funcName)) return value;
+      if (matchCurrentScopeFunction(funcName))
+        return value;
     } else
       return nullptr;
   }
@@ -707,7 +731,8 @@ class MLIRGenImpl {
     // TODO: maintain symbolTable per func
     // if (auto variable = symbolTable.lookup(expr.getName()).first) {
     if (symbolTableStack.size() == 0) {
-      if (DEBUG_SOL) llvm::outs() << "-----error: empty symbolTable------\n";
+      if (DEBUG_SOL)
+        llvm::outs() << "-----error: empty symbolTable------\n";
     }
     if (symbolTableStack.back()->count(expr.getName())) {
       auto result = symbolTableStack.back()->at(expr.getName());
@@ -751,7 +776,8 @@ class MLIRGenImpl {
       auto input = varName;
       // check classesInfoMap if input is an instance var or class var
       if (inst_varsClassMap.find(input) != inst_varsClassMap.end()) {
-        if (DEBUG_SOL) llvm::outs() << "found inst_var: " << input << "\n";
+        if (DEBUG_SOL)
+          llvm::outs() << "found inst_var: " << input << "\n";
         for (auto className : inst_varsClassMap.at(input)) {
           if (DEBUG_SOL)
             llvm::outs() << "possible className: " << className << "\n";
@@ -767,7 +793,8 @@ class MLIRGenImpl {
         }
 
       } else if (class_varsClassMap.find(input) != class_varsClassMap.end()) {
-        if (DEBUG_SOL) llvm::outs() << "found class_var: " << input << "\n";
+        if (DEBUG_SOL)
+          llvm::outs() << "found class_var: " << input << "\n";
         for (auto className : class_varsClassMap.at(input)) {
           if (DEBUG_SOL)
             llvm::outs() << "possible className: " << className << "\n";
@@ -779,7 +806,8 @@ class MLIRGenImpl {
         auto value = callOp.getResult(0);
         return value;
       } else if (classesInfoMap.find(input) != classesInfoMap.end()) {
-        if (DEBUG_SOL) llvm::outs() << "found className: " << input << "\n";
+        if (DEBUG_SOL)
+          llvm::outs() << "found className: " << input << "\n";
       } else {
         // todo: can be anonymous scope, go to search parent scope
         auto functionName = findSymbolInParentScopes(input);
@@ -835,7 +863,7 @@ class MLIRGenImpl {
       // cout << "blockparam size: " << blockOperands.size() << endl;
       auto blockRef = getOrInsertBuiltInBlockParamFunctionX(blockOperands);
       [[maybe_unused]] auto tmp = builder.create<LLVM::CallOp>(
-              locInfo, llvmI8PtrTy, blockRef, blockOperands);
+          locInfo, llvmI8PtrTy, blockRef, blockOperands);
 
       // Create a scope in the symbol table to hold variable declarations.
       // SymbolTableScopeT2 var_scope(symbolTable2);
@@ -1001,7 +1029,7 @@ class MLIRGenImpl {
     // constant string
     std::string name = LOCAL_VAR_NAME + input;
     Value str = getOrCreateGlobalStringX(loc(lit.loc()), name, input);
-    return str;  // important
+    return str; // important
   }
   mlir::Value mlirGen(PrimitiveExprAST &str) {
     auto input = "primitivex";
@@ -1082,52 +1110,53 @@ class MLIRGenImpl {
                    << " loc: " << loc(expr.loc()) << "\n";
 
     switch (expr.getKind()) {
-      case ExprAST::Expr_Var:
-        return mlirGen(cast<VariableExprAST>(expr));
-      case ExprAST::Expr_Num:
-        return mlirGen(cast<NumberExprAST>(expr));
-      case ExprAST::Expr_String:
-        return mlirGen(cast<StringExprAST>(expr));
-      case ExprAST::Expr_Symbol:
-        return mlirGen(cast<SymbolExprAST>(expr));
-      case ExprAST::Expr_Reserved:
-        return mlirGen(cast<ReservedKeywordExprAST>(expr));
-      case ExprAST::Expr_Literal:
-        return mlirGen(cast<LiteralExprAST>(expr));
-      case ExprAST::Expr_Block:
-        return mlirGen(cast<BlockExprAST>(expr));
-      case ExprAST::Expr_Assign:
-        return mlirGen(cast<AssignExprAST>(expr));
-      case ExprAST::Expr_FuncCall: {
-        return mlirGen(cast<FunctionCallAST>(expr));
-      }
-      case ExprAST::Expr_DynamicDictionary: {
-        auto dictExprAST = cast<DynamicDictionaryExprAST>(expr);
-        mlir::Value v = nullptr;
-        for (auto dictExpr : dictExprAST.getExpressions())
-          v = mlirGen(*dictExpr);
-        return v;
-      }
-      case ExprAST::Expr_DynamicArray: {
-        auto arrExprAST = cast<DynamicArrayExprAST>(expr);
-        mlir::Value v = nullptr;
-        for (auto arrExpr : arrExprAST.getExpressions()) v = mlirGen(*arrExpr);
-        return v;
-      }
-      case ExprAST::Expr_Primitive: {
-        return mlirGen(cast<PrimitiveExprAST>(expr));
-      }
-      case ExprAST::Expr_Error: {
-        return mlirGen(cast<ParserErrorAST>(expr));
-      }
-        //     auto funcExpr = cast<FunctionAST>(expr);
-        //     auto name = funcExpr.getProto()->getName();
-        // return SymbolRefAttr::get(name, builder.getContext());
-      default:
-        emitError(loc(expr.loc()))
-            << "MLIR codegen encountered an unhandled expr kind '"
-            << Twine(expr.getKind()) << "'";
-        return nullptr;
+    case ExprAST::Expr_Var:
+      return mlirGen(cast<VariableExprAST>(expr));
+    case ExprAST::Expr_Num:
+      return mlirGen(cast<NumberExprAST>(expr));
+    case ExprAST::Expr_String:
+      return mlirGen(cast<StringExprAST>(expr));
+    case ExprAST::Expr_Symbol:
+      return mlirGen(cast<SymbolExprAST>(expr));
+    case ExprAST::Expr_Reserved:
+      return mlirGen(cast<ReservedKeywordExprAST>(expr));
+    case ExprAST::Expr_Literal:
+      return mlirGen(cast<LiteralExprAST>(expr));
+    case ExprAST::Expr_Block:
+      return mlirGen(cast<BlockExprAST>(expr));
+    case ExprAST::Expr_Assign:
+      return mlirGen(cast<AssignExprAST>(expr));
+    case ExprAST::Expr_FuncCall: {
+      return mlirGen(cast<FunctionCallAST>(expr));
+    }
+    case ExprAST::Expr_DynamicDictionary: {
+      auto dictExprAST = cast<DynamicDictionaryExprAST>(expr);
+      mlir::Value v = nullptr;
+      for (auto dictExpr : dictExprAST.getExpressions())
+        v = mlirGen(*dictExpr);
+      return v;
+    }
+    case ExprAST::Expr_DynamicArray: {
+      auto arrExprAST = cast<DynamicArrayExprAST>(expr);
+      mlir::Value v = nullptr;
+      for (auto arrExpr : arrExprAST.getExpressions())
+        v = mlirGen(*arrExpr);
+      return v;
+    }
+    case ExprAST::Expr_Primitive: {
+      return mlirGen(cast<PrimitiveExprAST>(expr));
+    }
+    case ExprAST::Expr_Error: {
+      return mlirGen(cast<ParserErrorAST>(expr));
+    }
+      //     auto funcExpr = cast<FunctionAST>(expr);
+      //     auto name = funcExpr.getProto()->getName();
+      // return SymbolRefAttr::get(name, builder.getContext());
+    default:
+      emitError(loc(expr.loc()))
+          << "MLIR codegen encountered an unhandled expr kind '"
+          << Twine(expr.getKind()) << "'";
+      return nullptr;
     }
   }
 
@@ -1158,7 +1187,7 @@ class MLIRGenImpl {
         builder.create<LLVM::CallOp>(varLoc, llvmI8PtrTy, newTempRef, v);
     auto value = callOp.getResult(0);
     declareX2(vardecl.getName(), value,
-              funcName);  // ok this assume value is unique?
+              funcName); // ok this assume value is unique?
   }
 
   /// Create the prototype for an MLIR function with as many arguments as the
@@ -1194,7 +1223,7 @@ class MLIRGenImpl {
     auto returnType = llvmVoidTy;
     if (proto.getName() == MAIN_FUNC_NAME) {
       returnType = llvmI64Ty;
-    } else  // if (!proto.getRet())
+    } else // if (!proto.getRet())
     {
       returnType = llvmI8PtrTy;
     }
@@ -1329,7 +1358,7 @@ class MLIRGenImpl {
     // this function.
     OpBuilder::InsertionGuard insertGuard(builder);
     builder.setInsertionPointToStart(&entryBlock);
-    auto locProto = loc(funcAST.getProto()->loc());  // loc(return_val->loc()
+    auto locProto = loc(funcAST.getProto()->loc()); // loc(return_val->loc()
     // create SOL_BUILT_IN_MODEL_FUNC_ARG sol.model.funcArg
     for (auto arg : protoArgs) {
       if (DEBUG_SOL)
@@ -1375,4 +1404,4 @@ mlir::OwningOpRef<mlir::ModuleOp> mlirGenFull(mlir::MLIRContext &context,
   return MLIRGenImpl(context).mlirGen(moduleAST);
 };
 
-}  // namespace sol
+} // namespace sol

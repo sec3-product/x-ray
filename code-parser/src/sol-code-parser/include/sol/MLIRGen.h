@@ -5,7 +5,7 @@
 
 namespace mlir {
 class MLIRContext;
-}  // namespace mlir
+} // namespace mlir
 
 namespace sol {
 class ModuleAST;
@@ -15,4 +15,4 @@ class ModuleAST;
 mlir::OwningOpRef<mlir::ModuleOp> mlirGenFull(mlir::MLIRContext &context,
                                               sol::ModuleAST &moduleAST);
 
-}  // namespace sol
+} // namespace sol

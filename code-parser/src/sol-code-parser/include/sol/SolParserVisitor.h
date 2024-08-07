@@ -7,8 +7,8 @@
 #include <string>
 #include <vector>
 
-#include "ast/AST.h"
 #include "RustParserBaseVisitor.h"
+#include "ast/AST.h"
 
 using namespace sol;
 
@@ -21,7 +21,7 @@ std::map<std::string, uint> functionAnonNamesMap;
 std::set<std::string> declareIdAddresses;
 
 class SolParserVisitor : public RustParserBaseVisitor {
- private:
+private:
   std::string fileName;
   std::string fnBaseName;
   std::string curFuncName;
@@ -34,13 +34,15 @@ class SolParserVisitor : public RustParserBaseVisitor {
                       std::vector<sol::VarDeclExprAST> &args,
                       sol::FunctionAST *func) {
     // if a previous function with the same name exists, append $k to this name
-    // if (DEBUG_SOL) std::cout << "addNewFunction ->fname: " << fname << std::endl;
+    // if (DEBUG_SOL) std::cout << "addNewFunction ->fname: " << fname <<
+    // std::endl;
     auto k = functionNamesMap[fname];
     if (k > 0) {
       func->function_name = func->function_name + "$" + std::to_string(k);
     }
     if (DEBUG_SOL) {
-      std::cout << "addNewFunction ->function_name: " << func->function_name << std::endl;
+      std::cout << "addNewFunction ->function_name: " << func->function_name
+                << std::endl;
     }
     functionNamesMap[fname] = k + 1;
     auto protoAST = new PrototypeAST(loc, func->function_name, args);
@@ -60,10 +62,12 @@ class SolParserVisitor : public RustParserBaseVisitor {
   }
 
   bool existInCurScope(sol::FunctionAST *scope, std::string name) {
-    if (scope->temp_vars.size() == 0) return false;
+    if (scope->temp_vars.size() == 0)
+      return false;
     for (auto it = scope->temp_vars.begin(); it < scope->temp_vars.end();
          ++it) {
-      if (it->getName() == name) return true;
+      if (it->getName() == name)
+        return true;
     }
     return false;
   }
@@ -82,7 +86,7 @@ class SolParserVisitor : public RustParserBaseVisitor {
     return level;
   }
 
- public:
+public:
   SolParserVisitor(std::string fileName, std::string funcName, size_t line)
       : fileName(fileName), fnBaseName(funcName), line_base(line) {
     // llvm::outs() << "----visitor filename: " << fileName << "-------"<< "\n";
@@ -90,10 +94,12 @@ class SolParserVisitor : public RustParserBaseVisitor {
   sol::SEM sem;
 
   virtual std::any visitCrate(RustParser::CrateContext *ctx) override {
-    if (DEBUG_SOL) std::cout << "visitCrate path: " << fileName << std::endl;
+    if (DEBUG_SOL)
+      std::cout << "visitCrate path: " << fileName << std::endl;
     // TODO: collect all functions and
     visitChildren(ctx);
-    if (DEBUG_SOL) std::cout << "visitCrate: end" << std::endl;
+    if (DEBUG_SOL)
+      std::cout << "visitCrate: end" << std::endl;
     return functions;
   }
 
@@ -104,7 +110,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
     indentMore();
     result = visitItemX(fnBaseName, ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitItem end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitItem end " << std::endl;
 
     return result;
   }
@@ -122,7 +129,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
         if (attr.find("#[test") != std::string::npos) {
           // skip #[test
           indentLess();
-          if (DEBUG_SOL) std::cout << SPACE << "visitItemX end test code" << std::endl;
+          if (DEBUG_SOL)
+            std::cout << SPACE << "visitItemX end test code" << std::endl;
           return result;
         }
       }
@@ -146,7 +154,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
       for (auto outerAttribute : ctx->outerAttribute()) {
         auto attr = outerAttribute->getText();
         if (attr == "#[program]") {
-          if (DEBUG_SOL) std::cout << SPACE << "Anchor: " << attr << std::endl;
+          if (DEBUG_SOL)
+            std::cout << SPACE << "Anchor: " << attr << std::endl;
           if (ctx->visItem()) {
             itemExploredInAnchorProgram = true;
             if (auto moduleCtx = ctx->visItem()->module()) {
@@ -171,7 +180,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
                     // sol.access_control() to funcAST->body
                     for (auto attrCtx : itemCtx->outerAttribute()) {
                       auto attrCtx_str = attrCtx->attr()->getText();
-                      // std::cout << SPACE << "  attrCtx: " << attrCtx_str << std::endl;
+                      // std::cout << SPACE << "  attrCtx: " << attrCtx_str <<
+                      // std::endl;
                       if (attrCtx->attr()->simplePath()->getText() ==
                           "access_control") {
                         sol::FunctionCallAST *fcall =
@@ -182,8 +192,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
                             15, attrCtx_str.length() - 15 - 1);
                         if (DEBUG_SOL)
                           std::cout << SPACE
-                               << "  access_control callee: " << calleeName
-                               << std::endl;
+                                    << "  access_control callee: " << calleeName
+                                    << std::endl;
                         std::vector<sol::ExprAST *> args;
                         auto arg = new LiteralExprAST(getLoc(attrCtx->attr()),
                                                       calleeName);
@@ -200,11 +210,11 @@ class SolParserVisitor : public RustParserBaseVisitor {
                       auto calleeName = funcAST->getName();
                       if (auto found = calleeName.find("::"))
                         calleeName = calleeName.substr(found + 2);
-                      fcall->callee =
-                          calleeName;  // callee already added .count
+                      fcall->callee = calleeName; // callee already added .count
                       if (DEBUG_SOL)
-                        std::cout << SPACE << "  fcall->callee: " << fcall->callee
-                             << std::endl;
+                        std::cout << SPACE
+                                  << "  fcall->callee: " << fcall->callee
+                                  << std::endl;
                       std::vector<sol::ExprAST *> args;
                       for (auto declareExpr : funcAST->getProto()->getArgs()) {
                         auto literal = declareExpr.getName() + ":" +
@@ -240,7 +250,7 @@ class SolParserVisitor : public RustParserBaseVisitor {
                   fcall->callee = fnName;
                   if (DEBUG_SOL)
                     std::cout << SPACE << "  fcall->callee: " << fcall->callee
-                         << std::endl;
+                              << std::endl;
                   std::vector<sol::ExprAST *> args;
                   args.push_back(program_id);
                   fcall->args = args;
@@ -257,7 +267,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
                 FunctionCallAST *fcall = new FunctionCallAST(getLoc(ctx));
                 fcall->callee = fnName;
                 if (DEBUG_SOL)
-                  std::cout << SPACE << "  fcall->callee: " << fcall->callee << std::endl;
+                  std::cout << SPACE << "  fcall->callee: " << fcall->callee
+                            << std::endl;
                 std::vector<sol::ExprAST *> args;
                 auto program_id = new LiteralExprAST(getLoc(ctx), "program_id");
                 args.push_back(program_id);
@@ -273,7 +284,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
           //         to the prefix
           //   // s starts with prefix
           // }
-          if (DEBUG_SOL) std::cout << SPACE << "Anchor: " << attr << std::endl;
+          if (DEBUG_SOL)
+            std::cout << SPACE << "Anchor: " << attr << std::endl;
           if (ctx->visItem()) {
             if (ctx->visItem()->struct_() &&
                 ctx->visItem()->struct_()->structStruct()) {
@@ -283,7 +295,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
           }
         } else if (attr.find("#[derive(") != std::string::npos) {
           //#[derive(BorshSerialize, BorshDeserialize)]
-          if (DEBUG_SOL) std::cout << SPACE << "non-Anchor struct: " << attr << std::endl;
+          if (DEBUG_SOL)
+            std::cout << SPACE << "non-Anchor struct: " << attr << std::endl;
           if (ctx->visItem()) {
             if (ctx->visItem()->struct_() &&
                 ctx->visItem()->struct_()->structStruct()) {
@@ -295,11 +308,13 @@ class SolParserVisitor : public RustParserBaseVisitor {
                    attr.find("#[allow(") != std::string::npos ||
                    attr.find("#[cfg") != std::string::npos ||
                    attr.find("#[proc_macro_attribute]") != std::string::npos) {
-          if (DEBUG_SOL) std::cout << SPACE << "more attr: " << attr << std::endl;
+          if (DEBUG_SOL)
+            std::cout << SPACE << "more attr: " << attr << std::endl;
         } else if (attr.find("#[access_control(") != std::string::npos) {
           //#[access_control(is_not_emergency(&ctx.accounts.nirv_center,
           //&ctx.accounts.signer))]
-          if (DEBUG_SOL) std::cout << SPACE << "access_control: " << attr << std::endl;
+          if (DEBUG_SOL)
+            std::cout << SPACE << "access_control: " << attr << std::endl;
 
           if (funcAST_single) {
             {
@@ -310,7 +325,7 @@ class SolParserVisitor : public RustParserBaseVisitor {
               auto calleeName = attr.substr(17, attr.length() - 17 - 2);
               if (DEBUG_SOL)
                 std::cout << SPACE << "  access_control callee: " << calleeName
-                     << std::endl;
+                          << std::endl;
               std::vector<sol::ExprAST *> args;
               auto arg = new LiteralExprAST(getLoc(outerAttribute->attr()),
                                             calleeName);
@@ -321,7 +336,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
             }
           }
         } else {
-          if (DEBUG_SOL) std::cout << SPACE << "other attr: " << attr << std::endl;
+          if (DEBUG_SOL)
+            std::cout << SPACE << "other attr: " << attr << std::endl;
           // for test
           // visitChildren(ctx);
         }
@@ -337,8 +353,9 @@ class SolParserVisitor : public RustParserBaseVisitor {
         if (auto simplePath = macroInvocationSemi->simplePath()) {
           auto macroName = simplePath->getText();
           if (DEBUG_SOL)
-            std::cout << SPACE << "macroInvocationSemi simplePath: " << macroName
-                 << std::endl;
+            std::cout << SPACE
+                      << "macroInvocationSemi simplePath: " << macroName
+                      << std::endl;
 
           if (macroName == "entrypoint") {
             for (auto tokenTreeCtx : macroInvocationSemi->tokenTree()) {
@@ -365,7 +382,7 @@ class SolParserVisitor : public RustParserBaseVisitor {
                   fcall->callee = entryName;
                   if (DEBUG_SOL)
                     std::cout << SPACE << "  fcall->callee: " << fcall->callee
-                         << std::endl;
+                              << std::endl;
                   std::vector<sol::ExprAST *> args;
                   args.push_back(program_id);
                   args.push_back(accounts);
@@ -406,14 +423,14 @@ class SolParserVisitor : public RustParserBaseVisitor {
             std::string para1, para2, fname;
             for (auto tokenTreeCtx : macroInvocationSemi->tokenTree()) {
               auto tokenTree = tokenTreeCtx->getText();
-              // if (DEBUG_SOL) std::cout << "solitaire tokenTree: " << tokenTree <<
-              // std::endl;
+              // if (DEBUG_SOL) std::cout << "solitaire tokenTree: " <<
+              // tokenTree << std::endl;
 
               if (tokenTree.find("=>") != std::string::npos) {
                 auto found = tokenTree.find(",");
                 fname = tokenTree.substr(2, found - 2);
-                // if (DEBUG_SOL) std::cout << "fname: " << fname << " para1: " <<
-                // para1
+                // if (DEBUG_SOL) std::cout << "fname: " << fname << " para1: "
+                // << para1
                 //      << " para2: " << para2 << std::endl;
 
                 auto arg0 = new LiteralExprAST(getLoc(tokenTreeCtx), para0);
@@ -476,7 +493,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
             // for (auto tokenTreeCtx : macroInvocationSemi->tokenTree()) {
             //   auto tokenTree = tokenTreeCtx->getText();
             //   if (DEBUG_SOL)
-            //     std::cout << "solana_program::declare_id tokenTree: " << tokenTree
+            //     std::cout << "solana_program::declare_id tokenTree: " <<
+            //     tokenTree
             //          << std::endl;
             // }
             if (isProduction) {
@@ -485,7 +503,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
                 if (address.length() > 16 &&
                     address.find(".") == std::string::npos) {
                   if (DEBUG_SOL)
-                    std::cout << "solana_program::declare_id : " << address << std::endl;
+                    std::cout << "solana_program::declare_id : " << address
+                              << std::endl;
                   declareIdAddresses.insert(
                       address.substr(1, address.length() - 2));
                 }
@@ -508,13 +527,15 @@ class SolParserVisitor : public RustParserBaseVisitor {
     }
 
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitItemX end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitItemX end " << std::endl;
 
     return result;
   }
 
   virtual std::any visitStruct_(RustParser::Struct_Context *ctx) override {
-    // if (DEBUG_SOL) std::cout << "visitStruct_ begin: " << ctx->getText() << std::endl;
+    // if (DEBUG_SOL) std::cout << "visitStruct_ begin: " << ctx->getText() <<
+    // std::endl;
     auto result = visitChildren(ctx);
     // if (DEBUG_SOL) std::cout << "visitStruct_ end " << std::endl;
     return result;
@@ -525,13 +546,15 @@ class SolParserVisitor : public RustParserBaseVisitor {
     // TODO: create a model function for each struct
     auto name = ctx->identifier()->getText();
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitStructStructX begin: identifier: " << name << std::endl;
+      std::cout << SPACE << "visitStructStructX begin: identifier: " << name
+                << std::endl;
 
     indentMore();
     auto loc = getLoc(ctx);
     sol::FunctionAST *func = new sol::FunctionAST(loc);
     auto fnName = "sol.model.struct." + name;
-    if (isAnchor) fnName = "sol.model.struct.anchor." + name;
+    if (isAnchor)
+      fnName = "sol.model.struct.anchor." + name;
 
     func->function_name = fnName;
     auto fieldCallFunc = "model.struct.field";
@@ -551,7 +574,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
             FunctionCallAST *fcall = new FunctionCallAST(getLoc(attr));
             fcall->callee = constraintCallFunc;
             if (DEBUG_SOL)
-              std::cout << SPACE << "  fcall->callee: " << fcall->callee << std::endl;
+              std::cout << SPACE << "  fcall->callee: " << fcall->callee
+                        << std::endl;
             auto cons = attrText.substr(8);
             cons.pop_back();
             auto arg0 = new LiteralExprAST(getLoc(attr), cons);
@@ -565,13 +589,14 @@ class SolParserVisitor : public RustParserBaseVisitor {
         auto type = fieldCtx->type_()->getText();
         if (DEBUG_SOL)
           std::cout << SPACE << "structField identifier: " << field
-               << " type: " << type << std::endl;
+                    << " type: " << type << std::endl;
 
         FunctionCallAST *fcall =
             new FunctionCallAST(getLoc(fieldCtx->identifier()));
         fcall->callee = fieldCallFunc;
         if (DEBUG_SOL)
-          std::cout << SPACE << "  fcall->callee: " << fcall->callee << std::endl;
+          std::cout << SPACE << "  fcall->callee: " << fcall->callee
+                    << std::endl;
         auto arg0 = new LiteralExprAST(getLoc(fieldCtx), field);
         auto arg1 = new LiteralExprAST(getLoc(fieldCtx), type);
         std::vector<sol::ExprAST *> args;
@@ -587,19 +612,22 @@ class SolParserVisitor : public RustParserBaseVisitor {
 
     // auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitStructStructX end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitStructStructX end " << std::endl;
     return func;
   }
 
-  virtual std::any visitTupleStruct(
-      RustParser::TupleStructContext *ctx) override {
+  virtual std::any
+  visitTupleStruct(RustParser::TupleStructContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitTupleStruct begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitTupleStruct begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitTupleStruct end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitTupleStruct end " << std::endl;
     return result;
   }
 
@@ -607,82 +635,95 @@ class SolParserVisitor : public RustParserBaseVisitor {
     //(module mod (identifier ddca_operating_account)
 
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitModule begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitModule begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitModule end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitModule end " << std::endl;
     return result;
   }
 
   virtual std::any visitVisItem(RustParser::VisItemContext *ctx) override {
-    // if (DEBUG_SOL) std::cout << "visitVisItem begin: " << ctx->getText() << std::endl;
+    // if (DEBUG_SOL) std::cout << "visitVisItem begin: " << ctx->getText() <<
+    // std::endl;
     auto result = visitChildren(ctx->module());
     // if (DEBUG_SOL) std::cout << "visitVisItem end " << std::endl;
     return result;
   }
-  virtual std::any visitUseDeclaration(
-      RustParser::UseDeclarationContext *ctx) override {
+  virtual std::any
+  visitUseDeclaration(RustParser::UseDeclarationContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitUseDeclaration begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitUseDeclaration begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitUseDeclaration end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitUseDeclaration end " << std::endl;
     return result;
   }
   virtual std::any visitMacroInvocationSemi(
       RustParser::MacroInvocationSemiContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitMacroInvocationSemi begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitMacroInvocationSemi end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitMacroInvocationSemi end " << std::endl;
     return result;
   }
-  virtual std::any visitConstantItem(
-      RustParser::ConstantItemContext *ctx) override {
+  virtual std::any
+  visitConstantItem(RustParser::ConstantItemContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitConstantItem begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitConstantItem begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitConstantItem end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitConstantItem end " << std::endl;
     return result;
   }
-  virtual std::any visitOuterAttribute(
-      RustParser::OuterAttributeContext *ctx) override {
+  virtual std::any
+  visitOuterAttribute(RustParser::OuterAttributeContext *ctx) override {
     //(outerAttribute # [ (attr (simplePath (simplePathSegment (identifier
     // program)))) ])
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitOuterAttribute begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitOuterAttribute begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitOuterAttribute end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitOuterAttribute end " << std::endl;
     return result;
   }
 
-  virtual std::any visitStaticItem(
-      RustParser::StaticItemContext *ctx) override {
+  virtual std::any
+  visitStaticItem(RustParser::StaticItemContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitStaticItem begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitStaticItem begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitStaticItem end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitStaticItem end " << std::endl;
     return result;
   }
 
   sol::FunctionAST *visitTrait_X(std::string fnBaseName_tmp,
                                  RustParser::Trait_Context *ctx) {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitTrait_X begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitTrait_X begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     sol::FunctionAST *result = nullptr;
     std::string typeName = ctx->identifier()->getText();
@@ -691,7 +732,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
     ;
 
     auto found = typeName.find("<");
-    if (found != std::string::npos) typeName = typeName.substr(0, found);
+    if (found != std::string::npos)
+      typeName = typeName.substr(0, found);
     fnBaseName = fnBaseName_tmp + "::" + typeName;
     for (auto associateItemCtx : associatedItems) {
       if (associateItemCtx->function_()) {
@@ -701,15 +743,17 @@ class SolParserVisitor : public RustParserBaseVisitor {
     fnBaseName = fnBaseName_tmp;
 
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitTrait_X end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitTrait_X end " << std::endl;
     return result;
   }
 
-  sol::FunctionAST *visitImplementation_X(std::string fnBaseName_tmp,
-                                          RustParser::ImplementationContext *ctx) {
+  sol::FunctionAST *
+  visitImplementation_X(std::string fnBaseName_tmp,
+                        RustParser::ImplementationContext *ctx) {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitImplementation_X begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
     sol::FunctionAST *result = nullptr;
     std::string typeName;
@@ -724,7 +768,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
     }
     if (!typeName.empty()) {
       auto found = typeName.find("<");
-      if (found != std::string::npos) typeName = typeName.substr(0, found);
+      if (found != std::string::npos)
+        typeName = typeName.substr(0, found);
       if (typeName.rfind("crate::", 0) == 0) {
         typeName = typeName.substr(7);
       }
@@ -738,67 +783,76 @@ class SolParserVisitor : public RustParserBaseVisitor {
       fnBaseName = fnBaseName_tmp;
     }
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitImplementation_X end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitImplementation_X end " << std::endl;
     return result;
   }
-  virtual std::any visitInherentImpl(
-      RustParser::InherentImplContext *ctx) override {
+  virtual std::any
+  visitInherentImpl(RustParser::InherentImplContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitInherentImpl begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitInherentImpl begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitInherentImpl end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitInherentImpl end " << std::endl;
     return result;
   }
-  virtual std::any visitTraitImpl(
-      RustParser::TraitImplContext *ctx) override {
+  virtual std::any visitTraitImpl(RustParser::TraitImplContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitTraitImpl begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitTraitImpl begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitTraitImpl end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitTraitImpl end " << std::endl;
     return result;
   }
-  virtual std::any visitGenericParams(
-      RustParser::GenericParamsContext *ctx) override {
+  virtual std::any
+  visitGenericParams(RustParser::GenericParamsContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitGenericParams begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitGenericParams begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitGenericParams end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitGenericParams end " << std::endl;
     return result;
   }
-  virtual std::any visitAssociatedItem(
-      RustParser::AssociatedItemContext *ctx) override {
+  virtual std::any
+  visitAssociatedItem(RustParser::AssociatedItemContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitAssociatedItem begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitAssociatedItem begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitAssociatedItem end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitAssociatedItem end " << std::endl;
     return result;
   }
 
-  virtual std::any visitFunction_(
-      RustParser::Function_Context *ctx) override {
+  virtual std::any visitFunction_(RustParser::Function_Context *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitFunction_ begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitFunction_ begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitFunction_ end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitFunction_ end " << std::endl;
     return result;
   }
   sol::FunctionAST *visitFunction_X(std::string fnBaseName,
-                               RustParser::Function_Context *ctx) {
+                                    RustParser::Function_Context *ctx) {
     curFuncName = ctx->identifier()->getText();
     auto fnName = fnBaseName + "::" + curFuncName;
     auto loc = getLoc(ctx);
@@ -807,7 +861,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
 
     std::vector<sol::VarDeclExprAST> args;
 
-    if (DEBUG_SOL) std::cout << SPACE << "visitFunction_X: " << fnName << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitFunction_X: " << fnName << std::endl;
     indentMore();
 
     if (ctx->functionParameters())
@@ -825,31 +880,33 @@ class SolParserVisitor : public RustParserBaseVisitor {
         func->function_name + "." + std::to_string(args.size());
     addNewFunction(loc, func->function_name, args, func);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitFunction_X end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitFunction_X end " << std::endl;
     return func;
   }
 
-  virtual std::any visitFunctionReturnType(
-      RustParser::FunctionReturnTypeContext *ctx) override {
+  virtual std::any
+  visitFunctionReturnType(RustParser::FunctionReturnTypeContext *ctx) override {
     std::any result = nullptr;
     if (DEBUG_SOL)
       std::cout << SPACE << "visitFunctionReturnType begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     // indentMore();
     // auto result = visitChildren(ctx);
     // indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitFunctionReturnType end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitFunctionReturnType end " << std::endl;
     return result;
   }
-  std::vector<sol::VarDeclExprAST> visitFunctionParametersX(
-      RustParser::FunctionParametersContext *ctx) {
+  std::vector<sol::VarDeclExprAST>
+  visitFunctionParametersX(RustParser::FunctionParametersContext *ctx) {
     std::vector<sol::VarDeclExprAST> args;
     auto loc = getLoc(ctx);
 
     std::any result = nullptr;
     if (DEBUG_SOL)
       std::cout << SPACE << "visitFunctionParameters begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
     if (ctx->selfParam()) {
       // for &self
@@ -857,11 +914,13 @@ class SolParserVisitor : public RustParserBaseVisitor {
       VarType type;
       type.name = paramName;
       auto arg = new sol::VarDeclExprAST(loc, paramName, type);
-      if (DEBUG_SOL) std::cout << SPACE << "param: " << paramName << std::endl;
+      if (DEBUG_SOL)
+        std::cout << SPACE << "param: " << paramName << std::endl;
       args.push_back(*arg);
     }
     for (auto param : ctx->functionParam()) {
-      if (DEBUG_SOL) std::cout << SPACE << "param: " << param->getText() << std::endl;
+      if (DEBUG_SOL)
+        std::cout << SPACE << "param: " << param->getText() << std::endl;
       if (param->functionParamPattern()) {
         auto paramName = param->functionParamPattern()->pattern()->getText();
         auto patternCtx = param->functionParamPattern()->pattern();
@@ -875,56 +934,62 @@ class SolParserVisitor : public RustParserBaseVisitor {
         VarType type;
         type.name = typeName;
         auto arg = new sol::VarDeclExprAST(loc, paramName, type);
-        // if (DEBUG_SOL) std::cout << SPACE << "arg paramName: " << paramName << "
-        // type: " << typeName << std::endl;
+        // if (DEBUG_SOL) std::cout << SPACE << "arg paramName: " << paramName
+        // << " type: " << typeName << std::endl;
         args.push_back(*arg);
       }
     }
     // auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitFunctionParameters end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitFunctionParameters end " << std::endl;
     return args;
   }
-  virtual std::any visitFunctionQualifiers(
-      RustParser::FunctionQualifiersContext *ctx) override {
+  virtual std::any
+  visitFunctionQualifiers(RustParser::FunctionQualifiersContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitFunctionQualifiers begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitFunctionQualifiers end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitFunctionQualifiers end " << std::endl;
     return result;
   }
 
-  virtual std::any visitIdentifier(
-      RustParser::IdentifierContext *ctx) override {
+  virtual std::any
+  visitIdentifier(RustParser::IdentifierContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitIdentifier begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitIdentifier begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitIdentifier end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitIdentifier end " << std::endl;
     return result;
   }
 
-  virtual std::any visitBlockExpression(
-      RustParser::BlockExpressionContext *ctx) override {
+  virtual std::any
+  visitBlockExpression(RustParser::BlockExpressionContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitBlockExpression begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitBlockExpression begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitBlockExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitBlockExpression end " << std::endl;
     return result;
   }
 
   sol::ExprAST *visitBlockExpressionX(RustParser::BlockExpressionContext *ctx) {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitBlockExpressionX begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
     sol::ExprAST *res = nullptr;
 
@@ -935,39 +1000,48 @@ class SolParserVisitor : public RustParserBaseVisitor {
         auto blockExprStatements = ctx->statements()->statement();
         if (blockExprStatements.size() > 0) {
           auto lastStmt =
-              blockExprStatements.back();  // blockExprStatements.size()-1
+              blockExprStatements.back(); // blockExprStatements.size()-1
           res = visitStatementX(lastStmt);
         }
       }
-      if (res) res = visitCustomizedIfBlockExpressionX(ctx, res, true);
+      if (res)
+        res = visitCustomizedIfBlockExpressionX(ctx, res, true);
     }
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitBlockExpressionX end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitBlockExpressionX end " << std::endl;
     return res;
   }
 
-  std::vector<sol::ExprAST *> visitStatementsX(RustParser::StatementsContext *ctx) {
+  std::vector<sol::ExprAST *>
+  visitStatementsX(RustParser::StatementsContext *ctx) {
     std::vector<sol::ExprAST *> ret;
-    if (!ctx) return ret;  // empty block
+    if (!ctx)
+      return ret; // empty block
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitStatementsX begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitStatementsX begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     for (auto stmt : ctx->statement()) {
       auto stmtExpr = visitStatementX(stmt);
-      if (stmtExpr) ret.push_back(stmtExpr);
+      if (stmtExpr)
+        ret.push_back(stmtExpr);
     }
     if (ctx->expression()) {
       if (DEBUG_SOL)
-        std::cout << SPACE << "expression: " << ctx->expression()->getText() << std::endl;
+        std::cout << SPACE << "expression: " << ctx->expression()->getText()
+                  << std::endl;
       // if (ctx->statement().empty())
       {
         auto expr = visitExpressionX(ctx->expression());
-        if (expr) ret.push_back(expr);
+        if (expr)
+          ret.push_back(expr);
       }
     }
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitStatementsX end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitStatementsX end " << std::endl;
     return ret;
   }
 
@@ -976,7 +1050,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
     sol::ExprAST *expr = nullptr;
 
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitStatementX begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitStatementX begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     // TODO handle CompoundAssignmentExpression
     // ifamount>0{letamountw=1000/amount;}**wallet_info.lamports.borrow_mut()-=amount
@@ -1013,18 +1088,21 @@ class SolParserVisitor : public RustParserBaseVisitor {
     } else if (ctx->macroInvocationSemi()) {
       // TODO: macro, e.g.,assert_eq!(g.floor(),3.0);
       auto macroName = ctx->macroInvocationSemi()->simplePath()->getText();
-      if (DEBUG_SOL) std::cout << SPACE << "macroName: " << macroName << std::endl;
+      if (DEBUG_SOL)
+        std::cout << SPACE << "macroName: " << macroName << std::endl;
     }
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitStatementX end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitStatementX end " << std::endl;
     return expr;
     // return result;
   }
 
-  sol::ExprAST *visitMacroInvocationSemiX(
-      RustParser::MacroInvocationSemiContext *ctx) {
+  sol::ExprAST *
+  visitMacroInvocationSemiX(RustParser::MacroInvocationSemiContext *ctx) {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitMacroInvocationSemiX: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitMacroInvocationSemiX: " << ctx->getText()
+                << std::endl;
 
     sol::ExprAST *expr = nullptr;
     {
@@ -1041,9 +1119,10 @@ class SolParserVisitor : public RustParserBaseVisitor {
       //   );
       for (auto tokenCtx : ctx->tokenTree()) {
         // for (auto paramCtx : tokenCtx->tokenTreeToken())
-        {  // concatenate until startswith ','
+        { // concatenate until startswith ','
           auto varName = tokenCtx->getText();
-          if (DEBUG_SOL) std::cout << SPACE << "  varName: " << varName << std::endl;
+          if (DEBUG_SOL)
+            std::cout << SPACE << "  varName: " << varName << std::endl;
           if (varName.front() == ',') {
             // add paraName
             paraNames.push_back(paraName);
@@ -1062,11 +1141,13 @@ class SolParserVisitor : public RustParserBaseVisitor {
           }
         }
       }
-      if (!paraName.empty()) paraNames.push_back(paraName);
+      if (!paraName.empty())
+        paraNames.push_back(paraName);
       for (auto varName : paraNames) {
         auto *var = new VariableExprAST(getLoc(ctx), varName);
         args.push_back(var);
-        if (DEBUG_SOL) std::cout << SPACE << "  fcall->args: " << varName << std::endl;
+        if (DEBUG_SOL)
+          std::cout << SPACE << "  fcall->args: " << varName << std::endl;
       }
 
       // ok - function names can collide - we need to append parameter count
@@ -1082,13 +1163,15 @@ class SolParserVisitor : public RustParserBaseVisitor {
       fcall->args = args;
       return fcall;
     }
-    if (DEBUG_SOL) std::cout << SPACE << "visitMacroInvocationSemiX end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitMacroInvocationSemiX end " << std::endl;
     return expr;
   }
 
   sol::ExprAST *visitLoopExpressionX(RustParser::LoopExpressionContext *ctx) {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitLoopExpression begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitLoopExpression begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     sol::ExprAST *res = nullptr;
     // auto result = visitChildren(ctx);
@@ -1117,7 +1200,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
       auto index2 = functions.size();
       if (index2 > index1) {
         auto funcName = functions[index2 - 1]->getName();
-        // std::cout << SPACE << "model.loop funcName: " << funcName << std::endl;
+        // std::cout << SPACE << "model.loop funcName: " << funcName <<
+        // std::endl;
 
         auto literal = new LiteralExprAST(getLoc(blockExpr), funcName);
         args.push_back(literal);
@@ -1127,14 +1211,16 @@ class SolParserVisitor : public RustParserBaseVisitor {
     fcall->callee = loopCallFunc + "." + std::to_string(args.size());
     res = fcall;
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitLoopExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitLoopExpression end " << std::endl;
     return res;
   }
 
-  sol::ExprAST *visitExpressionWithBlockX(
-      RustParser::ExpressionWithBlockContext *ctx) {
+  sol::ExprAST *
+  visitExpressionWithBlockX(RustParser::ExpressionWithBlockContext *ctx) {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitExpressionWithBlockX: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitExpressionWithBlockX: " << ctx->getText()
+                << std::endl;
     indentMore();
     sol::ExprAST *res = nullptr;
     if (ctx->ifExpression()) {
@@ -1150,7 +1236,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
       res = visitBlockExpressionX(ctx->blockExpression());
     }
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitExpressionWithBlockX end" << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitExpressionWithBlockX end" << std::endl;
     return res;
   }
 
@@ -1164,14 +1251,15 @@ class SolParserVisitor : public RustParserBaseVisitor {
                    ctx)) {
       if (DEBUG_SOL)
         std::cout << SPACE << "  stripping ErrorPropagationExpressionContext: "
-             << ctx->getText() << std::endl;
+                  << ctx->getText() << std::endl;
       ctx = expressionCtx->expression();
     }
 
     if (auto callExpressionCtx =
             dynamic_cast<RustParser::CallExpressionContext *>(ctx)) {
       if (DEBUG_SOL)
-        std::cout << SPACE << "  callExpressionCtx: " << ctx->getText() << std::endl;
+        std::cout << SPACE << "  callExpressionCtx: " << ctx->getText()
+                  << std::endl;
       FunctionCallAST *fcall = new FunctionCallAST(getLoc(ctx));
       // expr
       // callParams
@@ -1185,8 +1273,10 @@ class SolParserVisitor : public RustParserBaseVisitor {
           auto varName = paramCtx->getText();
           // auto *var = new VariableExprAST(getLoc(ctx), varName);
           auto var = visitExpressionX(paramCtx);
-          if (var != nullptr) args.push_back(var);
-          if (DEBUG_SOL) std::cout << SPACE << "  fcall->args: " << varName << std::endl;
+          if (var != nullptr)
+            args.push_back(var);
+          if (DEBUG_SOL)
+            std::cout << SPACE << "  fcall->args: " << varName << std::endl;
         }
       }
       // ok - function names can collide - we need to append parameter count
@@ -1197,8 +1287,9 @@ class SolParserVisitor : public RustParserBaseVisitor {
                    dynamic_cast<RustParser::MethodCallExpressionContext *>(
                        ctx)) {
       if (DEBUG_SOL)
-        std::cout << SPACE << "  MethodCallExpressionContext: " << ctx->getText()
-             << std::endl;
+        std::cout << SPACE
+                  << "  MethodCallExpressionContext: " << ctx->getText()
+                  << std::endl;
 
       FunctionCallAST *fcall = new FunctionCallAST(
           getLoc(methodCallExpressionCtx->pathExprSegment()));
@@ -1212,15 +1303,18 @@ class SolParserVisitor : public RustParserBaseVisitor {
 
       std::vector<sol::ExprAST *> args;
       auto baseExpr = visitExpressionX(methodCallExpressionCtx->expression());
-      if (baseExpr != nullptr) args.push_back(baseExpr);
+      if (baseExpr != nullptr)
+        args.push_back(baseExpr);
       if (methodCallExpressionCtx->callParams()) {
         for (auto paramCtx :
              methodCallExpressionCtx->callParams()->expression()) {
           auto varName = paramCtx->getText();
           // auto *var = new VariableExprAST(getLoc(ctx), varName);
           auto var = visitExpressionX(paramCtx);
-          if (var != nullptr) args.push_back(var);
-          if (DEBUG_SOL) std::cout << SPACE << "  fcall->args: " << varName << std::endl;
+          if (var != nullptr)
+            args.push_back(var);
+          if (DEBUG_SOL)
+            std::cout << SPACE << "  fcall->args: " << varName << std::endl;
         }
       }
       // ok - function names can collide - we need to append parameter count
@@ -1233,21 +1327,23 @@ class SolParserVisitor : public RustParserBaseVisitor {
       indentMore();
       if (DEBUG_SOL)
         std::cout << SPACE << "  ClosureExpression_Context: " << ctx->getText()
-             << std::endl;
+                  << std::endl;
 
       if (auto closureExpr =
               closureExpressionCtx->closureExpression()->expression()) {
         return visitExpressionX(closureExpr);
       }
 
-      if (DEBUG_SOL) std::cout << SPACE << "  ClosureExpression_Context end" << std::endl;
+      if (DEBUG_SOL)
+        std::cout << SPACE << "  ClosureExpression_Context end" << std::endl;
       indentLess();
     } else if (auto compareExpressionCtx =
                    dynamic_cast<RustParser::ComparisonExpressionContext *>(
                        ctx)) {
       if (DEBUG_SOL)
-        std::cout << SPACE << "  ComparisonExpressionContext: " << ctx->getText()
-             << std::endl;
+        std::cout << SPACE
+                  << "  ComparisonExpressionContext: " << ctx->getText()
+                  << std::endl;
 
       FunctionCallAST *fcall = new FunctionCallAST(getLoc(ctx));
       // expr
@@ -1262,12 +1358,15 @@ class SolParserVisitor : public RustParserBaseVisitor {
           auto varName = paramCtx->getText();
           // auto *var = new VariableExprAST(getLoc(ctx), varName);
           auto var = visitExpressionX(paramCtx);
-          if (var != nullptr) args.push_back(var);
-          if (DEBUG_SOL) std::cout << SPACE << "  fcall->args: " << varName << std::endl;
+          if (var != nullptr)
+            args.push_back(var);
+          if (DEBUG_SOL)
+            std::cout << SPACE << "  fcall->args: " << varName << std::endl;
         }
       } else {
         auto var = visitExpressionX(compareExpressionCtx->expression(0));
-        if (var != nullptr) args.push_back(var);
+        if (var != nullptr)
+          args.push_back(var);
       }
 
       fcall->args = args;
@@ -1277,8 +1376,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
                    RustParser::CompoundAssignmentExpressionContext *>(ctx)) {
       if (DEBUG_SOL)
         std::cout << SPACE
-             << "  CompoundAssignmentExpressionContext: " << ctx->getText()
-             << std::endl;
+                  << "  CompoundAssignmentExpressionContext: " << ctx->getText()
+                  << std::endl;
       auto compoundAssignCtx =
           compoundAssignmentExpressionCtx->compoundAssignOperator();
       FunctionCallAST *fcall = new FunctionCallAST(getLoc(compoundAssignCtx));
@@ -1289,9 +1388,11 @@ class SolParserVisitor : public RustParserBaseVisitor {
       std::vector<sol::ExprAST *> args;
       for (auto paramCtx : compoundAssignmentExpressionCtx->expression()) {
         auto var = visitExpressionX(paramCtx);
-        if (var != nullptr) args.push_back(var);
+        if (var != nullptr)
+          args.push_back(var);
         if (DEBUG_SOL)
-          std::cout << SPACE << "  fcall->args: " << paramCtx->getText() << std::endl;
+          std::cout << SPACE << "  fcall->args: " << paramCtx->getText()
+                    << std::endl;
       }
 
       fcall->args = args;
@@ -1301,12 +1402,14 @@ class SolParserVisitor : public RustParserBaseVisitor {
                    dynamic_cast<RustParser::AssignmentExpressionContext *>(
                        ctx)) {
       if (DEBUG_SOL)
-        std::cout << SPACE << "  AssignmentExpressionContext: " << ctx->getText()
-             << std::endl;
+        std::cout << SPACE
+                  << "  AssignmentExpressionContext: " << ctx->getText()
+                  << std::endl;
       auto leftVar = assignmentExpressionCtx->expression(0)->getText();
       auto var = new VariableExprAST(getLoc(assignmentExpressionCtx), leftVar);
 
-      [[maybe_unused]] auto leftExpr = visitExpressionX(assignmentExpressionCtx->expression(0));
+      [[maybe_unused]] auto leftExpr =
+          visitExpressionX(assignmentExpressionCtx->expression(0));
       auto rightExpr = visitExpressionX(assignmentExpressionCtx->expression(1));
       // make sure leftExpr and leftExpr rightExpr are not null
       if (rightExpr != nullptr) {
@@ -1316,7 +1419,7 @@ class SolParserVisitor : public RustParserBaseVisitor {
       } else {
         if (DEBUG_SOL)
           std::cout << SPACE << "  AssignmentExpression is wrong!!!"
-               << ctx->getText() << std::endl;
+                    << ctx->getText() << std::endl;
       }
 
     } else if (auto borrowExpressionCtx =
@@ -1324,10 +1427,11 @@ class SolParserVisitor : public RustParserBaseVisitor {
       indentMore();
       if (DEBUG_SOL)
         std::cout << SPACE << "  BorrowExpressionContext: " << ctx->getText()
-             << std::endl;
+                  << std::endl;
 
       auto res = visitExpressionX(borrowExpressionCtx->expression());
-      if (DEBUG_SOL) std::cout << SPACE << "  BorrowExpressionContext end" << std::endl;
+      if (DEBUG_SOL)
+        std::cout << SPACE << "  BorrowExpressionContext end" << std::endl;
       indentLess();
       return res;
 
@@ -1336,8 +1440,9 @@ class SolParserVisitor : public RustParserBaseVisitor {
                        ctx)) {
       indentMore();
       if (DEBUG_SOL)
-        std::cout << SPACE << "  DereferenceExpressionContext: " << ctx->getText()
-             << std::endl;
+        std::cout << SPACE
+                  << "  DereferenceExpressionContext: " << ctx->getText()
+                  << std::endl;
 
       auto res = visitExpressionX(derefExpressionCtx->expression());
       if (DEBUG_SOL)
@@ -1349,7 +1454,7 @@ class SolParserVisitor : public RustParserBaseVisitor {
                    dynamic_cast<RustParser::NegationExpressionContext *>(ctx)) {
       if (DEBUG_SOL)
         std::cout << SPACE << "  NegationExpressionContext: " << ctx->getText()
-             << std::endl;
+                  << std::endl;
       FunctionCallAST *fcall = new FunctionCallAST(getLoc(ctx));
       if (negationExpressionCtx->MINUS()) {
         // fcall->callee = negationExpressionCtx->MINUS()->getText();
@@ -1363,7 +1468,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
 
       std::vector<sol::ExprAST *> args;
       auto var = visitExpressionX(negationExpressionCtx->expression());
-      if (var != nullptr) args.push_back(var);
+      if (var != nullptr)
+        args.push_back(var);
       fcall->args = args;
       return fcall;
 
@@ -1371,7 +1477,7 @@ class SolParserVisitor : public RustParserBaseVisitor {
                    dynamic_cast<RustParser::StructExpression_Context *>(ctx)) {
       if (DEBUG_SOL)
         std::cout << SPACE << "  StructExpression_Context: " << ctx->getText()
-             << std::endl;
+                  << std::endl;
 
       if (structExpressionCtx_->structExpression()->structExprStruct()) {
         auto structExprStructCtx =
@@ -1382,7 +1488,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
                           structExprStructCtx->pathInExpression()->getText();
         fcall->callee = structName;
         if (DEBUG_SOL)
-          std::cout << SPACE << "  fcall->callee: " << fcall->callee << std::endl;
+          std::cout << SPACE << "  fcall->callee: " << fcall->callee
+                    << std::endl;
 
         std::vector<sol::ExprAST *> args;
         // auto structExpr = new LiteralExprAST(getLoc(ctx), structName);
@@ -1407,9 +1514,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
                     getLoc(exprFieldCtx->identifier()), var, valueExpr);
                 args.push_back(assign_expr);
               } else {
-                std::cout << SPACE
-                     << "NULL structExprFields: " << exprFieldCtx->getText()
-                     << std::endl;
+                std::cout << SPACE << "NULL structExprFields: "
+                          << exprFieldCtx->getText() << std::endl;
                 args.push_back(var);
               }
             } else {
@@ -1429,14 +1535,15 @@ class SolParserVisitor : public RustParserBaseVisitor {
                    dynamic_cast<RustParser::LiteralExpression_Context *>(ctx)) {
       if (DEBUG_SOL)
         std::cout << SPACE << "  LiteralExpression_Context: " << ctx->getText()
-             << std::endl;
+                  << std::endl;
       auto literal = literalExpressionCtx->literalExpression()->getText();
       return new LiteralExprAST(getLoc(ctx), literal);
 
     } else if (auto tupleExpressionCtx =
                    dynamic_cast<RustParser::TupleExpressionContext *>(ctx)) {
       if (DEBUG_SOL)
-        std::cout << SPACE << "  TupleExpressionContext: " << ctx->getText() << std::endl;
+        std::cout << SPACE << "  TupleExpressionContext: " << ctx->getText()
+                  << std::endl;
       if (tupleExpressionCtx->tupleElements()) {
         auto literal = tupleExpressionCtx->tupleElements()->getText();
         return new LiteralExprAST(getLoc(ctx), literal);
@@ -1450,8 +1557,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
       indentMore();
       if (DEBUG_SOL)
         std::cout << SPACE
-             << "  MacroInvocationAsExpressionContext: " << ctx->getText()
-             << std::endl;
+                  << "  MacroInvocationAsExpressionContext: " << ctx->getText()
+                  << std::endl;
       // call func
       auto name =
           macroInvokeExpressionCtx->macroInvocation()->simplePath()->getText();
@@ -1463,7 +1570,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
       }
       auto paraName = delimTokenTree->getText();
       // for (auto tokenTree : delimTokenTree->tokenTree()) {
-      //   std::cout << SPACE << "  tokenTree: " << tokenTree->getText() << std::endl;
+      //   std::cout << SPACE << "  tokenTree: " << tokenTree->getText() <<
+      //   std::endl;
       // }
       auto literal = new LiteralExprAST(getLoc(delimTokenTree), paraName);
 
@@ -1478,14 +1586,16 @@ class SolParserVisitor : public RustParserBaseVisitor {
       fcall->callee = macroCallFunc + name + ".!" + std::to_string(args.size());
 
       if (DEBUG_SOL)
-        std::cout << SPACE << "  MacroInvocationAsExpressionContext end" << std::endl;
+        std::cout << SPACE << "  MacroInvocationAsExpressionContext end"
+                  << std::endl;
       indentLess();
       return fcall;
 
     } else if (auto arrayExpressionCtx =
                    dynamic_cast<RustParser::ArrayExpressionContext *>(ctx)) {
       if (DEBUG_SOL)
-        std::cout << SPACE << "  ArrayExpressionContext: " << ctx->getText() << std::endl;
+        std::cout << SPACE << "  ArrayExpressionContext: " << ctx->getText()
+                  << std::endl;
       auto literal = arrayExpressionCtx->getText();
       // auto literal = arrayExpressionCtx->innerAttribute()->getText();
       return new LiteralExprAST(getLoc(ctx), literal);
@@ -1493,14 +1603,16 @@ class SolParserVisitor : public RustParserBaseVisitor {
     } else if (auto fieldExpressionCtx =
                    dynamic_cast<RustParser::FieldExpressionContext *>(ctx)) {
       if (DEBUG_SOL)
-        std::cout << SPACE << "  FieldExpressionContext: " << ctx->getText() << std::endl;
+        std::cout << SPACE << "  FieldExpressionContext: " << ctx->getText()
+                  << std::endl;
       auto varName = fieldExpressionCtx->getText();
       return new VariableExprAST(getLoc(ctx), varName);
 
     } else if (auto pathExpressionCtx =
                    dynamic_cast<RustParser::PathExpression_Context *>(ctx)) {
       if (DEBUG_SOL)
-        std::cout << SPACE << "  PathExpression_Context: " << ctx->getText() << std::endl;
+        std::cout << SPACE << "  PathExpression_Context: " << ctx->getText()
+                  << std::endl;
       auto varName = pathExpressionCtx->getText();
       return new VariableExprAST(getLoc(ctx), varName);
 
@@ -1508,10 +1620,12 @@ class SolParserVisitor : public RustParserBaseVisitor {
                    dynamic_cast<RustParser::IndexExpressionContext *>(ctx)) {
       indentMore();
       if (DEBUG_SOL)
-        std::cout << SPACE << "  IndexExpressionContext: " << ctx->getText() << std::endl;
+        std::cout << SPACE << "  IndexExpressionContext: " << ctx->getText()
+                  << std::endl;
       // only the first one
       auto res = visitExpressionX(indexExpressionCtx->expression(0));
-      if (DEBUG_SOL) std::cout << SPACE << "  IndexExpressionContext end" << std::endl;
+      if (DEBUG_SOL)
+        std::cout << SPACE << "  IndexExpressionContext end" << std::endl;
       indentLess();
       return res;
 
@@ -1519,9 +1633,11 @@ class SolParserVisitor : public RustParserBaseVisitor {
                    dynamic_cast<RustParser::AwaitExpressionContext *>(ctx)) {
       indentMore();
       if (DEBUG_SOL)
-        std::cout << SPACE << "  AwaitExpressionContext: " << ctx->getText() << std::endl;
+        std::cout << SPACE << "  AwaitExpressionContext: " << ctx->getText()
+                  << std::endl;
       auto res = visitExpressionX(awaitExpressionCtx->expression());
-      if (DEBUG_SOL) std::cout << SPACE << "  AwaitExpressionContext end" << std::endl;
+      if (DEBUG_SOL)
+        std::cout << SPACE << "  AwaitExpressionContext end" << std::endl;
       indentLess();
       return res;
     } else if (auto tupleIndexExpressionCtx =
@@ -1529,12 +1645,14 @@ class SolParserVisitor : public RustParserBaseVisitor {
                        ctx)) {
       indentMore();
       if (DEBUG_SOL)
-        std::cout << SPACE << "  TupleIndexingExpressionContext: " << ctx->getText()
-             << std::endl;
+        std::cout << SPACE
+                  << "  TupleIndexingExpressionContext: " << ctx->getText()
+                  << std::endl;
       //    | expression '.' tupleIndex
       auto res = visitExpressionX(tupleIndexExpressionCtx->expression());
       if (DEBUG_SOL)
-        std::cout << SPACE << "  TupleIndexingExpressionContext end" << std::endl;
+        std::cout << SPACE << "  TupleIndexingExpressionContext end"
+                  << std::endl;
       indentLess();
       return res;
 
@@ -1543,10 +1661,11 @@ class SolParserVisitor : public RustParserBaseVisitor {
       indentMore();
       if (DEBUG_SOL)
         std::cout << SPACE << "  GroupedExpressionContext: " << ctx->getText()
-             << std::endl;
+                  << std::endl;
       //    '(' innerAttribute* expression ')'
       auto res = visitExpressionX(groupExpressionCtx->expression());
-      if (DEBUG_SOL) std::cout << SPACE << "  GroupedExpressionContext end" << std::endl;
+      if (DEBUG_SOL)
+        std::cout << SPACE << "  GroupedExpressionContext end" << std::endl;
       indentLess();
       return res;
 
@@ -1555,9 +1674,9 @@ class SolParserVisitor : public RustParserBaseVisitor {
       indentMore();
       if (DEBUG_SOL)
         std::cout << SPACE << "  ReturnExpressionContext: " << ctx->getText()
-             << std::endl;
+                  << std::endl;
       FunctionCallAST *fcall = new FunctionCallAST(getLoc(ctx));
-      fcall->callee = "return";  // special
+      fcall->callee = "return"; // special
       std::vector<sol::ExprAST *> args;
       //    'return' expression?
       if (returnExpressionCtx->expression()) {
@@ -1567,10 +1686,12 @@ class SolParserVisitor : public RustParserBaseVisitor {
         else {
           if (DEBUG_SOL)
             std::cout << SPACE << "NULL ReturnExpressionContext: "
-                 << returnExpressionCtx->expression()->getText() << std::endl;
+                      << returnExpressionCtx->expression()->getText()
+                      << std::endl;
         }
       }
-      if (DEBUG_SOL) std::cout << SPACE << "  ReturnExpressionContext end" << std::endl;
+      if (DEBUG_SOL)
+        std::cout << SPACE << "  ReturnExpressionContext end" << std::endl;
       indentLess();
       fcall->args = args;
       fcall->callee = fcall->callee + "." + std::to_string(args.size());
@@ -1579,9 +1700,9 @@ class SolParserVisitor : public RustParserBaseVisitor {
                    dynamic_cast<RustParser::TypeCastExpressionContext *>(ctx)) {
       if (DEBUG_SOL)
         std::cout << SPACE << "  TypeCastExpressionContext: " << ctx->getText()
-             << std::endl;
+                  << std::endl;
       FunctionCallAST *fcall = new FunctionCallAST(getLoc(ctx));
-      fcall->callee = "typecast";  // special
+      fcall->callee = "typecast"; // special
 
       if (DEBUG_SOL)
         std::cout << SPACE << "  fcall->callee: " << fcall->callee << std::endl;
@@ -1596,7 +1717,7 @@ class SolParserVisitor : public RustParserBaseVisitor {
       } else {
         if (DEBUG_SOL)
           std::cout << SPACE << "  TypeCastExpressionContext is wrong!!!"
-               << ctx->getText() << std::endl;
+                    << ctx->getText() << std::endl;
       }
       fcall->args = args;
       return fcall;
@@ -1605,8 +1726,9 @@ class SolParserVisitor : public RustParserBaseVisitor {
                        ctx)) {
       indentMore();
       if (DEBUG_SOL)
-        std::cout << SPACE << "  ExpressionWithBlock_Context: " << ctx->getText()
-             << std::endl;
+        std::cout << SPACE
+                  << "  ExpressionWithBlock_Context: " << ctx->getText()
+                  << std::endl;
       auto expressionWithBlockCtx =
           expressionWithBlock_Ctx->expressionWithBlock();
       auto res = visitExpressionWithBlockX(expressionWithBlockCtx);
@@ -1617,9 +1739,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
     } else if (auto arithLogicExpressionCtx = dynamic_cast<
                    RustParser::ArithmeticOrLogicalExpressionContext *>(ctx)) {
       if (DEBUG_SOL)
-        std::cout << SPACE
-             << "  ArithmeticOrLogicalExpressionContext: " << ctx->getText()
-             << std::endl;
+        std::cout << SPACE << "  ArithmeticOrLogicalExpressionContext: "
+                  << ctx->getText() << std::endl;
 
       // if (arithLogicExpressionCtx->STAR()) {
       //   return visitExpressionX(arithLogicExpressionCtx->expression(1));
@@ -1659,7 +1780,7 @@ class SolParserVisitor : public RustParserBaseVisitor {
         opName = arithLogicExpressionCtx->OR()->getText();
       } else {
       }
-      fcall->callee = opName;  // special
+      fcall->callee = opName; // special
 
       if (DEBUG_SOL)
         std::cout << SPACE << "  fcall->callee: " << fcall->callee << std::endl;
@@ -1674,8 +1795,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
       } else {
         if (DEBUG_SOL)
           std::cout << SPACE
-               << "TODO  ArithmeticOrLogicalExpressionContext is wrong!!!"
-               << ctx->getText() << std::endl;
+                    << "TODO  ArithmeticOrLogicalExpressionContext is wrong!!!"
+                    << ctx->getText() << std::endl;
         return nullptr;
       }
       fcall->args = args;
@@ -1685,8 +1806,9 @@ class SolParserVisitor : public RustParserBaseVisitor {
                    dynamic_cast<RustParser::LazyBooleanExpressionContext *>(
                        ctx)) {
       if (DEBUG_SOL)
-        std::cout << SPACE << "  LazyBooleanExpressionContext: " << ctx->getText()
-             << std::endl;
+        std::cout << SPACE
+                  << "  LazyBooleanExpressionContext: " << ctx->getText()
+                  << std::endl;
       FunctionCallAST *fcall = new FunctionCallAST(getLoc(ctx));
 
       auto opName = lazyBoolExpressionCtx->getText();
@@ -1696,7 +1818,7 @@ class SolParserVisitor : public RustParserBaseVisitor {
         opName = lazyBoolExpressionCtx->OROR()->getText();
       }
 
-      fcall->callee = opName;  // || or &&
+      fcall->callee = opName; // || or &&
 
       if (DEBUG_SOL)
         std::cout << SPACE << "  fcall->callee: " << fcall->callee << std::endl;
@@ -1710,8 +1832,9 @@ class SolParserVisitor : public RustParserBaseVisitor {
         args.push_back(expr1);
       } else {
         if (DEBUG_SOL)
-          std::cout << SPACE << "  ArithmeticOrLogicalExpressionContext is wrong!!!"
-               << ctx->getText() << std::endl;
+          std::cout << SPACE
+                    << "  ArithmeticOrLogicalExpressionContext is wrong!!!"
+                    << ctx->getText() << std::endl;
       }
       fcall->args = args;
       return fcall;
@@ -1719,21 +1842,24 @@ class SolParserVisitor : public RustParserBaseVisitor {
     } else if (auto callExpressionCtx =
                    dynamic_cast<RustParser::RangeExpressionContext *>(ctx)) {
       if (DEBUG_SOL)
-        std::cout << SPACE << "  RangeExpressionContext: " << ctx->getText() << std::endl;
+        std::cout << SPACE << "  RangeExpressionContext: " << ctx->getText()
+                  << std::endl;
     } else if (auto callExpressionCtx = dynamic_cast<
                    RustParser::ErrorPropagationExpressionContext *>(ctx)) {
       if (DEBUG_SOL)
         std::cout << SPACE
-             << "  ErrorPropagationExpressionContext: " << ctx->getText()
-             << std::endl;
+                  << "  ErrorPropagationExpressionContext: " << ctx->getText()
+                  << std::endl;
     } else if (auto callExpressionCtx =
                    dynamic_cast<RustParser::CallExpressionContext *>(ctx)) {
       if (DEBUG_SOL)
-        std::cout << SPACE << "  CallExpressionContext: " << ctx->getText() << std::endl;
+        std::cout << SPACE << "  CallExpressionContext: " << ctx->getText()
+                  << std::endl;
     } else if (auto breakExpressionCtx =
                    dynamic_cast<RustParser::BreakExpressionContext *>(ctx)) {
       if (DEBUG_SOL)
-        std::cout << SPACE << "  BreakExpressionContext: " << ctx->getText() << std::endl;
+        std::cout << SPACE << "  BreakExpressionContext: " << ctx->getText()
+                  << std::endl;
       FunctionCallAST *fcall = new FunctionCallAST(getLoc(ctx));
       fcall->callee = "model.break";
       std::vector<sol::ExprAST *> args;
@@ -1742,26 +1868,29 @@ class SolParserVisitor : public RustParserBaseVisitor {
     } else if (auto callExpressionCtx = dynamic_cast<
                    RustParser::EnumerationVariantExpression_Context *>(ctx)) {
       if (DEBUG_SOL)
-        std::cout << SPACE
-             << "  EnumerationVariantExpression_Context: " << ctx->getText()
-             << std::endl;
+        std::cout << SPACE << "  EnumerationVariantExpression_Context: "
+                  << ctx->getText() << std::endl;
     } else if (auto callExpressionCtx =
                    dynamic_cast<RustParser::AttributedExpressionContext *>(
                        ctx)) {
       if (DEBUG_SOL)
-        std::cout << SPACE << "  AttributedExpressionContext: " << ctx->getText()
-             << std::endl;
+        std::cout << SPACE
+                  << "  AttributedExpressionContext: " << ctx->getText()
+                  << std::endl;
     } else {
       if (DEBUG_SOL)
-        std::cout << SPACE << "  Other Unknown Context: " << ctx->getText() << std::endl;
+        std::cout << SPACE << "  Other Unknown Context: " << ctx->getText()
+                  << std::endl;
     }
-    if (DEBUG_SOL) std::cout << SPACE << "visitExpressionX end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitExpressionX end " << std::endl;
     return expr;
   }
 
   sol::ExprAST *visitLetStatementX(RustParser::LetStatementContext *ctx) {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitLetStatement begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitLetStatement begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     sol::ExprAST *expr = nullptr;
     auto varName = ctx->patternNoTopAlt()->getText();
@@ -1796,23 +1925,26 @@ class SolParserVisitor : public RustParserBaseVisitor {
         expr = new VariableExprAST(getLoc(ctx), varName);
       }
     }
-    auto result = visitChildren(ctx);  // debug
+    auto result = visitChildren(ctx); // debug
     if (ctx->expression()) {
-        sol::ExprAST *valueExpr = visitExpressionX(ctx->expression());
+      sol::ExprAST *valueExpr = visitExpressionX(ctx->expression());
       // make sure valueExpr is not null
-      if (valueExpr == nullptr) return expr;
+      if (valueExpr == nullptr)
+        return expr;
 
       auto assign_expr = new AssignExprAST(getLoc(ctx), expr, valueExpr);
       expr = assign_expr;
     }
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitLetStatement end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitLetStatement end " << std::endl;
     return expr;
   }
 
   sol::ExprAST *visitIfExpressionX(RustParser::IfExpressionContext *ctx) {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitIfExpressionX begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitIfExpressionX begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     sol::ExprAST *expr = nullptr;
     // if(left,right)
@@ -1862,37 +1994,43 @@ class SolParserVisitor : public RustParserBaseVisitor {
 
     // auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitIfExpressionX end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitIfExpressionX end " << std::endl;
     return expr;
   }
 
-  virtual std::any visitIfExpression(
-      RustParser::IfExpressionContext *ctx) override {
+  virtual std::any
+  visitIfExpression(RustParser::IfExpressionContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitIfExpression begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitIfExpression begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitIfExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitIfExpression end " << std::endl;
     return result;
   }
 
-  virtual std::any visitIfLetExpression(
-      RustParser::IfLetExpressionContext *ctx) override {
+  virtual std::any
+  visitIfLetExpression(RustParser::IfLetExpressionContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitIfLetExpression begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitIfLetExpression begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitIfLetExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitIfLetExpression end " << std::endl;
     return result;
   }
 
   // customized
-  sol::ExprAST *visitCustomizedIfBlockExpressionX(
-      RustParser::BlockExpressionContext *ctx, sol::ExprAST *expr, bool isTrue) {
+  sol::ExprAST *
+  visitCustomizedIfBlockExpressionX(RustParser::BlockExpressionContext *ctx,
+                                    sol::ExprAST *expr, bool isTrue) {
     auto stmts = ctx->statements();
     auto loc = getLoc(ctx);
     sol::FunctionAST *func = new sol::FunctionAST(loc);
@@ -1933,7 +2071,7 @@ class SolParserVisitor : public RustParserBaseVisitor {
   sol::ExprAST *visitIfLetExpressionX(RustParser::IfLetExpressionContext *ctx) {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitIfLetExpressionX begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
     sol::ExprAST *expr = nullptr;
 
@@ -1951,7 +2089,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
         auto var = new VariableExprAST(getLoc(ctx->pattern()), varName);
         expr = new AssignExprAST(getLoc(ctx), var, expr);
       } else {
-        std::cout << "NULL visitIfLetExpressionX: " << ctx->getText() << std::endl;
+        std::cout << "NULL visitIfLetExpressionX: " << ctx->getText()
+                  << std::endl;
       }
 
       // create func for the block statements
@@ -1971,14 +2110,15 @@ class SolParserVisitor : public RustParserBaseVisitor {
     }
 
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitIfLetExpressionX end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitIfLetExpressionX end " << std::endl;
     return expr;
   }
 
   sol::ExprAST *visitMatchExpressionX(RustParser::MatchExpressionContext *ctx) {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitMatchExpressionX begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
 
     sol::ExprAST *expr = nullptr;
@@ -2028,7 +2168,8 @@ class SolParserVisitor : public RustParserBaseVisitor {
 
       if (matchExpr) {
         args.push_back(matchExpr);
-        if (DEBUG_SOL) std::cout << SPACE << "matched: " << debugExprText << std::endl;
+        if (DEBUG_SOL)
+          std::cout << SPACE << "matched: " << debugExprText << std::endl;
       } else {
         if (DEBUG_SOL)
           std::cout << SPACE << "not matched: " << debugExprText << std::endl;
@@ -2041,13 +2182,12 @@ class SolParserVisitor : public RustParserBaseVisitor {
       args.push_back(matchExpr);
       if (DEBUG_SOL)
         std::cout << SPACE
-             << "matched: " << ctx->matchArms()->expression()->getText()
-             << std::endl;
+                  << "matched: " << ctx->matchArms()->expression()->getText()
+                  << std::endl;
     } else {
       if (DEBUG_SOL)
-        std::cout << SPACE
-             << "not matched: " << ctx->matchArms()->expression()->getText()
-             << std::endl;
+        std::cout << SPACE << "not matched: "
+                  << ctx->matchArms()->expression()->getText() << std::endl;
     }
     fcall->args = args;
     // ok - function names can collide - we need to append parameter count
@@ -2055,82 +2195,92 @@ class SolParserVisitor : public RustParserBaseVisitor {
     expr = fcall;
 
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitMatchExpressionX end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitMatchExpressionX end " << std::endl;
     return expr;
   }
 
-  virtual std::any visitMatchExpression(
-      RustParser::MatchExpressionContext *ctx) override {
+  virtual std::any
+  visitMatchExpression(RustParser::MatchExpressionContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitMatchExpression begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitMatchExpression begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitMatchExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitMatchExpression end " << std::endl;
     return result;
   }
-  virtual std::any visitContinueExpression(
-      RustParser::ContinueExpressionContext *ctx) override {
+  virtual std::any
+  visitContinueExpression(RustParser::ContinueExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitContinueExpression begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitContinueExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitContinueExpression end " << std::endl;
     return result;
   }
 
   virtual std::any visitAssignmentExpression(
       RustParser::AssignmentExpressionContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitAssignmentExpression begin: " << ctx->getText()
-           << std::endl;
+      std::cout << SPACE
+                << "visitAssignmentExpression begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitAssignmentExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitAssignmentExpression end " << std::endl;
     return result;
   }
 
   virtual std::any visitMethodCallExpression(
       RustParser::MethodCallExpressionContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitMethodCallExpression begin: " << ctx->getText()
-           << std::endl;
+      std::cout << SPACE
+                << "visitMethodCallExpression begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitMethodCallExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitMethodCallExpression end " << std::endl;
     return result;
   }
 
-  virtual std::any visitLiteralExpression_(
-      RustParser::LiteralExpression_Context *ctx) override {
+  virtual std::any
+  visitLiteralExpression_(RustParser::LiteralExpression_Context *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitLiteralExpression_ begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitLiteralExpression_ end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitLiteralExpression_ end " << std::endl;
     return result;
   }
-  virtual std::any visitReturnExpression(
-      RustParser::ReturnExpressionContext *ctx) override {
+  virtual std::any
+  visitReturnExpression(RustParser::ReturnExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitReturnExpression begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitReturnExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitReturnExpression end " << std::endl;
     return result;
   }
 
@@ -2138,133 +2288,151 @@ class SolParserVisitor : public RustParserBaseVisitor {
       RustParser::ExpressionStatementContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitExpressionStatement begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitExpressionStatement end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitExpressionStatement end " << std::endl;
     return result;
   }
-  virtual std::any visitTypeCastExpression(
-      RustParser::TypeCastExpressionContext *ctx) override {
+  virtual std::any
+  visitTypeCastExpression(RustParser::TypeCastExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitTypeCastExpression begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitTypeCastExpression end " << std::endl;
-    return result;
-  }
-
-  virtual std::any visitPathExpression_(
-      RustParser::PathExpression_Context *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitPathExpression_ begin: " << ctx->getText() << std::endl;
-    indentMore();
-
-    auto result = visitChildren(ctx);
-    indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitPathExpression_ end " << std::endl;
+      std::cout << SPACE << "visitTypeCastExpression end " << std::endl;
     return result;
   }
 
-  virtual std::any visitTupleExpression(
-      RustParser::TupleExpressionContext *ctx) override {
+  virtual std::any
+  visitPathExpression_(RustParser::PathExpression_Context *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitTupleExpression begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitPathExpression_ begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitTupleExpression end " << std::endl;
-    return result;
-  }
-
-  virtual std::any visitIndexExpression(
-      RustParser::IndexExpressionContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitIndexExpression begin: " << ctx->getText() << std::endl;
-    indentMore();
-
-    auto result = visitChildren(ctx);
-    indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitIndexExpression end " << std::endl;
+      std::cout << SPACE << "visitPathExpression_ end " << std::endl;
     return result;
   }
 
-  virtual std::any visitRangeExpression(
-      RustParser::RangeExpressionContext *ctx) override {
+  virtual std::any
+  visitTupleExpression(RustParser::TupleExpressionContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitRangeExpression begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitTupleExpression begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitRangeExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitTupleExpression end " << std::endl;
     return result;
   }
-  virtual std::any visitStructExpression_(
-      RustParser::StructExpression_Context *ctx) override {
+
+  virtual std::any
+  visitIndexExpression(RustParser::IndexExpressionContext *ctx) override {
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitIndexExpression begin: " << ctx->getText()
+                << std::endl;
+    indentMore();
+
+    auto result = visitChildren(ctx);
+    indentLess();
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitIndexExpression end " << std::endl;
+    return result;
+  }
+
+  virtual std::any
+  visitRangeExpression(RustParser::RangeExpressionContext *ctx) override {
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitRangeExpression begin: " << ctx->getText()
+                << std::endl;
+    indentMore();
+
+    auto result = visitChildren(ctx);
+    indentLess();
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitRangeExpression end " << std::endl;
+    return result;
+  }
+  virtual std::any
+  visitStructExpression_(RustParser::StructExpression_Context *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitStructExpression_ begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitStructExpression_ end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitStructExpression_ end " << std::endl;
     return result;
   }
   virtual std::any visitTupleIndexingExpression(
       RustParser::TupleIndexingExpressionContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitTupleIndexingExpression begin: " << ctx->getText()
-           << std::endl;
+      std::cout << SPACE
+                << "visitTupleIndexingExpression begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitTupleIndexingExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitTupleIndexingExpression end " << std::endl;
     return result;
   }
 
-  virtual std::any visitNegationExpression(
-      RustParser::NegationExpressionContext *ctx) override {
+  virtual std::any
+  visitNegationExpression(RustParser::NegationExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitNegationExpression begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitNegationExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitNegationExpression end " << std::endl;
     return result;
   }
 
-  virtual std::any visitCallExpression(
-      RustParser::CallExpressionContext *ctx) override {
+  virtual std::any
+  visitCallExpression(RustParser::CallExpressionContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitCallExpression begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitCallExpression begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitCallExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitCallExpression end " << std::endl;
     return result;
   }
 
   virtual std::any visitLazyBooleanExpression(
       RustParser::LazyBooleanExpressionContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitLazyBooleanExpression begin: " << ctx->getText()
-           << std::endl;
+      std::cout << SPACE
+                << "visitLazyBooleanExpression begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
-    if (DEBUG_SOL) std::cout << SPACE << "visitLazyBooleanExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitLazyBooleanExpression end " << std::endl;
     indentLess();
     return result;
   }
@@ -2272,122 +2440,136 @@ class SolParserVisitor : public RustParserBaseVisitor {
   virtual std::any visitDereferenceExpression(
       RustParser::DereferenceExpressionContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitDereferenceExpression begin: " << ctx->getText()
-           << std::endl;
+      std::cout << SPACE
+                << "visitDereferenceExpression begin: " << ctx->getText()
+                << std::endl;
     indentMore();
 
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitDereferenceExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitDereferenceExpression end " << std::endl;
     return result;
   }
   virtual std::any visitExpressionWithBlock_(
       RustParser::ExpressionWithBlock_Context *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitExpressionWithBlock_ begin: " << ctx->getText()
-           << std::endl;
+      std::cout << SPACE
+                << "visitExpressionWithBlock_ begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitExpressionWithBlock_ end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitExpressionWithBlock_ end " << std::endl;
     return result;
   }
 
-  virtual std::any visitGroupedExpression(
-      RustParser::GroupedExpressionContext *ctx) override {
+  virtual std::any
+  visitGroupedExpression(RustParser::GroupedExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitGroupedExpression begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitGroupedExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitGroupedExpression end " << std::endl;
     return result;
   }
 
-  virtual std::any visitBreakExpression(
-      RustParser::BreakExpressionContext *ctx) override {
+  virtual std::any
+  visitBreakExpression(RustParser::BreakExpressionContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitBreakExpression begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitBreakExpression begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitBreakExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitBreakExpression end " << std::endl;
     return result;
   }
 
   virtual std::any visitArithmeticOrLogicalExpression(
       RustParser::ArithmeticOrLogicalExpressionContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE
-           << "visitArithmeticOrLogicalExpression begin: " << ctx->getText()
-           << std::endl;
+      std::cout << SPACE << "visitArithmeticOrLogicalExpression begin: "
+                << ctx->getText() << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitArithmeticOrLogicalExpression end " << std::endl;
+      std::cout << SPACE << "visitArithmeticOrLogicalExpression end "
+                << std::endl;
     return result;
   }
 
-  virtual std::any visitFieldExpression(
-      RustParser::FieldExpressionContext *ctx) override {
+  virtual std::any
+  visitFieldExpression(RustParser::FieldExpressionContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitFieldExpression begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitFieldExpression begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitFieldExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitFieldExpression end " << std::endl;
     return result;
   }
 
   virtual std::any visitEnumerationVariantExpression_(
       RustParser::EnumerationVariantExpression_Context *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE
-           << "visitEnumerationVariantExpression_ begin: " << ctx->getText()
-           << std::endl;
+      std::cout << SPACE << "visitEnumerationVariantExpression_ begin: "
+                << ctx->getText() << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitEnumerationVariantExpression_ end " << std::endl;
+      std::cout << SPACE << "visitEnumerationVariantExpression_ end "
+                << std::endl;
     return result;
   }
 
   virtual std::any visitComparisonExpression(
       RustParser::ComparisonExpressionContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitComparisonExpression begin: " << ctx->getText()
-           << std::endl;
+      std::cout << SPACE
+                << "visitComparisonExpression begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitComparisonExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitComparisonExpression end " << std::endl;
     return result;
   }
 
   virtual std::any visitAttributedExpression(
       RustParser::AttributedExpressionContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitAttributedExpression begin: " << ctx->getText()
-           << std::endl;
+      std::cout << SPACE
+                << "visitAttributedExpression begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitAttributedExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitAttributedExpression end " << std::endl;
     return result;
   }
 
-  virtual std::any visitBorrowExpression(
-      RustParser::BorrowExpressionContext *ctx) override {
+  virtual std::any
+  visitBorrowExpression(RustParser::BorrowExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitBorrowExpression begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitBorrowExpression end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitBorrowExpression end " << std::endl;
     return result;
   }
 
@@ -2395,81 +2577,91 @@ class SolParserVisitor : public RustParserBaseVisitor {
       RustParser::CompoundAssignmentExpressionContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE
-           << "visitCompoundAssignmentExpression begin: " << ctx->getText()
-           << std::endl;
+                << "visitCompoundAssignmentExpression begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitCompoundAssignmentExpression end " << std::endl;
+      std::cout << SPACE << "visitCompoundAssignmentExpression end "
+                << std::endl;
     return result;
   }
 
-  virtual std::any visitClosureExpression_(
-      RustParser::ClosureExpression_Context *ctx) override {
+  virtual std::any
+  visitClosureExpression_(RustParser::ClosureExpression_Context *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitClosureExpression_ begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitClosureExpression_ end " << std::endl;
-    return result;
-  }
-
-  virtual std::any visitArrayExpression(
-      RustParser::ArrayExpressionContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitArrayExpression begin: " << ctx->getText() << std::endl;
-    indentMore();
-    auto result = visitChildren(ctx);
-    indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitArrayExpression end " << std::endl;
+      std::cout << SPACE << "visitClosureExpression_ end " << std::endl;
     return result;
   }
 
-  virtual std::any visitComparisonOperator(
-      RustParser::ComparisonOperatorContext *ctx) override {
+  virtual std::any
+  visitArrayExpression(RustParser::ArrayExpressionContext *ctx) override {
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitArrayExpression begin: " << ctx->getText()
+                << std::endl;
+    indentMore();
+    auto result = visitChildren(ctx);
+    indentLess();
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitArrayExpression end " << std::endl;
+    return result;
+  }
+
+  virtual std::any
+  visitComparisonOperator(RustParser::ComparisonOperatorContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitComparisonOperator begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitComparisonOperator end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitComparisonOperator end " << std::endl;
     return result;
   }
 
   virtual std::any visitCompoundAssignOperator(
       RustParser::CompoundAssignOperatorContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitCompoundAssignOperator begin: " << ctx->getText()
-           << std::endl;
+      std::cout << SPACE
+                << "visitCompoundAssignOperator begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitCompoundAssignOperator end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitCompoundAssignOperator end " << std::endl;
     return result;
   }
 
-  virtual std::any visitMatchArmGuard(
-      RustParser::MatchArmGuardContext *ctx) override {
+  virtual std::any
+  visitMatchArmGuard(RustParser::MatchArmGuardContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << "visitMatchArmGuard begin: " << ctx->getText() << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << "visitMatchArmGuard end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << "visitMatchArmGuard end " << std::endl;
     return result;
   }
 
   virtual std::any visitPattern(RustParser::PatternContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitPattern begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitPattern begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitPattern end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitPattern end " << std::endl;
     return result;
   }
 
@@ -2477,114 +2669,130 @@ class SolParserVisitor : public RustParserBaseVisitor {
       RustParser::PatternWithoutRangeContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitPatternWithoutRange begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitPatternWithoutRange end " << std::endl;
-    return result;
-  }
-
-  virtual std::any visitLiteralPattern(
-      RustParser::LiteralPatternContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitLiteralPattern begin: " << ctx->getText() << std::endl;
-    indentMore();
-    auto result = visitChildren(ctx);
-    indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitLiteralPattern end " << std::endl;
+      std::cout << SPACE << "visitPatternWithoutRange end " << std::endl;
     return result;
   }
 
-  virtual std::any visitIdentifierPattern(
-      RustParser::IdentifierPatternContext *ctx) override {
+  virtual std::any
+  visitLiteralPattern(RustParser::LiteralPatternContext *ctx) override {
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitLiteralPattern begin: " << ctx->getText()
+                << std::endl;
+    indentMore();
+    auto result = visitChildren(ctx);
+    indentLess();
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitLiteralPattern end " << std::endl;
+    return result;
+  }
+
+  virtual std::any
+  visitIdentifierPattern(RustParser::IdentifierPatternContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitIdentifierPattern begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitIdentifierPattern end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitIdentifierPattern end " << std::endl;
     return result;
   }
 
-  virtual std::any visitWildcardPattern(
-      RustParser::WildcardPatternContext *ctx) override {
+  virtual std::any
+  visitWildcardPattern(RustParser::WildcardPatternContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitWildcardPattern begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitWildcardPattern begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitWildcardPattern end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitWildcardPattern end " << std::endl;
     return result;
   }
 
-  virtual std::any visitRestPattern(
-      RustParser::RestPatternContext *ctx) override {
+  virtual std::any
+  visitRestPattern(RustParser::RestPatternContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitRestPattern begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitRestPattern begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitRestPattern end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitRestPattern end " << std::endl;
     return result;
   }
   virtual std::any visitObsoleteRangePattern(
       RustParser::ObsoleteRangePatternContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitObsoleteRangePattern begin: " << ctx->getText()
-           << std::endl;
+      std::cout << SPACE
+                << "visitObsoleteRangePattern begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitObsoleteRangePattern end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitObsoleteRangePattern end " << std::endl;
     return result;
   }
 
-  virtual std::any visitRangePatternBound(
-      RustParser::RangePatternBoundContext *ctx) override {
+  virtual std::any
+  visitRangePatternBound(RustParser::RangePatternBoundContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitRangePatternBound begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitRangePatternBound end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitRangePatternBound end " << std::endl;
     return result;
   }
 
-  virtual std::any visitReferencePattern(
-      RustParser::ReferencePatternContext *ctx) override {
+  virtual std::any
+  visitReferencePattern(RustParser::ReferencePatternContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitReferencePattern begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitReferencePattern end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitReferencePattern end " << std::endl;
     return result;
   }
 
-  virtual std::any visitStructPattern(
-      RustParser::StructPatternContext *ctx) override {
+  virtual std::any
+  visitStructPattern(RustParser::StructPatternContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitStructPattern begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitStructPattern begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitStructPattern end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitStructPattern end " << std::endl;
     return result;
   }
 
   virtual std::any visitStructPatternElements(
       RustParser::StructPatternElementsContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitStructPatternElements begin: " << ctx->getText()
-           << std::endl;
+      std::cout << SPACE
+                << "visitStructPatternElements begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitStructPatternElements end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitStructPatternElements end " << std::endl;
     return result;
   }
 
@@ -2592,126 +2800,143 @@ class SolParserVisitor : public RustParserBaseVisitor {
       RustParser::StructPatternFieldsContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitStructPatternFields begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitStructPatternFields end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitStructPatternFields end " << std::endl;
     return result;
   }
 
-  virtual std::any visitStructPatternField(
-      RustParser::StructPatternFieldContext *ctx) override {
+  virtual std::any
+  visitStructPatternField(RustParser::StructPatternFieldContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitStructPatternField begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitStructPatternField end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitStructPatternField end " << std::endl;
     return result;
   }
 
   virtual std::any visitStructPatternEtCetera(
       RustParser::StructPatternEtCeteraContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitStructPatternEtCetera begin: " << ctx->getText()
-           << std::endl;
+      std::cout << SPACE
+                << "visitStructPatternEtCetera begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitStructPatternEtCetera end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitStructPatternEtCetera end " << std::endl;
     return result;
   }
 
-  virtual std::any visitTupleStructPattern(
-      RustParser::TupleStructPatternContext *ctx) override {
+  virtual std::any
+  visitTupleStructPattern(RustParser::TupleStructPatternContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitTupleStructPattern begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitTupleStructPattern end " << std::endl;
-    return result;
-  }
-
-  virtual std::any visitTupleStructItems(
-      RustParser::TupleStructItemsContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << "visitTupleStructItems begin: " << ctx->getText() << std::endl;
-    indentMore();
-    auto result = visitChildren(ctx);
-    indentLess();
-    if (DEBUG_SOL) std::cout << "visitTupleStructItems end " << std::endl;
+      std::cout << SPACE << "visitTupleStructPattern end " << std::endl;
     return result;
   }
 
-  virtual std::any visitTuplePattern(
-      RustParser::TuplePatternContext *ctx) override {
+  virtual std::any
+  visitTupleStructItems(RustParser::TupleStructItemsContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitTuplePattern begin: " << ctx->getText() << std::endl;
+      std::cout << "visitTupleStructItems begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitTuplePattern end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << "visitTupleStructItems end " << std::endl;
     return result;
   }
 
-  virtual std::any visitTuplePatternItems(
-      RustParser::TuplePatternItemsContext *ctx) override {
+  virtual std::any
+  visitTuplePattern(RustParser::TuplePatternContext *ctx) override {
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitTuplePattern begin: " << ctx->getText()
+                << std::endl;
+    indentMore();
+    auto result = visitChildren(ctx);
+    indentLess();
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitTuplePattern end " << std::endl;
+    return result;
+  }
+
+  virtual std::any
+  visitTuplePatternItems(RustParser::TuplePatternItemsContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitTuplePatternItems begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitTuplePatternItems end " << std::endl;
-    return result;
-  }
-
-  virtual std::any visitGroupedPattern(
-      RustParser::GroupedPatternContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitGroupedPattern begin: " << ctx->getText() << std::endl;
-    indentMore();
-    auto result = visitChildren(ctx);
-    indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitGroupedPattern end " << std::endl;
+      std::cout << SPACE << "visitTuplePatternItems end " << std::endl;
     return result;
   }
 
-  virtual std::any visitSlicePattern(
-      RustParser::SlicePatternContext *ctx) override {
+  virtual std::any
+  visitGroupedPattern(RustParser::GroupedPatternContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitSlicePattern begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitGroupedPattern begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitSlicePattern end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitGroupedPattern end " << std::endl;
     return result;
   }
 
-  virtual std::any visitSlicePatternItems(
-      RustParser::SlicePatternItemsContext *ctx) override {
+  virtual std::any
+  visitSlicePattern(RustParser::SlicePatternContext *ctx) override {
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitSlicePattern begin: " << ctx->getText()
+                << std::endl;
+    indentMore();
+    auto result = visitChildren(ctx);
+    indentLess();
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitSlicePattern end " << std::endl;
+    return result;
+  }
+
+  virtual std::any
+  visitSlicePatternItems(RustParser::SlicePatternItemsContext *ctx) override {
     if (DEBUG_SOL)
       std::cout << SPACE << "visitSlicePatternItems begin: " << ctx->getText()
-           << std::endl;
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitSlicePatternItems end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitSlicePatternItems end " << std::endl;
     return result;
   }
 
-  virtual std::any visitPathPattern(
-      RustParser::PathPatternContext *ctx) override {
+  virtual std::any
+  visitPathPattern(RustParser::PathPatternContext *ctx) override {
     if (DEBUG_SOL)
-      std::cout << SPACE << "visitPathPattern begin: " << ctx->getText() << std::endl;
+      std::cout << SPACE << "visitPathPattern begin: " << ctx->getText()
+                << std::endl;
     indentMore();
     auto result = visitChildren(ctx);
     indentLess();
-    if (DEBUG_SOL) std::cout << SPACE << "visitPathPattern end " << std::endl;
+    if (DEBUG_SOL)
+      std::cout << SPACE << "visitPathPattern end " << std::endl;
     return result;
   }
 };

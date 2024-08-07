@@ -10,13 +10,13 @@
 #include <vector>
 
 #include <llvm/ADT/StringRef.h>
-#include <llvm/IR/LLVMContext.h>  // for llvm LLVMContext
+#include <llvm/IR/LLVMContext.h> // for llvm LLVMContext
 #include <llvm/IR/LegacyPassManager.h>
-#include <llvm/IRReader/IRReader.h>  // IR reader for bit file
+#include <llvm/IRReader/IRReader.h> // IR reader for bit file
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/InitLLVM.h>
-#include <llvm/Support/SourceMgr.h>  // for SMDiagnostic
+#include <llvm/Support/SourceMgr.h> // for SMDiagnostic
 #include <llvm/Support/TargetSelect.h>
 #include <mlir/ExecutionEngine/ExecutionEngine.h>
 #include <mlir/IR/AsmState.h>
@@ -25,9 +25,9 @@
 #include <mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h>
 #include <mlir/Target/LLVMIR/Export.h>
 
-#include <antlr4-runtime.h>
 #include <RustLexer.h>
 #include <RustParser.h>
+#include <antlr4-runtime.h>
 #include <toml.hpp>
 
 #include "sol/MLIRGen.h"
@@ -49,17 +49,17 @@ cl::opt<bool> ConfigDebugSol("d", cl::desc("single-threaded parser for debug"));
 cl::opt<std::string> ConfigOutputFile("o", cl::desc("IR output file name"),
                                       cl::init("t.ll"));
 
-cl::opt<int> NUM_LOW_BOUND(
-    "lb", cl::desc("set lower bound of the number of functions"),
-    cl::value_desc("number"), cl::init(0));
+cl::opt<int>
+    NUM_LOW_BOUND("lb", cl::desc("set lower bound of the number of functions"),
+                  cl::value_desc("number"), cl::init(0));
 int LOWER_BOUND_ID = 0;
-cl::opt<int> NUM_UP_BOUND(
-    "ub", cl::desc("set upper bound of the number of functions"),
-    cl::value_desc("number"), cl::init(1000000));
+cl::opt<int>
+    NUM_UP_BOUND("ub", cl::desc("set upper bound of the number of functions"),
+                 cl::value_desc("number"), cl::init(1000000));
 
 namespace sol {
 
-SolLLVMIRGenerator::SolLLVMIRGenerator(int argc, char** argv) {
+SolLLVMIRGenerator::SolLLVMIRGenerator(int argc, char **argv) {
   // InitLLVM will setup signal handler to print stack trace when the program
   // crashes.
   llvm::InitLLVM x(argc, argv);
@@ -110,7 +110,8 @@ static bool handleRustFile(const std::string &full_path) {
   return true;
 }
 
-static bool handleDiretory(sol::ModuleAST *mod, const std::filesystem::path &dir_path) {
+static bool handleDiretory(sol::ModuleAST *mod,
+                           const std::filesystem::path &dir_path) {
   std::string dir_path_str(dir_path.string());
   llvm::StringRef pathname(dir_path_str);
   if (pathname.endswith("/src")) {
@@ -130,14 +131,14 @@ static bool handleDiretory(sol::ModuleAST *mod, const std::filesystem::path &dir
   for (const auto &entry : std::filesystem::directory_iterator(dir_path)) {
     std::string entry_str(entry.path().string());
     llvm::StringRef dname(entry_str);
-    if (DEBUG_SOL) llvm::outs() << "dname: " << dname << "\n";
+    if (DEBUG_SOL)
+      llvm::outs() << "dname: " << dname << "\n";
 
     if (entry.is_directory()) {
-      if (!dname.equals("tests") &&
-          !dname.equals("js") && !dname.equals("cli") &&
-          !dname.equals("logs") && !dname.equals("target") &&
-          !dname.equals("debug") && !dname.equals("migrations") &&
-          !dname.equals("services") &&
+      if (!dname.equals("tests") && !dname.equals("js") &&
+          !dname.equals("cli") && !dname.equals("logs") &&
+          !dname.equals("target") && !dname.equals("debug") &&
+          !dname.equals("migrations") && !dname.equals("services") &&
           !dname.equals("proptest-regressions")) {
         // nested diretory
         handleDiretory(mod, entry.path());
@@ -277,7 +278,8 @@ static int dumpLLVMIR(mlir::ModuleOp module) {
   llvm::LLVMContext llvmContext;
   auto llvmModule = mlir::translateModuleToLLVMIR(module, llvmContext);
   if (!llvmModule) {
-    if (DEBUG_SOL) llvm::errs() << "Failed to emit LLVM IR\n";
+    if (DEBUG_SOL)
+      llvm::errs() << "Failed to emit LLVM IR\n";
     return -1;
   }
 
@@ -290,7 +292,8 @@ static int dumpLLVMIR(mlir::ModuleOp module) {
     std::error_code err;
     llvm::raw_fd_ostream outfile(ConfigOutputFile, err, llvm::sys::fs::OF_None);
     if (err) {
-      if (DEBUG_SOL) llvm::errs() << "Error dumping IR!\n";
+      if (DEBUG_SOL)
+        llvm::errs() << "Error dumping IR!\n";
     }
 
     llvmModule->print(outfile, nullptr);
@@ -299,7 +302,8 @@ static int dumpLLVMIR(mlir::ModuleOp module) {
     llvm::outs() << "IR file: " << fullPathName << "\n";
   }
 
-  if (DEBUG_SOL) llvm::errs() << *llvmModule << "\n";
+  if (DEBUG_SOL)
+    llvm::errs() << *llvmModule << "\n";
   return 0;
 }
 
@@ -319,7 +323,8 @@ void SolLLVMIRGenerator::GenerateLLVMIR(sol::ModuleAST *moduleAST) {
   // Finish lowering the IR to the LLVM dialect.
   pm.addPass(mlir::sol::createLowerToLLVMPass());
   if (mlir::failed(pm.run(*mod))) {
-    if (DEBUG_SOL) llvm::errs() << "Errors in createLowerToLLVMPass.\n";
+    if (DEBUG_SOL)
+      llvm::errs() << "Errors in createLowerToLLVMPass.\n";
   }
 
   dumpLLVMIR(*mod);

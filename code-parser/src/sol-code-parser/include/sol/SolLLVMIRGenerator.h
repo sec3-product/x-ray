@@ -9,13 +9,13 @@ namespace sol {
 class ModuleAST;
 
 class SolLLVMIRGenerator {
- public:
+public:
   SolLLVMIRGenerator(int argc, char **argv);
   void Run();
 
- protected:
+protected:
   bool GenerateAST(sol::ModuleAST *mod);
   void GenerateLLVMIR(sol::ModuleAST *mod);
 };
 
-};  // namespace sol
+}; // namespace sol

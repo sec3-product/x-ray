@@ -1,4 +1,5 @@
-//===- ScopedHashTableX.h - A simple scoped hash table -----------*- C++ -*-===//
+//===- ScopedHashTableX.h - A simple scoped hash table -----------*- C++
+//-*-===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -45,8 +46,7 @@ template <typename K, typename V, typename KInfo = DenseMapInfo<K>,
           typename AllocatorTy = MallocAllocator>
 class ScopedHashTableX;
 
-template <typename K, typename V>
-class ScopedHashTableXVal {
+template <typename K, typename V> class ScopedHashTableXVal {
   ScopedHashTableXVal *NextInScope;
   ScopedHashTableXVal *NextForKey;
   K Key;
@@ -54,7 +54,7 @@ class ScopedHashTableXVal {
 
   ScopedHashTableXVal(const K &key, const V &val) : Key(key), Val(val) {}
 
- public:
+public:
   const K &getKey() const { return Key; }
   const V &getValue() const { return Val; }
   V &getValue() { return Val; }
@@ -64,10 +64,9 @@ class ScopedHashTableXVal {
   ScopedHashTableXVal *getNextInScope() { return NextInScope; }
 
   template <typename AllocatorTy>
-  static ScopedHashTableXVal *Create(ScopedHashTableXVal *nextInScope,
-                                     ScopedHashTableXVal *nextForKey,
-                                     const K &key, const V &val,
-                                     AllocatorTy &Allocator) {
+  static ScopedHashTableXVal *
+  Create(ScopedHashTableXVal *nextInScope, ScopedHashTableXVal *nextForKey,
+         const K &key, const V &val, AllocatorTy &Allocator) {
     ScopedHashTableXVal *New =
         Allocator.template Allocate<ScopedHashTableXVal>();
     // Set up the value.
@@ -77,8 +76,7 @@ class ScopedHashTableXVal {
     return New;
   }
 
-  template <typename AllocatorTy>
-  void Destroy(AllocatorTy &Allocator) {
+  template <typename AllocatorTy> void Destroy(AllocatorTy &Allocator) {
     // Free memory referenced by the item.
     this->~ScopedHashTableXVal();
     Allocator.Deallocate(this);
@@ -98,7 +96,7 @@ class ScopedHashTableXScope {
   /// or null if none have been inserted yet.
   ScopedHashTableXVal<K, V> *LastValInScope;
 
- public:
+public:
   ScopedHashTableXScope(ScopedHashTableX<K, V, KInfo, AllocatorTy> &HT);
   ScopedHashTableXScope(ScopedHashTableXScope &) = delete;
   ScopedHashTableXScope &operator=(ScopedHashTableXScope &) = delete;
@@ -107,7 +105,7 @@ class ScopedHashTableXScope {
   ScopedHashTableXScope *getParentScope() { return PrevScope; }
   const ScopedHashTableXScope *getParentScope() const { return PrevScope; }
 
- private:
+private:
   friend class ScopedHashTableX<K, V, KInfo, AllocatorTy>;
 
   ScopedHashTableXVal<K, V> *getLastValInScope() { return LastValInScope; }
@@ -121,7 +119,7 @@ template <typename K, typename V, typename KInfo = DenseMapInfo<K>>
 class ScopedHashTableXIterator {
   ScopedHashTableXVal<K, V> *Node;
 
- public:
+public:
   ScopedHashTableXIterator(ScopedHashTableXVal<K, V> *node) : Node(node) {}
 
   V &operator*() const {
@@ -137,12 +135,12 @@ class ScopedHashTableXIterator {
     return Node != RHS.Node;
   }
 
-  inline ScopedHashTableXIterator &operator++() {  // Preincrement
+  inline ScopedHashTableXIterator &operator++() { // Preincrement
     assert(Node && "incrementing past end()");
     Node = Node->getNextForKey();
     return *this;
   }
-  ScopedHashTableXIterator operator++(int) {  // Postincrement
+  ScopedHashTableXIterator operator++(int) { // Postincrement
     ScopedHashTableXIterator tmp = *this;
     ++*this;
     return tmp;
@@ -151,13 +149,13 @@ class ScopedHashTableXIterator {
 
 template <typename K, typename V, typename KInfo, typename AllocatorTy>
 class ScopedHashTableX {
- public:
+public:
   /// ScopeTy - This is a helpful typedef that allows clients to get easy access
   /// to the name of the scope for this hash table.
   using ScopeTy = ScopedHashTableXScope<K, V, KInfo, AllocatorTy>;
   using size_type = unsigned;
 
- private:
+private:
   friend class ScopedHashTableXScope<K, V, KInfo, AllocatorTy>;
 
   using ValTy = ScopedHashTableXVal<K, V>;
@@ -167,7 +165,7 @@ class ScopedHashTableX {
 
   AllocatorTy Allocator;
 
- public:
+public:
   ScopedHashTableX() = default;
   ScopedHashTableX(AllocatorTy A) : Allocator(A) {}
   ScopedHashTableX(const ScopedHashTableX &) = delete;
@@ -188,7 +186,8 @@ class ScopedHashTableX {
 
   V lookup(const K &Key) const {
     auto I = TopLevelMap.find(Key);
-    if (I != TopLevelMap.end()) return I->second->getValue();
+    if (I != TopLevelMap.end())
+      return I->second->getValue();
 
     // llvm::outs() << "-----lookup failure\n";
     return V();
@@ -206,7 +205,8 @@ class ScopedHashTableX {
 
   iterator begin(const K &Key) {
     typename DenseMap<K, ValTy *, KInfo>::iterator I = TopLevelMap.find(Key);
-    if (I == TopLevelMap.end()) return end();
+    if (I == TopLevelMap.end())
+      return end();
     return iterator(I->second);
   }
 
@@ -267,6 +267,6 @@ ScopedHashTableXScope<K, V, KInfo, Allocator>::~ScopedHashTableXScope() {
   llvm::outs() << "-----leave scope\n";
 }
 
-}  // end namespace llvm
+} // end namespace llvm
 
-#endif  // LLVM_ADT_ScopedHashTableX_H
+#endif // LLVM_ADT_ScopedHashTableX_H
