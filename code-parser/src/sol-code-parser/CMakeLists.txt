@@ -1,25 +1,3 @@
-set(SOURCE_FILES
-    sol/LowerToLLVM.cpp
-    sol/MLIRGen.cpp
-    sol/SolLLVMIRGenerator.cpp
-)
-
-add_library(SolCodeParser STATIC ${SOURCE_FILES})
-
-target_include_directories(SolCodeParser PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-target_link_libraries(SolCodeParser
-    AntlrRust
-    conflib
-    o2
-)
-
-# Enable exceptions for SolCodeParser target, introduced via
-# external/antlr/antlr4cpp.
-target_compile_options(SolCodeParser PRIVATE -fexceptions)
-
 if (ENABLE_BUILD_ANTLR)
     set(ANTLR4CPP_JAR_LOCATION ${CMAKE_SOURCE_DIR}/external/antlr/antlr-4.13.1-complete.jar)
     LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
@@ -43,7 +21,6 @@ else()
     include_directories(${ANTLR4CPP_PARSER_DIR})
 endif()
 
-
 llvm_map_components_to_libnames(LLVM_LIBS
     bitwriter
     core
@@ -65,28 +42,44 @@ llvm_map_components_to_libnames(LLVM_LIBS
     mc
 )
 
-add_executable(SolCodeParserExe
-    main.cpp
-    ${antlr4cpp_src_files_antlrcpp}
+# Static library.
+set(SOURCE_FILES
+    sol/LowerToLLVM.cpp
+    sol/MLIRGen.cpp
+    sol/SolLLVMIRGenerator.cpp
+)
+
+add_library(SolCodeParser STATIC ${SOURCE_FILES})
+
+# Enable exceptions for SolCodeParser target, introduced via
+# external/antlr/antlr4cpp.
+target_compile_options(SolCodeParser PRIVATE -fexceptions)
+
+target_include_directories(SolCodeParser PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 get_property(DIALECT_LIBS GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 get_property(CONVERSION_LIBS GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
 
-target_link_libraries(SolCodeParserExe
-    SolCodeParser
+target_link_libraries(SolCodeParser
+    AntlrRust
+    conflib
+    o2
     ${LLVM_LIBS}
     ${DIALECT_LIBS}
     ${CONVERSION_LIBS}
-    MLIRAnalysis
-    MLIRCallInterfaces
     MLIRExecutionEngine
-    MLIRIR
-    MLIRParser
-    MLIRPass
-    MLIRSideEffectInterfaces
-    MLIRTargetLLVMIRExport
-    MLIRTransforms
+)
+
+# Executable.
+add_executable(SolCodeParserExe
+    main.cpp
+    ${antlr4cpp_src_files_antlrcpp}
+)
+
+target_link_libraries(SolCodeParserExe
+    SolCodeParser
 )
 
 if (ENABLE_HEAP_PROFILE)
