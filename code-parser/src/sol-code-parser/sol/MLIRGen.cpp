@@ -209,6 +209,7 @@ private:
     return mlir::FileLineColLoc::get(builder.getStringAttr(loc.file), loc.line,
                                      loc.col);
   }
+
   Value getOrCreateGlobalStringX(mlir::Location loc, std::string name,
                                  StringRef value) {
     if (name == "local_self") {
@@ -220,12 +221,14 @@ private:
     // Create the global at the entry of the module.
     LLVM::GlobalOp global;
     if (!(global = theModule.lookupSymbol<LLVM::GlobalOp>(name))) {
-      if (DEBUG_SOL)
+      if (DEBUG_SOL) {
         llvm::outs() << "-----adding GlobalString ------" << name << "\n";
+      }
 
       OpBuilder::InsertionGuard insertGuard(builder);
       builder.setInsertionPointToStart(theModule.getBody());
-      auto type = LLVM::LLVMArrayType::get(llvmI8PtrTy, value.size());
+
+      auto type = LLVM::LLVMArrayType::get(builder.getI8Type(), value.size());
       global = builder.create<LLVM::GlobalOp>(loc, type, /*isConstant=*/true,
                                               LLVM::Linkage::Internal, name,
                                               builder.getStringAttr(value));
@@ -241,6 +244,7 @@ private:
     return builder.create<LLVM::GEPOp>(loc, llvmI8PtrTy, globalPtr,
                                        ArrayRef<Value>({cst0, cst0}));
   }
+
   FlatSymbolRefAttr
   getOrInsertUserDefinedFunctionX(mlir::Location mlocation,
                                   llvm::StringRef name,
@@ -719,6 +723,7 @@ public:
     } else
       return nullptr;
   }
+
   /// This is a reference to a variable in an expression. The variable is
   /// expected to have been declared and so should have a value in the symbol
   /// table, otherwise emit an error and return nullptr.
@@ -1031,6 +1036,7 @@ public:
     Value str = getOrCreateGlobalStringX(loc(lit.loc()), name, input);
     return str; // important
   }
+
   mlir::Value mlirGen(PrimitiveExprAST &str) {
     auto input = "primitivex";
     if (DEBUG_SOL)
@@ -1042,6 +1048,7 @@ public:
     Value v = getOrCreateGlobalStringX(loc(str.loc()), name, inputS);
     return v;
   }
+
   mlir::Value mlirGen(ParserErrorAST &str) {
     auto input = "parser.error";
     if (DEBUG_SOL)
@@ -1230,6 +1237,7 @@ public:
     auto func_type = builder.getFunctionType(argTypes, returnType);
     return mlir::FuncOp::create(location, proto.getName(), func_type);
   }
+
   mlir::FuncOp mlirGenTomlConfiguration(sol::ModuleAST &moduleAST) {
     auto funcName = SOL_BUILT_IN_MODEL_CARGO_TOML;
     auto location = mlir::FileLineColLoc::get(
@@ -1259,6 +1267,7 @@ public:
 
     return function;
   }
+
   mlir::FuncOp mlirGenDeclareIdAddresses(sol::ModuleAST &moduleAST) {
     auto funcName = SOL_BUILT_IN_MODEL_DECLARE_ID_ADDRESS;
     auto location = mlir::FileLineColLoc::get(
@@ -1329,6 +1338,7 @@ public:
 
     return function;
   }
+
   /// Emit a new function and add it to the MLIR module.
   mlir::FuncOp mlirGen(FunctionAST &funcAST) {
     // Create a scope in the symbol table to hold variable declarations.
@@ -1346,6 +1356,7 @@ public:
     // same argument list as the function itself.
     auto &entryBlock = *function.addEntryBlock();
     auto protoArgs = funcAST.getProto()->getArgs();
+
     // Declare all the function arguments in the symbol table.
     for (const auto name_value :
          llvm::zip(protoArgs, entryBlock.getArguments())) {
@@ -1361,9 +1372,10 @@ public:
     auto locProto = loc(funcAST.getProto()->loc()); // loc(return_val->loc()
     // create SOL_BUILT_IN_MODEL_FUNC_ARG sol.model.funcArg
     for (auto arg : protoArgs) {
-      if (DEBUG_SOL)
+      if (DEBUG_SOL) {
         llvm::outs() << "func arg: " << arg.getName()
                      << " type: " << arg.getType().name << "\n";
+      }
       declareFunctionArgType(locProto, arg.getName(), arg.getType().name);
     }
 
