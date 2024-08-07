@@ -11,11 +11,11 @@ class ModuleAST;
 class SolLLVMIRGenerator {
  public:
   SolLLVMIRGenerator(int argc, char **argv);
-  int Run(sol::ModuleAST *mod);
+  void Run();
 
  protected:
-  bool InitParser(sol::ModuleAST *mod);
-  void InitLLVMIR(sol::ModuleAST *mod);
+  bool GenerateAST(sol::ModuleAST *mod);
+  void GenerateLLVMIR(sol::ModuleAST *mod);
 };
 
 };  // namespace sol

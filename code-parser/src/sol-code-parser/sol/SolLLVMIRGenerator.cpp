@@ -250,7 +250,7 @@ static bool handleDiretory(sol::ModuleAST *mod, const std::filesystem::path &dir
   return true;
 }
 
-bool SolLLVMIRGenerator::InitParser(sol::ModuleAST *mod) {
+bool SolLLVMIRGenerator::GenerateAST(sol::ModuleAST *mod) {
   LOWER_BOUND_ID = NUM_LOW_BOUND;
 
   llvm::StringRef path(TargetModulePath);
@@ -303,7 +303,7 @@ static int dumpLLVMIR(mlir::ModuleOp module) {
   return 0;
 }
 
-void SolLLVMIRGenerator::InitLLVMIR(sol::ModuleAST *moduleAST) {
+void SolLLVMIRGenerator::GenerateLLVMIR(sol::ModuleAST *moduleAST) {
   // Register any command line options.
   mlir::registerAsmPrinterCLOptions();
   mlir::registerMLIRContextCLOptions();
@@ -325,10 +325,12 @@ void SolLLVMIRGenerator::InitLLVMIR(sol::ModuleAST *moduleAST) {
   dumpLLVMIR(*mod);
 }
 
-int SolLLVMIRGenerator::Run(sol::ModuleAST *mod) {
-  bool success = InitParser(mod);
-  if (success) InitLLVMIR(mod);
-  return 0;
+void SolLLVMIRGenerator::Run() {
+  sol::ModuleAST mod;
+  bool success = GenerateAST(&mod);
+  if (success) {
+    GenerateLLVMIR(&mod);
+  }
 }
 
 }; // namespace sol

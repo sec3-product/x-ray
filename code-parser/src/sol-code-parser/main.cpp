@@ -4,7 +4,6 @@
 #include <o2/Util/Log.h>
 #include <spdlog/spdlog.h>
 
-#include "ast/AST.h"
 #include "sol/SolLLVMIRGenerator.h"
 
 using namespace o2;
@@ -49,6 +48,7 @@ int main(int argc, char **argv) {
   logger::init(logConfig);
 
   sol::SolLLVMIRGenerator generator(argc, argv);
-  sol::ModuleAST *mod = new sol::ModuleAST();
-  return generator.Run(mod);
+  generator.Run();
+
+  return 0;
 }
