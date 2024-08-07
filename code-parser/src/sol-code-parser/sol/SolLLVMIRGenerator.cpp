@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <set>
 #include <string>
@@ -38,7 +39,6 @@ using namespace antlr4;
 using namespace antlrcpp;
 using namespace llvm;
 
-std::vector<sol::FunctionAST *> processResults;
 uint numOfFunctions = 0;
 
 // CLI options.
@@ -67,8 +67,10 @@ SolLLVMIRGenerator::SolLLVMIRGenerator(int argc, char **argv) {
   DEBUG_SOL = ConfigDebugSol;
 }
 
-static void process(const std::string &filename, const std::string &method,
-                    size_t line, std::string contents) {
+std::vector<sol::FunctionAST *>
+SolLLVMIRGenerator::process(const std::string &filename,
+                            const std::string &method, size_t line,
+                            std::string contents) {
   std::replace(contents.begin(), contents.end(), '\t', ' ');
 
   // Process file contents via ANTLR lexer.
@@ -81,24 +83,10 @@ static void process(const std::string &filename, const std::string &method,
   auto *parser = new RustParser(tokens);
   SolParserVisitor visitor(filename, method, line);
   auto any_res = visitor.visitCrate(parser->crate());
-  std::vector<sol::FunctionAST *> res(
-      std::any_cast<std::vector<sol::FunctionAST *>>(std::move(any_res)));
-  processResults.insert(processResults.end(), res.begin(), res.end());
+  return std::any_cast<std::vector<sol::FunctionAST *>>(std::move(any_res));
 }
 
-static void initParserForFile(const std::string &full_path) {
-  llvm::outs() << "  source file: " << full_path << "\n";
-
-  std::ifstream ws(full_path);
-  std::string contents((std::istreambuf_iterator<char>(ws)),
-                       std::istreambuf_iterator<char>());
-
-  auto path = std::filesystem::path(full_path);
-  auto base_name = path.stem().string();
-  process(full_path, base_name, 0, contents);
-}
-
-static bool handleRustFile(const std::string &full_path) {
+bool SolLLVMIRGenerator::handleRustFile(const std::string &full_path) {
   std::ifstream fptr(full_path);
   if (!fptr) {
     if (DEBUG_SOL) {
@@ -106,12 +94,22 @@ static bool handleRustFile(const std::string &full_path) {
     }
     return false;
   }
-  initParserForFile(full_path);
+
+  std::ifstream ws(full_path);
+  std::string contents((std::istreambuf_iterator<char>(ws)),
+                       std::istreambuf_iterator<char>());
+
+  auto path = std::filesystem::path(full_path);
+  auto base_name = path.stem().string();
+  auto res = process(full_path, base_name, 0, contents);
+  processResults.insert(processResults.end(),
+                        std::make_move_iterator(res.begin()),
+                        std::make_move_iterator(res.end()));
   return true;
 }
 
-static bool handleDiretory(sol::ModuleAST *mod,
-                           const std::filesystem::path &dir_path) {
+bool SolLLVMIRGenerator::handleDirectory(
+    sol::ModuleAST *mod, const std::filesystem::path &dir_path) {
   std::string dir_path_str(dir_path.string());
   llvm::StringRef pathname(dir_path_str);
   if (pathname.endswith("/src")) {
@@ -141,7 +139,7 @@ static bool handleDiretory(sol::ModuleAST *mod,
           !dname.equals("migrations") && !dname.equals("services") &&
           !dname.equals("proptest-regressions")) {
         // nested diretory
-        handleDiretory(mod, entry.path());
+        handleDirectory(mod, entry.path());
       }
       continue;
     }
@@ -251,7 +249,7 @@ static bool handleDiretory(sol::ModuleAST *mod,
   return true;
 }
 
-bool SolLLVMIRGenerator::GenerateAST(sol::ModuleAST *mod) {
+bool SolLLVMIRGenerator::generateAST(sol::ModuleAST *mod) {
   LOWER_BOUND_ID = NUM_LOW_BOUND;
 
   llvm::StringRef path(TargetModulePath);
@@ -263,7 +261,7 @@ bool SolLLVMIRGenerator::GenerateAST(sol::ModuleAST *mod) {
       handleRustFile(full_path);
     }
   } else if (std::filesystem::is_directory(full_path)) {
-    handleDiretory(mod, full_path);
+    handleDirectory(mod, full_path);
   }
   for (auto functionAst : processResults) {
     mod->addFunctionAST(functionAst);
@@ -271,12 +269,12 @@ bool SolLLVMIRGenerator::GenerateAST(sol::ModuleAST *mod) {
   return true;
 }
 
-static int dumpLLVMIR(mlir::ModuleOp module) {
+static int dumpLLVMIR(mlir::ModuleOp mod) {
   // Register the translation to LLVM IR with the MLIR context.
-  mlir::registerLLVMDialectTranslation(*module->getContext());
+  mlir::registerLLVMDialectTranslation(*mod->getContext());
 
   llvm::LLVMContext llvmContext;
-  auto llvmModule = mlir::translateModuleToLLVMIR(module, llvmContext);
+  auto llvmModule = mlir::translateModuleToLLVMIR(mod, llvmContext);
   if (!llvmModule) {
     if (DEBUG_SOL)
       llvm::errs() << "Failed to emit LLVM IR\n";
@@ -307,7 +305,7 @@ static int dumpLLVMIR(mlir::ModuleOp module) {
   return 0;
 }
 
-void SolLLVMIRGenerator::GenerateLLVMIR(sol::ModuleAST *moduleAST) {
+void SolLLVMIRGenerator::generateLLVMIR(sol::ModuleAST *moduleAST) {
   // Register any command line options.
   mlir::registerAsmPrinterCLOptions();
   mlir::registerMLIRContextCLOptions();
@@ -323,18 +321,19 @@ void SolLLVMIRGenerator::GenerateLLVMIR(sol::ModuleAST *moduleAST) {
   // Finish lowering the IR to the LLVM dialect.
   pm.addPass(mlir::sol::createLowerToLLVMPass());
   if (mlir::failed(pm.run(*mod))) {
-    if (DEBUG_SOL)
+    if (DEBUG_SOL) {
       llvm::errs() << "Errors in createLowerToLLVMPass.\n";
+    }
   }
 
   dumpLLVMIR(*mod);
 }
 
-void SolLLVMIRGenerator::Run() {
+void SolLLVMIRGenerator::run() {
   sol::ModuleAST mod;
-  bool success = GenerateAST(&mod);
+  bool success = generateAST(&mod);
   if (success) {
-    GenerateLLVMIR(&mod);
+    generateLLVMIR(&mod);
   }
 }
 

@@ -141,6 +141,7 @@ public:
     return ParsetimeLiteral;
   }
 };
+
 /// Expression class for referencing a variable, like "a".
 class VariableExprAST : public ExprAST {
   std::string name;
@@ -154,6 +155,7 @@ public:
   /// LLVM style RTTI
   static bool classof(const ExprAST *c) { return c->getKind() == Expr_Var; }
 };
+
 /// Ex
 // A block-list of expressions.
 using ExprASTList = std::vector<ExprAST *>;
@@ -208,6 +210,7 @@ public:
     return c->getKind() == Expr_Reserved;
   }
 };
+
 /// Expression class for numeric literals like "10".
 class NumberExprAST : public ExprAST {
   long Val;
@@ -234,6 +237,7 @@ public:
     return c->getKind() == Expr_DynamicDictionary;
   }
 };
+
 class DynamicArrayExprAST : public ExprAST {
   std::vector<ExprAST *> arr;
 
@@ -292,6 +296,7 @@ public:
   /// LLVM style RTTI
   static bool classof(const ExprAST *c) { return c->getKind() == Expr_Return; }
 };
+
 /// Expression class for builtin print calls.
 class PrintExprAST : public ExprAST {
   ExprAST *arg;
@@ -305,6 +310,7 @@ public:
   /// LLVM style RTTI
   static bool classof(const ExprAST *c) { return c->getKind() == Expr_Print; }
 };
+
 class AssignExprAST : public ExprAST {
   std::string name; // variable name 'teset'
   ExprAST *var;
@@ -411,7 +417,9 @@ public:
   std::string path_config = "";
   std::map<std::string, std::string> configMap;
   std::map<std::string, ClassAST *> classesMap;
+
   void addFunctionAST(FunctionAST *funcAst) { functions.push_back(funcAst); }
+
   // TODO: if same class name is added multiple times, merge
   void addClassAST(ClassAST *classAst) {
     if (classesMap.find(classAst->class_name) != classesMap.end()) {
@@ -430,6 +438,7 @@ public:
 };
 
 class KeywordPairAST;
+
 class FunctionCallAST : public ExprAST {
 public:
   FunctionCallAST(Location loc) : ExprAST(Expr_FuncCall, loc) {}

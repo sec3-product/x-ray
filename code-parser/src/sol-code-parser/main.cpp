@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
   logger::init(logConfig);
 
   sol::SolLLVMIRGenerator generator(argc, argv);
-  generator.Run();
+  generator.run();
 
   return 0;
 }

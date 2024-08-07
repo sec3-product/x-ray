@@ -34,8 +34,6 @@ private:
                       std::vector<sol::VarDeclExprAST> &args,
                       sol::FunctionAST *func) {
     // if a previous function with the same name exists, append $k to this name
-    // if (DEBUG_SOL) std::cout << "addNewFunction ->fname: " << fname <<
-    // std::endl;
     auto k = functionNamesMap[fname];
     if (k > 0) {
       func->function_name = func->function_name + "$" + std::to_string(k);
@@ -105,8 +103,9 @@ public:
 
   virtual std::any visitItem(RustParser::ItemContext *ctx) override {
     std::any result = nullptr;
-    if (DEBUG_SOL)
+    if (DEBUG_SOL) {
       std::cout << SPACE << "visitItem begin: " << ctx->getText() << std::endl;
+    }
     indentMore();
     result = visitItemX(fnBaseName, ctx);
     indentLess();
@@ -266,9 +265,11 @@ public:
               } else {
                 FunctionCallAST *fcall = new FunctionCallAST(getLoc(ctx));
                 fcall->callee = fnName;
-                if (DEBUG_SOL)
-                  std::cout << SPACE << "  fcall->callee: " << fcall->callee
+                if (DEBUG_SOL) {
+                  std::cout << SPACE
+                            << "  main fcall->callee: " << fcall->callee
                             << std::endl;
+                }
                 std::vector<sol::ExprAST *> args;
                 auto program_id = new LiteralExprAST(getLoc(ctx), "program_id");
                 args.push_back(program_id);
@@ -851,6 +852,7 @@ public:
       std::cout << SPACE << "visitFunction_ end " << std::endl;
     return result;
   }
+
   sol::FunctionAST *visitFunction_X(std::string fnBaseName,
                                     RustParser::Function_Context *ctx) {
     curFuncName = ctx->identifier()->getText();
@@ -1113,32 +1115,27 @@ public:
       std::vector<sol::ExprAST *> args;
       std::vector<std::string> paraNames;
       std::string paraName = "";
-      // require!(
-      //       merkle_proof::verify(proof, distributor.root, node.0),
-      //       InvalidProof
-      //   );
       for (auto tokenCtx : ctx->tokenTree()) {
-        // for (auto paramCtx : tokenCtx->tokenTreeToken())
-        { // concatenate until startswith ','
-          auto varName = tokenCtx->getText();
-          if (DEBUG_SOL)
-            std::cout << SPACE << "  varName: " << varName << std::endl;
-          if (varName.front() == ',') {
-            // add paraName
+        auto varName = tokenCtx->getText();
+        if (DEBUG_SOL)
+          std::cout << SPACE << "  varName: " << varName << std::endl;
+
+        // concatenate until startswith ','
+        if (varName.front() == ',') {
+          // add paraName
+          paraNames.push_back(paraName);
+          paraName = varName.substr(1);
+        } else if (varName.front() == '(') {
+          // add func call
+          paraName = paraName + varName;
+        } else {
+          auto found = varName.find(',');
+          if (found != std::string::npos) {
+            paraName = paraName + varName.substr(0, found);
             paraNames.push_back(paraName);
-            paraName = varName.substr(1);
-          } else if (varName.front() == '(') {
-            // add func call
+            paraName = varName.substr(found + 1);
+          } else
             paraName = paraName + varName;
-          } else {
-            auto found = varName.find(',');
-            if (found != std::string::npos) {
-              paraName = paraName + varName.substr(0, found);
-              paraNames.push_back(paraName);
-              paraName = varName.substr(found + 1);
-            } else
-              paraName = paraName + varName;
-          }
         }
       }
       if (!paraName.empty())
@@ -1153,12 +1150,6 @@ public:
       // ok - function names can collide - we need to append parameter count
       // macro !
       fcall->callee = fcall->callee + ".!" + std::to_string(args.size());
-
-      // for assert, drop the second one
-      // if (fcall->callee == "assert" || fcall->callee == "msg" ||
-      //     fcall->callee == "info") {
-      //   while (args.size() > 1) args.pop_back();
-      // }
 
       fcall->args = args;
       return fcall;
