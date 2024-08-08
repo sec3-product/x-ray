@@ -69,7 +69,6 @@ target_link_libraries(SolCodeParser
     ${LLVM_LIBS}
     ${DIALECT_LIBS}
     ${CONVERSION_LIBS}
-    MLIRExecutionEngine
 )
 
 # Executable.

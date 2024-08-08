@@ -17,10 +17,6 @@
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/InitLLVM.h>
-#include <llvm/Support/SourceMgr.h> // for SMDiagnostic
-#include <llvm/Support/TargetSelect.h>
-#include <mlir/ExecutionEngine/ExecutionEngine.h>
-#include <mlir/IR/AsmState.h>
 #include <mlir/Pass/Pass.h>
 #include <mlir/Pass/PassManager.h>
 #include <mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h>
@@ -281,17 +277,13 @@ static int dumpLLVMIR(mlir::ModuleOp mod) {
     return -1;
   }
 
-  // Initialize LLVM targets.
-  llvm::InitializeNativeTarget();
-  llvm::InitializeNativeTargetAsmPrinter();
-  mlir::ExecutionEngine::setupTargetTriple(llvmModule.get());
-
   if (ConfigDumpIR || ConfigOutputFile != "t.ll") {
     std::error_code err;
     llvm::raw_fd_ostream outfile(ConfigOutputFile, err, llvm::sys::fs::OF_None);
     if (err) {
-      if (DEBUG_SOL)
+      if (DEBUG_SOL) {
         llvm::errs() << "Error dumping IR!\n";
+      }
     }
 
     llvmModule->print(outfile, nullptr);
@@ -300,14 +292,14 @@ static int dumpLLVMIR(mlir::ModuleOp mod) {
     llvm::outs() << "IR file: " << fullPathName << "\n";
   }
 
-  if (DEBUG_SOL)
+  if (DEBUG_SOL) {
     llvm::errs() << *llvmModule << "\n";
+  }
   return 0;
 }
 
 void SolLLVMIRGenerator::generateLLVMIR(sol::ModuleAST *moduleAST) {
   // Register any command line options.
-  mlir::registerAsmPrinterCLOptions();
   mlir::registerMLIRContextCLOptions();
   mlir::registerPassManagerCLOptions();
 
