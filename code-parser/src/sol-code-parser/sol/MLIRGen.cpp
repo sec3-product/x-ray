@@ -737,10 +737,11 @@ public:
                      << " value: " << value << "\n";
 
       // make sure the function name match
-      if (matchCurrentScopeFunction(funcName))
+      if (matchCurrentScopeFunction(funcName)) {
         return value;
-    } else
-      return nullptr;
+      }
+    }
+    return nullptr;
   }
 
   /// This is a reference to a variable in an expression. The variable is
@@ -787,7 +788,13 @@ public:
         auto callOp = builder.create<LLVM::CallOp>(
             varLoc, llvmI8PtrTy, newScopeRef, ArrayRef<Value>({v1, v2}));
         auto value = callOp.getResult(0);
-        declareX2(name, value, funcName);
+        auto result = declareX2(name, value, funcName);
+        if (mlir::failed(result)) {
+          if (DEBUG_SOL) {
+            llvm::outs() << "failed to declare " << name << "in function "
+                         << funcName << "\n";
+          }
+        }
         return value;
       }
     } else {
@@ -950,8 +957,15 @@ public:
       // Declare all the function arguments in the symbol table.
       for (const auto name_value :
            llvm::zip(protoArgs, entryBlock.getArguments())) {
-        declareX2(std::get<0>(name_value).getName(), std::get<1>(name_value),
-                  funcName);
+        auto name = std::get<0>(name_value).getName();
+        auto value = std::get<1>(name_value);
+        auto result = declareX2(name, value, funcName);
+        if (mlir::failed(result)) {
+          if (DEBUG_SOL) {
+            llvm::outs() << "failed to declare " << name << "in function "
+                         << funcName << "\n";
+          }
+        }
       }
 
       // Set the insertion point in the builder to the beginning of the function
@@ -1197,6 +1211,7 @@ public:
         locProto, llvmI8PtrTy, funcArgRef, ArrayRef<Value>({v1, v2}));
     // auto value = callOp.getResult(0);
   }
+
   void declareLocalVariable(VarDeclExprAST &vardecl, llvm::StringRef funcName) {
     auto varName = vardecl.getName();
     auto varLoc = loc(vardecl.loc());
@@ -1214,8 +1229,14 @@ public:
     auto callOp =
         builder.create<LLVM::CallOp>(varLoc, llvmI8PtrTy, newTempRef, v);
     auto value = callOp.getResult(0);
-    declareX2(vardecl.getName(), value,
-              funcName); // ok this assume value is unique?
+    auto result = declareX2(vardecl.getName(), value,
+                            funcName); // ok this assume value is unique?
+    if (mlir::failed(result)) {
+      if (DEBUG_SOL) {
+        llvm::outs() << "failed to declare " << vardecl.getName()
+                     << "in function " << funcName << "\n";
+      }
+    }
   }
 
   /// Create the prototype for an MLIR function with as many arguments as the
@@ -1249,7 +1270,7 @@ public:
       }
     }
 
-    for (auto &arg : proto.getArgs()) {
+    for ([[maybe_unused]] auto &arg : proto.getArgs()) {
       argTypes.push_back(llvmI8PtrTy);
     }
 
@@ -1387,8 +1408,15 @@ public:
     // Declare all the function arguments in the symbol table.
     for (const auto name_value :
          llvm::zip(protoArgs, entryBlock.getArguments())) {
-      declareX2(std::get<0>(name_value).getName(), std::get<1>(name_value),
-                funcName);
+      auto name = std::get<0>(name_value).getName();
+      auto value = std::get<1>(name_value);
+      auto result = declareX2(name, value, funcName);
+      if (mlir::failed(result)) {
+        if (DEBUG_SOL) {
+          llvm::outs() << "failed to declare " << name << "in function "
+                       << funcName << "\n";
+        }
+      }
     }
 
     // Set the insertion point in the builder to the beginning of the function
