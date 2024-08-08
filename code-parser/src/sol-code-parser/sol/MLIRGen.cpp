@@ -41,9 +41,16 @@ const std::string SOL_ANON_FUNC_NAME = "sol.anonfun.";
 const std::string ANON_NAME = "anon";
 const std::string SOL_NEW = "sol.new";
 
-// int ANON_FUNC_INDEX = 0;
 std::atomic<int> ANON_FUNC_INDEX{0};
-const std::string MAIN_FUNC_NAME = "main";
+
+// The following MAIN_FUNC_NAME constant uses a hack to identify main
+// functions. It used to check equality to "main", which is problematic. It now
+// instead searches for substr as a (hacky) workaround.
+const std::string MAIN_FUNC_NAME = "::main.";
+static bool isMainFunc(const std::string &name) {
+  return name.find(MAIN_FUNC_NAME) != std::string::npos;
+}
+
 const std::string GLOBAL_VAR_NAME = "global_";
 const std::string LOCAL_VAR_NAME = ""; //"local_";
 const std::string GLOBAL_OP_NAME = "global_op_";
@@ -1205,11 +1212,18 @@ public:
   mlir::FuncOp mlirGen(PrototypeAST &proto) {
     auto location = loc(proto.loc());
 
+    if (DEBUG_SOL) {
+      llvm::outs() << "-----mlirGen PrototypeAST ----- proto: "
+                   << proto.getName()
+                   << " (isMain: " << isMainFunc(proto.getName()) << ")\n";
+    }
+
     // This is a generic function, the return type will be inferred later.
     llvm::SmallVector<mlir::Type, 4> argTypes;
-    // by default, add *i8 to func's arg to represent "this"
-    //"this" is either class object or class instance object
-    if (proto.getName() != MAIN_FUNC_NAME) {
+
+    // By default, add *i8 to func's arg to represent "this". "this" is either
+    // class object or class instance object.
+    if (!isMainFunc(proto.getName())) {
       // should be already added in parser AST
 
       if (proto.getArgs().size() == 0) {
@@ -1219,16 +1233,15 @@ public:
         VarDeclExprAST err(proto.loc(), "parser.error", type);
         proto.getArgs().push_back(err);
       }
-    } else {
-      // main
     }
 
     for (auto &arg : proto.getArgs()) {
       argTypes.push_back(llvmI8PtrTy);
     }
 
+    // TODO: This doesn't seem right: not handling void return?
     auto returnType = llvmVoidTy;
-    if (proto.getName() == MAIN_FUNC_NAME) {
+    if (isMainFunc(proto.getName())) {
       returnType = llvmI64Ty;
     } else // if (!proto.getRet())
     {
@@ -1389,7 +1402,7 @@ public:
     { mlirGen(*funcAST.getBody()); }
     // if (false)
     {
-      if (funcName != MAIN_FUNC_NAME) {
+      if (!isMainFunc(funcName)) {
         mlir::Value retValue = entryBlock.getArguments().front();
         if (funcAST.getProto()->getRet()) {
           // TODO: return the correct value
