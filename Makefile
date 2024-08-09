@@ -18,9 +18,10 @@ X_RAY_IMAGE ?= x-ray:latest
 .PHONY: all build-x-ray build-cli install extract-llvm check-llvm \
   build-detector build-parser \
   build-container-image run-container-e2e run-native-e2e \
-  build-llvm-prebuilt-image push-llvm-prebuilt-image
+  build-llvm-prebuilt-image push-llvm-prebuilt-image \
+  clean
 
-all: build-x-ray build-image
+all: build-x-ray build-container-image
 
 build-x-ray: build-detector build-parser build-cli
 
@@ -85,6 +86,9 @@ install:
 	@cp package/data/reporter/artifacts/coderrect* $(INSTALL_DIR)/data/reporter/artifacts/
 	@cp package/data/reporter/artifacts/images/* $(INSTALL_DIR)/data/reporter/artifacts/images/
 	@echo "Done. X-Ray has been installed to $(INSTALL_DIR)."
+
+clean:
+	@rm -rf build/detector build/parser build/cli build/dist
 
 build-llvm-prebuilt-image:
 	@docker build -t $(LLVM_PREBUILT_IMAGE) \
