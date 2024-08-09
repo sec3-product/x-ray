@@ -31,10 +31,9 @@ set(racedetect-component
         src/Races.cpp
         src/OpenLib.cpp
         src/LocksetManager.cpp
-        src/PTAModels/GraphBLASModel.cpp
-        src/LinkModules.cpp
-        src/StaticThread.cpp
         src/PTAModels/ExtFunctionManager.cpp
+        src/PTAModels/GraphBLASModel.cpp
+        src/StaticThread.cpp
 )
 
 include_directories(

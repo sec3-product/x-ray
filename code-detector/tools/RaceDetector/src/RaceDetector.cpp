@@ -25,7 +25,6 @@
 #include <libloaderapi.h>
 #endif
 
-#include "LinkModules.h"
 #include "OpenLib.h"
 #include "PTAModels/ExtFunctionManager.h"
 #include "PTAModels/GraphBLASModel.h"
@@ -509,38 +508,6 @@ static std::unique_ptr<Module> loadFile(const std::string &FN,
   }
 
   return Result;
-}
-
-static bool linkFiles(LLVMContext &Context, aser::Linker &L,
-                      const std::vector<std::string> &Files, unsigned Flags) {
-  // Filter out flags that don't apply to the first file we load.
-  unsigned ApplicableFlags = Flags & aser::Linker::Flags::OverrideFromSrc;
-  bool isOrignalModule = true;
-  for (const auto &File : Files) {
-    std::unique_ptr<Module> M = loadFile(File, Context, isOrignalModule);
-    isOrignalModule = false;
-
-    if (M.get() == nullptr) {
-      LOG_ERROR("fail to load bc file, bc : {}", File);
-      continue;
-    }
-    // Note that when ODR merging types cannot verify input files in here When
-    // doing that debug metadata in the src module might already be pointing to
-    // the destination.
-    if (verifyModule(*M, &errs())) {
-      LOG_ERROR("input module is broken, file: {}", File);
-      continue;
-    }
-
-    bool Err = L.linkInModule(std::move(M), ApplicableFlags);
-
-    if (Err) return false;
-
-    // All linker flags apply to linking of subsequent files.
-    ApplicableFlags = Flags;
-  }
-
-  return true;
 }
 
 set<const Function *> CR_UNExploredFunctions;
