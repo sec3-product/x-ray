@@ -1169,7 +1169,6 @@ int main(int argc, char **argv) {
   analysisPasses.add(new DominatorTreeWrapperPass());
   analysisPasses.add(new LoopInfoWrapperPass());
 
-  // analysisPasses.add(new BradPass());
   // analysisPasses.add(new ConstructModelPass<LangModel>());
   analysisPasses.add(new PointerAnalysisPass<PTA>());
   analysisPasses.add(new RaceDetectionPass());
