@@ -35,7 +35,7 @@ set(racedetect-component
         src/LinkModules.cpp
         src/StaticThread.cpp
         src/PTAModels/ExtFunctionManager.cpp
-        src/PathConditionManager.cpp)
+)
 
 include_directories(
         ${INSTALL_DIR}/include
