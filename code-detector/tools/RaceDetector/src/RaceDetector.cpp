@@ -440,11 +440,8 @@ void initRaceDetect() {
   if (reportLimit != -1) {
     ConfigReportLimit = reportLimit;
   }
-  DataRace::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
   OrderViolation::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
   DeadLock::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
-  MismatchedAPI::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
-  TOCTOU::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
   UntrustfulAccount::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
   UnSafeOperation::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
   CosplayAccounts::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
