@@ -204,90 +204,80 @@ func getPackageVersion() string {
 }
 
 func findAllXargoTomlDirectory(rootPath string) []string {
-	//targetName := "Xargo.toml";
 	var pathList []string
 	var ignorePaths []string
-	err := filepath.WalkDir(rootPath,
-		func(path string, d fs.DirEntry, err error) error {
-			if err != nil {
-				//fmt.Println(err)
-				return err
+	walkFunc := func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// check for malicious path
+		if strings.Contains(path, ";") || strings.Contains(path, "`") || strings.Contains(path, "<") {
+			logger.Infof("skip malicious path: %s", path)
+			return filepath.SkipDir
+		}
+
+		if strings.HasSuffix(path, "soteria.ignore") || strings.HasSuffix(path, "sec3.ignore") {
+			// ignorePaths
+			bytesRead, _ := ioutil.ReadFile(path)
+			file_content := string(bytesRead)
+			lines := strings.Split(file_content, "\n")
+			for _, line := range lines {
+				if len(line) > 0 {
+					ignorePaths = append(ignorePaths, line)
+				}
 			}
-			//check malicious path
-			if strings.Contains(path, ";") || strings.Contains(path, "`") || strings.Contains(path, "<") {
-				logger.Infof("skip malicious path: %s", path)
+		}
+
+		// check folder
+		if d.IsDir() {
+			if strings.HasPrefix(d.Name(), ".") {
+				// Skip hidden directories.
+				return filepath.SkipDir
+			}
+			parent, _ := filepath.Split(path)
+			if strings.Contains(parent, "/proptest") ||
+				strings.Contains(parent, "/logs") ||
+				strings.Contains(parent, "/target") ||
+				strings.Contains(parent, "/docs") ||
+				strings.Contains(parent, "/migrations") ||
+				strings.Contains(parent, "/services") ||
+				strings.Contains(parent, "/js") ||
+				strings.HasSuffix(parent, "/test") {
+				logger.Infof("skip path: %s", path)
+
 				return filepath.SkipDir
 			}
 
-			if strings.HasSuffix(path, "soteria.ignore") || strings.HasSuffix(path, "sec3.ignore") {
-				//ignorePaths
-				bytesRead, _ := ioutil.ReadFile(path)
-				file_content := string(bytesRead)
-				lines := strings.Split(file_content, "\n")
-				for _, line := range lines {
-					if len(line) > 0 {
-						ignorePaths = append(ignorePaths, line)
-					}
+			// if path contains ignore path
+			for _, ignore_path := range ignorePaths {
+				path1 := path + "/"
+				ignore_path1 := ignore_path + "/"
+				if strings.HasSuffix(path, ignore_path) || strings.HasSuffix(path1, ignore_path) || strings.HasSuffix(path, ignore_path1) {
+					fmt.Println("ignored path: ", path)
+					return filepath.SkipDir
 				}
 			}
-			{ //check folder
-				file, err := os.Open(path)
-				if err != nil {
-					//fmt.Println(err)
-					return err
-				}
-				fileInfo, err := file.Stat()
-				if err != nil {
-					//fmt.Println(err)
-					return err
-				}
-				if fileInfo.IsDir() {
-					if strings.Contains(path, "/.") {
-						return filepath.SkipDir
-					}
-					parent, _ := filepath.Split(path)
-					if strings.Contains(parent, "/proptest") || strings.Contains(parent, "/logs") || strings.Contains(parent, "/target") || strings.Contains(parent, "/docs") || strings.Contains(parent, "/migrations") || strings.Contains(parent, "/services") || strings.Contains(parent, "/js") || strings.HasSuffix(parent, "/test") {
-						//fmt.Println("skip path: ", path)
-						logger.Infof("skip path: %s", path)
+		}
 
-						return filepath.SkipDir
-
-						// if strings.HasPrefix(name, ".") || name == "target" {
-						// 	return filepath.SkipDir
-						// }
-					}
-
-					//if path contains ignore path
-					for _, ignore_path := range ignorePaths {
-						path1 := path + "/"
-						ignore_path1 := ignore_path + "/"
-						if strings.HasSuffix(path, ignore_path) || strings.HasSuffix(path1, ignore_path) || strings.HasSuffix(path, ignore_path1) {
-							fmt.Println("ignored path: ", path)
-							return filepath.SkipDir
-						}
-					}
+		if strings.HasSuffix(path, "argo.toml") {
+			//check section [dependencies] solana-program
+			config, err := toml.LoadFile(path)
+			if err == nil {
+				solana := config.Get("dependencies.solana-program")
+				anchor := config.Get("dependencies.anchor-lang")
+				if solana != nil || anchor != nil {
+					srcFolder, _ := filepath.Split(path)
+					pathList = append(pathList, strings.TrimSuffix(srcFolder, "/"))
+					fmt.Println("Program found in: ", srcFolder)
+					//fmt.Println("solana-program: ", solana)
 				}
 			}
-
-			if strings.HasSuffix(path, "argo.toml") {
-				//check section [dependencies] solana-program
-				config, err := toml.LoadFile(path)
-				if err == nil {
-					//fmt.Println("Checking Path: ", path)
-					solana := config.Get("dependencies.solana-program")
-					anchor := config.Get("dependencies.anchor-lang")
-					if solana != nil || anchor != nil {
-						srcFolder, _ := filepath.Split(path)
-						pathList = append(pathList, strings.TrimSuffix(srcFolder, "/"))
-						fmt.Println("Program found in: ", srcFolder)
-						//fmt.Println("solana-program: ", solana)
-					}
-				}
-			}
-			//fmt.Println("path: ", path)
-			return nil
-		})
-	if err != nil {
+		}
+		//fmt.Println("path: ", path)
+		return nil
+	}
+	if err := filepath.WalkDir(rootPath, walkFunc); err != nil {
 		fmt.Println(err)
 	}
 	//if path contains ignore path
