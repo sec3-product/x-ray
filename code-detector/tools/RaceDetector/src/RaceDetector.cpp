@@ -30,14 +30,6 @@
 #include "PTAModels/GraphBLASModel.h"
 #include "RaceDetectionPass.h"
 #include "Races.h"
-#include "aser/PreProcessing/IRPreProcessor.h"
-#include "aser/PreProcessing/Passes/CanonicalizeGEPPass.h"
-#include "aser/PreProcessing/Passes/InsertGlobalCtorCallPass.h"
-#include "aser/PreProcessing/Passes/LoweringMemCpyPass.h"
-#include "aser/PreProcessing/Passes/RemoveASMInstPass.h"
-#include "aser/PreProcessing/Passes/RemoveExceptionHandlerPass.h"
-#include "aser/PreProcessing/Passes/UnrollThreadCreateLoopPass.h"
-#include "aser/PreProcessing/Passes/WrapperFunIdentifyPass.h"
 
 using namespace llvm;
 using namespace aser;
@@ -47,9 +39,6 @@ cl::opt<bool> DebugIR("debug-ir",
                       cl::desc("Load from modified.ll directly, no "
                                "preprocessing and openlib rewriting"),
                       cl::init(false));
-cl::opt<bool> SkipPreProcess("skip-preprocess",
-                             cl::desc("Do not run preprocessing pass"),
-                             cl::init(true));
 cl::opt<bool> NoLinkStub("no-stub", cl::desc("Do not link stub files"),
                          cl::init(true));
 cl::opt<bool> SkipOverflowChecks("skip-overflow",
@@ -107,8 +96,6 @@ cl::opt<size_t> MaxIndirectTarget(
     "max-indirect-target", cl::init(2),
     cl::desc("max number of indirect call target that can be resolved by "
              "indirect call"));
-cl::opt<bool> ConfigLoopUnroll(
-    "Xloop-unroll", cl::desc("Turn on unrolling the thread creation loops"));
 cl::opt<bool> ConfigNoFalseAlias("Xno-false-alias",
                                  cl::desc("Turn off checking false alias"));
 cl::opt<bool> ConfigNoProducerConsumer(
@@ -957,7 +944,6 @@ int main(int argc, char **argv) {
   CONFIG_NO_REPORT_LIMIT =
       ConfigNoReportLimit | (conflib::Get<int>("raceLimit", -1) < 0);
   CONFIG_IGNORE_LOCK = ConfigIngoreLock | !enableLockSet;
-  CONFIG_LOOP_UNROLL = ConfigLoopUnroll | enableLoopUnroll;
   CONFIG_NO_FALSE_ALIAS = ConfigNoFalseAlias;
   CONFIG_NO_PRODUCER_CONSUMER = ConfigNoProducerConsumer;
 
@@ -1067,15 +1053,6 @@ int main(int argc, char **argv) {
     rewriteUserSpecifiedAPI(module.get());
   }
 
-  if (!SkipPreProcess && !DebugIR) {
-    // Preprocessing the IR
-    IRPreProcessor preProcessor;
-    preProcessor.runOnModule(
-        *module, [&](llvm::legacy::PassManagerBase &MPM) -> void {
-          LMT::addPreProcessingPass(MPM);  // run before inline
-        });
-  }
-
   if (!DebugIR) {
     // TODO: probably make main configurable through conflib?
     if (USE_FAKE_MAIN) {
@@ -1088,30 +1065,6 @@ int main(int argc, char **argv) {
         return 1;
       }
     }
-  }
-
-  if (!SkipPreProcess && !DebugIR) {
-    llvm::legacy::PassManager passes;
-    // for field-sensitive pointer analysis
-    // 1. transform getelementptr
-    // 2. delete inline asm instruction (change it to Undef Value)
-    passes.add(new InsertGlobalCtorCallPass());
-    // passes.add(new LoweringMemCpyPass());
-
-    // for race detector
-    passes.add(new RemoveASMInstPass());
-    passes.add(new RemoveExceptionHandlerPass());
-    if (CONFIG_LOOP_UNROLL) {
-      // peel once for all 1-level loops containing thread creation
-      passes.add(new UnrollThreadCreateLoopPass());
-    }
-    // has to run after OMP Constant Propagation
-    passes.add(new CanonicalizeGEPPass());
-    // has to run after gep expansion
-
-    passes.run(*module);
-
-    LOG_INFO("Running Compiler Optimization Passes (Phase II)");
   }
 
   // Dump IR to file
@@ -1129,10 +1082,6 @@ int main(int argc, char **argv) {
   logger::newPhaseSpinner("Running Pointer Analysis");
 
   llvm::legacy::PassManager analysisPasses;
-  analysisPasses.add(new DominatorTreeWrapperPass());
-  analysisPasses.add(new LoopInfoWrapperPass());
-
-  // analysisPasses.add(new ConstructModelPass<LangModel>());
   analysisPasses.add(new PointerAnalysisPass<PTA>());
   analysisPasses.add(new RaceDetectionPass());
 
