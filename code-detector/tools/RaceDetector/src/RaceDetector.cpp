@@ -123,9 +123,6 @@ cl::opt<bool> ConfigTerminateImmediately(
 cl::opt<bool> ConfigPrintCoverage("Xprint-cov",
                                   cl::desc("Print analysis code coverage"));
 
-cl::opt<bool> ConfigIntegrateDynamic(
-    "Xdynamic", cl::desc("Store race results for dynamic analysis"));
-
 cl::opt<bool> ConfigShowSummary("Xshow-race-summary",
                                 cl::desc("show race summary"));
 cl::opt<bool> ConfigShowDetail("Xshow-race-detail",
@@ -996,7 +993,6 @@ int main(int argc, char **argv) {
                        ConfigShowAllTerminal;  // show race details
 
   CONFIG_EXPLORE_ALL_LOCK_PATHS = ConfigKeepLockPath | exploreAllLockPaths;
-  CONFIG_INTEGRATE_DYNAMIC = ConfigIntegrateDynamic;
   // by default, set the pts size to 999
   PTSTrait<PtsTy>::setPTSSizeLimit(9);  // set pts size limit to 999
   if (CONFIG_FAST_MODE) {
