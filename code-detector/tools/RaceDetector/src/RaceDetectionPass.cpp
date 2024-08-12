@@ -836,8 +836,6 @@ static unsigned int FUNC_COUNT_PROGRESS_THESHOLD = 10000;
 
 static aser::trie::TrieNode *cur_trie;
 
-extern void addExploredFunction(const Function *f);
-
 bool RaceDetectionPass::mayBeExclusive(const Event *const e1, const Event *const e2) {
     std::vector<CallEvent *> callStack1, callStack2;
     getCallEventStackUntilMain(e1, callEventTraces, callStack1);
@@ -948,7 +946,6 @@ void RaceDetectionPass::traverseFunction(const aser::ctx *ctx, const Function *f
                                          map<uint8_t, const llvm::Constant *> *valMap) {
     auto tid = thread->getTID();
     Function *func = const_cast<Function *>(func0);
-    addExploredFunction(func);
 
     // FOR SOLANA
     // llvm::outs() << "SOLANA traverseFunction: " << func->getName() << "\n";
@@ -4090,30 +4087,6 @@ void RaceDetectionPass::detectRaceCondition(const aser::ctx *ctx, TID tid) {
     }
 }
 
-void RaceDetectionPass::detectDeadCode(const aser::ctx *ctx, TID tid) {
-    // std::set<const llvm::Function *> result;
-    // getAllUnexploredFunctionsbyPartialName(result,"::validate");
-    if (auto func1 = getUnexploredFunctionbyPartialName("::validate")) {
-        auto funcName = func1->getName();
-        auto signature = funcName.substr(funcName.find("validate"));
-
-        if (signature.contains(".")) signature = signature.substr(0, signature.find("."));
-        // llvm::errs() << "==============detectDeadCode signature: " << signature << "!============\n";
-        // check Anchor constraints
-        auto tid_max = StaticThread::getThreadNum();
-        for (TID i = 0; i < tid_max; i++) {
-            if (StaticThread::isSignatureUsedInAccountConstraint(i, signature)) {
-                // llvm::errs() << "==============detectDeadCode isSignatureUsedInAccountConstraint: " << i
-                //              << " tid_max: " << tid_max << "============\n";
-                return;
-            }
-        }
-        if (DEBUG_RUST_API) llvm::errs() << "==============detectDeadCode funcName: " << funcName << "!============\n";
-        auto inst1 = func1->getEntryBlock().getFirstNonPHI();
-        auto e1 = graph->createApiReadEvent(ctx, inst1, tid);
-        UnSafeOperation::collect(e1, callEventTraces, SVE::Type::CRITICAL_REDUNDANT_CODE, 9);
-    }
-}
 StaticThread *RaceDetectionPass::forkNewThread(ForkEvent *forkEvent) {
     aser::CallSite forkSite(forkEvent->getInst());
     assert(forkSite.isCallOrInvoke());
@@ -4295,7 +4268,6 @@ bool RaceDetectionPass::runOnModule(llvm::Module &module) {
 
     detectAccountsCosplay(entryNode->getContext(), 0);
     detectRaceCondition(entryNode->getContext(), 0);
-    detectDeadCode(entryNode->getContext(), 0);
     auto race_end = std::chrono::steady_clock::now();
     std::chrono::duration<double> race_elapsed = race_end - race_start;
     // llvm::outs() << "Finished Race Detection in " << race_elapsed.count() << " seconds\n";

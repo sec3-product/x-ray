@@ -107,8 +107,6 @@ cl::opt<bool> ConfigPrintImmediately(
     "Xprint-fast", cl::desc("Print races immediately on terminal"));
 cl::opt<bool> ConfigTerminateImmediately(
     "one-race", cl::desc("Print a race and terminate immediately"));
-cl::opt<bool> ConfigPrintCoverage("Xprint-cov",
-                                  cl::desc("Print analysis code coverage"));
 
 cl::opt<bool> ConfigShowSummary("Xshow-race-summary",
                                 cl::desc("show race summary"));
@@ -251,9 +249,6 @@ int SAME_FUNC_BUDGET_SIZE;  // keep at most x times per func per thread 10 by
 int FUNC_COUNT_BUDGET;      // 100,000 by default
 
 bool USE_FAKE_MAIN = true;
-// static OriginsSetter<3> OS{"pthread_create", "GrB_Matrix_new",
-// "__kmpc_fork_call", "__kmpc_fork_teams"}; using Model =
-// GraphBLASModel<KOrigin<1>>;
 map<string, string> NONE_PARALLEL_FUNCTIONS;
 
 bool CONFIG_IGNORE_READ_WRITE_RACES = false;
@@ -491,14 +486,6 @@ static std::unique_ptr<Module> loadFile(const std::string &FN,
   return Result;
 }
 
-set<const Function *> CR_UNExploredFunctions;
-const std::set<llvm::StringRef> SKIPPED_APIS{
-    "llvm.",  "pthread_", "__kmpc_",         "_mp_",
-    ".omp.",  "omp_",     "__clang_",        "_ZNSt",
-    "_ZSt",   "_ZNKSt",   "_ZN14coderrect_", "__coderrect_",
-    "printf", "je_"};
-void addExploredFunction(const Function *f) { CR_UNExploredFunctions.erase(f); }
-
 // Method to compare two versions.
 // Returns 1 if v2 is smaller, -1
 // if v1 is smaller, 0 if equal
@@ -651,6 +638,7 @@ void loadIDLInstructionAccounts(std::string api_name, jsoncons::json j) {
     }
   }
 }
+
 set<StringRef> SMART_CONTRACT_ADDRESSES;
 void computeDeclareIdAddresses(Module *module) {
   // st.class.metadata
@@ -705,62 +693,6 @@ void computeDeclareIdAddresses(Module *module) {
       }
     }
   }
-}
-
-void initUnexploredFunctions(Module *module) {
-  auto &functionList = module->getFunctionList();
-  for (auto &function : functionList) {
-    auto func = &function;
-    if (!func->isDeclaration()) {
-      bool insert = true;
-      // do not count llvm.* pthread_* __kmpc_* __coderrect_ .omp. omp_ std::
-      for (auto str : SKIPPED_APIS) {
-        if (func->getName().startswith(str)) {
-          insert = false;
-          break;
-        }
-      }
-      if (insert) {
-        CR_UNExploredFunctions.insert(func);
-        FUNC_NAME_MAP[func->getName()] = func;
-      }
-    }
-  }
-  NUM_OF_FUNCTIONS = CR_UNExploredFunctions.size();
-  openlib::computeCandidateAPIs(module, false);
-}
-void getAllUnexploredFunctionsbyPartialName(
-    std::set<const llvm::Function *> &result, StringRef sig) {
-  for (auto func : CR_UNExploredFunctions) {
-    if (openlib::isInferredPublicAPI(func) && func->getName().contains(sig) &&
-        !func->getName().contains(".anon.")) {
-      result.insert(func);
-    }
-  }
-}
-const llvm::Function *getUnexploredFunctionbyPartialName(StringRef sig) {
-  for (auto func : CR_UNExploredFunctions) {
-    if (openlib::isInferredPublicAPI(func) && func->getName().contains(sig) &&
-        !func->getName().contains(".anon.")) {
-      return func;
-    }
-  }
-  return nullptr;
-}
-void reportUnexploredFunctions() {
-  int size = CR_UNExploredFunctions.size();
-  if (size > 0) {
-    llvm::outs() << "=== unexplored public apis ===\n";
-    for (auto func : CR_UNExploredFunctions) {
-      if (openlib::isInferredPublicAPI(func))
-        llvm::outs() << openlib::getCleanFunctionName(func) << "\n";
-    }
-  }
-  llvm::outs() << "\n============= unexplored functions ==========\n";
-  float percent = size * 100.0 / NUM_OF_FUNCTIONS;
-  llvm::outs() << "total number of functions: " << NUM_OF_FUNCTIONS
-               << "\nunexplored functions: " << size << " ("
-               << llvm::format("%.2f%%", percent) << ")\n\n";
 }
 
 int main(int argc, char **argv) {
@@ -1082,12 +1014,9 @@ int main(int argc, char **argv) {
   analysisPasses.add(new PointerAnalysisPass<PTA>());
   analysisPasses.add(new RaceDetectionPass());
 
-  initUnexploredFunctions(module.get());
   computeCargoTomlConfig(module.get());
   computeDeclareIdAddresses(module.get());
   analysisPasses.run(*module);
-
-  if (ConfigPrintCoverage) reportUnexploredFunctions();
 
   return 0;
 }
