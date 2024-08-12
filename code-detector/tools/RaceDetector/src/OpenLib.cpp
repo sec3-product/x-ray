@@ -1,5 +1,9 @@
 #include "OpenLib.h"
 
+#include <fstream>
+#include <regex>
+#include <string>
+
 #include <llvm/Demangle/Demangle.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/IRBuilder.h>
@@ -7,12 +11,10 @@
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/GlobPattern.h>
 
-#include <fstream>
 #include <nlohmann/json.hpp>
-#include <regex>
-#include <string>
 
 #include "PTAModels/GraphBLASModel.h"
+
 using namespace llvm;
 using namespace aser;
 using namespace std;
@@ -25,7 +27,6 @@ std::string CR_FUNC_NAME = "coderrect_cb.";
 static unsigned int crcount = 0;
 std::set<llvm::Value *> crFunctions;
 extern bool DEBUG_API;
-static bool PRINT_API = false;
 static uint32_t api_limit_count = 1000;
 // TODO: avoid recursion
 // be simple: set a depth
@@ -43,61 +44,8 @@ llvm::Value *createNewObject(llvm::IRBuilder<> &builder, llvm::PointerType *type
     // simply use a special function and delegate the new object initialization to pointer analysis
     auto ptr = builder.CreateCall(crAllocRecFun->getFunctionType(), crAllocRecFun);
     return builder.CreateBitCast(ptr, type);
-
-    //    // create a shared object
-    //    llvm::AllocaInst *AllocSharedObj = builder.CreateAlloca(type->getPointerElementType(), 0, "");
-    //    if (object_depth > OBJECT_MAX_DEPTH) return AllocSharedObj;
-    //    // let's just initialize this obj's field
-    //    object_depth++;
-    //    if (auto ty = dyn_cast<StructType>(type->getPointerElementType())) {
-    //        for (unsigned int i = 0; i < ty->getStructNumElements(); i++) {
-    //            auto ty2 = ty->getStructElementType(i);
-    //            if (ty2->isPtrOrPtrVectorTy()) {
-    //                //
-    //                // llvm::AllocaInst *AllocSharedObj1 = builder.CreateAlloca(ty2->getPointerElementType(), 0, "");
-    //                if (auto ptrTy = dyn_cast<llvm::PointerType>(ty2)) {
-    //                    if (auto ST = dyn_cast<StructType>(ptrTy->getPointerElementType())) {
-    //                        if (ST->isOpaque()) {
-    //                            // skip the opaque type
-    //                            continue;
-    //                        }
-    //                    } else if (ptrTy->getPointerElementType()->isFunctionTy()) {
-    //                        // alloca a function is not allowed in IR
-    //                        continue;
-    //                    }
-    //                }
-    //                llvm::Value *AllocSharedObj1 = createNewObject(builder, dyn_cast<llvm::PointerType>(ty2));
-    //                llvm::APInt zero(32, 0);
-    //                llvm::APInt index_i(32, i);
-    //                std::vector<llvm::Value *> values;
-    //                values.push_back(llvm::Constant::getIntegerValue(builder.getInt32Ty(), zero));
-    //                values.push_back(llvm::Constant::getIntegerValue(builder.getInt32Ty(), index_i));
-    //
-    //                auto gep = builder.CreateGEP(AllocSharedObj, values);
-    //                builder.CreateStore(AllocSharedObj1, gep, false);
-    //
-    //            } else if (ty2->isAggregateType()) {
-    //            }
-    //        }
-    //    } else if (auto ty = dyn_cast<ArrayType>(type->getPointerElementType())) {
-    //        auto ty2 = ty->getArrayElementType();
-    //        if (ty2->isPtrOrPtrVectorTy()) {
-    //            llvm::Value *AllocSharedObj1 = createNewObject(builder, dyn_cast<llvm::PointerType>(ty2));
-    //            llvm::APInt zero(32, 0);
-    //            llvm::APInt index_i(32, 0);  // initialize the first element?
-    //            std::vector<llvm::Value *> values;
-    //            values.push_back(llvm::Constant::getIntegerValue(builder.getInt32Ty(), zero));
-    //            values.push_back(llvm::Constant::getIntegerValue(builder.getInt32Ty(), index_i));
-    //
-    //            auto gep = builder.CreateGEP(AllocSharedObj, values);
-    //            builder.CreateStore(AllocSharedObj1, gep, false);
-    //        } else if (ty2->isAggregateType()) {
-    //            // recursive?
-    //        }
-    //    }
-    //    // object_depth--;
-    //    return AllocSharedObj;
 }
+
 std::map<PointerType *, llvm::Value *> allocatedObjects;
 llvm::Value *createNewObjectWrapper(llvm::IRBuilder<> &builder, llvm::PointerType *type, bool reuse) {
     if (reuse && allocatedObjects.find(type) != allocatedObjects.end()) {
@@ -109,31 +57,6 @@ llvm::Value *createNewObjectWrapper(llvm::IRBuilder<> &builder, llvm::PointerTyp
     auto obj = createNewObject(builder, type);
     if (reuse) allocatedObjects[type] = obj;
     // llvm::outs() << "2type: " << type << " " << *type << " obj: " << obj << " " << *obj << "\n";
-    return obj;
-}
-llvm::Value *getOrAllocateNewObject(llvm::IRBuilder<> &builder, PointerType *type) {
-    if (allocatedObjects.find(type) == allocatedObjects.end()) {
-        llvm::Value *AllocSharedObj = createNewObjectWrapper(builder, type, true);
-        allocatedObjects[type] = AllocSharedObj;
-        return AllocSharedObj;
-    } else {
-        return allocatedObjects.at(type);
-    }
-}
-std::map<const llvm::Function *, llvm::Value *> allocatedSmallTalkInitializeObjects;
-llvm::Value *createSmallTalkInitializeObjectWrapper(llvm::IRBuilder<> &builder, const llvm::Function *callee,
-                                                    llvm::PointerType *type, bool reuse) {
-    if (reuse && allocatedSmallTalkInitializeObjects.find(callee) != allocatedSmallTalkInitializeObjects.end()) {
-        auto obj = allocatedSmallTalkInitializeObjects.at(callee);
-        return obj;
-    }
-
-    auto para = createNewObjectWrapper(builder, type, reuse);
-    std::vector<llvm::Value *> Args;
-    Args.push_back(para);
-    llvm::ArrayRef<llvm::Value *> argsRef(Args);
-    auto obj = builder.CreateCall((llvm::Function *)callee, argsRef, "");
-    if (reuse) allocatedSmallTalkInitializeObjects[callee] = obj;
     return obj;
 }
 
@@ -181,6 +104,7 @@ void addFunctionCallInCRCallBack(Module *module, llvm::Function *caller, const l
     // builder.CreateRet(builder.getInt32(0));
     builder.CreateRetVoid();
 }
+
 llvm::Value *createNewCRCallBack(Module *module, llvm::Type *type) {
     crcount++;
     string funcName = CR_FUNC_NAME + std::to_string(crcount);
@@ -197,6 +121,7 @@ llvm::Value *createNewCRCallBack(Module *module, llvm::Type *type) {
     crFunctions.insert(coderrectCall);
     return coderrectCall;
 }
+
 llvm::Value *getOrCreatePthreadCreateFunction(Module *module, llvm::Type *type) {
     llvm::Value *pthreadCreateFun = module->getFunction("pthread_create");
     if (!pthreadCreateFun) {
@@ -218,6 +143,7 @@ llvm::Value *getOrCreatePthreadCreateFunction(Module *module, llvm::Type *type) 
 
     return pthreadCreateFun;
 }
+
 bool hasSpecialFunctionStrings(std::string &funcName) {
     if (funcName.find("st.anonfun.") == 0 || funcName.find("__cxx11::") == 0 || funcName.find("__cxx_") == 0 ||
         funcName.find("__gnu_cxx::") == 0 || funcName.find("__gthread") == 0 || funcName.find("_GLOBAL__") == 0 ||
@@ -237,178 +163,8 @@ bool hasSpecialFunctionStrings(std::string &funcName) {
     return false;
 }
 
-set<const Function *> interestingFunctions;        // functions of interest
-set<const Function *> interestingFunctionCallers;  //
-set<const Function *> interestingPublicAPIs;       //
-set<const Function *> exploredFunctions;           //
-map<const Function *, set<const Function *>> calleeCallerMap;
-set<const Function *> excludedConstructors;
-
-void aser::openlib::computeInterestingAPIs(set<const Function *> &interestingFuncs) {
-    // find public APIs that call interestingFunctions
-    for (auto interest : interestingFuncs) {
-        if (exploredFunctions.count(interest)) continue;
-        exploredFunctions.insert(interest);
-
-        if (calleeCallerMap.find(interest) != calleeCallerMap.end()) {
-            if (interestingFunctionCallers.count(interest)) continue;
-            auto interestingFuncs2 = calleeCallerMap.at(interest);
-            computeInterestingAPIs(interestingFuncs2);
-            interestingFunctionCallers.insert(interest);
-        } else {
-            auto funcName = demangle(interest->getName().str());
-            if (hasSpecialFunctionStrings(funcName)) continue;  // skip cr_main
-
-            if (excludedConstructors.find(interest) == excludedConstructors.end()) {
-                if (DEBUG_API) llvm::outs() << "public api (interesting): " << funcName << "\n";
-                interestingPublicAPIs.insert(interest);
-            }
-        }
-    }
-}
-
-set<const Function *> apiFuncs;
 map<const Function *, const Function *> openLibCallbackCalleeMap;
 
-void aser::openlib::computeCandidateAPIs(Module *module, int mode) {
-    // return if already computed
-    if (!apiFuncs.empty()) return;
-
-    map<Type *, set<Function *>> candidateClassesMap;
-    map<Type *, set<Function *>> candidateMethodsMap;
-
-    // 1. get all C++ classes with constructors
-    auto &functionList = module->getFunctionList();
-    for (auto &function : functionList) {
-        if (function.isIntrinsic() || function.isDeclaration()) continue;
-        string funcName = demangle(function.getName().str());
-        // llvm::outs() << "func: "<<<<"\n";
-        bool isCPP = false;
-        if (funcName.find("::") != string::npos) isCPP = true;
-        size_t size = function.getFunctionType()->getNumParams();
-
-        if (isCPP && size > 0) {
-            auto *type = function.getFunctionType()->getFunctionParamType(0);
-            if (type->isPointerTy()) {
-                if (type->getPointerElementType()->isStructTy()) {
-                    // llvm::outs() << "class type: "<<*type<<"\n";
-                    candidateClassesMap[type].insert(&function);
-                }
-            }
-        } else {
-            for (int i = 0; i < size; i++) {
-                auto *type = function.getFunctionType()->getFunctionParamType(i);
-                if (type->isStructTy() || (type->isPtrOrPtrVectorTy() && type->getPointerElementType()->isStructTy()))
-                    candidateClassesMap[type].insert(&function);
-            }
-        }
-    }
-
-    // traverse and find out constructor, destructor, and apis
-    for (auto [type, funcs] : candidateClassesMap) {
-        if (DEBUG_API) llvm::outs() << "\nstruct type: " << *type << "\n";
-        for (auto *f : funcs) {
-            string funcName = demangle(f->getName().str());
-
-            if (funcName.find("::") != funcName.npos) {  // C++
-                // c++ names
-                std::size_t pos1 = funcName.find_last_of("(");
-                std::size_t pos2 = funcName.substr(0, pos1).find_last_of("::");
-                string methodname = funcName.substr(pos2 + 1, pos1 - pos2 - 1);
-                string classname = funcName.substr(0, pos2 - 1);
-                std::size_t pos3 = classname.find_last_of("::");
-                if (pos3) classname = classname.substr(pos3 + 1, pos2 - pos3 + 1);
-
-                if (methodname.find("~") != methodname.npos) {
-                    // destructor
-                    if (DEBUG_API) llvm::outs() << "destructor : " << funcName << "\n";
-                    excludedConstructors.insert(f);
-                } else if (methodname == classname) {
-                    // constructor
-                    if (DEBUG_API) llvm::outs() << "constructor : " << funcName << "\n";
-                    excludedConstructors.insert(f);
-
-                } else {
-                    // other methods
-                    if (DEBUG_API) llvm::outs() << "API : " << funcName << "\n";
-                    if (funcName.find("std::") == string::npos) candidateMethodsMap[type].insert(f);
-                }
-            } else {  // C
-                if (DEBUG_API) llvm::outs() << "API : " << funcName << "\n";
-                if (funcName.find("std::") == string::npos) candidateMethodsMap[type].insert(f);
-            }
-        }
-    }
-
-    for (auto &function : functionList) {
-        auto &basicBlockList = function.getBasicBlockList();
-        for (auto &BB : basicBlockList) {
-            for (BasicBlock::const_iterator BI = BB.begin(), BE = BB.end(); BI != BE; ++BI) {
-                const Instruction *inst = llvm::dyn_cast<Instruction>(BI);
-                if (auto callInst = llvm::dyn_cast<llvm::CallBase>(inst)) {
-                    auto *callee = callInst->getCalledFunction();
-                    if (callee)  // make sure callee is resolved
-                    {
-                        if ((mode == 2 && LangModel::isSmalltalkForkCall(callee)) ||
-                            (mode == 1 && LangModel::isSyncCall(callee))) {
-                            interestingFunctions.insert(&function);
-                        } else {
-                            calleeCallerMap[callee].insert(&function);
-                        }
-                    } else {
-                        // llvm::outs() << "indirect call : " << *callInst << " in " <<
-                        // demangle(function.getName().str()) << "\n";
-                    }
-                }
-            }
-        }
-    }
-
-    if (DEBUG_API) {
-        for (auto f : interestingFunctions) llvm::outs() << "sync func : " << demangle(f->getName().str()) << "\n";
-    }
-    if (mode > 0) {
-        // find public APIs that call interestingFunctions
-        computeInterestingAPIs(interestingFunctions);
-
-        // clear maps
-        interestingFunctions.clear();
-        interestingFunctionCallers.clear();
-        exploredFunctions.clear();
-        calleeCallerMap.clear();
-        candidateClassesMap.clear();
-        candidateMethodsMap.clear();
-        apiFuncs.clear();
-
-        // assign apiFuncs in optimal mode
-        apiFuncs = interestingPublicAPIs;
-    } else {
-        // get public APIs with no callers
-        for (auto &function : functionList) {
-            if (function.isIntrinsic() || function.isDeclaration()) continue;
-            if (calleeCallerMap.find(&function) == calleeCallerMap.end()) {
-                string funcName = demangle(function.getName().str());
-
-                // skip standard libraries
-                //__gthread __cxx11:: std:: __cxx_ __gnu_cxx:: _GLOBAL__sub_I_ __invoke .omp_outlined.
-                // TestDirectory()::$_4::__invoke(void*, char const*, unsigned int)
-
-                if (hasSpecialFunctionStrings(funcName)) continue;
-
-                // TODO: get rid of constructors and destructors
-                if (excludedConstructors.find(&function) != excludedConstructors.end()) continue;
-
-                // consider func with name starting with "Graph_" only
-                // if (function.getName().startswith("Graph_Query")
-                // //|| function.getName().startswith("Graph_Explain")
-                // //  ||   function.getName().startswith("Graph_Profile")
-                //     )
-                if (DEBUG_API) llvm::outs() << "public api: " << demangle(function.getName().str()) << "\n";
-                apiFuncs.insert(&function);
-            }
-        }
-    }
-}
 std::string aser::openlib::getCleanFunctionName(const llvm::Function *f) {
     std::string funcName = demangle(f->getName().str());
     // llvm::outs() << "public api before: " << name << "\n";
@@ -486,40 +242,7 @@ std::string aser::openlib::getCleanFunctionName(const llvm::Function *f) {
 
     return funcName;
 }
-void generateSortedAPINames(std::vector<std::string> &apiNames) {
-    std::set<std::string> names;
-    for (auto *f : apiFuncs) {
-        auto funcName = getCleanFunctionName(f);
-        if (funcName.find(">") != string::npos) continue;  // this may be a constructor
-        if (!funcName.empty()) names.insert(funcName);
-    }
-    apiNames.assign(names.begin(), names.end());
-    std::sort(apiNames.begin(), apiNames.end());
-}
-void printAPIToJson() {
-    // Jie: generate a json file containing all these public apis
-    // $CODERRECT_TMPDIR/api.json
-    // {
-    //     apis: [
-    //        "SharedLRUCache::Insert",
-    //        "SharedLRUCache::Put",
-    //        ... ...
-    //    ]
-    // }
-    json apis;
-    std::vector<std::string> apiNames;
-    generateSortedAPINames(apiNames);
 
-    std::string path = "api.json";
-    if (const char *env_p = std::getenv("CODERRECT_TMPDIR")) {
-        path = "/" + path;  // unix separator
-        path = env_p + path;
-    }
-    std::ofstream output(path, std::ofstream::out);
-    apis["apis"] = apiNames;
-    output << apis;
-    output.close();
-}
 void createThreadCallBack(Module *module, llvm::IRBuilder<> &builder, const llvm::Function *f,
                           llvm::Value *sharedObjPtr) {
     llvm::Type *type = sharedObjPtr->getType();  //->getAllocatedType();
@@ -573,121 +296,6 @@ void createBuilderCallFunction(llvm::IRBuilder<> &builder, llvm::Function *f) {
     }
     llvm::ArrayRef<llvm::Value *> argsRef(Args);
     builder.CreateCall(f, argsRef, "");
-}
-void refineAPIFunctions() {
-    set<const llvm::Function *> apiFuncs2;
-    map<char, int> charCountMap;
-    for (auto *f : apiFuncs) {
-        auto name = getCleanFunctionName(f);
-        auto c = name.front();
-        if (!charCountMap.count(c)) {
-            charCountMap[c] = 0;
-        } else {
-            if (charCountMap[c] > 9) {
-                continue;
-            }
-        }
-        charCountMap[c]++;
-        apiFuncs2.insert(f);
-    }
-    apiFuncs.clear();
-    apiFuncs.insert(apiFuncs2.begin(), apiFuncs2.end());
-}
-extern std::set<std::string> SmallTalkCTRemoteClasses;
-void keepOnlyCTRemoteAPIFunctions() {
-    set<const llvm::Function *> apiFuncs2;
-    for (auto *f : apiFuncs) {
-        auto fname = getCleanFunctionName(f);
-        auto className = fname.substr(fname.find_last_of('$') + 1);
-        auto pos = className.find(" class");
-        if (pos != string::npos) className = className.substr(0, pos);
-        if (SmallTalkCTRemoteClasses.find(className) != SmallTalkCTRemoteClasses.end()) {
-            // llvm::outs() << "st.CTRemote: " << className << "\n";
-            apiFuncs2.insert(f);
-        }
-    }
-    if (apiFuncs2.size() > 0) {
-        // only trigger if there exists any SmallTalkCTRemoteClasses in the api functions
-        apiFuncs.clear();
-        apiFuncs.insert(apiFuncs2.begin(), apiFuncs2.end());
-    }
-}
-void doAlgorithm2(Module *module, llvm::IRBuilder<> &builder, bool once) {
-    // st.CTRemote
-    if (SmallTalkCTRemoteClasses.size() > 0) {
-        // llvm::outs() << "SmallTalkCTRemoteClasses size:" << SmallTalkCTRemoteClasses.size() << "\n";
-        keepOnlyCTRemoteAPIFunctions();
-    }
-    if (apiFuncs.empty())
-        return;
-    else if (apiFuncs.size() > api_limit_count) {
-        // if too many api functions, then pick a subset of them
-        refineAPIFunctions();
-    }
-    // llvm::outs() << "\npublic api limit: " << api_limit_count << "\n";
-    llvm::outs() << "automatically inferred " << apiFuncs.size() << " apis as entry points (limit=" << api_limit_count
-                 << "):\n";
-
-    // std::vector<std::string> apiNames;
-    // generateSortedAPINames(apiNames);
-    // llvm::outs() << "automatically inferred " << apiNames.size() << " apis as entry points:\n";
-    // for (auto name : apiNames) llvm::outs() << "public api: " << name << "\n";
-    Type *mytype = builder.getInt8PtrTy();
-    // init
-    crAllocRecFun = llvm::cast<Function>(
-        module->getOrInsertFunction(CR_ALLOC_OBJ_RECUR, FunctionType::get(builder.getInt8PtrTy(), false)).getCallee());
-
-    uint32_t count = 0;
-    bool repeated = !once;
-    for (auto *f : apiFuncs) {
-        if (count < 99)
-            llvm::outs() << "public api: " << demangle(f->getName().str()) << "\n";
-        else if (count == 99)
-            llvm::outs() << "public api: " << (apiFuncs.size() - 99) << " more apis ...\n\n";
-
-        bool stHandled = false;
-
-        // for smalltalk - %3 = call i8* @"st.initialize$LamAlarmManager"(i8* %0)
-        auto fname = f->getName();
-        if (fname.startswith("st.")) {
-            auto className = fname.substr(fname.find_last_of('$'));
-            auto initializeFuncName = "st.initialize" + className.str();
-            llvm::Function *initializeFunc = module->getFunction(initializeFuncName);
-            if (initializeFunc) {
-                // llvm::outs() << "initializeFunc: " << initializeFuncName << "\n";
-                llvm::Value *AllocSharedObj = createSmallTalkInitializeObjectWrapper(
-                    builder, initializeFunc, dyn_cast<llvm::PointerType>(mytype), true);
-                createThreadCallBackWrapper(module, builder, f, AllocSharedObj, repeated);  // call twice if repeated
-                stHandled = true;
-            }
-            auto initializeFromFuncName = "st.initializeFrom:" + className.str();
-            llvm::Function *initializeFromFunc = module->getFunction(initializeFromFuncName);
-            if (initializeFromFunc) {
-                // llvm::outs() << "initializeFromFunc: " << initializeFromFuncName << "\n";
-                llvm::Value *AllocSharedObj = createSmallTalkInitializeObjectWrapper(
-                    builder, initializeFromFunc, dyn_cast<llvm::PointerType>(mytype), true);
-                createThreadCallBackWrapper(module, builder, f, AllocSharedObj, repeated);  // call twice if repeated
-                stHandled = true;
-            }
-        }
-        if (!stHandled) {
-            int size = f->getFunctionType()->getFunctionNumParams();
-            for (unsigned int i = 0; i < size; i++) {
-                Type *type = f->getFunctionType()->getFunctionParamType(i);
-                if (type->isPtrOrPtrVectorTy()) {
-                    mytype = type;
-                    break;
-                }
-            }
-            llvm::Value *AllocSharedObj = createNewObjectWrapper(builder, dyn_cast<llvm::PointerType>(mytype), true);
-            createThreadCallBackWrapper(module, builder, f, AllocSharedObj, repeated);  // call twice if repeated
-        }
-        if (count++ > api_limit_count) break;
-    }
-}
-void exploreOpenLibraryAPIs(Module *module, llvm::IRBuilder<> &builder, int mode, bool once) {
-    computeCandidateAPIs(module, mode);
-    doAlgorithm2(module, builder, once);
 }
 
 llvm::Value *allocObjectForFunction(const llvm::Function *function, IRBuilder<> &builder, bool reuse = true) {
@@ -855,18 +463,11 @@ void handleEntryPoints(Module *module, llvm::IRBuilder<> &builder, std::vector<E
         }
     }
 }
-void aser::openlib::createFakeMain(OpenLibConfig &config) {
-    if (config.printAPI) {
-        // after printing apis we will exit
-        computeCandidateAPIs(config.module, config.mode);
-        printAPIToJson();
-        exit(0);
-    }
 
+void aser::openlib::createFakeMain(OpenLibConfig &config) {
     Module *module = config.module;
     auto entryPoints = config.entryPoints;
 
-    PRINT_API = config.printAPI;
     api_limit_count = config.apiLimit;
     // let's create a fake main func here and add it to the module IR
     // in the fake main, call each entry point func
@@ -898,29 +499,11 @@ void aser::openlib::createFakeMain(OpenLibConfig &config) {
         } else {
             createBuilderCallFunction(builder, realMainFun);
         }
-    } else {
-        // for fortran code generated by flang
-        llvm::Function *fortranMainFun = module->getFunction("MAIN_");
-        if (fortranMainFun && !fortranMainFun->isDeclaration()) {
-            if (fortranMainFun->getFunctionType() == functionType) {
-                // create a call to fortran main using fake main's argc, argv if possible
-                llvm::SmallVector<Value *, 2> args;
-                for (auto &arg : mainFunction->args()) {
-                    args.push_back(&arg);
-                }
-                builder.CreateCall(fortranMainFun, args, "");
-            } else {
-                createBuilderCallFunction(builder, fortranMainFun);
-            }
-        }
     }
 
     // TODO: handle entry points
     if (!entryPoints.empty()) {
         handleEntryPoints(module, builder, entryPoints);
-    }
-    if (config.explorePublicAPIs) {
-        exploreOpenLibraryAPIs(module, builder, config.mode, config.onceOnly);
     }
 
     // cr_main return
@@ -936,10 +519,4 @@ void aser::openlib::createFakeMain(OpenLibConfig &config) {
             llvm::verifyFunction(*(Function *)f);
         }
     }
-}
-bool aser::openlib::isInferredPublicAPI(const llvm::Function *f) {
-    if (apiFuncs.find(f) != apiFuncs.end())
-        return true;
-    else
-        return false;
 }

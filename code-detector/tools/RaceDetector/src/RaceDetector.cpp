@@ -79,18 +79,6 @@ cl::opt<bool> ConfigIgnoreWriteWriteRaces("ignore-ww",
 
 cl::opt<bool> ConfigNoReportLimit(
     "no-limit", cl::desc("No limit for the number of races reported"));
-cl::opt<bool> ConfigAnalyzeAPI(
-    "analyze-api", cl::desc("Analyze all public apis in the library"));
-cl::opt<bool> ConfigPrintAPI("print-api",
-                             cl::desc("Print all public apis in the library"));
-cl::opt<bool> ConfigOpenLibOnce(
-    "openlib-once",
-    cl::desc("Analyze only once for every public api in the library"));
-cl::opt<bool> ConfigOptimalAPI(
-    "openlib-optimal",
-    cl::desc("Analyze all public synchronization apis in the library"));
-cl::opt<bool> ConfigForkAPI(
-    "openlib-fork", cl::desc("Analyze all smalltalk fork apis in the library"));
 
 cl::opt<size_t> MaxIndirectTarget(
     "max-indirect-target", cl::init(2),
@@ -239,7 +227,6 @@ bool CONFIG_ENTRY_POINT_SINGLE_TIME;
 // NOTE: temporary config option, turn off path-sensitive
 bool CONFIG_NO_PS;
 bool CONFIG_SKIP_CONSTRUCTOR;
-bool CONFIG_OPEN_API;
 bool CONFIG_OPEN_API_FORK_ONLY = false;
 extern cl::opt<bool> CONFIG_USE_FI_MODE;  // for fortran
 
@@ -382,25 +369,9 @@ openlib::OpenLibConfig initOpenLibConf(Module *module) {
     }
   }
 
-  auto fork = conflib::Get<bool>("openlib.fork", false);
-  auto optimal = conflib::Get<bool>("openlib.optimal", false);
-  if (ConfigForkAPI | fork) {
-    CONFIG_OPEN_API_FORK_ONLY = true;
-    config.mode = 2;
-  } else if (ConfigOptimalAPI | optimal)
-    config.mode = 1;
-  else
-    config.mode = 0;
-  auto analyzeAPI = conflib::Get<bool>("openlib.analyzeAPI", false);
-  config.explorePublicAPIs = config.mode | ConfigAnalyzeAPI |
-                             analyzeAPI;  // optimal always explore public apis
-  CONFIG_OPEN_API = config.explorePublicAPIs;
-  auto printAPI = conflib::Get<bool>("openlib.printAPI", false);
-  config.printAPI = ConfigPrintAPI | printAPI;
+  config.mode = 0;
   auto apiLimit = conflib::Get<uint32_t>("openlib.limit", 999);
   config.apiLimit = apiLimit;
-  auto onceOnly = conflib::Get<bool>("openlib.once", false);
-  config.onceOnly = ConfigOpenLibOnce | onceOnly;
 
   return config;
 }

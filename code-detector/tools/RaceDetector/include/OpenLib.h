@@ -40,9 +40,6 @@ struct OpenLibConfig {
 };
 
 void createFakeMain(OpenLibConfig &config);
-void computeCandidateAPIs(llvm::Module *module, int mode);
-void computeInterestingAPIs(std::set<const llvm::Function *> &interestingFuncs);
-bool isInferredPublicAPI(const llvm::Function *f);
 std::string getCleanFunctionName(const llvm::Function *f);
 
 }  // namespace openlib
