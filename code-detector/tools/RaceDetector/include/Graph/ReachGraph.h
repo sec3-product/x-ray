@@ -6,20 +6,16 @@
 
 #include <stdint.h>
 
-#include <sstream>
+#include <map>
+#include <string>
+#include <vector>
 
-#include <llvm/Analysis/CFG.h>
 #include <llvm/IR/Instruction.h>
-#include <llvm/Support/DOTGraphTraits.h>
-#include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/InitializePasses.h>
 
 #include "Event.h"
-#include "LockGraph.h"
 #include "RaceDetectionPass.h"
-#include "Races.h"
 #include "ReachabilityEngine.h"
-#include "StaticThread.h"
 
 namespace aser {
 
