@@ -226,8 +226,6 @@ int SAME_FUNC_BUDGET_SIZE;  // keep at most x times per func per thread 10 by
                             // default
 int FUNC_COUNT_BUDGET;      // 100,000 by default
 
-map<string, string> NONE_PARALLEL_FUNCTIONS;
-
 bool CONFIG_IGNORE_READ_WRITE_RACES = false;
 bool CONFIG_IGNORE_WRITE_WRITE_RACES = false;
 
@@ -258,8 +256,6 @@ const llvm::Function *getFunctionMatchStartEndName(llvm::StringRef startName,
   }
   return nullptr;
 }
-
-vector<string> DEBUG_FOCUS_VEC;
 
 logger::LoggingConfig initLoggingConf() {
   logger::LoggingConfig config;
@@ -303,9 +299,6 @@ logger::LoggingConfig initLoggingConf() {
 }
 
 void initRaceDetect() {
-  NONE_PARALLEL_FUNCTIONS =
-      conflib::Get<map<string, string>>("notParallelFunctionPairs", {});
-
   CONFIG_IGNORE_READ_WRITE_RACES =
       ConfigIgnoreReadWriteRaces |
       conflib::Get<bool>("ignoreReadWriteRaces", false);
@@ -760,14 +753,6 @@ int main(int argc, char **argv) {
     // llvm::outs() << "SOTERIA_PLAN: " << SOTERIA_PLAN << "\n";
   }
 
-  DEBUG_FOCUS_VEC =
-      ConfigDebugDebugDebug;  // conflib::Get<std::vector<std::string>>("debugdebugdebug",
-                              // {});
-  if (DEBUG_FOCUS_VEC.size() > 0) {
-    llvm::outs() << "debug focus mode (size " << DEBUG_FOCUS_VEC.size() << "):";
-    for (auto elem : DEBUG_FOCUS_VEC) llvm::outs() << " " << elem;
-    llvm::outs() << "\n";
-  }
   MAX_CALLSTACK_DEPTH = conflib::Get<int>("maxCallStackDepth", -1);
   SAME_FUNC_BUDGET_SIZE = conflib::Get<int>("sameFunctionBudget", 10);
   FUNC_COUNT_BUDGET = conflib::Get<int>("functionCountBudget", 20000);

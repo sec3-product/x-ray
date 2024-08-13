@@ -39,7 +39,6 @@
     "rm_calloc"
   ],
   "lockUnlockFunctions": { "malloc_mutex_lock": "malloc_mutex_unlock" },
-  "notParallelFunctionPairs": {},
   "highPriorityFiles": [],
   "openlib": {
     "entryPoints": [],

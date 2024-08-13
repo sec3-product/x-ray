@@ -243,9 +243,6 @@ bool customizedFilter(Event *e1, Event *e2, std::vector<std::string> &st1, std::
 bool customizedOMPFilter(Event *e1, Event *e2, std::vector<std::string> &st1, std::vector<std::string> &st2,
                          const std::vector<std::string> &callingCtx, std::vector<std::string> &ignoreRaceInFun);
 
-bool isNotParallelFunctions(std::vector<std::string> &st1, std::vector<std::string> &st2,
-                            std::map<std::string, std::string> &pairs);
-
 bool customizedFilterIgnoreFunctions(const Event *e1, const Event *e2, std::vector<std::string> &ignoreRaceInFun);
 
 bool customizedFilterIgnoreVariables(std::string name, std::vector<std::string> &ignoreRaceVariables);

@@ -25,7 +25,6 @@ extern bool CONFIG_NO_FILTER;
 
 extern std::map<std::string, std::map<std::string, std::string>> SOLANA_SVE_DB;
 
-extern map<string, string> NONE_PARALLEL_FUNCTIONS;
 extern vector<string> IGNORED_FUN_ALL;
 extern vector<string> IGNORED_VAR_ALL;
 extern vector<string> IGNORED_LOCATION_ALL;
@@ -71,9 +70,6 @@ void aser::OrderViolation::collect(const MemAccessEvent *e1, const MemAccessEven
 
     auto st1 = getStackTrace(e1, callEventTraces, srcInfo1.isCpp());
     auto st2 = getStackTrace(e2, callEventTraces, srcInfo2.isCpp());
-
-    // user customized filtering (by pattern)
-    if (isNotParallelFunctions(st1, st2, NONE_PARALLEL_FUNCTIONS)) return;
 
     if (customizedFilterIgnoreFunctions(e1, e2, IGNORED_FUN_ALL)) return;
     if (customizedFilterIgnoreVariables(sharedObjLoc.getName(), IGNORED_VAR_ALL)) return;
