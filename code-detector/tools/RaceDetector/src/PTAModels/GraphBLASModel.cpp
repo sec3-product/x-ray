@@ -10,81 +10,9 @@ using namespace aser;
 using namespace llvm;
 
 extern bool DEBUG_RUST_API;
-extern bool CONFIG_EXPLORE_ALL_LOCK_PATHS;
-bool isInCheckingMissedOmp = false;
 
 std::set<StringRef> GraphBLASHeapModel::USER_HEAP_API;
 
-const std::set<llvm::StringRef> StdVectorFunctions::VECTOR_READS{
-    "operator[]", "begin()",    "end()",   "rbegin()", "rend()",  "crbegin()", "crend()", "size()",
-    "max_size()", "capacity()", "empty()", "at(",      "front()", "back()",    "count("};
-
-const std::set<llvm::StringRef> StdVectorFunctions::VECTOR_WRITES{
-    "push_back(", "pop_back()",    "insert(",       "erase(",  "swap(",
-    "emplace(",   "emplace_back(", "emplace_back<", "clear()", "resize("};
-
-const llvm::StringRef StdStringFunctions::STRING_CTOR = "basic_string";
-
-// NOTE: API not included:
-// shrink_to_fit, reserve, get_allocator, c_str, operator basic_string_view
-// operator<<, operator>>, operator</>/=>/=</<=>
-// type convertion functions, hash, getline
-const std::set<llvm::StringRef> StdStringFunctions::STRING_READS{"at",
-                                                                 "operator[]",
-                                                                 "front",
-                                                                 "back",
-                                                                 "data",
-                                                                 "begin",
-                                                                 "cbegin",
-                                                                 "end",
-                                                                 "cend",
-                                                                 "rbegin",
-                                                                 "crbegin",
-                                                                 "rend",
-                                                                 "crend",
-                                                                 "empty",
-                                                                 "size",
-                                                                 "length",
-                                                                 "max_size",
-                                                                 "capacity",
-                                                                 "compare",
-                                                                 "starts_with",
-                                                                 "ends_with",
-                                                                 "substr",
-                                                                 "copy",
-                                                                 "find",
-                                                                 "rfind",
-                                                                 "find_first_of",
-                                                                 "find_first_not_of",
-                                                                 "find_last_of",
-                                                                 "find_last not_of",
-                                                                 "operator==",
-                                                                 "operator!="};
-
-// NOTE: swap seems like a special case, if a.swap(b), then we write to both a and b
-const std::set<llvm::StringRef> StdStringFunctions::STRING_WRITES{
-    "operator=", "assign",     "clear",   "insert", "erase", "push_back", "pop_back",
-    "append",    "operator+=", "replace", "resize", "swap",  "operator+"};
-
-const std::set<llvm::StringRef> OriginEntrys{
-    "pthread_create",
-    "signal",
-    "sigaction",
-    "GrB_Matrix_new",
-    "__kmpc_fork_call",
-    "__kmpc_fork_teams",
-    "_ZNKSt14__shared_countILN9__gnu_cxx12_Lock_policyE2EE14_M_get_deleterERKSt9type_info",
-    "_ZNSt14__shared_countILN9__gnu_cxx12_Lock_policyE2EE7_M_swapERS2_"};  // for shared_ptr;
-
-//_ZdlPv operator delete(void*)
-//_ZdaPv operator delete[](void*)
-const std::set<llvm::StringRef> MemoryFreeAPIs{"free", "redisFree", "je_free", "rax_free", "_ZdlPv", "_ZdaPv"};
-const std::set<llvm::StringRef> ExtraLockAPIs{"std::mutex::lock()", "std::mutex::unlock()",
-                                              "__gthread_mutex_lock(pthread_mutex_t*)",
-                                              "__gthread_mutex_unlock(pthread_mutex_t*)"};
-// make sure it is demangled
-// const std::set<llvm::StringRef> CONFIG_MUST_EXPLORE_APIS{"_ExecutionPlan_FreeInternals"};
-extern std::vector<std::string> CONFIG_MUST_EXPLORE_APIS;
 extern std::vector<std::string> CONFIG_INDIRECT_APIS;
 extern std::map<std::string, std::string> CRITICAL_INDIRECT_TARGETS;
 
@@ -183,78 +111,8 @@ static const Value *getMatchedArg(const Argument *fArg, const CallBase *call) {
     return matchedArg;
 }
 
-bool GraphBLASModel::isInvokingAnOrigin(const ctx *prevCtx, const Instruction *I) {
-    // if it is becomes too complex, maybe turn it into seperate class
-    if (auto callBase = dyn_cast<CallBase>(I)) {
-        // Peiming: use aser::CallSite here as it will do some simple target function resolution
-        // such that
-        // %fun = bitcast ...
-        // call %fun
-        // won't be considered as indirect call, and the origin will be inferred correctly
-        // seems that there is always such pattern in fortran call to kmpc_fork_call
-        auto CS = aser::CallSite(I);
-        const llvm::Function *fun = CS.getCalledFunction();
-        if (fun != nullptr) {
-            if (OriginEntrys.find(fun->getName()) != OriginEntrys.end()) {
-                return true;
-            }
-            if (fun->getName().startswith(ThreadAPIRewriter::getCanonicalizedAPIPrefix())) {
-                return true;
-            }
-
-            std::string demangled = getDemangledName(fun->getName());
-
-            if (demangled.rfind("std::thread::thread<", 0) == 0 ||
-                demangled.rfind("public: __cdecl std::thread::thread<", 0) == 0) {
-                return true;
-            }
-
-            // Heuristic for thread wrapper:
-            // if a function has newed a object
-            // and passes it to a thread creation API
-            // then we should also consider this wrapper function as an origin
-            for (auto &BB : *fun) {
-                for (auto &inst : BB) {
-                    if (auto call = llvm::dyn_cast<llvm::CallBase>(&inst)) {
-                        if (auto called = call->getCalledFunction()) {
-                            // a heap allocator was called
-                            if (heapModel.isHeapAllocFun(called)) {
-                                // check if the pointer was passed to a thread creation API
-                                for (auto user : call->users()) {
-                                    if (auto callpthread = llvm::dyn_cast<llvm::CallBase>(user)) {
-                                        if (auto pthread = callpthread->getCalledFunction()) {
-                                            if (pthread->getName().equals("pthread_create") ||
-                                                pthread->getName().equals("signal") ||
-                                                pthread->getName().equals("sigaction")) {
-                                                return true;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return false;
-}
-
-namespace {
-
-static const char *tag = "pthread_specific";
-
-}
-
-extern cl::opt<bool> CONFIG_EXHAUST_MODE;
-
 IndirectResolveOption GraphBLASModel::onNewIndirectTargetResolvation(const llvm::Function *target,
                                                                      const llvm::Instruction *callsite) {
-    //    if (CONFIG_EXHAUST_MODE) {
-    //        // no limit in exhaust mode
-    //        return IndirectResolveOption::CRITICAL;
-    //    }
     if (callsite->getFunction()->getName().equals("_ZZ9StartRESTRKN4util3RefEENK3$_1clEP11HTTPRequestRKNSt7__"
                                                   "cxx1112basic_stringIcSt11char_traitsIcESaIcEEE")) {
         return IndirectResolveOption::CRITICAL;
@@ -472,31 +330,6 @@ InterceptResult GraphBLASModel::interceptFunction(const ctx *calleeCtx, const ct
             // call back is indirect call.
             return {v, InterceptResult::Option::EXPAND_BODY};
         }
-    } else if (isThreadCreate(F)) {
-        aser::CallSite CS(callsite);
-        assert(CS.isCallOrInvoke());
-        const llvm::Value *v;
-        if (F->getName().startswith(ThreadAPIRewriter::getCanonicalizedAPIPrefix())) {
-            v = CS.getArgOperand(1);  // the 2nd argument is the callback function
-        } else {
-            v = CS.getArgOperand(2);
-        }
-
-        if (auto threadFun = llvm::dyn_cast<llvm::Function>(v->stripPointerCasts())) {
-            // replace call to pthread_create to the thread starting
-            // routine
-            F = threadFun;
-        } else {
-            // llvm_unreachable("need to handle more API");
-            // pthread_create call back is indirect call.
-            return {v, InterceptResult::Option::EXPAND_BODY};
-
-            // llvm_unreachable("need to handle pthread_create using indirect call!");
-            // return InterceptResult::IGNORE;
-        }
-        // thread creation site is intercepted, and the body of the
-        // thread need to be handled.
-        // return InterceptResult::EXPAND_BODY;
     } else if (LangModel::isRegisterSignal(callsite)) {
         aser::CallSite CS(callsite);
         assert(CS.isCallOrInvoke());
@@ -630,44 +463,6 @@ static Optional<StringRef> getStringFromValue(const Value *V, const DataLayout &
     return {};
 }
 
-static bool isCXXInvokeMemFun(const CtxFunction<ctx> *callee) {
-    ItaniumPartialDemangler demangler;
-    if (!demangler.partialDemangle(callee->getFunction()->getName().begin())) {
-        StringRef funName = demangler.getFunctionName(nullptr, nullptr);
-        if (funName.startswith("std::__invoke_impl")) {
-            StringRef funParams = demangler.getFunctionParameters(nullptr, nullptr);
-            if (funParams.startswith("(std::__invoke_memfun_deref")) {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-static bool isCXXInvokeMemFunInStdThread(const CtxFunction<ctx> *callee) {
-    if (isCXXInvokeMemFun(callee)) {
-        // make sure it is called inside std::thread
-        if (auto call = llvm::dyn_cast_or_null<CallBase>(callee->getContext()->getLast())) {
-            if (auto fun = call->getCalledFunction();
-                fun != nullptr && getDemangledName(fun->getName()).rfind("std::thread::thread<", 0) == 0) {
-                // calling a std::thread
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-static const Value *stripOffsetAndCast(const Value *V) {
-    auto ret = V->stripInBoundsOffsets();
-    while (auto gep = dyn_cast<GetElementPtrInst>(ret)) {
-        ret = gep->getPointerOperand();
-        ret = ret->stripInBoundsOffsets();
-    }
-    return ret;
-}
-
 // static MapObject<StringRef, PT, >
 bool GraphBLASModel::interceptCallSite(const CtxFunction<ctx> *caller, const CtxFunction<ctx> *callee,
                                        const llvm::Function *originalTarget, const llvm::Instruction *callsite) {
@@ -754,12 +549,6 @@ bool GraphBLASModel::interceptCallSite(const CtxFunction<ctx> *caller, const Ctx
         }
     }
 
-    // TODO: this may be too aggressive, we need some benchmark on vector
-    if (StdVectorFunctions::isVectorRead(callee->getFunction()) ||
-        StdVectorFunctions::isVectorWrite(callee->getFunction())) {
-        return true;
-    }
-
     // a corner case: indirect call resolved to pthread_create, so we alway use
     // the original target to determine whether the callsite need to be intercepted
     // FIXME: should all other cases rely on the orignalTarget as well?
@@ -804,47 +593,6 @@ bool GraphBLASModel::interceptCallSite(const CtxFunction<ctx> *caller, const Ctx
         this->consGraph->addConstraints(formal2, actual2, Constraints::copy);
 
         return true;
-    } else if ((fun && isThreadCreate(fun)) || isThreadCreate(originalTarget)) {
-        // dbg_os() << *callee->getFunction() << "\n";
-        if (fun && fun->getName().startswith(ThreadAPIRewriter::getCanonicalizedAPIPrefix())) {
-            int argNum = callee->getFunction()->arg_size();
-            assert(argNum == fun->arg_size() - 2);
-            for (int i = 0; i < argNum; i++) {
-                PtrNode *formal =
-                    this->getPtrNodeOrNull(callee->getContext(), &*callee->getFunction()->arg_begin() + i);
-                if (formal == nullptr) {
-                    // the argument is not a pointer
-                    continue;
-                } else {
-                    PtrNode *actual = this->getPtrNode(caller->getContext(), CS.getArgOperand(i + 2));
-                    this->consGraph->addConstraints(actual, formal, Constraints::copy);
-                }
-            }
-            return true;
-        } else {
-            // We encounter case where coid casts a function with no args to a function
-            // that takes void* so that it can be passed to pthread_create directly
-            // assert(callee->getFunction()->arg_size() == 1);
-
-            // If the callee has no args, nothing to link. Just return
-            if (callee->getFunction()->arg_size() == 0) {
-                return true;
-            }
-
-            // link the parameter
-            PtrNode *formal = this->getPtrNodeOrNull(callee->getContext(), &*callee->getFunction()->arg_begin());
-            if (formal == nullptr) {
-                // some race cases where the callback function actually require a integer as the parameter
-                // pthread_create(i8* (i8*)* bitcast (void (i32)* @myPartOfCalc to i8* (i8*)*), i8* %53)
-                // and
-                // void @myPartOfCalc(i32)
-                return true;  // simply return
-            }
-
-            PtrNode *actual = this->getPtrNode(caller->getContext(), CS.getArgOperand(3));
-            this->consGraph->addConstraints(actual, formal, Constraints::copy);
-        }
-        return true;
     }
 
     // we need to use callsite to identify the thread creation
@@ -883,180 +631,9 @@ bool GraphBLASModel::interceptCallSite(const CtxFunction<ctx> *caller, const Ctx
         }
     }
 
-    // FIXME: this is kinda dirty..
-    // a dirty fix to std::thread which uses pointer to member function as the callable,
-    // whose type is { i64, i64 } and thus is missed by pointer analysis
-    // we manually resolved the points-to set here (if this is resolvable)
-    if (caller->getContext() == callee->getContext() && isCXXInvokeMemFunInStdThread(callee)) {
-        // 1st, find the indirect call
-        PtrNode *indirectPtr = nullptr;
-        Value *adjThis = nullptr;
-
-        auto stdInvokeImpl = callee->getFunction();
-
-        for (auto &BB : *stdInvokeImpl) {
-            for (auto &I : BB) {
-                if (auto call = dyn_cast<CallBase>(&I)) {
-                    if (call->isIndirectCall()) {
-                        indirectPtr = this->getPtrNode(callee->getContext(), call->getCalledOperand());
-                        adjThis = call->getArgOperand(0);
-                        break;
-                    }
-                }
-            }
-        }
-        assert(indirectPtr && adjThis && "can not find the indirect call in std::__invoke_impl ??");
-
-        // 2nd, resolve the target
-        // get the std::thread creation site, which is the context's last item (if we are using origin-sensitive)
-        // isCXXInvokeMemFunInStdThread guarantees the last context is call to std::threads
-        // TODO: ctx insensitve, we need to find all the callsite to std::thread
-        auto callStdThread = llvm::cast<CallBase>(callee->getContext()->getLast());
-        auto callable = callStdThread->getArgOperand(1);
-
-        if (callable->getType() == stdInvokeImpl->arg_begin()->getType()) {
-            std::vector<const GetElementPtrInst *> geps;
-            // now try to resolve the target if possible
-            for (User *user : callable->users()) {
-                if (auto gep = dyn_cast<GetElementPtrInst>(user)) {
-                    // find two geps that set the elements of the
-                    geps.push_back(gep);
-                }
-            }
-
-            if (geps.size() == 2) {
-                auto gep1 = geps[0];
-                auto gep2 = geps[1];
-                // should looks like this
-                // %.fca.1.gep2 = getelementptr inbounds { i64, i64 }, { i64, i64 }* %ref.tmp, i32 0, i32 1, !dbg !1596
-                assert(gep1->getOperand(0) == callable && gep2->getOperand(0) == callable &&
-                       gep1->getNumOperands() == 3 && gep2->getNumOperands() == 3);
-                auto idx1 = cast<ConstantInt>(gep1->getOperand(1));
-                auto idx2 = cast<ConstantInt>(gep2->getOperand(1));
-                assert(idx1->getSExtValue() == 0 && idx2->getSExtValue() == 0);
-                // we should have two geps to set { i64, i64 }
-                // one is gep 0, 0
-                // another is gep 0, 1
-                idx1 = cast<ConstantInt>(gep1->getOperand(2));
-                idx2 = cast<ConstantInt>(gep2->getOperand(2));
-                assert((idx1->getSExtValue() == 0 && idx2->getSExtValue() == 1) ||
-                       (idx1->getSExtValue() == 1 && idx2->getSExtValue() == 0));
-
-                if (idx2->getSExtValue() == 0) {  //
-                    std::swap(gep1, gep2);
-                }
-
-                const Function *target = nullptr;
-                // here gep1 is the memptr.ptr, gep2 is the memptr.adj
-                for (auto user : gep1->users()) {
-                    // find a store
-                    if (auto SI = dyn_cast<StoreInst>(user)) {
-                        if (auto ptr2int = dyn_cast<PtrToIntInst>(SI->getValueOperand())) {
-                            if (auto f = dyn_cast<Function>(ptr2int->getPointerOperand())) {
-                                target = f;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                bool isAdjZero = false;
-                for (auto user : gep2->users()) {
-                    if (auto SI = dyn_cast<StoreInst>(user)) {
-                        // find a store
-                        if (auto adj = dyn_cast<ConstantInt>(SI->getValueOperand())) {
-                            if (adj->getSExtValue() == 0) {
-                                isAdjZero = true;
-                            }
-                        }
-                    }
-                }
-
-                // TODO: what if the adjustment is non-zero?
-                if (target != nullptr && isAdjZero) {
-                    // we are sure that the callback is the resolved one, so the previous constraints are unnecessary
-                    indirectPtr->clearConstraints();
-                    PtrNode *targetNode = this->getPtrNode(CT::getGlobalCtx(), target);
-                    this->consGraph->addConstraints(targetNode, indirectPtr, Constraints::copy);
-                    this->consGraph->addConstraints(this->getPtrNode(callee->getContext(), stripOffsetAndCast(adjThis)),
-                                                    this->getPtrNode(callee->getContext(), adjThis), Constraints::copy);
-                }
-            }
-        }
-    }
-
     return false;
 }
 
-bool GraphBLASModel::isStdThreadCreate(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return (llvm::demangle(CS.getCalledFunction()->getName().str())
-                    .rfind("__coderrect_stub_thread_create_no_origin", 0) == 0);
-        // from bitcoind: std::thread& std::vector<std::thread, std::allocator<std::thread> >::emplace_back
-    }
-}
-
-bool GraphBLASModel::isStdThreadAssign(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return llvm::demangle(CS.getCalledFunction()->getName().str()) == "std::thread::operator=(std::thread&&)";
-    }
-}
-bool GraphBLASModel::isStdThreadJoin(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return llvm::demangle(CS.getCalledFunction()->getName().str()) == "std::thread::join()" ||
-               llvm::demangle(CS.getCalledFunction()->getName().str()) == "boost::thread::join()";
-    }
-}
-bool GraphBLASModel::isLibEventSetCallBack(const Function *F) { return F->getName().equals("evhttp_set_gencb"); }
-bool GraphBLASModel::isLibEventSetCallBack(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return isLibEventSetCallBack(CS.getCalledFunction());
-    }
-}
-bool GraphBLASModel::isLibEventDispath(const Function *F) { return F->getName().equals("event_base_dispatch"); }
-bool GraphBLASModel::isLibEventDispath(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return isLibEventDispath(CS.getCalledFunction());
-    }
-}
-bool GraphBLASModel::isThreadCreate(const Function *F) {
-    return F->getName().equals("pthread_create") || F->getName().equals("__coderrect_stub_thread_create_no_origin") ||
-
-           F->getName().startswith(ThreadAPIRewriter::getCanonicalizedAPIPrefix());
-}
-
-bool GraphBLASModel::isThreadCreate(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return isThreadCreate(CS.getCalledFunction());  //|| isStdThreadCreate(inst)
-    }
-}
-
-bool GraphBLASModel::isThreadJoin(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return CS.getCalledFunction()->getName().equals("pthread_join");
-    }
-}
 bool GraphBLASModel::isRegisterSignal(const llvm::Instruction *inst) {
     aser::CallSite CS(inst);
     if (CS.isIndirectCall()) {
@@ -1073,172 +650,12 @@ bool GraphBLASModel::isRegisterSignalAction(const llvm::Instruction *inst) {
         return CS.getCalledFunction()->getName().equals("sigaction");
     }
 }
-bool GraphBLASModel::isCondWait(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return CS.getCalledFunction()->getName().equals("pthread_cond_wait");
-    }
-}
-
-bool GraphBLASModel::isCondSignal(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return CS.getCalledFunction()->getName().equals("pthread_cond_signal");
-    }
-}
-bool GraphBLASModel::isCondBroadcast(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return CS.getCalledFunction()->getName().equals("pthread_cond_broadcast");
-    }
-}
-bool GraphBLASModel::isSyncCall(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return isSyncCall(CS.getCalledFunction());
-    }
-}
-bool GraphBLASModel::isSyncCall(const Function *F) {
-    return false;
-}
-bool GraphBLASModel::isSemaphoreWait(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return CS.getCalledFunction()->getName().equals("sem_wait") ||
-               CS.getCalledFunction()->getName().startswith("tsem_wait");  //    tsem_wait(&pSub->sem);
-    }
-}
-
-bool GraphBLASModel::isSemaphorePost(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return CS.getCalledFunction()->getName().equals("sem_post");
-    }
-}
-
-bool GraphBLASModel::isMutexLock(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return CS.getCalledFunction()->getName().equals("pthread_mutex_lock") ||
-               CS.getCalledFunction()->getName().equals("pthread_spin_lock") ||
-               CS.getCalledFunction()->getName().equals(".coderrect.mutex.lock");
-    }
-}
-bool GraphBLASModel::isMutexTryLock(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return CS.getCalledFunction()->getName().equals("pthread_mutex_trylock");
-    }
-}
-
-bool GraphBLASModel::isMutexUnLock(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return CS.getCalledFunction()->getName().equals("pthread_mutex_unlock") ||
-               CS.getCalledFunction()->getName().equals("pthread_spin_unlock") ||
-               CS.getCalledFunction()->getName().equals(".coderrect.mutex.unlock");
-    }
-}
 
 bool GraphBLASModel::isRead(const llvm::Instruction *inst) { return llvm::isa<llvm::LoadInst>(inst); }
 
 bool GraphBLASModel::isWrite(const llvm::Instruction *inst) { return llvm::isa<llvm::StoreInst>(inst); }
 
 bool GraphBLASModel::isReadORWrite(const llvm::Instruction *inst) { return isRead(inst) || isWrite(inst); }
-
-bool GraphBLASModel::isMemoryFree(const llvm::Function *func) {
-    // auto name = llvm::demangle(func->getName());
-    // llvm::outs() << "name: " << name << " - original: " << func->getName() << "\n";
-    return MemoryFreeAPIs.find(func->getName()) != MemoryFreeAPIs.end();
-}
-
-bool GraphBLASModel::isMemoryFree(const llvm::Instruction *inst) {
-    auto call = dyn_cast_or_null<CallBase>(inst);
-    if (call == nullptr) {
-        return false;
-    }
-
-    auto func = call->getCalledFunction();
-    if (func == nullptr) {
-        return false;
-    }
-
-    return isMemoryFree(func);
-}
-
-static std::set<const llvm::Function *> lockCallStackFunctions;
-void GraphBLASModel::addLockCallStackFunction(std::vector<const Function *> &callStack) {
-    // only consider the last five calls
-    // int size = callStack.size();
-    // int k = size-5;
-    // if(k<0) k=0;
-    // for (;k<size;k++){
-    // auto f = callStack[k];
-    if (CONFIG_EXPLORE_ALL_LOCK_PATHS)
-        for (auto f : callStack) {
-            auto result = lockCallStackFunctions.insert(f);
-            if (result.second) {
-                // std::cout << "Inserted a new lock call stack function: "<<llvm::demangle(f->getName().str())<<" size:
-                // "<<lockCallStackFunctions.size()<<"\n";
-            }
-        }
-}
-
-bool GraphBLASModel::isCriticalAPI(const llvm::Function *func) {
-    auto name = llvm::demangle(func->getName().str());
-    // std::thread::thread<
-    if (name.rfind("std::thread::", 0) == 0) return true;
-    // llvm::outs() << "name: " << name << " - original: " << func->getName() << "\n";
-    return (std::find(CONFIG_MUST_EXPLORE_APIS.begin(), CONFIG_MUST_EXPLORE_APIS.end(), name) !=
-            CONFIG_MUST_EXPLORE_APIS.end()) ||
-           ExtraLockAPIs.find(name) != ExtraLockAPIs.end() ||
-           lockCallStackFunctions.find(func) != lockCallStackFunctions.end();
-}
-
-bool GraphBLASModel::isCriticalCallStack(std::vector<const llvm::Function *> &callStack) {
-    for (auto f : callStack) {
-        if (f->hasName()) {
-            auto name = llvm::demangle(f->getName().str());
-            if (std::find(CONFIG_MUST_EXPLORE_APIS.begin(), CONFIG_MUST_EXPLORE_APIS.end(), name) !=
-                CONFIG_MUST_EXPLORE_APIS.end())
-                return true;
-        }
-    }
-    return false;
-}
-
-bool GraphBLASModel::isWriteAPI(const llvm::Function *func) {
-    // model memory free as write as well
-    return isMemoryFree(func) || StdVectorFunctions::isVectorWrite(func) || StdStringFunctions::isStringWrite(func) ||
-           func->getName().equals("raxInsert") || func->getName().equals("raxRemove");
-}
-bool GraphBLASModel::isReadAPI(const llvm::Function *func) {
-    return StdVectorFunctions::isVectorRead(func) || StdStringFunctions::isStringRead(func) ||
-           func->getName().equals("raxFind");
-}
-
-bool GraphBLASModel::isReadWriteAPI(const llvm::Function *func) {
-    return isWriteAPI(func) || isReadAPI(func) || StdVectorFunctions::isVectorAccess(func) ||
-           StdStringFunctions::isStringAccess(func);
-}
 
 bool GraphBLASModel::isRustNormalCall(const llvm::Function *func) { return isRustAPI(func) && !isRustModelAPI(func); }
 bool GraphBLASModel::isRustNormalCall(const llvm::Instruction *inst) {

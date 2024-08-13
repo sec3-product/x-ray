@@ -102,9 +102,6 @@ cl::opt<bool> ConfigShowDetail("Xshow-race-detail",
 cl::opt<bool> ConfigShowAllTerminal(
     "t", cl::desc("show race detail and summary on the terminal"));
 
-cl::opt<bool> ConfigKeepLockPath("Xkeep-lock-path",
-                                 cl::desc("Turn on exploring all lock paths"));
-
 cl::opt<size_t> PTAAnonLimit(
     "Xpta-anon-limit", cl::init(10000),
     cl::desc("max number of anonymous abjects to allocate in pointer analysis. "
@@ -217,7 +214,6 @@ bool CONFIG_IGNORE_LOCK;
 bool CONFIG_LOOP_UNROLL;
 bool CONFIG_NO_FALSE_ALIAS;
 bool CONFIG_NO_PRODUCER_CONSUMER;
-bool CONFIG_EXPLORE_ALL_LOCK_PATHS;
 bool CONFIG_INTEGRATE_DYNAMIC;
 
 bool CONFIG_ENTRY_POINT_SINGLE_TIME;
@@ -656,9 +652,6 @@ static void createFakeMain(llvm::Module *module) {
 }
 
 int main(int argc, char **argv) {
-  // llvm::outs() << sizeof(std::pair<NodeID, NodeID>) << ", " <<
-  // sizeof(std::pair<void *, void *>); return 1;
-
   // InitLLVM will setup signal handler to print stack trace when the program
   // crashes.
   InitLLVM x(argc, argv);
@@ -808,7 +801,6 @@ int main(int argc, char **argv) {
       conflib::Get<bool>("enablePrintRaceSummary", false);
   auto enableShowRaceDetail =
       conflib::Get<bool>("enablePrintRaceDetail", false);
-  auto exploreAllLockPaths = conflib::Get<bool>("exploreAllLockPaths", false);
 
   auto entryPointOnce = conflib::Get<bool>("entryPoint.once", false);
 
@@ -861,7 +853,6 @@ int main(int argc, char **argv) {
   CONFIG_SHOW_DETAIL = ConfigShowDetail | enableShowRaceDetail |
                        ConfigShowAllTerminal;  // show race details
 
-  CONFIG_EXPLORE_ALL_LOCK_PATHS = ConfigKeepLockPath | exploreAllLockPaths;
   // by default, set the pts size to 999
   PTSTrait<PtsTy>::setPTSSizeLimit(9);  // set pts size limit to 999
   if (CONFIG_FAST_MODE) {
