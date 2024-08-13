@@ -63,8 +63,8 @@ void aser::OrderViolation::collect(
     return;
   }
 
-  auto st1 = getStackTrace(e1, callEventTraces, srcInfo1.isCpp());
-  auto st2 = getStackTrace(e2, callEventTraces, srcInfo2.isCpp());
+  auto st1 = getStackTrace(e1, callEventTraces, true);
+  auto st2 = getStackTrace(e2, callEventTraces, true);
 
   P = customizedPriorityAdjust(P, sharedObjLoc.getName(), srcInfo1, srcInfo2,
                                st1, st2);
@@ -415,6 +415,7 @@ json aser::CosplayAccounts::to_json() {
           {"url", url}});
   return j;
 }
+
 void aser::CosplayAccounts::print() {
   // llvm::errs() << "==============VULNERABLE: Possible Accounts Cosplay
   // Attacks!============\n"; outs() << errorMsg; outs() << " Data Type1 defined
@@ -454,6 +455,7 @@ void aser::CosplayAccounts::print() {
   outs() << "\n";
   outs() << "For more info, see " << url << "\n\n\n";
 }
+
 void aser::CosplayAccounts::printAll() {
   std::sort(cosplayAccounts.begin(), cosplayAccounts.end());
   for (auto r : cosplayAccounts) {

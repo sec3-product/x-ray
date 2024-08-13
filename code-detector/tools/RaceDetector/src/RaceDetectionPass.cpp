@@ -375,8 +375,6 @@ llvm::StringRef RaceDetectionPass::findCallStackAccountAliasName(
     for (; i >= 0; i--) {
       CallEvent *ce = callTrace.at(i);
       auto *e_caller = ce->getInst();
-      // auto *e_caller
-      // =getEventCallerInstruction(callEventTraces, e, tid);
       if (auto call_site = dyn_cast<CallBase>(e_caller)) {
         CallSite CS4(call_site);
         if (DEBUG_RUST_API) {
@@ -4345,7 +4343,7 @@ void RaceDetectionPass::detectUntrustfulAccounts(TID tid) {
       } else {
         // TODO: define pattern for mut declared but not updated account
         //&& !isAccountPDA(accountName) - this condition removed, because PDA
-        //can still be faked...
+        // can still be faked...
         if (!isUnvalidate && !isAnchorValidatedAccount(accountName) &&
             !curThread->isAccountLamportsUpdated(accountName) &&
             !curThread->isAccountKeyValidated(accountName) &&

@@ -1,6 +1,7 @@
-// Created by Yanze 12/5/2019
-#ifndef RACEDETECTOR_UTIL_H
-#define RACEDETECTOR_UTIL_H
+#pragma once
+
+#include <string>
+#include <vector>
 
 #include <llvm/Demangle/Demangle.h>
 #include <llvm/IR/DebugInfoMetadata.h>
@@ -10,18 +11,10 @@
 #include <llvm/Support/Casting.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Transforms/Utils/Local.h>
-
-//#include <inja/inja.hpp>
 #include <nlohmann/json.hpp>
-#include <string>
-#include <vector>
 
 #include "Graph/Event.h"
 #include "StaticThread.h"
-
-#ifdef __MINGW32__
-typedef unsigned uint;
-#endif
 
 namespace aser {
 using CallingCtx = std::pair<std::vector<CallEvent *>, TID>;
@@ -65,12 +58,6 @@ inline bool hasNoAliasMD(const llvm::Instruction *inst) {
 }
 
 std::string getCurrentTimeStr();
-
-// inja is the template engine we are using
-// I want to use its callback feature to limit the string length
-// therefore we need to initialize the engine first
-// static inja::Environment tplEngine;
-// void initTplEngine();
 
 void tplPrint(std::string &tpl, const json &data);
 
@@ -147,22 +134,12 @@ public:
     this->accessPath = accessPath;
   };
 
-  bool isCpp() const;
   bool isInAccurate() { return inaccurate; }
   bool isGlobalValue() const {
-    if (val && isa<llvm::GlobalValue>(val))
-      return true;
-    else
-      return false;
+    return val && llvm::isa<llvm::GlobalValue>(val);
   }
   void setWrite() { iswrite = true; }
-  bool isWrite() const {
-    return iswrite;
-    // if (val && isa<llvm::StoreInst>(val))
-    //     return true;
-    // else
-    //     return false;
-  }
+  bool isWrite() const { return iswrite; }
   std::string overview() const;
 
   // return a source-level signature for the memory access
@@ -305,10 +282,6 @@ std::vector<CallEvent *> getCallEventStackUntilMain(
 // leverage: all the function that haven't returned does not have a EndID
 std::vector<std::string> getCallingCtx(CallingCtx &callingCtx, bool isCpp);
 
-const llvm::Instruction *getEventCallerInstruction(
-    std::map<TID, std::vector<CallEvent *>> &callEventTraces, Event *e,
-    TID tid);
-
 std::vector<std::string>
 getStackTrace(const Event *e,
               std::map<TID, std::vector<CallEvent *>> &callEventTraces);
@@ -316,10 +289,7 @@ std::vector<std::string>
 getStackTrace(const Event *e,
               std::map<TID, std::vector<CallEvent *>> &callEventTraces,
               bool isCpp);
-std::vector<std::string>
-getCallStackUntilMain(const Event *e,
-                      std::map<TID, std::vector<CallEvent *>> &callEventTraces,
-                      bool isCpp);
+
 void printStackTrace(const Event *e,
                      std::map<TID, std::vector<CallEvent *>> &callEventTraces);
 void printStackTrace(const Event *e,
@@ -329,20 +299,6 @@ void printStackTrace(const Event *e,
 void printStackTrace(const std::vector<std::string> &stackTrace);
 void printCallEventStackTrace(std::vector<CallEvent *> &st);
 
-void printSharedObj(SourceInfo &sharedObjLoc);
-
 void printSrcInfo(SourceInfo &srcInfo, TID tid);
 
-void printRace(SourceInfo &srcInfo1, SourceInfo &srcInfo2,
-               std::vector<std::string> &st1, std::vector<std::string> &st2,
-               SourceInfo &sharedObjLoc);
-// NOTE: only for debugging
-void printRace(Event *e1, Event *e2, const ObjTy *obj,
-               std::map<TID, std::vector<CallEvent *>> &callEventTraces);
-
-void printAtomicityViolation(
-    Event *e1, Event *e2, Event *e3, const ObjTy *obj,
-    std::map<TID, std::vector<CallEvent *>> &callEventTraces);
 } // namespace aser
-
-#endif

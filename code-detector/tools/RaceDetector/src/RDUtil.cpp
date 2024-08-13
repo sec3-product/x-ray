@@ -892,32 +892,6 @@ aser::getStackTrace(const Event *e,
   }
   return result;
 }
-std::vector<std::string> aser::getCallStackUntilMain(
-    const Event *e, std::map<TID, std::vector<CallEvent *>> &callEventTraces,
-    bool isCpp) {
-  std::vector<CallEvent *> callEventResult;
-  getCallEventStackUntilMain(e, callEventTraces, callEventResult);
-
-  std::vector<std::string> result;
-  for (CallEvent *ce : callEventResult) {
-    result.push_back(ce->getCallSiteString(isCpp));
-  }
-  //! 116743 = !DILocation(line: 96, column: 24, scope: !116721, inlinedAt:
-  //! !116726)
-  // if inst is inlined, add the CallSiteString
-  if (DILocation *Loc = e->getInst()->getDebugLoc()) {
-    if (auto Loc2 = Loc->getInlinedAt()) {
-      auto inlinedCallStrs = e->getInlinedCallSiteStrings(isCpp);
-      if (!inlinedCallStrs.empty()) {
-        for (auto csStr : inlinedCallStrs)
-          result.push_back(csStr);
-      }
-      // llvm::outs() << "getInlinedCallSiteString: " << inlinedCallStr << "
-      // inst: " << *e->getInst() << "\n";
-    }
-  }
-  return result;
-}
 
 std::vector<CallEvent *> aser::getCallEventStack(
     const Event *e, std::map<TID, std::vector<CallEvent *>> &callEventTraces) {
@@ -954,39 +928,6 @@ std::vector<CallEvent *> aser::getCallEventStackUntilMain(
   std::vector<CallEvent *> result;
   getCallEventStackUntilMain(e, callEventTraces, result);
   return result;
-}
-
-const Instruction *aser::getEventCallerInstruction(
-    std::map<TID, std::vector<CallEvent *>> &callEventTraces, Event *e,
-    TID tid) {
-  if (!e)
-    return callEventTraces[tid].front()->getInst(); //__kmpc_fork_call
-
-  auto &callTrace = callEventTraces[e->getTID()];
-  auto id = e->getID();
-  if (callTrace.size() > 0) {
-    // reverse traverse
-    for (int i = callTrace.size() - 1; i >= 0; i--) {
-      CallEvent *ce = callTrace.at(i);
-      if (ce->getID() > id)
-        continue;
-      if (ce->getEndID() > id || ce->getEndID() == 0) {
-        return ce->getInst();
-      }
-    }
-    // for debug, if we arrive here and inst is not omp_fork_call, it is likely
-    // something is wrong if (callTrace[0]->getInst()->getFunction()->getName()
-    // != "__kmpc_fork_call") {
-    //     for (CallEvent *ce : callTrace) llvm::outs() << "call event: " <<
-    //     *ce->getInst() << "\n";
-    // }
-    return callTrace[0]->getInst();
-  } else {
-    // llvm::outs() << "\n!!!!!! Something is wrong: empty call trace
-    // !!!!!!!\n";
-    LOG_ERROR("\n!!!!!! Something is wrong: empty call trace !!!!!!!\n");
-    return nullptr;
-  }
 }
 
 void aser::printStackTrace(
@@ -1037,20 +978,6 @@ void aser::printCallEventStackTrace(std::vector<CallEvent *> &st) {
   }
 }
 
-void aser::printSharedObj(SourceInfo &sharedObjLoc) {
-  if (sharedObjLoc.isGlobalValue())
-    error("Static variable: ");
-  else
-    error("Shared variable: ");
-  info(sharedObjLoc.getName(), false);
-  llvm::outs() << " at line " << sharedObjLoc.getLine() << " of "
-               << sharedObjLoc.getFilename() << "\n";
-#ifdef RACE_DETECT_DEBUG
-  llvm::outs() << "Instruction: " << *sharedObjLoc.getValue() << "\n";
-#endif
-  llvm::outs() << sharedObjLoc.getSourceLine();
-}
-
 void aser::printSrcInfo(SourceInfo &srcInfo, TID tid) {
   highlight("Thread " + std::to_string(tid) + ": ");
 #ifdef RACE_DETECT_DEBUG
@@ -1058,61 +985,6 @@ void aser::printSrcInfo(SourceInfo &srcInfo, TID tid) {
 #endif
   llvm::outs() << srcInfo.str();
   llvm::outs() << ">>>Stack Trace:\n";
-}
-
-// NOTE: only use this for debugging purpose
-void aser::printRace(Event *e1, Event *e2, const ObjTy *obj,
-                     std::map<TID, std::vector<CallEvent *>> &callEventTraces) {
-  SourceInfo srcInfo1 = getSourceLoc(e1->getInst());
-  SourceInfo srcInfo2 = getSourceLoc(e2->getInst());
-  auto sharedObjLoc = getSourceLoc(obj->getValue());
-
-  llvm::outs() << "\n==== Found a race between: \n"
-               << srcInfo1.overview() << "  AND  " << srcInfo2.overview()
-               << "\n";
-
-  printSharedObj(sharedObjLoc);
-
-  printSrcInfo(srcInfo1, 1);
-  printStackTrace(e1, callEventTraces, srcInfo1.isCpp());
-
-  printSrcInfo(srcInfo2, 2);
-  printStackTrace(e2, callEventTraces, srcInfo2.isCpp());
-}
-
-void aser::printRace(SourceInfo &srcInfo1, SourceInfo &srcInfo2,
-                     std::vector<std::string> &st1,
-                     std::vector<std::string> &st2, SourceInfo &sharedObjLoc) {
-  llvm::outs() << "\n";
-  llvm::outs() << "==== Found a potential race between: \n"
-               << srcInfo1.overview() << "  AND  " << srcInfo2.overview()
-               << "\n";
-
-  printSharedObj(sharedObjLoc);
-
-  printSrcInfo(srcInfo1, 1);
-  printStackTrace(st1);
-
-  printSrcInfo(srcInfo2, 2);
-  printStackTrace(st2);
-}
-
-void aser::printAtomicityViolation(
-    Event *e1, Event *e2, Event *e3, const ObjTy *obj,
-    std::map<TID, std::vector<CallEvent *>> &callEventTraces) {
-  SourceInfo srcInfo1 = getSourceLoc(e1->getInst());
-  SourceInfo srcInfo2 = getSourceLoc(e2->getInst());
-  SourceInfo srcInfo3 = getSourceLoc(e3->getInst());
-  auto sharedObjLoc = getSourceLoc(obj->getValue());
-
-  llvm::outs() << "\n==== Found atomicity violation: \n";
-  printSharedObj(sharedObjLoc);
-
-  printSrcInfo(srcInfo1, 1);
-
-  printSrcInfo(srcInfo2, 2);
-
-  printSrcInfo(srcInfo3, 1);
 }
 
 aser::SourceInfo::SourceInfo()
@@ -1153,16 +1025,4 @@ std::string aser::SourceInfo::sig() const {
      << this->col;
 
   return ss.str();
-}
-
-bool aser::SourceInfo::isCpp() const {
-  if (true)
-    return true; // Jeff: always demangle (c++ can be used in .h)
-  std::size_t pos = filename.find_last_of('.');
-  if (pos != std::string::npos) {
-    std::string ext = filename.substr(pos);
-    if (ext == ".cpp" || ext == ".cc" || ext == ".hpp")
-      return true;
-  }
-  return false;
 }
