@@ -4272,7 +4272,6 @@ bool RaceDetectionPass::runOnModule(llvm::Module &module) {
     logger::endPhase();
 
     if (CONFIG_SHOW_DETAIL && !PRINT_IMMEDIATELY) {
-        // MismatchedAPI::printAll();
         UntrustfulAccount::printAll();
         UnSafeOperation::printAll();
         CosplayAccounts::printAll();
@@ -4280,7 +4279,6 @@ bool RaceDetectionPass::runOnModule(llvm::Module &module) {
 
     // TODO design? by default always report summary
     if (CONFIG_SHOW_SUMMARY) {
-        // MismatchedAPI::printSummary();
         UntrustfulAccount::printSummary();
         UnSafeOperation::printSummary();
         CosplayAccounts::printSummary();

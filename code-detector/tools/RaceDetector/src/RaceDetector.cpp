@@ -207,7 +207,6 @@ bool CONFIG_NO_OMP;
 bool CONFIG_NO_AV;
 bool CONFIG_NO_OV;
 bool CONFIG_NO_MISSED_OMP;
-bool CONFIG_NO_MISS_MATCH_API;
 bool CONFIG_NO_FILTER;
 bool CONFIG_CHECK_IDENTICAL_WRITE;
 bool CONFIG_INCLUDE_ATOMIC;
@@ -804,7 +803,6 @@ int main(int argc, char **argv) {
   auto enableOMP = conflib::Get<bool>("enableOpenMP", true);
   auto enableAV = conflib::Get<bool>("enableAtomicityViolation", true);
   auto enableOV = conflib::Get<bool>("enableOrderViolation", true);
-  auto enableMismatchedAPI = conflib::Get<bool>("enableMismatchedAPI", true);
   auto enableIdenticalWrites =
       conflib::Get<bool>("enableIdenticalWrites", false);
   auto enableLockSet = conflib::Get<bool>("enableLockSet", true);
@@ -827,7 +825,6 @@ int main(int argc, char **argv) {
   CONFIG_NO_AV = ConfigNoAV | !enableAV;
   CONFIG_NO_OV = ConfigNoOV | !enableOV;
   CONFIG_NO_MISSED_OMP = ConfigNoMissedOMP;  // TODO: add conflib check as well
-  CONFIG_NO_MISS_MATCH_API = ConfigNoMissAPI | !enableMismatchedAPI;
   CONFIG_CHECK_IDENTICAL_WRITE =
       ConfigCheckIdenticalWrites | enableIdenticalWrites;
 
