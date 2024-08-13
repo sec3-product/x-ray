@@ -22,10 +22,8 @@
 #include <llvm/Support/Signals.h>    // signal for command line
 #include <llvm/Support/SourceMgr.h>  // for SMDiagnostic
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
-#ifdef __MINGW32__
-#include <libloaderapi.h>
-#endif
 
+#include "CustomAPIRewriters/RustAPIRewriter.h"
 #include "PTAModels/GraphBLASModel.h"
 #include "RaceDetectionPass.h"
 #include "Races.h"
@@ -254,6 +252,7 @@ const llvm::Function *getFunctionFromPartialName(llvm::StringRef partialName) {
   }
   return nullptr;
 }
+
 const llvm::Function *getFunctionMatchStartEndName(llvm::StringRef startName,
                                                    llvm::StringRef endName) {
   for (auto [name, func] : FUNC_NAME_MAP) {
@@ -265,10 +264,6 @@ const llvm::Function *getFunctionMatchStartEndName(llvm::StringRef startName,
 }
 
 vector<string> DEBUG_FOCUS_VEC;
-
-namespace aser {
-void rewriteUserSpecifiedAPI(Module *M);
-}
 
 logger::LoggingConfig initLoggingConf() {
   logger::LoggingConfig config;
@@ -911,8 +906,7 @@ int main(int argc, char **argv) {
   logger::newPhaseSpinner("Running Compiler Optimization Passes");
 
   if (!DebugIR) {
-    // us
-    rewriteUserSpecifiedAPI(module.get());
+    RustAPIRewriter::rewriteModule(module.get());
 
     createFakeMain(module.get());
   }

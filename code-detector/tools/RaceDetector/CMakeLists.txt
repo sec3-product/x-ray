@@ -23,8 +23,6 @@ llvm_map_components_to_libnames(llvm_libs
 
 set(racedetect-component
         src/CustomAPIRewriters/RustAPIRewriter.cpp
-        src/CustomAPIRewriters/IndirectTargetRewriter.cpp
-        src/CustomAPIRewriters/RewriteUserSpecifiedAPI.cpp
         src/RDUtil.cpp
         src/Races.cpp
         src/LocksetManager.cpp
