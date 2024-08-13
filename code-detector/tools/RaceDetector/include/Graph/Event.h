@@ -329,13 +329,6 @@ public:
 };
 
 // TODO:
-class JoinEvent : public Event {
-public:
-    explicit JoinEvent(const ctx *const context, const llvm::Instruction *const inst, TID tid)
-        : Event(inst, context, EventType::Call, tid) {}
-};
-
-// TODO:
 class LockEvent : public Event {
     const LocksetManager::ID locksetID;
     const llvm::Value *lockPtr;
@@ -349,27 +342,5 @@ public:
     inline const llvm::Value *getLockPointer() const { return lockPtr; }
 };
 
-// TODO:
-class WaitEvent : public Event {
-    const llvm::Value *condVarPtr;
-
-public:
-    explicit WaitEvent(const ctx *const context, const llvm::Instruction *const inst, TID tid,
-                       const llvm::Value *condVarPtr)
-        : Event(inst, context, EventType::Wait, tid), condVarPtr(condVarPtr) {}
-
-    inline const llvm::Value *getCondVarPtr() const { return condVarPtr; }
-};
-// TODO:
-class SignalEvent : public Event {
-    const llvm::Value *condVarPtr;
-
-public:
-    explicit SignalEvent(const ctx *const context, const llvm::Instruction *const inst, TID tid,
-                         const llvm::Value *condVarPtr)
-        : Event(inst, context, EventType::Signal, tid), condVarPtr(condVarPtr) {}
-
-    inline const llvm::Value *getCondVarPtr() const { return condVarPtr; }
-};
 }  // namespace aser
 #endif

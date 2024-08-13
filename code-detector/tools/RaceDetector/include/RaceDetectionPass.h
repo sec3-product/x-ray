@@ -230,8 +230,6 @@ private:
     void detectUntrustfulAccounts(TID tid);
     TID addNewThread(ForkEvent *fork);
 
-    void addThreadJoinEdge(JoinEvent *join, StaticThread *thread, std::vector<const llvm::Function *> &callStack);
-
     void addCheckKeyEqual(const aser::ctx *ctx, TID tid, const llvm::Instruction *inst, StaticThread *thread,
                           CallSite &CS);
     void handleConditionalCheck0(const aser::ctx *ctx, TID tid, const llvm::Function *func,

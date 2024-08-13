@@ -174,13 +174,6 @@ public:
         EventID id1 = e->getID();
         reachEngine.addEdge(std::to_string(tid1) + ":" + std::to_string(id1), std::to_string(tid2) + "s");
     }
-
-    void addThreadJoinEdge(const JoinEvent *e, TID tid) {
-        const TID tid1 = e->getTID();
-        const TID tid2 = tid;
-        EventID id1 = e->getID();
-        reachEngine.addEdge(std::to_string(tid2) + "e", std::to_string(tid1) + ":" + std::to_string(id1));
-    }
 };  // class ReachGraph
 }  // namespace aser
 

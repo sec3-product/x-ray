@@ -15,7 +15,6 @@ namespace aser {
 using TID = uint32_t;
 class Event;
 class ForkEvent;
-class JoinEvent;
 
 class AccountIDL {
 public:
@@ -40,7 +39,6 @@ private:
     bool isOwnerOnlyComputed = false;
 
     std::vector<ForkEvent *> forkSites;
-    std::vector<JoinEvent *> joinSites;
 
 public:
     // extensions for sol
@@ -992,11 +990,7 @@ public:
 
     inline const std::vector<ForkEvent *> &getForkSites() const { return forkSites; }
 
-    inline const std::vector<JoinEvent *> &getJoinSites() const { return joinSites; }
-
     void addForkSite(ForkEvent *e) { forkSites.push_back(e); }
-
-    void addJoinSite(JoinEvent *e) { joinSites.push_back(e); }
 };
 
 }  // namespace aser
