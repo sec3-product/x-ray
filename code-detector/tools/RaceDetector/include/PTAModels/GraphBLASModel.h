@@ -6,21 +6,15 @@
 #define RACEDETECTOR_GRAPHBLASMODEL_H
 
 #include "GraphBLASHeapModel.h"
-#include "aser/PointerAnalysis/Context/HybridCtx.h"
-#include "aser/PointerAnalysis/Context/KCallSite.h"
 #include "aser/PointerAnalysis/Context/KOrigin.h"
-#include "aser/PointerAnalysis/Context/NoCtx.h"
 #include "aser/PointerAnalysis/Models/LanguageModel/LangModelBase.h"
 #include "aser/PointerAnalysis/Models/MemoryModel/CppMemModel/CppMemModel.h"
 #include "aser/PointerAnalysis/Program/CtxModule.h"
-#include "aser/PointerAnalysis/Solver/AndersenWave.h"
 #include "aser/PointerAnalysis/Solver/PartialUpdateSolver.h"
 #include "aser/PointerAnalysis/Solver/PointsTo/BitVectorPTS.h"
 
 namespace aser {
 
-// comment this out for hybrid ctx, still experimental feature
-// using ctx = HybridCtx<KOrigin<3>, KCallSite<3>>;
 using ctx = KOrigin<3>;
 using MemModel = cpp::CppMemModel<ctx>;
 using PtsTy = BitVectorPTS;
