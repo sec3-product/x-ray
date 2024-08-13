@@ -239,10 +239,6 @@ vector<string> LOW_PRIORITY_VAR_NAMES;
 vector<string> HIGH_PRIORITY_FILE_NAMES;
 vector<string> HIGH_PRIORITY_VAR_NAMES;
 
-vector<string> CONFIG_INDIRECT_APIS;
-vector<string> CONFIG_MUST_EXPLORE_APIS;
-map<string, string> CRITICAL_INDIRECT_TARGETS;
-
 // for solana
 std::map<std::string, std::map<std::string, std::string>> SOLANA_SVE_DB;
 std::map<llvm::StringRef, const llvm::Function *> FUNC_NAME_MAP;
@@ -664,14 +660,9 @@ int main(int argc, char **argv) {
   auto heapAPIs =
       conflib::Get<std::vector<std::string>>("heapAllocFunctions", {});
 
-  CONFIG_MUST_EXPLORE_APIS =
-      conflib::Get<std::vector<std::string>>("mustExploreFunctions", {});
-  CONFIG_INDIRECT_APIS =
-      conflib::Get<std::vector<std::string>>("indirectFunctions", {});
-  CRITICAL_INDIRECT_TARGETS =
-      conflib::Get<map<string, string>>("criticalIndirectTargets", {});
-  if (true) {  // for solana sve
-               // initialize SVEIDMap
+  // for solana sve
+  // initialize SVEIDMap
+  {
     std::set<std::string> freeSVEs;
     SVE::addTypeID("1001", SVE::Type::MISS_SIGNER);
     freeSVEs.insert("1001");
@@ -768,6 +759,7 @@ int main(int argc, char **argv) {
     }
     // llvm::outs() << "SOTERIA_PLAN: " << SOTERIA_PLAN << "\n";
   }
+
   DEBUG_FOCUS_VEC =
       ConfigDebugDebugDebug;  // conflib::Get<std::vector<std::string>>("debugdebugdebug",
                               // {});

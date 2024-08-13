@@ -1,5 +1,8 @@
 #include "PTAModels/GraphBLASModel.h"
 
+#include <set>
+#include <string>
+
 #include <llvm/ADT/StringSet.h>
 
 #include "PTAModels/GraphBLASHeapModel.h"
@@ -11,9 +14,6 @@ using namespace llvm;
 extern bool DEBUG_RUST_API;
 
 std::set<StringRef> GraphBLASHeapModel::USER_HEAP_API;
-
-extern std::vector<std::string> CONFIG_INDIRECT_APIS;
-extern std::map<std::string, std::string> CRITICAL_INDIRECT_TARGETS;
 
 const std::string SOL_BUILT_IN_NAME = "sol.";  // for all the built-in sol function
 const std::string SOL_BUILT_IN_MODEL_NAME = "sol.model.";
@@ -61,36 +61,6 @@ static int inline funcHasCallBack(const Function *fun) {
     return -1;
 }
 
-bool isConfiguredIndirectAPI(const llvm::Function *func) {
-    auto it = std::find(CONFIG_INDIRECT_APIS.begin(), CONFIG_INDIRECT_APIS.end(), func->getName());
-    if (it != CONFIG_INDIRECT_APIS.end()) {
-        LOG_DEBUG("find configure indirect func: func={}, demangled={}", func->getName(),
-                  llvm::demangle(func->getName().str()));
-        // llvm::outs() << "find indirect func: " << llvm::demangle(func->getName()) << " - original: " <<
-        // func->getName() << "\n";
-        return true;
-    } else {
-        return false;
-    }
-}
-
-// TODO: handle C++ mangled name
-bool isCriticalIndirectTarget(const llvm::Instruction *callsite, const llvm::Function *func) {
-    auto it = CRITICAL_INDIRECT_TARGETS.find(func->getName().str());
-    if (it != CRITICAL_INDIRECT_TARGETS.end()) {
-        std::string callerName = it->second;
-        if (callsite->getFunction()->getName().equals(callerName)) {
-            LOG_DEBUG("find configure critical indirect target: func={}, demangled={}", func->getName(),
-                      llvm::demangle(func->getName().str()));
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    return false;
-}
-
 static const Value *getMatchedArg(const Argument *fArg, const CallBase *call) {
     assert(fArg->getType()->isPointerTy() && "only need to match pointer type");
 
@@ -114,14 +84,6 @@ IndirectResolveOption GraphBLASModel::onNewIndirectTargetResolvation(const llvm:
                                                                      const llvm::Instruction *callsite) {
     if (callsite->getFunction()->getName().equals("_ZZ9StartRESTRKN4util3RefEENK3$_1clEP11HTTPRequestRKNSt7__"
                                                   "cxx1112basic_stringIcSt11char_traitsIcESaIcEEE")) {
-        return IndirectResolveOption::CRITICAL;
-    }
-
-    if (isConfiguredIndirectAPI(callsite->getFunction())) {
-        return IndirectResolveOption::CRITICAL;
-    }
-
-    if (isCriticalIndirectTarget(callsite, target)) {
         return IndirectResolveOption::CRITICAL;
     }
 
