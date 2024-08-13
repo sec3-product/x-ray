@@ -105,38 +105,3 @@ int StaticThread::isAccountCompatibleAddOrMut(llvm::StringRef accountName) {
     }
     return 0;
 }
-bool StaticThread::isRecursiveThread(TID tid, const llvm::Instruction* inst, const ctx* context, PTA* pta) {
-    int count = 1;
-    const llvm::Value* v = CallSite(inst).getArgOperand(2);
-    std::set<std::string> funNames;
-    if (auto threadFun = llvm::dyn_cast<llvm::Function>(v->stripPointerCasts())) {
-        funNames.insert(threadFun->getName().str());
-    } else {
-        // FIXME: there's an inconsistency with StaticThread::entry
-        // since StaticThread only take the first function resolved from function ptr
-        auto cs = pta->getInDirectCallSite(context, inst);
-        auto functions = cs->getResolvedTarget();
-        for (auto& func : functions) {
-            funNames.insert(func->getName().str());
-        }
-    }
-
-    // parent thread
-    auto parent = tidToThread.at(tid);
-    string parentName;
-    while (parent->getTID() != 0) {
-        parentName = parent->getEntryNode()->getTargetFun()->getName().str();
-        // found a forksite with the same thread callback
-        if (funNames.count(parentName)) {
-            // we allow recursive thread creation to happen twice
-            // so that we can detect their self-race
-            if (count != 0)
-                --count;
-            else {
-                return true;
-            }
-        }
-        parent = tidToThread.at(parent->getParentEvent()->getTID());
-    }
-    return false;
-}

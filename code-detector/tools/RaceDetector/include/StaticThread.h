@@ -27,19 +27,6 @@ public:
 };
 
 class StaticThread {
-private:
-    static TID curID;
-    static std::map<TID, StaticThread *> tidToThread;
-    static std::map<TID, std::map<uint8_t, const llvm::Constant *>> threadArgs;
-    const CallGraphNodeTy *entryNode;
-    const ForkEvent *parent = nullptr;
-    const llvm::Value *threadHandle;
-    const TID id;
-    bool isOwnerOnly = false;
-    bool isOwnerOnlyComputed = false;
-
-    std::vector<ForkEvent *> forkSites;
-
 public:
     // extensions for sol
     // e.g., wallet_info -> next_account_info(account_info_iter)?;
@@ -963,15 +950,6 @@ public:
 
     ~StaticThread() { tidToThread.erase(this->id); }
 
-    // FIXME: this function is temporarily deprecated as "MAX_SAME_INST_CREATE_THREAD" may as well do the job
-    // FIXME: this check caused a crash in whole redis (redis + redis graph)
-    // tid -- current thread id
-    // inst -- current fork instruction
-    // NOTE: this function is implemented under the assumption that
-    // llvm::Function::getName() is a unique name for each function
-    // NOTE: only support pthread.
-    static bool isRecursiveThread(TID tid, const llvm::Instruction *inst, const ctx *context, PTA *pta);
-
     static int getThreadNum() { return tidToThread.size(); }
 
     static void setThreadArg(TID tid, std::map<uint8_t, const llvm::Constant *> &argMap);
@@ -991,6 +969,20 @@ public:
     inline const std::vector<ForkEvent *> &getForkSites() const { return forkSites; }
 
     void addForkSite(ForkEvent *e) { forkSites.push_back(e); }
+
+private:
+    static TID curID;
+    static std::map<TID, StaticThread *> tidToThread;
+    static std::map<TID, std::map<uint8_t, const llvm::Constant *>> threadArgs;
+    const CallGraphNodeTy *entryNode;
+    const ForkEvent *parent = nullptr;
+    const llvm::Value *threadHandle;
+    const TID id;
+    bool isOwnerOnly = false;
+    bool isOwnerOnlyComputed = false;
+
+    std::vector<ForkEvent *> forkSites;
+
 };
 
 }  // namespace aser
