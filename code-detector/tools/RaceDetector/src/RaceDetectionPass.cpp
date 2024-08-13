@@ -17,7 +17,6 @@
 #include "Graph/Event.h"
 #include "Graph/ReachGraph.h"
 #include "Graph/Trie.h"
-#include "PTAModels/ExtFunctionManager.h"
 #include "PTAModels/GraphBLASModel.h"
 #include "Races.h"
 #include "StaticThread.h"
@@ -3474,7 +3473,6 @@ void RaceDetectionPass::traverseFunctionWrapper(const aser::ctx *ctx, StaticThre
         return;
     }
 
-    // if (!directNode->getTargetFun()->isExtFunction())
     {
         CallEvent *callEvent = nullptr;
         if (f->getName().startswith("sol."))  // for sol only
@@ -3496,10 +3494,8 @@ void RaceDetectionPass::traverseFunctionWrapper(const aser::ctx *ctx, StaticThre
             threadIDValueMap[inst] = forkevent;
         }
     }
-    {
-        // external functions we didn't model (or simply didn't care)
-    }
 }
+
 void RaceDetectionPass::initStructFunctions() {
     // find all functions with
     auto &functionList = thisModule->getFunctionList();

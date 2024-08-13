@@ -30,7 +30,6 @@ set(racedetect-component
         src/RDUtil.cpp
         src/Races.cpp
         src/LocksetManager.cpp
-        src/PTAModels/ExtFunctionManager.cpp
         src/PTAModels/GraphBLASModel.cpp
         src/StaticThread.cpp
 )

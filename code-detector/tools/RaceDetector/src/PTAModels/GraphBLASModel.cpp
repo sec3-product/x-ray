@@ -3,7 +3,6 @@
 #include <llvm/ADT/StringSet.h>
 
 #include "CustomAPIRewriters/ThreadAPIRewriter.h"
-#include "PTAModels/ExtFunctionManager.h"
 #include "PTAModels/GraphBLASHeapModel.h"
 #include "aser/PointerAnalysis/Context/KOrigin.h"
 
@@ -493,14 +492,6 @@ const llvm::Function *GraphBLASModel::findThreadStartFunc(PTA *pta, const ctx *c
 InterceptResult GraphBLASModel::interceptFunction(const ctx *calleeCtx, const ctx *callerCtx, const llvm::Function *F,
                                                   const llvm::Instruction *callsite) {
     assert(!isHeapAllocAPI(F, callsite));
-
-    if (ExtFunctionsManager::isSkipped(F)) {
-        return {nullptr, InterceptResult::Option::IGNORE_FUN};
-    }
-
-    if (ExtFunctionsManager::onlyKeepCallSite(F)) {
-        return {F, InterceptResult::Option::ONLY_CALLSITE};
-    }
 
     if (F->hasName() && (F->getName().equals("raxFind") || F->getName().equals("raxInsert"))) {
         return {F, InterceptResult::Option::ONLY_CALLSITE};
@@ -1155,13 +1146,6 @@ bool GraphBLASModel::interceptCallSite(const CtxFunction<ctx> *caller, const Ctx
         return true;
     }
 
-    // since they are not expanded in callgraph
-    // we should also skip them here.
-    // otherwise it will crash.
-    if (ExtFunctionsManager::isSkipped(callee->getFunction())) {
-        return true;
-    }
-
     // a corner case: indirect call resolved to pthread_create, so we alway use
     // the original target to determine whether the callsite need to be intercepted
     // FIXME: should all other cases rely on the orignalTarget as well?
@@ -1253,21 +1237,6 @@ bool GraphBLASModel::interceptCallSite(const CtxFunction<ctx> *caller, const Ctx
     // as the function was intercepted and replaced for thread creation
     // before
     if (auto fun = CS.getCalledFunction()) {
-        // TODO: seems to be too conservative ...
-        //        if (ExtFunctionsManager::isPthreadGetSpecific(fun)) {
-        //            auto ptr = this->getOrCreateTaggedAnonPtrNode(CT::getInitialCtx(), tag);
-        //            PtrNode *specific = this->getPtrNode(caller->getContext(), callsite);
-        //            this->consGraph->addConstraints(ptr, specific, Constraints::copy);
-        //            return true;
-        //        }
-        //
-        //        if (ExtFunctionsManager::isPthreadSetSpecific(fun)) {
-        //            auto ptr = this->getOrCreateTaggedAnonPtrNode(CT::getInitialCtx(), tag);
-        //            PtrNode *specific = this->getPtrNode(caller->getContext(), CS.getArgOperand(1));
-        //            this->consGraph->addConstraints(specific, ptr, Constraints::copy);
-        //            return true;
-        //        }
-
         if (fun->isDeclaration()) {
             // a extern api that uses call back
             // first get the callback function

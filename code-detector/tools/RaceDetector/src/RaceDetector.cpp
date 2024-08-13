@@ -26,7 +26,6 @@
 #include <libloaderapi.h>
 #endif
 
-#include "PTAModels/ExtFunctionManager.h"
 #include "PTAModels/GraphBLASModel.h"
 #include "RaceDetectionPass.h"
 #include "Races.h"
@@ -801,9 +800,6 @@ int main(int argc, char **argv) {
   FUNC_COUNT_BUDGET = conflib::Get<int>("functionCountBudget", 20000);
 
   GraphBLASHeapModel::init(heapAPIs);
-  // PTA will skip looking into those functions
-  auto skipFun = conflib::Get<std::vector<std::string>>("skipFunctions", {});
-  ExtFunctionsManager::init(skipFun);
 
   auto enableOMP = conflib::Get<bool>("enableOpenMP", true);
   auto enableAV = conflib::Get<bool>("enableAtomicityViolation", true);
@@ -896,18 +892,6 @@ int main(int argc, char **argv) {
   CONFIG_NO_PS = ConfigNoPathSensitive;
   CONFIG_SKIP_CONSTRUCTOR = conflib::Get<bool>("skipConstructors", true);
   CONFIG_SKIP_SINGLE_THREAD = conflib::Get<bool>("skipSingleThreaded", false);
-  // TODO: this is a temporary fix for excluding `main` function
-  // if later we support customized entries, we need to also change this
-  for (auto f : skipFun) {
-    llvm::Regex pat(f);
-    if (pat.match("main")) {
-      error(
-          "[ABORT] The main function will be excluded by the "
-          "\"ignoreFunctions\" in the config file.");
-      error("Please check your config file.");
-      return 1;
-    }
-  }
 
   initRaceDetect();
 
