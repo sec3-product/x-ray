@@ -17,8 +17,6 @@ using namespace std;
 using namespace aser;
 using namespace llvm;
 
-extern cl::opt<bool> CONFIG_USE_FI_MODE;
-
 void LoweringMemCpyPass::lowerMemCpyForType(Type *type, Value *src, Value *dst, SmallVector<Value *, 5> &idx,
                                             IRBuilder<NoFolder> &builder) {
     switch (type->getTypeID()) {
@@ -60,11 +58,6 @@ void LoweringMemCpyPass::lowerMemCpyForType(Type *type, Value *src, Value *dst, 
 }
 
 bool LoweringMemCpyPass::runOnModule(llvm::Module &M) {
-    if (CONFIG_USE_FI_MODE) {
-        return false;
-    }
-
-    // LOG_DEBUG(); // TODO add progress message?
     if (idxType == nullptr) {
         // use i32 to index getelementptr
         // TODO: does it matter to use i32 instead of i64?

@@ -22,7 +22,6 @@
 
 extern bool DEBUG_PTA;
 extern bool DEBUG_PTA_VERBOSE;
-extern cl::opt<bool> CONFIG_USE_FI_MODE;
 extern cl::opt<size_t> PTAAnonLimit;
 
 namespace aser {
@@ -143,10 +142,6 @@ protected:
     template <typename PT>
     ObjNode *allocValueWithType(const ctx *C, const llvm::Value *V, AllocKind T, llvm::Type *type,
                                 const llvm::DataLayout &DL) {
-        if (CONFIG_USE_FI_MODE) {
-            return allocFIObject<PT>(C, V, T);
-        }
-
         assert(type && "llvm::Type can not be null");
         LOG_TRACE("allocate object. type={}", *type);
 
@@ -219,14 +214,6 @@ protected:
         // for the remaining memcpy, we do not handle it for now.
         // if we handle it, it more introduce too many false positive, as we have to do it conservatively
         LOG_TRACE("unhandled memcpy instruction. inst={}", *memCpy);
-        if (CONFIG_USE_FI_MODE) {
-            // a temporal node
-            ObjNode *memCpyNode = this->template allocAnonObj<PT>(C, memCpy->getModule()->getDataLayout(),
-                                                                  nullptr, nullptr, false);
-            // a MemCpy => <src>--load--><tmp>--store--><dst>;
-            consGraph.addConstraints(src, memCpyNode, Constraints::load);
-            consGraph.addConstraints(memCpyNode, dst, Constraints::store);
-        }
     }
 
     bool isSpecialType(const llvm::Type *T) {

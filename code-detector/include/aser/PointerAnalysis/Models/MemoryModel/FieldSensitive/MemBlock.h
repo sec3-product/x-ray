@@ -16,7 +16,6 @@
 #include "aser/Util/Util.h"
 
 extern cl::opt<bool> USE_MEMLAYOUT_FILTERING;
-extern cl::opt<bool> CONFIG_USE_FI_MODE;
 
 namespace aser {
 
@@ -165,7 +164,7 @@ public:
     }
 
     [[nodiscard]] inline bool isFIBlock() {
-        return kind == MemBlockKind::FIBlock && !CONFIG_USE_FI_MODE;
+        return kind == MemBlockKind::FIBlock;
     }
 
     [[nodiscard]] inline std::string getFieldAccessPath(size_t pOffset, const llvm::StringRef separator) const {

@@ -50,18 +50,16 @@
 using namespace aser;
 using namespace llvm;
 
-extern cl::opt<bool> CONFIG_USE_FI_MODE;
-
 PreProcPassManagerBuilder::PreProcPassManagerBuilder()
     : useCFL(UseCFLAA::None),
-      runInstCombine(CONFIG_USE_FI_MODE),
+      runInstCombine(false),
       enableLoopUnswitch(false),
       enableSimpleLoopUnswitch(false),
       beforeInlineHook(Noop()) {}
 
 PreProcPassManagerBuilder::PreProcPassManagerBuilder(std::function<void(llvm::legacy::PassManagerBase &)>&& hook)
     : useCFL(UseCFLAA::None),
-      runInstCombine(CONFIG_USE_FI_MODE),
+      runInstCombine(false),
       enableLoopUnswitch(false),
       enableSimpleLoopUnswitch(false),
       beforeInlineHook(hook) {}

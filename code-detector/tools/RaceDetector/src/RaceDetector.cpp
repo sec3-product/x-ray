@@ -212,14 +212,11 @@ bool CONFIG_IGNORE_LOCK;
 bool CONFIG_LOOP_UNROLL;
 bool CONFIG_NO_FALSE_ALIAS;
 bool CONFIG_NO_PRODUCER_CONSUMER;
-bool CONFIG_INTEGRATE_DYNAMIC;
 
 bool CONFIG_ENTRY_POINT_SINGLE_TIME;
 // NOTE: temporary config option, turn off path-sensitive
 bool CONFIG_NO_PS;
 bool CONFIG_SKIP_CONSTRUCTOR;
-bool CONFIG_OPEN_API_FORK_ONLY = false;
-extern cl::opt<bool> CONFIG_USE_FI_MODE;  // for fortran
 
 int MAX_CALLSTACK_DEPTH;    // -1 (no limit) by default
 int SAME_FUNC_BUDGET_SIZE;  // keep at most x times per func per thread 10 by
@@ -857,14 +854,6 @@ int main(int argc, char **argv) {
   // link
   auto module = loadFile(TargetModulePath, Context, true);
   module->setModuleIdentifier("coderrect.stub.pid" + std::to_string(getpid()));
-
-  // add -Xuse-fi-model-- this needs to be added to PTA configure before
-  // anything else
-  if (!module->getFunction("main") && module->getFunction("MAIN_")) {
-    CONFIG_USE_FI_MODE =
-        true;  // for now fortran, use field-insensitive model by default
-    FORTRAN_IR_MODE = true;
-  }
 
   // Initialize passes
   PassRegistry &Registry = *PassRegistry::getPassRegistry();

@@ -20,7 +20,6 @@ using namespace aser;
 using namespace llvm;
 
 extern cl::opt<bool> USE_MEMLAYOUT_FILTERING;
-extern cl::opt<bool> CONFIG_USE_FI_MODE;
 
 static const Value *stripNullOrUnDef(const Value *V) {
     // a uni ptr
@@ -127,11 +126,6 @@ static const Value *stripPointerCasts(const Value *V) {
 /// Strip off pointer casts, all-zero GEPs, aliases and invariant group
 /// info.
 const Value *FSCanonicalizer::canonicalize(const llvm::Value *V) {
-    if (CONFIG_USE_FI_MODE) {
-        // use the field-insensitive canonicalizer instead
-        return FICanonicalizer::canonicalize(V);
-    }
-
     if (!V->getType()->isPointerTy()) return V;
     bool changed = true;
 
@@ -148,12 +142,11 @@ const Value *FSCanonicalizer::canonicalize(const llvm::Value *V) {
         }
         // does not strip GEP even it is zero offset, it will enable type filtering on zero-offset gep as well
         // V = stripPointerCasts(
-	
-	// strip away global alias
-	if (auto GV = dyn_cast<GlobalAlias>(V)) {
+        // strip away global alias
+        if (auto GV = dyn_cast<GlobalAlias>(V)) {
             V = GV->getAliasee();
         }
-	
+
         auto tmp = stripNullOrUnDef(V);
         if (V != tmp) {
             V = tmp;
