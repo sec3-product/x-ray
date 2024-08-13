@@ -7,6 +7,8 @@
 
 #include <stdint.h>
 
+#include <map>
+#include <queue>
 #include <set>
 #include <string>
 #include <vector>
@@ -18,8 +20,10 @@
 #include <llvm/Pass.h>
 #include <llvm/Transforms/Utils/Local.h>
 
+#include "Graph/Event.h"
 #include "PTAModels/GraphBLASModel.h"
 #include "RDUtil.h"
+#include "StaticThread.h"
 #include "aser/PointerAnalysis/PointerAnalysisPass.h"
 
 namespace aser {

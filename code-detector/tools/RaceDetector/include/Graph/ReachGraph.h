@@ -1,8 +1,4 @@
-//
-// Created by peiming on 11/18/19.
-//
-#ifndef RACEDETECTOR_REACHGRAPH_H
-#define RACEDETECTOR_REACHGRAPH_H
+#pragma once
 
 #include <stdint.h>
 
@@ -16,6 +12,7 @@
 #include "Event.h"
 #include "RaceDetectionPass.h"
 #include "ReachabilityEngine.h"
+#include "SourceInfo.h"
 
 namespace aser {
 
@@ -195,7 +192,7 @@ public:
     reachEngine.addEdge(std::to_string(tid1) + ":" + std::to_string(id1),
                         std::to_string(tid2) + "s");
   }
-}; // class ReachGraph
-} // namespace aser
 
-#endif
+}; // class ReachGraph
+
+} // namespace aser

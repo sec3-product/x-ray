@@ -22,12 +22,13 @@ llvm_map_components_to_libnames(llvm_libs
         mc)
 
 set(racedetect-component
-        src/CustomAPIRewriters/RustAPIRewriter.cpp
-        src/RDUtil.cpp
-        src/Races.cpp
-        src/LocksetManager.cpp
-        src/PTAModels/GraphBLASModel.cpp
-        src/StaticThread.cpp
+    src/CustomAPIRewriters/RustAPIRewriter.cpp
+    src/LocksetManager.cpp
+    src/PTAModels/GraphBLASModel.cpp
+    src/RDUtil.cpp
+    src/Races.cpp
+    src/SourceInfo.cpp
+    src/StaticThread.cpp
 )
 
 include_directories(

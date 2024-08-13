@@ -1,9 +1,12 @@
-// This file declares a set of serializable data structure
-// of all kinds of
-#ifndef RACEDETECTOR_RACES_H
-#define RACEDETECTOR_RACES_H
+#pragma once
+
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
 
 #include "RDUtil.h"
+#include "SourceInfo.h"
 
 namespace aser {
 
@@ -340,5 +343,3 @@ inline void to_json(json &j, const SourceInfo &si) {
 };
 
 } // namespace aser
-
-#endif
