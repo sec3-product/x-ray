@@ -7,7 +7,7 @@
 
 #include <llvm/ADT/Statistic.h>
 
-#define LOCAL_STATISTIC(VARNAME, DESC)                                               \
-  llvm::Statistic VARNAME {DEBUG_TYPE, #VARNAME, DESC}
+#define LOCAL_STATISTIC(VARNAME, DESC)                                         \
+  llvm::Statistic VARNAME { DEBUG_TYPE, #VARNAME, DESC }
 
-#endif  // ASER_PTA_STATISTICS_H
+#endif // ASER_PTA_STATISTICS_H

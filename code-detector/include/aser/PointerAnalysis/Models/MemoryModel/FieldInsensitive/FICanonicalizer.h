@@ -13,9 +13,9 @@ namespace aser {
 // Canonicalizer should not collapse alloca, load, store, phi .. instructions
 class FICanonicalizer {
 public:
-    static const llvm::Value *canonicalize(const llvm::Value *V);
+  static const llvm::Value *canonicalize(const llvm::Value *V);
 };
 
-}  // namespace aser
+} // namespace aser
 
 #endif

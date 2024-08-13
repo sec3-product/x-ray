@@ -11,12 +11,12 @@ namespace aser {
 
 class RemoveASMInstPass : public llvm::FunctionPass {
 public:
-    static char ID;
-    explicit RemoveASMInstPass() : llvm::FunctionPass(ID){}
+  static char ID;
+  explicit RemoveASMInstPass() : llvm::FunctionPass(ID) {}
 
-    bool runOnFunction(llvm::Function &F) override;
+  bool runOnFunction(llvm::Function &F) override;
 };
 
-}
+} // namespace aser
 
-#endif  // ASER_PTA_REMOVEASMINSTPASS_H
+#endif // ASER_PTA_REMOVEASMINSTPASS_H

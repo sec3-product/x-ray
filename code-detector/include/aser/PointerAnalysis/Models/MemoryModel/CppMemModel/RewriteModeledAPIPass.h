@@ -11,13 +11,13 @@ namespace cpp {
 
 class RewriteModeledAPIPass : public llvm::FunctionPass {
 public:
-    static char ID;
-    explicit RewriteModeledAPIPass() : llvm::FunctionPass(ID) {}
+  static char ID;
+  explicit RewriteModeledAPIPass() : llvm::FunctionPass(ID) {}
 
-    bool runOnFunction(llvm::Function &F) override;
+  bool runOnFunction(llvm::Function &F) override;
 };
 
-}
-}
+} // namespace cpp
+} // namespace aser
 
-#endif  // ASER_PTA_REWRITEMODELEDAPIPASS_H
+#endif // ASER_PTA_REWRITEMODELEDAPIPASS_H

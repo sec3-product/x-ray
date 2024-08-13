@@ -9,4 +9,5 @@
 
 using namespace llvm;
 
-const std::set<StringRef> aser::DefaultExtFunctions::THREAD_CREATIONS{"pthread_create"};
+const std::set<StringRef> aser::DefaultExtFunctions::THREAD_CREATIONS{
+    "pthread_create"};

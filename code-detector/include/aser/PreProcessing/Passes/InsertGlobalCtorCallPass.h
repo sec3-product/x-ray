@@ -11,12 +11,12 @@ namespace aser {
 
 class InsertGlobalCtorCallPass : public llvm::ModulePass {
 public:
-    static char ID;
-    explicit InsertGlobalCtorCallPass() : llvm::ModulePass(ID) {}
+  static char ID;
+  explicit InsertGlobalCtorCallPass() : llvm::ModulePass(ID) {}
 
-    bool runOnModule(llvm::Module &M) override;
+  bool runOnModule(llvm::Module &M) override;
 };
 
-}
+} // namespace aser
 
-#endif  // ASER_PTA_INSERTGLOBALCTORCALLPASS_H
+#endif // ASER_PTA_INSERTGLOBALCTORCALLPASS_H

@@ -16,21 +16,21 @@ namespace aser {
 
 class UnrollThreadCreateLoopPass : public llvm::LoopPass {
 public:
-    static char ID;
-    static std::set<llvm::StringRef> THREAD_CREATE_API;
-    UnrollThreadCreateLoopPass() : llvm::LoopPass(ID) {}
+  static char ID;
+  static std::set<llvm::StringRef> THREAD_CREATE_API;
+  UnrollThreadCreateLoopPass() : llvm::LoopPass(ID) {}
 
-    bool runOnLoop(llvm::Loop *L, llvm::LPPassManager &LPM) override;
+  bool runOnLoop(llvm::Loop *L, llvm::LPPassManager &LPM) override;
 
-    void getAnalysisUsage(llvm::AnalysisUsage &AU) const override {
-        AU.addRequired<llvm::AssumptionCacheTracker>();
-        AU.addRequired<llvm::DominatorTreeWrapperPass>();
-        AU.addRequired<llvm::LoopInfoWrapperPass>();
-        AU.addRequired<llvm::ScalarEvolutionWrapperPass>();
-        AU.addRequired<llvm::TargetTransformInfoWrapperPass>();
-    }
+  void getAnalysisUsage(llvm::AnalysisUsage &AU) const override {
+    AU.addRequired<llvm::AssumptionCacheTracker>();
+    AU.addRequired<llvm::DominatorTreeWrapperPass>();
+    AU.addRequired<llvm::LoopInfoWrapperPass>();
+    AU.addRequired<llvm::ScalarEvolutionWrapperPass>();
+    AU.addRequired<llvm::TargetTransformInfoWrapperPass>();
+  }
 };
 
-}  // namespace aser
+} // namespace aser
 
-#endif  // ASER_PTA_UNROLLTHREADCREATELOOPPASS_H
+#endif // ASER_PTA_UNROLLTHREADCREATELOOPPASS_H

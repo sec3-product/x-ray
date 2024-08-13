@@ -10,11 +10,10 @@
 class StandardHeapAPIRewritePass : public llvm::ModulePass {
 
 public:
-    static char ID;
-    explicit StandardHeapAPIRewritePass() : ModulePass(ID) {}
+  static char ID;
+  explicit StandardHeapAPIRewritePass() : ModulePass(ID) {}
 
-    bool runOnModule(llvm::Module &M) override;
+  bool runOnModule(llvm::Module &M) override;
 };
 
-
-#endif  // ASER_PTA_STANDARDHEAPAPIREWRITEPASS_H
+#endif // ASER_PTA_STANDARDHEAPAPIREWRITEPASS_H

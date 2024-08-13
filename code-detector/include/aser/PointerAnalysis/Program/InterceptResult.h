@@ -6,23 +6,27 @@
 #define ASER_PTA_INTERCEPTRESULT_H
 
 // forward declaration
-namespace llvm { class Value; }
+namespace llvm {
+class Value;
+}
 
 namespace aser {
 
 struct InterceptResult {
-    enum class Option {
-        EXPAND_BODY,    // analyze and expand the body of the function
-        ONLY_CALLSITE,  // do not analyze into the function body, but keep the callsite
-        IGNORE_FUN,         // ignore the function completely (no callnode in the callgraph).
-    };
+  enum class Option {
+    EXPAND_BODY,   // analyze and expand the body of the function
+    ONLY_CALLSITE, // do not analyze into the function body, but keep the
+                   // callsite
+    IGNORE_FUN,    // ignore the function completely (no callnode in the
+                   // callgraph).
+  };
 
-    const llvm::Value * redirectTo;
-    Option option;
+  const llvm::Value *redirectTo;
+  Option option;
 
-    InterceptResult(const llvm::Value *target, Option opt)
-        : redirectTo(target), option(opt) {}
+  InterceptResult(const llvm::Value *target, Option opt)
+      : redirectTo(target), option(opt) {}
 };
 
-}
-#endif  // ASER_PTA_INTERCEPTRESULT_H
+} // namespace aser
+#endif // ASER_PTA_INTERCEPTRESULT_H

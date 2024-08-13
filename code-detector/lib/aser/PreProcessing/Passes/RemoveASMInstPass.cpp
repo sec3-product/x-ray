@@ -11,32 +11,31 @@ using namespace aser;
 using namespace llvm;
 
 static bool destroyASMInst(Function &F, IRBuilder<NoFolder> &builder) {
-    std::vector<Instruction *> removeThese;
-    for (auto &BB : F) {
-        for (auto &I : BB) {
-            if (auto callInst = dyn_cast<CallBase>(&I)) {
-                auto V = callInst->getCalledOperand();
-                if (V != nullptr && isa<InlineAsm>(V)) {
-                    removeThese.push_back(callInst);
-                }
-            }
+  std::vector<Instruction *> removeThese;
+  for (auto &BB : F) {
+    for (auto &I : BB) {
+      if (auto callInst = dyn_cast<CallBase>(&I)) {
+        auto V = callInst->getCalledOperand();
+        if (V != nullptr && isa<InlineAsm>(V)) {
+          removeThese.push_back(callInst);
         }
+      }
     }
+  }
 
-    for (auto I : removeThese) {
-        I->replaceAllUsesWith(llvm::UndefValue::get(I->getType()));
-        I->eraseFromParent();
-    }
-    return !removeThese.empty();
+  for (auto I : removeThese) {
+    I->replaceAllUsesWith(llvm::UndefValue::get(I->getType()));
+    I->eraseFromParent();
+  }
+  return !removeThese.empty();
 }
 
 bool RemoveASMInstPass::runOnFunction(llvm::Function &F) {
-    IRBuilder<NoFolder> builder(F.getContext());
+  IRBuilder<NoFolder> builder(F.getContext());
 
-    bool changed = destroyASMInst(F, builder);
-    return changed;
+  bool changed = destroyASMInst(F, builder);
+  return changed;
 }
-
 
 char RemoveASMInstPass::ID = 0;
 static RegisterPass<RemoveASMInstPass> CIP("", "Remove ASM Instruction",

@@ -12,43 +12,42 @@
 
 namespace aser {
 
-
 struct Demangler : public llvm::ItaniumPartialDemangler {
 private:
-    std::string curStr;
+  std::string curStr;
 
 public:
-    /// strip the number post fix before demangling to avoid potential errors
-    /// \return true on error, false otherwise
-    bool partialDemangle(llvm::StringRef MangledName) {
-        llvm::StringRef stripedName = stripNumberPostFix(MangledName);
-        // ensure the lifetime is as long as the demangler so that the pointer is valid during the whole
-        // mangling process
-        curStr = stripedName.str();
-        return ItaniumPartialDemangler::partialDemangle(curStr.c_str());
-    }
+  /// strip the number post fix before demangling to avoid potential errors
+  /// \return true on error, false otherwise
+  bool partialDemangle(llvm::StringRef MangledName) {
+    llvm::StringRef stripedName = stripNumberPostFix(MangledName);
+    // ensure the lifetime is as long as the demangler so that the pointer is
+    // valid during the whole mangling process
+    curStr = stripedName.str();
+    return ItaniumPartialDemangler::partialDemangle(curStr.c_str());
+  }
 
-    bool isCtor() const {
-        if (this->isCtorOrDtor()) {
-            llvm::StringRef baseName = this->getFunctionBaseName(nullptr, nullptr);
-            if (!baseName.startswith("~")) {
-                return true;
-            }
-        }
-        return false;
+  bool isCtor() const {
+    if (this->isCtorOrDtor()) {
+      llvm::StringRef baseName = this->getFunctionBaseName(nullptr, nullptr);
+      if (!baseName.startswith("~")) {
+        return true;
+      }
     }
+    return false;
+  }
 
-    bool isDtor() const {
-        if (this->isCtorOrDtor()) {
-            llvm::StringRef baseName = this->getFunctionBaseName(nullptr, nullptr);
-            if (baseName.startswith("~")) {
-                return true;
-            }
-        }
-        return false;
+  bool isDtor() const {
+    if (this->isCtorOrDtor()) {
+      llvm::StringRef baseName = this->getFunctionBaseName(nullptr, nullptr);
+      if (baseName.startswith("~")) {
+        return true;
+      }
     }
+    return false;
+  }
 };
 
-}
+} // namespace aser
 
-#endif  // ASER_PTA_DEMANGLER_H
+#endif // ASER_PTA_DEMANGLER_H

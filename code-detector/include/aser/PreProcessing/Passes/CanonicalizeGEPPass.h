@@ -7,7 +7,8 @@
 
 #include <llvm/Pass.h>
 
-// TO canoicalize GEP instruction (required only by Field-Sensitive Pointer Analysis)
+// TO canoicalize GEP instruction (required only by Field-Sensitive Pointer
+// Analysis)
 
 // 1st, turn
 // %v = getelementptr (getelementptr idx1 ...) idx0 ...
@@ -32,13 +33,13 @@ namespace aser {
 class CanonicalizeGEPPass : public llvm::FunctionPass {
 
 public:
-    static char ID;
-    explicit CanonicalizeGEPPass(): llvm::FunctionPass(ID) {}
+  static char ID;
+  explicit CanonicalizeGEPPass() : llvm::FunctionPass(ID) {}
 
-    bool runOnFunction(llvm::Function &F) override;
-    bool doInitialization(llvm::Module &M) override;
+  bool runOnFunction(llvm::Function &F) override;
+  bool doInitialization(llvm::Module &M) override;
 };
 
-}
+} // namespace aser
 
-#endif  // ASER_PTA_CANONICALIZEGEPPASS_H
+#endif // ASER_PTA_CANONICALIZEGEPPASS_H

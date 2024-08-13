@@ -8,19 +8,19 @@
 #include <llvm/Analysis/TypeBasedAliasAnalysis.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/IRPrintingPasses.h>
-#include <llvm/IR/LLVMContext.h>  // for llvm LLVMContext
+#include <llvm/IR/LLVMContext.h> // for llvm LLVMContext
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Mangler.h>
 #include <llvm/IR/Verifier.h>
-#include <llvm/IRReader/IRReader.h>  // IR reader for bit file
+#include <llvm/IRReader/IRReader.h> // IR reader for bit file
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FormatVariadic.h>
 #include <llvm/Support/InitLLVM.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/Regex.h>
-#include <llvm/Support/Signals.h>    // signal for command line
-#include <llvm/Support/SourceMgr.h>  // for SMDiagnostic
+#include <llvm/Support/Signals.h>   // signal for command line
+#include <llvm/Support/SourceMgr.h> // for SMDiagnostic
 #include <llvm/Transforms/IPO/AlwaysInliner.h>
 
 #include "CustomAPIRewriters/RustAPIRewriter.h"
@@ -44,16 +44,18 @@ cl::opt<bool> SkipOverflowChecks("skip-overflow",
 cl::opt<std::string> TargetModulePath(cl::Positional,
                                       cl::desc("path to input bitcode file"));
 cl::opt<bool> ConfigDumpIR("dump-ir", cl::desc("Dump the modified ir file"));
-cl::opt<bool> ConfigNoFilter(
-    "no-filter", cl::desc("Turn off the filtering for race report"));
-cl::opt<bool> ConfigIncludeAtomic(
-    "include-atomics", cl::desc("Include races on atomic operations"));
+cl::opt<bool>
+    ConfigNoFilter("no-filter",
+                   cl::desc("Turn off the filtering for race report"));
+cl::opt<bool>
+    ConfigIncludeAtomic("include-atomics",
+                        cl::desc("Include races on atomic operations"));
 cl::opt<std::string> ConfigOutputPath("o", cl::desc("JSON output path"),
                                       cl::value_desc("path"));
 cl::opt<bool> ConfigNoOMP("nomp",
                           cl::desc("Turn off the OpenMP race detection"));
-cl::opt<bool> ConfigNoAV(
-    "no-av", cl::desc("Turn off the atomicity violation detection"));
+cl::opt<bool>
+    ConfigNoAV("no-av", cl::desc("Turn off the atomicity violation detection"));
 cl::opt<bool> ConfigNoOV("no-ov",
                          cl::desc("Turn off the order violation detection"));
 cl::opt<bool> ConfigCheckIdenticalWrites(
@@ -62,8 +64,9 @@ cl::opt<bool> ConfigCheckIdenticalWrites(
     cl::init(true));
 cl::opt<bool> ConfigNoMissedOMP("no-missed-omp",
                                 cl::desc("Do not scan for missed omp regions"));
-cl::opt<bool> ConfigNoMissAPI(
-    "no-miss-match-api", cl::desc("Turn off the miss-match api detection"));
+cl::opt<bool>
+    ConfigNoMissAPI("no-miss-match-api",
+                    cl::desc("Turn off the miss-match api detection"));
 cl::opt<bool> ConfigDebugLog("v", cl::desc("Turn off log to file"));
 cl::opt<int> ConfigReportLimit("limit",
                                cl::desc("Max number of races can be reported"),
@@ -74,8 +77,9 @@ cl::opt<bool> ConfigIgnoreReadWriteRaces("ignore-rw",
 cl::opt<bool> ConfigIgnoreWriteWriteRaces("ignore-ww",
                                           cl::desc("Ignore write-write races"));
 
-cl::opt<bool> ConfigNoReportLimit(
-    "no-limit", cl::desc("No limit for the number of races reported"));
+cl::opt<bool>
+    ConfigNoReportLimit("no-limit",
+                        cl::desc("No limit for the number of races reported"));
 
 cl::opt<size_t> MaxIndirectTarget(
     "max-indirect-target", cl::init(2),
@@ -83,13 +87,15 @@ cl::opt<size_t> MaxIndirectTarget(
              "indirect call"));
 cl::opt<bool> ConfigNoFalseAlias("Xno-false-alias",
                                  cl::desc("Turn off checking false alias"));
-cl::opt<bool> ConfigNoProducerConsumer(
-    "Xno-producer-consumer", cl::desc("Turn off checking producer consumer"));
+cl::opt<bool>
+    ConfigNoProducerConsumer("Xno-producer-consumer",
+                             cl::desc("Turn off checking producer consumer"));
 cl::opt<bool> ConfigEntryPointOnce(
     "entry-point-once",
     cl::desc("Create only one thread for each entry point"));
-cl::opt<bool> ConfigPrintImmediately(
-    "Xprint-fast", cl::desc("Print races immediately on terminal"));
+cl::opt<bool>
+    ConfigPrintImmediately("Xprint-fast",
+                           cl::desc("Print races immediately on terminal"));
 cl::opt<bool> ConfigTerminateImmediately(
     "one-race", cl::desc("Print a race and terminate immediately"));
 
@@ -107,7 +113,7 @@ cl::opt<size_t> PTAAnonLimit(
              "missed omp takes too much memory)"));
 cl::opt<string> SOTERIA_PLAN("plan", cl::desc("soteria plan"));
 
-bool DEBUG_LOCK;  // default is false
+bool DEBUG_LOCK; // default is false
 bool DEBUG_LOCK_STR;
 bool DEBUG_RUST_API;
 bool DEBUG_API;
@@ -121,7 +127,7 @@ bool DEBUG_RACE;
 bool DEBUG_THREAD;
 bool DEBUG_OMP_RACE;
 bool DEBUG_HB;
-bool DEBUG_RACE_EVENT;  // DEBUG_EVENT is defined on windows already
+bool DEBUG_RACE_EVENT; // DEBUG_EVENT is defined on windows already
 bool DEBUG_HAPPEN_IN_PARALLEL;
 bool DEBUG_PTA;
 bool DEBUG_PTA_VERBOSE;
@@ -129,8 +135,8 @@ bool USE_MAIN_CALLSTACK_HEURISTIC;
 bool CONFIG_CTX_INSENSITIVE_PTA;
 bool ENABLE_OLD_OMP_ALIAS_ANALYSIS = true;
 bool FORTRAN_IR_MODE = false;
-bool OPT_QUICK_CHECK = true;                // default is false
-bool OPT_SAME_THREAD_AT_MOST_TWICE = true;  // default is true
+bool OPT_QUICK_CHECK = true;               // default is false
+bool OPT_SAME_THREAD_AT_MOST_TWICE = true; // default is true
 bool PRINT_IMMEDIATELY = false;
 bool TERMINATE_IMMEDIATELY = false;
 bool CONFIG_SKIP_SINGLE_THREAD = false;
@@ -142,8 +148,9 @@ cl::opt<bool> CONFIG_EXHAUST_MODE("full",
 
 cl::opt<bool> ConfigIgnoreRepeatedMainCallStack(
     "skip-repeat-cs", cl::desc("Skip repeated call stack in main thread"));
-cl::opt<bool> ConfigNoOrigin(
-    "no-origin", cl::desc("Use context-insensitive pointer analysis"));
+cl::opt<bool>
+    ConfigNoOrigin("no-origin",
+                   cl::desc("Use context-insensitive pointer analysis"));
 cl::opt<bool> ConfigDebugThread("debug-threads",
                                 cl::desc("Turn on debug thread logs"));
 cl::opt<bool> ConfigDebugRace("debug-race",
@@ -160,8 +167,9 @@ cl::opt<bool> ConfigDumpLockSet("debug-dump-lockset",
 
 cl::opt<bool> ConfigDebugIndirectCall("debug-indirect",
                                       cl::desc("Turn on debug indirect call"));
-cl::opt<bool> ConfigDebugIndirectCallAll(
-    "debug-indirect-all", cl::desc("Turn on debug indirect call"));
+cl::opt<bool>
+    ConfigDebugIndirectCallAll("debug-indirect-all",
+                               cl::desc("Turn on debug indirect call"));
 cl::opt<bool> ConfigDebugPTA("debug-pta",
                              cl::desc("Turn on debug pointer analysis"));
 cl::opt<bool> ConfigDebugPTAVerbose(
@@ -181,20 +189,24 @@ cl::opt<bool> ConfigDebugHB("debug-hb",
                             cl::desc("Turn on debug happens-before"));
 cl::opt<bool> ConfigDebugEvent("debug-event",
                                cl::desc("Turn on debug read-write"));
-cl::opt<bool> ConfigDebugHappenInParallel(
-    "debug-hip", cl::desc("Turn on debug happen-in-parallel"));
+cl::opt<bool>
+    ConfigDebugHappenInParallel("debug-hip",
+                                cl::desc("Turn on debug happen-in-parallel"));
 cl::opt<bool> ConfigIngoreLock("no-lock",
                                cl::desc("Turn off the lockset check"));
-cl::opt<bool> ConfigNoPathSensitive(
-    "no-ps", cl::desc("Turn off path-sensitive analysis"));
+cl::opt<bool>
+    ConfigNoPathSensitive("no-ps",
+                          cl::desc("Turn off path-sensitive analysis"));
 
 cl::opt<bool> ConfigNoOldOMPAliasAnalysis(
     "Xno-old-omp-alias", cl::desc("Turn off the old OMPIndexAlias analysis"));
-cl::opt<bool> CONFIG_NO_KEYWORD_FILTER(
-    "Xno-svfFilter", cl::desc("Turn off keyword filter in SVF pass"));
+cl::opt<bool>
+    CONFIG_NO_KEYWORD_FILTER("Xno-svfFilter",
+                             cl::desc("Turn off keyword filter in SVF pass"));
 cl::opt<bool> ConfigFlowFilter("flowFilter", cl::desc("Enable flow filter"));
-cl::opt<bool> ConfigDisableProgress(
-    "no-progress", cl::desc("Does not print spinner progress"));
+cl::opt<bool>
+    ConfigDisableProgress("no-progress",
+                          cl::desc("Does not print spinner progress"));
 
 bool CONFIG_CHECK_UncheckedAccount;
 
@@ -218,10 +230,10 @@ bool CONFIG_ENTRY_POINT_SINGLE_TIME;
 bool CONFIG_NO_PS;
 bool CONFIG_SKIP_CONSTRUCTOR;
 
-int MAX_CALLSTACK_DEPTH;    // -1 (no limit) by default
-int SAME_FUNC_BUDGET_SIZE;  // keep at most x times per func per thread 10 by
-                            // default
-int FUNC_COUNT_BUDGET;      // 100,000 by default
+int MAX_CALLSTACK_DEPTH;   // -1 (no limit) by default
+int SAME_FUNC_BUDGET_SIZE; // keep at most x times per func per thread 10 by
+                           // default
+int FUNC_COUNT_BUDGET;     // 100,000 by default
 
 bool CONFIG_IGNORE_READ_WRITE_RACES = false;
 bool CONFIG_IGNORE_WRITE_WRITE_RACES = false;
@@ -239,7 +251,8 @@ std::map<std::string, std::map<std::string, std::string>> SOLANA_SVE_DB;
 std::map<llvm::StringRef, const llvm::Function *> FUNC_NAME_MAP;
 const llvm::Function *getFunctionFromPartialName(llvm::StringRef partialName) {
   for (auto [name, func] : FUNC_NAME_MAP) {
-    if (name.contains(partialName) && !name.contains(".anon.")) return func;
+    if (name.contains(partialName) && !name.contains(".anon."))
+      return func;
   }
   return nullptr;
 }
@@ -334,9 +347,8 @@ unsigned int NUM_OF_ATTACK_VECTORS = 0;
 unsigned int NUM_OF_IR_LINES = 0;
 unsigned int TOTAL_SOL_COST = 0;
 unsigned int TOTAL_SOL_TIME = 0;
-static std::unique_ptr<Module> loadFile(const std::string &FN,
-                                        LLVMContext &Context,
-                                        bool abortOnFail) {
+static std::unique_ptr<Module>
+loadFile(const std::string &FN, LLVMContext &Context, bool abortOnFail) {
   SMDiagnostic Err;
   std::unique_ptr<Module> Result;
   if (DebugIR) {
@@ -377,8 +389,8 @@ static std::unique_ptr<Module> loadFile(const std::string &FN,
 // Method to compare two versions.
 // Returns 1 if v2 is smaller, -1
 // if v1 is smaller, 0 if equal
-int versionCompare(string v1, string v2) {  // v1: the real version: ^0.20.1
-  std::replace(v1.begin(), v1.end(), '*', '0');  // replace all '*' to '0'
+int versionCompare(string v1, string v2) {      // v1: the real version: ^0.20.1
+  std::replace(v1.begin(), v1.end(), '*', '0'); // replace all '*' to '0'
   v1.erase(std::remove_if(
                v1.begin(), v1.end(),
                [](char c) { return !(c >= '0' && c <= '9') && c != '.'; }),
@@ -404,8 +416,10 @@ int versionCompare(string v1, string v2) {  // v1: the real version: ^0.20.1
       vnum2 = vnum2 * 10 + (v2[j] - '0');
       j++;
     }
-    if (vnum1 > vnum2) return 1;
-    if (vnum2 > vnum1) return -1;
+    if (vnum1 > vnum2)
+      return 1;
+    if (vnum2 > vnum1)
+      return -1;
     // if equal, reset variables and
     // go for next numeric part
     vnum1 = vnum2 = 0;
@@ -428,7 +442,8 @@ void computeCargoTomlConfig(Module *module) {
       for (auto &I : BB) {
         if (isa<CallBase>(&I)) {
           aser::CallSite CS(&I);
-          if (CS.getNumArgOperands() < 2) continue;
+          if (CS.getNumArgOperands() < 2)
+            continue;
           auto v1 = CS.getArgOperand(0);
           auto v2 = CS.getArgOperand(1);
 
@@ -441,7 +456,8 @@ void computeCargoTomlConfig(Module *module) {
           } else {
             auto overflow_checks = "profile.release.overflow-checks";
             if (valueName1 == overflow_checks) {
-              if (valueName2.contains("1")) hasOverFlowChecks = true;
+              if (valueName2.contains("1"))
+                hasOverFlowChecks = true;
               llvm::outs() << "overflow_checks: " << hasOverFlowChecks << "\n";
             }
           }
@@ -494,7 +510,8 @@ string exec(string command) {
   // read till end of process:
   while (!feof(pipe)) {
     // use buffer to read and add to result
-    if (fgets(buffer, 128, pipe) != NULL) result += buffer;
+    if (fgets(buffer, 128, pipe) != NULL)
+      result += buffer;
   }
 
   pclose(pipe);
@@ -536,7 +553,8 @@ void computeDeclareIdAddresses(Module *module) {
       for (auto &I : BB) {
         if (isa<CallBase>(&I)) {
           aser::CallSite CS(&I);
-          if (CS.getNumArgOperands() < 1) continue;
+          if (CS.getNumArgOperands() < 1)
+            continue;
           auto v1 = CS.getArgOperand(0);
           auto valueName1 = LangModel::findGlobalString(v1);
           llvm::outs() << "contract address: " << valueName1 << "\n";
@@ -549,7 +567,7 @@ void computeDeclareIdAddresses(Module *module) {
             auto address_str = valueName1.str();
             auto path = address_str + "-idl.json";
             if (const char *env_p = std::getenv("CODERRECT_TMPDIR")) {
-              path = "/" + path;  // unix separator
+              path = "/" + path; // unix separator
               path = env_p + path;
             }
             auto cmd = "/usr/bin/anchor --provider.cluster mainnet idl fetch " +
@@ -583,53 +601,57 @@ void computeDeclareIdAddresses(Module *module) {
   }
 }
 
-static void createBuilderCallFunction(llvm::IRBuilder<> &builder, llvm::Function *f) {
-    std::vector<llvm::Value *> Args;
-    auto it = f->arg_begin();
-    auto ie = f->arg_end();
+static void createBuilderCallFunction(llvm::IRBuilder<> &builder,
+                                      llvm::Function *f) {
+  std::vector<llvm::Value *> Args;
+  auto it = f->arg_begin();
+  auto ie = f->arg_end();
 
-    for (; it != ie; it++) {
-        if (it->getType()->isPointerTy()) {
-            llvm::AllocaInst *allocaInst =
-                builder.CreateAlloca(dyn_cast<PointerType>(it->getType())->getPointerElementType(), 0, "");
-            Args.push_back(allocaInst);
-        } else {
-            llvm::APInt zero(32, 0);
-            Args.push_back(llvm::Constant::getIntegerValue(builder.getInt32Ty(), zero));
-        }
+  for (; it != ie; it++) {
+    if (it->getType()->isPointerTy()) {
+      llvm::AllocaInst *allocaInst = builder.CreateAlloca(
+          dyn_cast<PointerType>(it->getType())->getPointerElementType(), 0, "");
+      Args.push_back(allocaInst);
+    } else {
+      llvm::APInt zero(32, 0);
+      Args.push_back(
+          llvm::Constant::getIntegerValue(builder.getInt32Ty(), zero));
     }
-    llvm::ArrayRef<llvm::Value *> argsRef(Args);
-    builder.CreateCall(f, argsRef, "");
+  }
+  llvm::ArrayRef<llvm::Value *> argsRef(Args);
+  builder.CreateCall(f, argsRef, "");
 }
 
 static void createFakeMain(llvm::Module *module) {
-    // let's create a fake main func here and add it to the module IR
-    // in the fake main, call each entry point func
-    llvm::IRBuilder<> builder(module->getContext());
-    // create fake main with type int(i32 argc, i8** argv)
-    auto functionType = llvm::FunctionType::get(builder.getInt32Ty(),
-                                                {builder.getInt32Ty(), builder.getInt8PtrTy()->getPointerTo()}, false);
-    llvm::Function *mainFunction =
-        llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, "cr_main", module);
-    llvm::BasicBlock *entryBB = llvm::BasicBlock::Create(module->getContext(), "entrypoint", mainFunction);
-    builder.SetInsertPoint(entryBB);
+  // let's create a fake main func here and add it to the module IR
+  // in the fake main, call each entry point func
+  llvm::IRBuilder<> builder(module->getContext());
+  // create fake main with type int(i32 argc, i8** argv)
+  auto functionType = llvm::FunctionType::get(
+      builder.getInt32Ty(),
+      {builder.getInt32Ty(), builder.getInt8PtrTy()->getPointerTo()}, false);
+  llvm::Function *mainFunction = llvm::Function::Create(
+      functionType, llvm::Function::ExternalLinkage, "cr_main", module);
+  llvm::BasicBlock *entryBB = llvm::BasicBlock::Create(
+      module->getContext(), "entrypoint", mainFunction);
+  builder.SetInsertPoint(entryBB);
 
-    llvm::Function *realMainFun = module->getFunction("main");
-    if (realMainFun && !realMainFun->isDeclaration()) {
-        if (realMainFun->getFunctionType() == functionType) {
-            // create a call to real main using fake main's argc, argv if possible
-            llvm::SmallVector<Value *, 2> args;
-            for (auto &arg : mainFunction->args()) {
-                args.push_back(&arg);
-            }
-            builder.CreateCall(realMainFun, args, "");
-        } else {
-            createBuilderCallFunction(builder, realMainFun);
-        }
+  llvm::Function *realMainFun = module->getFunction("main");
+  if (realMainFun && !realMainFun->isDeclaration()) {
+    if (realMainFun->getFunctionType() == functionType) {
+      // create a call to real main using fake main's argc, argv if possible
+      llvm::SmallVector<Value *, 2> args;
+      for (auto &arg : mainFunction->args()) {
+        args.push_back(&arg);
+      }
+      builder.CreateCall(realMainFun, args, "");
+    } else {
+      createBuilderCallFunction(builder, realMainFun);
     }
+  }
 
-    // cr_main return
-    builder.CreateRet(llvm::ConstantInt::get(builder.getInt32Ty(), 0));
+  // cr_main return
+  builder.CreateRet(llvm::ConstantInt::get(builder.getInt32Ty(), 0));
 }
 
 int main(int argc, char **argv) {
@@ -779,7 +801,7 @@ int main(int argc, char **argv) {
   CONFIG_NO_OMP = ConfigNoOMP | !enableOMP;
   CONFIG_NO_AV = ConfigNoAV | !enableAV;
   CONFIG_NO_OV = ConfigNoOV | !enableOV;
-  CONFIG_NO_MISSED_OMP = ConfigNoMissedOMP;  // TODO: add conflib check as well
+  CONFIG_NO_MISSED_OMP = ConfigNoMissedOMP; // TODO: add conflib check as well
   CONFIG_CHECK_IDENTICAL_WRITE =
       ConfigCheckIdenticalWrites | enableIdenticalWrites;
 
@@ -818,12 +840,12 @@ int main(int argc, char **argv) {
       ConfigPrintImmediately | enableImmediatePrint | ConfigShowAllTerminal;
   TERMINATE_IMMEDIATELY = ConfigTerminateImmediately;
   CONFIG_SHOW_SUMMARY = ConfigShowSummary | enableShowRaceSummary |
-                        ConfigShowAllTerminal;  // show race summary
+                        ConfigShowAllTerminal; // show race summary
   CONFIG_SHOW_DETAIL = ConfigShowDetail | enableShowRaceDetail |
-                       ConfigShowAllTerminal;  // show race details
+                       ConfigShowAllTerminal; // show race details
 
   // by default, set the pts size to 999
-  PTSTrait<PtsTy>::setPTSSizeLimit(9);  // set pts size limit to 999
+  PTSTrait<PtsTy>::setPTSSizeLimit(9); // set pts size limit to 999
   if (CONFIG_FAST_MODE) {
     CONFIG_CTX_INSENSITIVE_PTA = true;
     MaxIndirectTarget = 1;
@@ -902,6 +924,6 @@ int main(int argc, char **argv) {
   return 0;
 }
 
-static llvm::RegisterPass<PointerAnalysisPass<PTA>> PAP(
-    "Pointer Analysis Wrapper Pass", "Pointer Analysis Wrapper Pass", true,
-    true);
+static llvm::RegisterPass<PointerAnalysisPass<PTA>>
+    PAP("Pointer Analysis Wrapper Pass", "Pointer Analysis Wrapper Pass", true,
+        true);

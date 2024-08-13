@@ -9,15 +9,14 @@
 
 namespace aser {
 
-    class TransformCallInstBitCastPass : public llvm::ModulePass {
-    public:
-        static char ID;
-        explicit TransformCallInstBitCastPass() : llvm::ModulePass(ID) {}
+class TransformCallInstBitCastPass : public llvm::ModulePass {
+public:
+  static char ID;
+  explicit TransformCallInstBitCastPass() : llvm::ModulePass(ID) {}
 
-        bool runOnModule(llvm::Module &F) override;
-    };
+  bool runOnModule(llvm::Module &F) override;
+};
 
-}
+} // namespace aser
 
-
-#endif //ASER_PTA_TRANSFORMCALLINSTBITCASTPASS_H
+#endif // ASER_PTA_TRANSFORMCALLINSTBITCASTPASS_H

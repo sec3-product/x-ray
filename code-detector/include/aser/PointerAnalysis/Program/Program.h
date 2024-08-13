@@ -9,28 +9,30 @@
 
 namespace aser {
 
-template <typename ctx>
-class ProgramPoint {
+template <typename ctx> class ProgramPoint {
 private:
-    const llvm::Instruction *inst;
-    const ctx *context;
+  const llvm::Instruction *inst;
+  const ctx *context;
 
 public:
-    ProgramPoint() = delete;
+  ProgramPoint() = delete;
 
-    ProgramPoint(const llvm::Instruction *inst, const ctx *context) : inst(inst), context(context) {}
+  ProgramPoint(const llvm::Instruction *inst, const ctx *context)
+      : inst(inst), context(context) {}
 
-    [[nodiscard]] inline const llvm::Instruction *getInstruction() const { return this->inst; }
+  [[nodiscard]] inline const llvm::Instruction *getInstruction() const {
+    return this->inst;
+  }
 
-    [[nodiscard]] inline const ctx *getContext() const { return this->context; }
+  [[nodiscard]] inline const ctx *getContext() const { return this->context; }
 
-    [[nodiscard]] inline bool isCallSite() const {
-        if (inst == nullptr) {
-            return false;
-        }
-        return llvm::isa<llvm::CallInst>(inst) || llvm::isa<llvm::InvokeInst>(inst);
+  [[nodiscard]] inline bool isCallSite() const {
+    if (inst == nullptr) {
+      return false;
     }
+    return llvm::isa<llvm::CallInst>(inst) || llvm::isa<llvm::InvokeInst>(inst);
+  }
 };
 
-}  // namespace aser
+} // namespace aser
 #endif

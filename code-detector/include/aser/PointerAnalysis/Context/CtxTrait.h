@@ -6,11 +6,10 @@
 
 namespace aser {
 
-template <typename ctx>
-class CtxTrait {
-    using unknownTypeError = typename ctx::unknownTypeErrorType;
+template <typename ctx> class CtxTrait {
+  using unknownTypeError = typename ctx::unknownTypeErrorType;
 };
 
-}  // namespace aser
+} // namespace aser
 
 #endif

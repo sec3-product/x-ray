@@ -2,7 +2,7 @@
 
 #include "indicators/indicators.hpp"
 #include "spdlog/async.h"
-#include "spdlog/fmt/ostr.h"  // must be included
+#include "spdlog/fmt/ostr.h" // must be included
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
@@ -16,132 +16,142 @@ static Spinner *currentSpinner;
 static bool progressEnabled;
 
 void init(LoggingConfig config) {
-    // Console sink prints messages to the console
-    auto console_sink = std::make_shared<spdlog::sinks::stderr_color_sink_mt>();
-    console_sink->set_level(config.terminalLevel);
-    console_sink->set_pattern("%H:%M:%S [%^%=7l%$] [%n] [%@] %v");
+  // Console sink prints messages to the console
+  auto console_sink = std::make_shared<spdlog::sinks::stderr_color_sink_mt>();
+  console_sink->set_level(config.terminalLevel);
+  console_sink->set_pattern("%H:%M:%S [%^%=7l%$] [%n] [%@] %v");
 
-    // File sink will log messages to a file
-    auto log_file = config.logFolder + "/" + config.logFile;  // TODO: make sure the path is formed correctly
-    auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_file, false);
-    file_sink->set_level(config.fileLevel);
-    file_sink->set_pattern("%H:%M:%S [%l] [%n] [%@] %v");
+  // File sink will log messages to a file
+  auto log_file =
+      config.logFolder + "/" +
+      config.logFile; // TODO: make sure the path is formed correctly
+  auto file_sink =
+      std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_file, false);
+  file_sink->set_level(config.fileLevel);
+  file_sink->set_pattern("%H:%M:%S [%l] [%n] [%@] %v");
 
-    std::vector<spdlog::sink_ptr> sinks;
-    if (config.enableTerminal) {
-        sinks.push_back(console_sink);
-    }
-    if (config.enableFile) {
-        sinks.push_back(file_sink);
-    }
+  std::vector<spdlog::sink_ptr> sinks;
+  if (config.enableTerminal) {
+    sinks.push_back(console_sink);
+  }
+  if (config.enableFile) {
+    sinks.push_back(file_sink);
+  }
 
-    logger = std::make_shared<spdlog::logger>("racedetect", sinks.begin(), sinks.end());
-    logger->set_level(config.level);
+  logger = std::make_shared<spdlog::logger>("racedetect", sinks.begin(),
+                                            sinks.end());
+  logger->set_level(config.level);
 
-    // Used by progress spinner
-    currentSpinner = nullptr;
-    progressEnabled = config.enableProgress;
+  // Used by progress spinner
+  currentSpinner = nullptr;
+  progressEnabled = config.enableProgress;
 
-    LOG_DEBUG("Logging configs. level={}, logFolder={}, logFile={}, enableTerminal={}, enableFile={}", config.level,
-              config.logFolder, config.logFile, config.enableTerminal, config.enableFile);
+  LOG_DEBUG("Logging configs. level={}, logFolder={}, logFile={}, "
+            "enableTerminal={}, enableFile={}",
+            config.level, config.logFolder, config.logFile,
+            config.enableTerminal, config.enableFile);
 }
 
 using namespace indicators;
 class Spinner {
-    ProgressSpinner spinner;
-    const std::chrono::milliseconds interval;
-    std::atomic<bool> done;
-    std::thread *ticker;
-    std::string endMsg;
+  ProgressSpinner spinner;
+  const std::chrono::milliseconds interval;
+  std::atomic<bool> done;
+  std::thread *ticker;
+  std::string endMsg;
 
 public:
-    Spinner(std::string beginMsg, std::string endMsg, int tickIntervalms = 200);
-    Spinner(std::string msg, int tickIntervalms = 200) : Spinner(msg, msg, tickIntervalms) {}
-    ~Spinner();
+  Spinner(std::string beginMsg, std::string endMsg, int tickIntervalms = 200);
+  Spinner(std::string msg, int tickIntervalms = 200)
+      : Spinner(msg, msg, tickIntervalms) {}
+  ~Spinner();
 
-    void begin();
-    void end();
-    void set_progress(float) {}
+  void begin();
+  void end();
+  void set_progress(float) {}
 };
 
 Spinner::Spinner(std::string beginMsg, std::string endMsg, int tickIntervalms)
-    : interval(tickIntervalms),
-      ticker(nullptr),
-      done(false),
-      endMsg(endMsg),
+    : interval(tickIntervalms), ticker(nullptr), done(false), endMsg(endMsg),
       spinner(option::PrefixText{" - "}, option::PostfixText{beginMsg},
-              option::ForegroundColor{indicators::Color::white}, option::ShowPercentage{false},
+              option::ForegroundColor{indicators::Color::white},
+              option::ShowPercentage{false},
 #ifdef __MINGW32__
-              option::SpinnerStates{std::vector<std::string>{"/", "\\"}}, option::ShowElapsedTime{true}
+              option::SpinnerStates{std::vector<std::string>{"/", "\\"}},
+              option::ShowElapsedTime{true}
 #else
-              option::SpinnerStates{std::vector<std::string>{"▖", "▘", "▝", "▗"}}, option::ShowElapsedTime{true}
+              option::SpinnerStates{
+                  std::vector<std::string>{"▖", "▘", "▝", "▗"}},
+              option::ShowElapsedTime{true}
 #endif
- ) {
-
+      ) {
 }
 
 Spinner::~Spinner() {
-    if (ticker != nullptr) {
-        done.store(true);
-        ticker->join();
-        delete ticker;
-    }
+  if (ticker != nullptr) {
+    done.store(true);
+    ticker->join();
+    delete ticker;
+  }
 }
 
 void Spinner::begin() {
-    ticker = new std::thread([this]() {
-        while (!this->done.load()) {
-            this->spinner.tick();
-            auto c = this->spinner.current();
-            if (c > 90) {
-                this->spinner.set_progress(1);
-            }
-            std::this_thread::sleep_for(interval);
-        }
-    });
+  ticker = new std::thread([this]() {
+    while (!this->done.load()) {
+      this->spinner.tick();
+      auto c = this->spinner.current();
+      if (c > 90) {
+        this->spinner.set_progress(1);
+      }
+      std::this_thread::sleep_for(interval);
+    }
+  });
 }
 
 void Spinner::end() {
-    if (ticker) {
-        done.store(true);
-        ticker->join();
-        delete ticker;
-        ticker = nullptr;
-    }
-    spinner.set_progress(1);
-    spinner.set_option(option::ForegroundColor{indicators::Color::green});
+  if (ticker) {
+    done.store(true);
+    ticker->join();
+    delete ticker;
+    ticker = nullptr;
+  }
+  spinner.set_progress(1);
+  spinner.set_option(option::ForegroundColor{indicators::Color::green});
 #ifdef __MINGW32__
-    spinner.set_option(option::PrefixText{" - *"});
+  spinner.set_option(option::PrefixText{" - *"});
 #else
-    spinner.set_option(option::PrefixText{" - ✔"});
+  spinner.set_option(option::PrefixText{" - ✔"});
 #endif
-    spinner.set_option(option::PostfixText{endMsg});
-    spinner.set_option(option::ShowSpinner{false});
-    spinner.tick();
-    std::cout << std::endl;
+  spinner.set_option(option::PostfixText{endMsg});
+  spinner.set_option(option::ShowSpinner{false});
+  spinner.tick();
+  std::cout << std::endl;
 }
 
-void newPhaseSpinner(std::string beginMsg, std::string endMsg, int tickIntervalms) {
-    if (!progressEnabled) return;
+void newPhaseSpinner(std::string beginMsg, std::string endMsg,
+                     int tickIntervalms) {
+  if (!progressEnabled)
+    return;
 
-    if (currentSpinner != nullptr) {
-        currentSpinner->end();
-        delete currentSpinner;
-    }
+  if (currentSpinner != nullptr) {
+    currentSpinner->end();
+    delete currentSpinner;
+  }
 
-    currentSpinner = new Spinner(beginMsg, endMsg, tickIntervalms);
-    currentSpinner->begin();
+  currentSpinner = new Spinner(beginMsg, endMsg, tickIntervalms);
+  currentSpinner->begin();
 }
 
 void endPhase() {
-    if (!progressEnabled) return;
+  if (!progressEnabled)
+    return;
 
-    if (currentSpinner != nullptr) {
-        currentSpinner->end();
-        delete currentSpinner;
-        currentSpinner = nullptr;
-    }
+  if (currentSpinner != nullptr) {
+    currentSpinner->end();
+    delete currentSpinner;
+    currentSpinner = nullptr;
+  }
 }
 
-}  // namespace logger
-}  // namespace aser
+} // namespace logger
+} // namespace aser

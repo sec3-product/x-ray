@@ -9,9 +9,9 @@ namespace aser {
 
 class RustAPIRewriter {
 public:
-    static void rewriteModule(llvm::Module *M);
+  static void rewriteModule(llvm::Module *M);
 };
 
-}  // namespace aser
+} // namespace aser
 
-#endif  // ASER_PTA_RUSTAPIWRITER_H
+#endif // ASER_PTA_RUSTAPIWRITER_H

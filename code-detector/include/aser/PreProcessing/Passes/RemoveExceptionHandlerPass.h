@@ -11,13 +11,13 @@ namespace aser {
 
 class RemoveExceptionHandlerPass : public llvm::FunctionPass {
 public:
-    static char ID;
-    RemoveExceptionHandlerPass() : llvm::FunctionPass(ID) {}
+  static char ID;
+  RemoveExceptionHandlerPass() : llvm::FunctionPass(ID) {}
 
-    bool runOnFunction(llvm::Function &F) override;
-    bool doInitialization(llvm::Module &M) override;
+  bool runOnFunction(llvm::Function &F) override;
+  bool doInitialization(llvm::Module &M) override;
 };
 
-}  // namespace aser
+} // namespace aser
 
-#endif  // ASER_PTA_REMOVEEXCEPTIONHANDLERPASS_H
+#endif // ASER_PTA_REMOVEEXCEPTIONHANDLERPASS_H

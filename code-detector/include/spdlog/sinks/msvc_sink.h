@@ -17,19 +17,18 @@ namespace sinks {
 /*
  * MSVC sink (logging using OutputDebugStringA)
  */
-template <typename Mutex>
-class msvc_sink : public base_sink<Mutex> {
+template <typename Mutex> class msvc_sink : public base_sink<Mutex> {
 public:
-    explicit msvc_sink() {}
+  explicit msvc_sink() {}
 
 protected:
-    void sink_it_(const details::log_msg &msg) override {
-        memory_buf_t formatted;
-        base_sink<Mutex>::formatter_->format(msg, formatted);
-        OutputDebugStringA(fmt::to_string(formatted).c_str());
-    }
+  void sink_it_(const details::log_msg &msg) override {
+    memory_buf_t formatted;
+    base_sink<Mutex>::formatter_->format(msg, formatted);
+    OutputDebugStringA(fmt::to_string(formatted).c_str());
+  }
 
-    void flush_() override {}
+  void flush_() override {}
 };
 
 using msvc_sink_mt = msvc_sink<std::mutex>;
@@ -38,7 +37,7 @@ using msvc_sink_st = msvc_sink<details::null_mutex>;
 using windebug_sink_mt = msvc_sink_mt;
 using windebug_sink_st = msvc_sink_st;
 
-}  // namespace sinks
-}  // namespace spdlog
+} // namespace sinks
+} // namespace spdlog
 
 #endif

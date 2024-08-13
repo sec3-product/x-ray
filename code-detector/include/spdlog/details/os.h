@@ -5,7 +5,7 @@
 
 #include <spdlog/common.h>
 
-#include <ctime>  // std::time_t
+#include <ctime> // std::time_t
 
 namespace spdlog {
 namespace details {
@@ -54,7 +54,8 @@ int remove(const filename_t &filename) SPDLOG_NOEXCEPT;
 // other process/thread)
 int remove_if_exists(const filename_t &filename) SPDLOG_NOEXCEPT;
 
-int rename(const filename_t &filename1, const filename_t &filename2) SPDLOG_NOEXCEPT;
+int rename(const filename_t &filename1,
+           const filename_t &filename2) SPDLOG_NOEXCEPT;
 
 // Return if file exists.
 bool path_exists(const filename_t &filename) SPDLOG_NOEXCEPT;
@@ -89,7 +90,9 @@ bool is_color_terminal() SPDLOG_NOEXCEPT;
 // Source: https://github.com/agauniyal/rang/
 bool in_terminal(FILE *file) SPDLOG_NOEXCEPT;
 
-#if (defined(SPDLOG_WCHAR_TO_UTF8_SUPPORT) || defined(SPDLOG_WCHAR_FILENAMES)) && defined(_WIN32)
+#if (defined(SPDLOG_WCHAR_TO_UTF8_SUPPORT) ||                                  \
+     defined(SPDLOG_WCHAR_FILENAMES)) &&                                       \
+    defined(_WIN32)
 void wstr_to_utf8buf(wstring_view_t wstr, memory_buf_t &target);
 #endif
 
@@ -104,9 +107,9 @@ filename_t dir_name(filename_t path);
 // Return true if succeeded or if this dir already exists.
 bool create_dir(filename_t path);
 
-}  // namespace os
-}  // namespace details
-}  // namespace spdlog
+} // namespace os
+} // namespace details
+} // namespace spdlog
 
 #ifdef SPDLOG_HEADER_ONLY
 #include "os-inl.h"

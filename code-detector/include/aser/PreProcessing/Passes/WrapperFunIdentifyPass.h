@@ -10,11 +10,10 @@
 class WrapperFunIdentifyPass : public llvm::ModulePass {
 
 public:
-    static char ID;
-    explicit WrapperFunIdentifyPass() : ModulePass(ID) {}
+  static char ID;
+  explicit WrapperFunIdentifyPass() : ModulePass(ID) {}
 
-    bool runOnModule(llvm::Module &M) override;
+  bool runOnModule(llvm::Module &M) override;
 };
 
-
-#endif  // ASER_PTA_WRAPPERFUNIDENTIFYPASS_H
+#endif // ASER_PTA_WRAPPERFUNIDENTIFYPASS_H

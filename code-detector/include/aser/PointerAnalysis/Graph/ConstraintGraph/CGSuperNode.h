@@ -11,66 +11,70 @@
 
 namespace aser {
 // nodes represent collapsed SCC
-template <typename ctx>
-class CGSuperNode : public CGNodeBase<ctx> {
+template <typename ctx> class CGSuperNode : public CGNodeBase<ctx> {
 private:
-    using super = CGNodeBase<ctx>;
-    using NodeList = llvm::SparseBitVector<>;
+  using super = CGNodeBase<ctx>;
+  using NodeList = llvm::SparseBitVector<>;
 
-    NodeList scc;
-    NodeList callNodes;
+  NodeList scc;
+  NodeList callNodes;
 
-    CGSuperNode(const vector<super *> &scc, NodeID id) : super(id, CGNodeKind::SuperNode) {
-        for (super *node : scc) {
-            if (node->isFunctionPtr()) {
-                callNodes.set(node->getNodeID());
-            }
-            if (auto superNode = llvm::dyn_cast<CGSuperNode<ctx>>(node)) {
-                // merge a super node
-                this->scc |= superNode->scc;
-                this->callNodes |= superNode->callNodes;
-            }
-            this->scc.set(node->getNodeID());
-        }
-    };
+  CGSuperNode(const vector<super *> &scc, NodeID id)
+      : super(id, CGNodeKind::SuperNode) {
+    for (super *node : scc) {
+      if (node->isFunctionPtr()) {
+        callNodes.set(node->getNodeID());
+      }
+      if (auto superNode = llvm::dyn_cast<CGSuperNode<ctx>>(node)) {
+        // merge a super node
+        this->scc |= superNode->scc;
+        this->callNodes |= superNode->callNodes;
+      }
+      this->scc.set(node->getNodeID());
+    }
+  };
 
 public:
-    inline void copyOutgoingEdges(super *node) {
-        for (auto it = node->pred_edge_begin(), ie = node->pred_edge_end(); it != ie; it++) {
-            auto pred = (*it).second;
-            auto edgeKind = (*it).first;
-            // FIXME: is this correct?
-            pred->insertConstraint(this, edgeKind);
-        }
-
-        node->setSuperNode(this->getNodeID());
+  inline void copyOutgoingEdges(super *node) {
+    for (auto it = node->pred_edge_begin(), ie = node->pred_edge_end();
+         it != ie; it++) {
+      auto pred = (*it).second;
+      auto edgeKind = (*it).first;
+      // FIXME: is this correct?
+      pred->insertConstraint(this, edgeKind);
     }
 
-    void clearAndMergeIncomingEdges() {
-        for (NodeID nodeId : scc) {
-            auto node = this->graph->getNode(nodeId);
-            // merge the incoming edges
-            for (auto it = node->edge_begin(), ie = node->edge_end(); it != ie; it++) {
-                this->insertConstraint((*it).second, (*it).first);
-            }
-        }
+    node->setSuperNode(this->getNodeID());
+  }
 
-        for (NodeID nodeId : scc) {
-            auto node = this->graph->getNode(nodeId);
-            node->clearConstraints();
-        }
-
-        this->removeConstraint(this, Constraints::copy);
+  void clearAndMergeIncomingEdges() {
+    for (NodeID nodeId : scc) {
+      auto node = this->graph->getNode(nodeId);
+      // merge the incoming edges
+      for (auto it = node->edge_begin(), ie = node->edge_end(); it != ie;
+           it++) {
+        this->insertConstraint((*it).second, (*it).first);
+      }
     }
 
-    static inline bool classof(const super *node) { return node->getType() == CGNodeKind::SuperNode; }
+    for (NodeID nodeId : scc) {
+      auto node = this->graph->getNode(nodeId);
+      node->clearConstraints();
+    }
 
-    virtual std::string toString() const { return "SuperNode"; }
+    this->removeConstraint(this, Constraints::copy);
+  }
 
-    friend class GraphBase<super, Constraints>;
-    friend class ConstraintGraph<ctx>;
+  static inline bool classof(const super *node) {
+    return node->getType() == CGNodeKind::SuperNode;
+  }
+
+  virtual std::string toString() const { return "SuperNode"; }
+
+  friend class GraphBase<super, Constraints>;
+  friend class ConstraintGraph<ctx>;
 };
 
-}  // namespace aser
+} // namespace aser
 
 #endif
