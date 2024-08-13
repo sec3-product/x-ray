@@ -1,13 +1,18 @@
 #ifndef RACEDETECTOR_EVENT_H
 #define RACEDETECTOR_EVENT_H
 
-#include "../PTAModels/GraphBLASModel.h"
-#include "LocksetManager.h"
-#include "StaticThread.h"
+#include <stdint.h>
+
+#include <string>
+#include <vector>
+
+#include <llvm/IR/DebugInfoMetadata.h>
+#include <llvm/IR/Instruction.h>
+
 #include "aser/PointerAnalysis/Program/CallSite.h"
 #include "aser/Util/Demangler.h"
-#include "llvm/IR/DebugInfoMetadata.h"
-#include "llvm/IR/Instruction.h"
+#include "LocksetManager.h"
+#include "StaticThread.h"
 
 namespace aser {
 using EventID = uint64_t;
@@ -26,6 +31,7 @@ enum class EventType : uint8_t {
     Wait,
     Signal /*, Fork, Join, MaybeMore?*/
 };
+
 // This is the Base Event class that all other events derive from
 // Each Event object consists of:
 //   Type - A logical type for this event (Read, Write, etc)
@@ -139,35 +145,6 @@ public:
 
     inline const LocksetManager::ID getLocksetID() const { return locksetID; }
     inline void setLocksetId(LocksetManager::ID id) { locksetID = id; }
-};
-
-// BarrierEvents represent a barrier synchronization between all threads participating in the barrier
-// It is possible that two groups of threads may encounter the same barrier instruction but not be synchronized
-// e.g. In OpenMP:
-//   void foo() {
-//       #barrier
-//   }
-//
-//   // Team 1
-//   #pragma omp parallel
-//   foo()
-//
-//   // Team 2
-//   #pragma omp parallel
-//   foo()
-//
-// Two two teams of threads are created and they all encounter the same barrier
-// But Team 1 threads only sync with other Team 1 threads, not team 2 threads
-//
-// To model this, BarrierEvent has a teamId. Only BarrierEvents with the same teamId should be considered synchronized
-class BarrierEvent : public Event {
-    const TID teamId;
-
-public:
-    explicit BarrierEvent(const ctx *const context, const llvm::Instruction *const inst, TID threadId, TID teamId)
-        : Event(inst, context, EventType::Barrier, threadId), teamId(teamId) {}
-
-    inline TID getTeamId() const { return teamId; }
 };
 
 /* ==============================================
