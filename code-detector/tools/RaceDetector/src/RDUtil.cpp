@@ -1,15 +1,15 @@
 // Created by Yanze 12/5/2019
 #include "RDUtil.h"
 
-#include <llvm/Support/FormatVariadic.h>
-#include <llvm/Support/GlobPattern.h>
-#include <llvm/Support/Regex.h>
-
 #include <ctime>
 #include <fstream>
 #include <iomanip>
-#include <jsoncons/json.hpp>
 #include <sstream>
+
+#include <jsoncons/json.hpp>
+#include <llvm/Support/FormatVariadic.h>
+#include <llvm/Support/GlobPattern.h>
+#include <llvm/Support/Regex.h>
 
 #include "aser/Util/Demangler.h"
 
@@ -72,29 +72,6 @@ std::string aser::getCurrentTimeStr() {
   return str;
 }
 
-// If the inja template engine has been initialized
-// static bool TPL_ENGINE_INIT = false;
-//
-// void aser::initTplEngine() {
-//    tplEngine.add_callback("trim", 2, [](inja::Arguments &args) {
-//        std::string str = args.at(0)->get<std::string>();
-//        int len = args.at(1)->get<int>();
-//        std::string ellipsisStr;
-//        if (str.length() > len) {
-//            ellipsisStr = str.substr(0, len - 3) + "...";
-//        }
-//        return ellipsisStr;
-//    });
-//    TPL_ENGINE_INIT = true;
-//}
-//
-// void aser::tplPrint(std::string &tpl, const json &data) {
-//    if (!TPL_ENGINE_INIT) {
-//        initTplEngine();
-//    }
-//    llvm::outs() << tplEngine.render(tpl, data) << "\n";
-//}
-
 /* ------------------------------------
 
       report related util functions
@@ -150,6 +127,7 @@ void aser::getSourceLinesForSoteriaAnchorAccount(
   // for (auto line : out) llvm::outs() <<
   // "getSourceLinesForSoteriaAnchorAccount line: " << line << "\n";
 }
+
 std::string aser::getSourceLinesForSoteria(SourceInfo &srcInfo,
                                            unsigned range) {
   std::vector<std::string> out;
@@ -713,70 +691,6 @@ bool aser::filterStrPattern(std::string src) {
   return false;
 }
 
-bool aser::customizedFilterIgnoreVariables(
-    std::string name, std::vector<std::string> &ignoreRaceVarables) {
-  for (auto &str : ignoreRaceVarables) {
-    LOG_TRACE("Ignore Var: name={} varPattern={}", name, str);
-    llvm::Regex rg(str);
-    if (rg.match(name))
-      return true;
-  }
-  return false;
-}
-
-bool aser::customizedFilterIgnoreFunctions(
-    const Event *e1, const Event *e2,
-    std::vector<std::string> &ignoreRaceInFun) {
-  Demangler demangler;
-  StringRef m1 = e1->getInst()->getFunction()->getName();
-  StringRef m2 = e2->getInst()->getFunction()->getName();
-
-  if (!demangler.partialDemangle(e1->getInst()->getFunction()->getName())) {
-    m1 = demangler.getFunctionName(nullptr, nullptr);
-  } else {
-    // try msvc demangling
-    int status;
-    auto result = microsoftDemangle(
-        stripNumberPostFix(m1).str().data(), nullptr, nullptr, nullptr, &status,
-        (MSDemangleFlags)(MSDF_NoAccessSpecifier | MSDF_NoCallingConvention));
-    if (status == demangle_success) {
-      m1 = result;
-    }
-  }
-  if (!demangler.partialDemangle(e2->getInst()->getFunction()->getName())) {
-    m2 = demangler.getFunctionName(nullptr, nullptr);
-  } else {
-    // try msvc demangling
-    int status;
-    auto result = microsoftDemangle(
-        stripNumberPostFix(m1).str().data(), nullptr, nullptr, nullptr, &status,
-        (MSDemangleFlags)(MSDF_NoAccessSpecifier | MSDF_NoCallingConvention));
-
-    if (status == demangle_success) {
-      m2 = result;
-    }
-  }
-
-  auto m1_str = llvm::demangle(e1->getInst()->getFunction()->getName().str());
-  auto m2_str = llvm::demangle(e2->getInst()->getFunction()->getName().str());
-
-  for (auto &str : ignoreRaceInFun) {
-    LOG_DEBUG("Ignore Func: m1={} m2 = {} varPattern={}", m1, m2, str);
-    LOG_DEBUG("Ignore Func: m1_str={} m2_str = {} varPattern={}", m1_str,
-              m2_str, str);
-
-    llvm::Regex rg(str);
-    if (m1.empty() || m2.empty()) {
-      if (rg.match(m1_str) || rg.match(m2_str))
-        return true;
-    } else {
-      if (rg.match(m1) || rg.match(m2))
-        return true;
-    }
-  }
-  return false;
-}
-
 bool aser::customizedFilterSoteriaIgnoreSymbol(const Event *e,
                                                const std::string symbol) {
   SourceInfo srcInfo1 = getSourceLoc(e->getInst());
@@ -807,6 +721,7 @@ bool aser::customizedFilterSoteriaIgnoreSymbol(const Event *e,
   }
   return false;
 }
+
 bool aser::customizedFilterSoteriaIgnoreFullSymbol(const Event *e) {
   SourceInfo srcInfo = getSourceLoc(e->getInst());
 
@@ -838,41 +753,19 @@ bool aser::customizedFilterSoteriaIgnoreFullSymbol(const Event *e) {
 
   return false;
 }
-bool aser::customizedFilterIgnoreLocations(
-    const Event *e1, const Event *e2,
-    std::vector<std::string> &ignoreRaceLocations) {
-  // SKIP #[soteria(ignore)]
-  // TODO split, then pick the one line before middle
+
+bool aser::customizedFilterIgnoreLocations(const Event *e1, const Event *e2) {
   if (customizedFilterSoteriaIgnoreFullSymbol(e1) ||
       customizedFilterSoteriaIgnoreFullSymbol(e2)) {
     return true;
   }
-
-  SourceInfo srcInfo1 = getSourceLoc(e1->getInst());
-  SourceInfo srcInfo2 = getSourceLoc(e2->getInst());
-
-  std::string loc1 = srcInfo1.sig();
-  std::string loc2 = srcInfo2.sig();
-  // a design choice: we want exact match to avoid user mistakes
-  for (auto &str : ignoreRaceLocations) {
-    LOG_TRACE("Ignore Location: loc1={} loc2 = {} varPattern={}", loc1, loc2,
-              str);
-    std::replace(str.begin(), str.end(), ':', '@');
-
-    if (loc1.find(str) != std::string::npos ||
-        loc2.find(str) != std::string::npos)
-      return true;
-  }
   return false;
 }
 
-int aser::customizedPriorityAdjust(
-    int P, std::string name, SourceInfo &srcInfo1, SourceInfo &srcInfo2,
-    std::vector<std::string> &st1, std::vector<std::string> &st2,
-    std::vector<std::string> &lowPriorityFileNames,
-    std::vector<std::string> &highPriorityFileNames,
-    std::vector<std::string> &lowPriorityVariables,
-    std::vector<std::string> &highPriorityVariables) {
+int aser::customizedPriorityAdjust(int P, std::string name,
+                                   SourceInfo &srcInfo1, SourceInfo &srcInfo2,
+                                   std::vector<std::string> &st1,
+                                   std::vector<std::string> &st2) {
   std::string file1 = srcInfo1.getFilename();
   std::string file2 = srcInfo2.getFilename();
   std::transform(file1.begin(), file1.end(), file1.begin(), ::tolower);
@@ -880,73 +773,11 @@ int aser::customizedPriorityAdjust(
 
   // TODO: improve performance for repeately creating glob patterns
 
-  if (P != 1)
-    // if source file name contains low priority signals
-    for (auto &str : lowPriorityFileNames) {
-      std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-      std::string entry =
-          (str.front() == '*' ? str : "*" + str); // match any prefix
-      Expected<GlobPattern> pattern = llvm::GlobPattern::create(entry);
-      if (pattern) {
-        if (pattern->match(file1) || pattern->match(file2)) {
-          LOG_DEBUG("Low Priority File Name: name1={} name2={}  varPattern={}",
-                    srcInfo1.getFilename(), srcInfo2.getFilename(), str);
-          return 1;
-        }
-      }
-    }
-
-  // if source file name contains high priority signals
-  for (auto &str : highPriorityFileNames) {
-    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-
-    std::string entry =
-        (str.front() == '*' ? str : "*" + str); // match any prefix
-    Expected<GlobPattern> pattern = llvm::GlobPattern::create(entry);
-    if (pattern) {
-      if (pattern->match(file1) || pattern->match(file2)) {
-        LOG_DEBUG("High Priority File Name: name1={} name2={}  varPattern={}",
-                  srcInfo1.getFilename(), srcInfo2.getFilename(), str);
-        return P += 2;
-      }
-    }
-  }
-
   // return if name is empty
-  if (name.empty())
+  if (name.empty()) {
     return P;
-  std::transform(name.begin(), name.end(), name.begin(), ::tolower);
-
-  if (P != 1)
-    // if certain variable is configured by user to be low priority
-    for (auto &str : lowPriorityVariables) {
-      std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-
-      std::string entry =
-          (str.front() == '*' ? str : "*" + str); // match any prefix
-      Expected<GlobPattern> pattern = llvm::GlobPattern::create(entry);
-      if (pattern) {
-        if (pattern->match(name)) {
-          LOG_DEBUG("Low Priority Var: name={} varPattern={}", name, str);
-          return 1;
-        }
-      }
-    }
-
-  // if certain variable is configured by user to be high priority
-  for (auto &str : highPriorityVariables) {
-    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-
-    std::string entry =
-        (str.front() == '*' ? str : "*" + str); // match any prefix
-    Expected<GlobPattern> pattern = llvm::GlobPattern::create(entry);
-    if (pattern) {
-      if (pattern->match(name)) {
-        LOG_DEBUG("High Priority Var: name={} varPattern={}", name, str);
-        return P += 2;
-      }
-    }
   }
+  std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
   // if races involving main has low priority
   if ((!st1.empty() && st1.front() == "main") ||

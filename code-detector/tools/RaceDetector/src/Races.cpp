@@ -1,8 +1,8 @@
 #include "Races.h"
 
-#include <llvm/Support/Regex.h>
-
 #include <fstream>
+
+#include <llvm/Support/Regex.h>
 
 #include "RDUtil.h"
 
@@ -25,13 +25,6 @@ extern bool CONFIG_NO_FILTER;
 
 extern std::map<std::string, std::map<std::string, std::string>> SOLANA_SVE_DB;
 
-extern vector<string> IGNORED_FUN_ALL;
-extern vector<string> IGNORED_VAR_ALL;
-extern vector<string> IGNORED_LOCATION_ALL;
-extern vector<string> LOW_PRIORITY_FILE_NAMES;
-extern vector<string> LOW_PRIORITY_VAR_NAMES;
-extern vector<string> HIGH_PRIORITY_FILE_NAMES;
-extern vector<string> HIGH_PRIORITY_VAR_NAMES;
 extern bool PRINT_IMMEDIATELY;
 extern bool TERMINATE_IMMEDIATELY;
 
@@ -73,16 +66,8 @@ void aser::OrderViolation::collect(
   auto st1 = getStackTrace(e1, callEventTraces, srcInfo1.isCpp());
   auto st2 = getStackTrace(e2, callEventTraces, srcInfo2.isCpp());
 
-  if (customizedFilterIgnoreFunctions(e1, e2, IGNORED_FUN_ALL))
-    return;
-  if (customizedFilterIgnoreVariables(sharedObjLoc.getName(), IGNORED_VAR_ALL))
-    return;
-  if (customizedFilterIgnoreLocations(e1, e2, IGNORED_LOCATION_ALL))
-    return;
   P = customizedPriorityAdjust(P, sharedObjLoc.getName(), srcInfo1, srcInfo2,
-                               st1, st2, LOW_PRIORITY_FILE_NAMES,
-                               HIGH_PRIORITY_FILE_NAMES, LOW_PRIORITY_VAR_NAMES,
-                               HIGH_PRIORITY_VAR_NAMES);
+                               st1, st2);
 #pragma omp critical(ovfilter)
   {
     ovfilter.insert(sig1);
@@ -265,22 +250,23 @@ json &aser::DeadLock::to_json() {
 
 ----------------------------------- */
 std::map<SVE::Type, std::string> aser::SVE::sveTypeIdMap;
+
 void SVE::addTypeID(std::string ID, SVE::Type type) { sveTypeIdMap[type] = ID; }
+
 std::string SVE::getTypeID(SVE::Type type) {
   if (sveTypeIdMap.find(type) != sveTypeIdMap.end())
     return sveTypeIdMap.at(type);
   else
     return "";
 }
+
 std::set<std::string> aser::SVE::disabledCheckers;
 void SVE::addDisabledChecker(std::string ID) { disabledCheckers.insert(ID); }
 bool SVE::isCheckerDisabled(SVE::Type type) {
   auto id = SVE::getTypeID(type);
-  if (disabledCheckers.find(id) != disabledCheckers.end())
-    return true;
-  else
-    return false;
+  return (disabledCheckers.find(id) != disabledCheckers.end());
 }
+
 /* --------------------------------
 
            CosplayAccounts
@@ -352,17 +338,14 @@ void aser::CosplayAccounts::collect(
     apiSigs.insert(sig);
   }
 
-  if (customizedFilterIgnoreFunctions(e1, e2, IGNORED_FUN_ALL))
-    return;
   bool isIgnored = false;
   bool isHidden = false;
   if (SVE::isCheckerDisabled(type))
     isHidden = true;
-  if (customizedFilterIgnoreLocations(e1, e2, IGNORED_LOCATION_ALL))
+  if (customizedFilterIgnoreLocations(e1, e2)) {
     isIgnored = true;
+  }
 
-  // std::vector<std::string> st = getStackTrace(e, callEventTraces,
-  // srcInfo.isCpp());
   std::vector<std::string> st1;
   std::vector<std::string> st2;
 
@@ -647,8 +630,6 @@ void aser::UntrustfulAccount::collect(
       return;
   }
 
-  if (customizedFilterIgnoreFunctions(e, e, IGNORED_FUN_ALL))
-    return;
   // for Anchor accounts, _ is ignored by default
   bool isIgnored = accountName.startswith("_");
   bool isHidden = false;
@@ -656,8 +637,6 @@ void aser::UntrustfulAccount::collect(
     isIgnored = true; // skip no_check
   if (SVE::isCheckerDisabled(type))
     isHidden = true;
-  if (customizedFilterIgnoreLocations(e, e, IGNORED_LOCATION_ALL))
-    isIgnored = true;
 
   if (SVE::Type::ACCOUNT_UNVALIDATED_DESTINATION == type) {
     bool isDestinationIgnored = customizedFilterSoteriaIgnoreSymbol(e, "dest");
@@ -899,14 +878,11 @@ void aser::UnSafeOperation::collect(
   SourceInfo srcInfo = getSourceLoc(e->getInst());
   if (filter(srcInfo))
     return;
-  if (customizedFilterIgnoreFunctions(e, e, IGNORED_FUN_ALL))
-    return;
+
   bool isHidden = false;
   bool isIgnored = false;
   if (SVE::isCheckerDisabled(type))
     isHidden = true;
-  if (customizedFilterIgnoreLocations(e, e, IGNORED_LOCATION_ALL))
-    isIgnored = true;
 
   if (type == SVE::Type::CRITICAL_REDUNDANT_CODE) {
     bool isRedundantIgnored =

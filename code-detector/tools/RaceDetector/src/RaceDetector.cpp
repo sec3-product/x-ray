@@ -238,14 +238,6 @@ int FUNC_COUNT_BUDGET;     // 100,000 by default
 bool CONFIG_IGNORE_READ_WRITE_RACES = false;
 bool CONFIG_IGNORE_WRITE_WRITE_RACES = false;
 
-vector<string> IGNORED_FUN_ALL;
-vector<string> IGNORED_VAR_ALL;
-vector<string> IGNORED_LOCATION_ALL;
-vector<string> LOW_PRIORITY_FILE_NAMES;
-vector<string> LOW_PRIORITY_VAR_NAMES;
-vector<string> HIGH_PRIORITY_FILE_NAMES;
-vector<string> HIGH_PRIORITY_VAR_NAMES;
-
 // for solana
 std::map<std::string, std::map<std::string, std::string>> SOLANA_SVE_DB;
 std::map<llvm::StringRef, const llvm::Function *> FUNC_NAME_MAP;
@@ -315,21 +307,6 @@ void initRaceDetect() {
   CONFIG_IGNORE_WRITE_WRITE_RACES =
       ConfigIgnoreWriteWriteRaces |
       conflib::Get<bool>("ignoreWriteWriteRaces", false);
-
-  IGNORED_FUN_ALL =
-      conflib::Get<std::vector<std::string>>("ignoreRacesInFunctions", {});
-  IGNORED_VAR_ALL =
-      conflib::Get<std::vector<std::string>>("ignoreRaceVariables", {});
-  IGNORED_LOCATION_ALL =
-      conflib::Get<std::vector<std::string>>("ignoreRacesAtLocations", {});
-  LOW_PRIORITY_FILE_NAMES =
-      conflib::Get<std::vector<std::string>>("lowPriorityFiles", {});
-  HIGH_PRIORITY_FILE_NAMES =
-      conflib::Get<std::vector<std::string>>("highPriorityFiles", {});
-  LOW_PRIORITY_VAR_NAMES =
-      conflib::Get<std::vector<std::string>>("lowPriorityRaces", {});
-  HIGH_PRIORITY_VAR_NAMES =
-      conflib::Get<std::vector<std::string>>("highPriorityRaces", {});
 
   auto reportLimit = conflib::Get<int>("raceLimit", -1);
   if (reportLimit != -1) {

@@ -275,27 +275,16 @@ bool customizedOMPFilter(Event *e1, Event *e2, std::vector<std::string> &st1,
                          const std::vector<std::string> &callingCtx,
                          std::vector<std::string> &ignoreRaceInFun);
 
-bool customizedFilterIgnoreFunctions(const Event *e1, const Event *e2,
-                                     std::vector<std::string> &ignoreRaceInFun);
-
-bool customizedFilterIgnoreVariables(
-    std::string name, std::vector<std::string> &ignoreRaceVariables);
-
 bool customizedFilterSoteriaIgnoreFullSymbol(const Event *e);
 bool customizedFilterSoteriaIgnoreSymbol(const Event *e,
                                          const std::string symbol);
-bool customizedFilterIgnoreLocations(
-    const Event *e1, const Event *e2,
-    std::vector<std::string> &ignoreRaceLocations);
+bool customizedFilterIgnoreLocations(const Event *e1, const Event *e2);
 
 int customizedPriorityAdjust(int P, std::string name, SourceInfo &srcInfo1,
                              SourceInfo &srcInfo2,
                              std::vector<std::string> &st1,
-                             std::vector<std::string> &st2,
-                             std::vector<std::string> &lowPriorityFileNames,
-                             std::vector<std::string> &highPriorityFileNames,
-                             std::vector<std::string> &lowPriorityVariables,
-                             std::vector<std::string> &highPriorityVariables);
+                             std::vector<std::string> &st2);
+
 std::vector<CallEvent *>
 getCallEventStack(const Event *e,
                   std::map<TID, std::vector<CallEvent *>> &callEventTraces);
