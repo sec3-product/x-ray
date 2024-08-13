@@ -4,34 +4,26 @@
 
 #include "RaceDetectionPass.h"
 
-#include <CustomAPIRewriters/ThreadAPIRewriter.h>
+#include <chrono>
+#include <queue>
+
 #include <llvm/ADT/IndexedMap.h>
 #include <llvm/ADT/SCCIterator.h>
 #include <llvm/Analysis/CFG.h>
 #include <llvm/Analysis/MemoryLocation.h>
 #include <llvm/Analysis/TypeBasedAliasAnalysis.h>
 
-#include <chrono>
-#include <queue>
-
+#include "aser/Util/Log.h"
 #include "Graph/Event.h"
 #include "Graph/ReachGraph.h"
 #include "Graph/Trie.h"
 #include "PTAModels/GraphBLASModel.h"
 #include "Races.h"
 #include "StaticThread.h"
-#include "aser/Util/Log.h"
 
 using namespace std;
 using namespace llvm;
 using namespace aser;
-
-extern bool DEBUG_RACE;
-extern bool DEBUG_THREAD;
-extern std::string CR_FUNC_NAME;
-extern map<const Function *, const Function *> openLibCallbackCalleeMap;
-extern map<StringRef, StringRef> ST_CLASSES_SUPER;
-extern vector<string> IGNORED_LOCATION_ALL;
 
 extern bool CONFIG_SHOW_SUMMARY;
 extern bool CONFIG_SHOW_DETAIL;
@@ -60,25 +52,11 @@ extern bool CONFIG_LOOP_UNROLL;
 extern bool CONFIG_IGNORE_READ_WRITE_RACES;
 extern bool CONFIG_IGNORE_WRITE_WRITE_RACES;
 
-// NOTE: temporary
-extern bool CONFIG_NO_PS;
-
-extern bool CONFIG_CTX_INSENSITIVE_PTA;
-extern bool CONFIG_FAST_MODE;
-extern bool CONFIG_INCLUDE_ATOMIC;
-extern bool OPT_QUICK_CHECK;
-extern bool OPT_SAME_THREAD_AT_MOST_TWICE;
-
-extern bool DEBUG_RACE_EVENT;
-extern bool DEBUG_HAPPEN_IN_PARALLEL;
 extern bool DEBUG_INDIRECT_CALL;
 extern bool DEBUG_INDIRECT_CALL_ALL;
 extern bool DEBUG_CALL_STACK;
-extern bool DEBUG_LOCK;
 extern bool DEBUG_RUST_API;
 extern bool PRINT_IMMEDIATELY;
-
-extern int MAX_CALLSTACK_DEPTH;
 
 extern const llvm::Function *getFunctionFromPartialName(llvm::StringRef partialName);
 extern const llvm::Function *getFunctionMatchStartEndName(llvm::StringRef startName, llvm::StringRef endName);

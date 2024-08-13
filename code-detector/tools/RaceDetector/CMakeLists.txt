@@ -22,9 +22,7 @@ llvm_map_components_to_libnames(llvm_libs
         mc)
 
 set(racedetect-component
-        src/CustomAPIRewriters/ThreadAPIRewriter.cpp
         src/CustomAPIRewriters/RustAPIRewriter.cpp
-        src/CustomAPIRewriters/ThreadProfileRewriter.cpp
         src/CustomAPIRewriters/IndirectTargetRewriter.cpp
         src/CustomAPIRewriters/RewriteUserSpecifiedAPI.cpp
         src/RDUtil.cpp

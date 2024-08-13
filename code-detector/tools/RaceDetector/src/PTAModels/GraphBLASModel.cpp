@@ -2,7 +2,6 @@
 
 #include <llvm/ADT/StringSet.h>
 
-#include "CustomAPIRewriters/ThreadAPIRewriter.h"
 #include "PTAModels/GraphBLASHeapModel.h"
 #include "aser/PointerAnalysis/Context/KOrigin.h"
 
@@ -252,9 +251,7 @@ const llvm::Function *GraphBLASModel::findThreadStartFunc(PTA *pta, const ctx *c
                                                           const llvm::Instruction *forkSite) {
     int callSiteOffset = 2;
     if (auto call = cast<CallBase>(forkSite)) {
-        if (call->getCalledFunction()->getName().startswith(ThreadAPIRewriter::getCanonicalizedAPIPrefix())) {
-            callSiteOffset = 1;
-        } else if (call->getCalledFunction()->getName().equals("evhttp_set_gencb")) {
+        if (call->getCalledFunction()->getName().equals("evhttp_set_gencb")) {
             callSiteOffset = 1;
         }
     }
@@ -407,42 +404,6 @@ InterceptResult GraphBLASModel::interceptFunction(const ctx *calleeCtx, const ct
     }
 
     return {F, InterceptResult::Option::EXPAND_BODY};
-}
-
-// determine whether the resolved indirect call is compatible
-bool GraphBLASModel::isCompatible(const llvm::Instruction *callsite, const llvm::Function *target) {
-    auto call = llvm::cast<llvm::CallBase>(callsite);
-    // only pthread will override to indirect call in default language model
-    auto threadCreate = call->getCalledFunction();
-    assert(threadCreate);
-
-    if (threadCreate->getName().equals("pthread_create") ||
-        threadCreate->getName().equals(ThreadAPIRewriter::getStandardCThreadCreateAPI())) {
-        // pthread and thread library written in C
-        // pthread call back type -> i8* (*) (i8*)
-        if (target->arg_size() != 1) {
-            return false;
-        }
-        // pthread's callback's return type does not matter.
-        return target->arg_begin()->getType() == llvm::Type::getInt8PtrTy(callsite->getContext());
-    } else if (threadCreate->getName().startswith(ThreadAPIRewriter::getCanonicalizedAPIPrefix())) {
-        if (target->arg_size() != call->arg_size() - 2) {
-            return false;
-        }
-
-        auto fit = call->arg_begin() + 2;
-        for (const Argument &arg : target->args()) {
-            const Value *param = *fit;
-            if (param->getType()->isPointerTy() != arg.getType()->isPointerTy()) {
-                // TODO: this is a loose check
-                return false;
-            }
-            fit++;
-        }
-        return true;
-    }
-
-    llvm_unreachable("unrecognizable function");
 }
 
 static Optional<StringRef> getStringFromValue(const Value *V, const DataLayout &DL) {

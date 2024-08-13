@@ -51,10 +51,6 @@ public:
         });
     }
 
-    // callbacks called by ConsGraphBuilder
-    // whether the resolved indirect call is compatible with API
-    bool isCompatible(const llvm::Instruction *callsite, const llvm::Function *target);
-
     // callsite is supplied optional, in case in the future we might need it
     bool isHeapAllocAPI(const llvm::Function *F, const llvm::Instruction *callsite = nullptr) {
         return heapModel.isHeapAllocFun(F);

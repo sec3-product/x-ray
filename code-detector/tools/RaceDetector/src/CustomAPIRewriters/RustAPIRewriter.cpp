@@ -15,15 +15,6 @@
 using namespace std;
 using namespace llvm;
 
-extern const std::string ST_ANON_FUNC_NAME;
-extern const std::string SOL_BUILT_IN_NAME;
-extern const std::string SOL_BUILT_IN_MODEL_NAME;
-extern std::string ST_BUILT_IN_MODEL_NEW_TEMP;
-extern const std::string ST_BUILT_IN_MODEL_PARENT_SCOPE;
-extern const std::string ST_BUILT_IN_MODEL_OPAQUE_ASSIGN;
-extern const std::string ST_BUILT_IN_MODEL_BINARY_OP;
-extern const std::string ST_BUILT_IN_FORK_AT;
-extern const std::string ST_BUILT_IN_FORK_AT_NAMED;
 extern bool DEBUG_RUST_API;
 
 namespace aser {
