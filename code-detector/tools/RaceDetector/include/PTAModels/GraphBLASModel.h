@@ -203,8 +203,6 @@ public:
     static bool isLibEventSetCallBack(const Function *F);
     static bool isLibEventDispath(const llvm::Instruction *inst);
     static bool isLibEventDispath(const Function *F);
-    static llvm::Function *findSmallTalkThreadStart(aser::CallSite &CS, unsigned int pos = 0);
-    static llvm::Value *findSmallTalkThreadHandler(aser::CallSite &CS, unsigned int pos = 0);
     static const llvm::StringRef findGlobalString(const llvm::Value *value);
     static bool isPreviledgeAccount(llvm::StringRef accountName);
     static bool isAuthorityAccount(llvm::StringRef accountName);
@@ -244,23 +242,11 @@ public:
     static void addLockCallStackFunction(std::vector<const Function *> &callStack);
     static bool isSyncCall(const llvm::Instruction *inst);
     static bool isSyncCall(const llvm::Function *func);
-    static bool isSmalltalkForkCall(const llvm::Function *func);
 
     static bool isRustModelAPI(const llvm::Function *func);
-    static bool isSmallTalkModelAPI(const llvm::Instruction *inst);
     static bool isRustAPI(const llvm::Function *func);
-    static bool isSmallTalkAnonAPI(const llvm::Function *func);
     static bool isRustNormalCall(const llvm::Instruction *inst);
     static bool isRustNormalCall(const llvm::Function *func);
-    static bool isSmallTalkFork(const llvm::Function *func);
-    static bool isSmallTalkFork(const llvm::Instruction *inst);
-    static bool isSmallTalkForkAt(const llvm::Function *func);
-    static bool isSmallTalkForkAtNamed(const llvm::Function *func);
-    static bool isSmallTalkForkAt(const llvm::Instruction *inst);
-    static bool isSmallTalkForkAtNamed(const llvm::Instruction *inst);
-    static bool isSmallTalkReadAPI(const llvm::Function *func);
-    static bool isSmallTalkWriteAPI(const llvm::Function *func);
-    static bool isSmallTalkReadOrWriteAPI(const llvm::Instruction *inst);
 
     bool isInvokingAnOrigin(const ctx *prevCtx, const llvm::Instruction *I);
 

@@ -75,20 +75,6 @@ std::string LocksetManager::findLockStr(const llvm::Instruction *I, const llvm::
     auto lockStr = sourceInfo.getSourceLine();
     if (DEBUG_LOCK_STR) llvm::outs() << "\nsource line: " << lockStr;
 
-    // for smalltalk "^self accessProtect critical:"
-    auto found_st = lockStr.find(" critical:");
-    if (found_st != std::string::npos) {
-        auto tmp = lockStr.substr(0, found_st);
-        int found0 = tmp.find_last_of(" ");
-        if (found0 == std::string::npos) {
-            found0 = -1;
-        }
-        auto lockStr2 = lockStr.substr(found0 + 1, found_st - found0 - 1);
-        lockStrInstCache[I] = lockStr2;
-        if (DEBUG_LOCK_STR) llvm::outs() << "st lockStr: " << lockStr2 << "\n";
-        return lockStr2;
-    }
-
     // if (pthread_mutex_trylock(lock) == 0) {
     // skip trylock
     // if (lockStr.find("trylock(") != std::string::npos) return "";

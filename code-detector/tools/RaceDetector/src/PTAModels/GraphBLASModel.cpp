@@ -88,28 +88,8 @@ extern std::vector<std::string> CONFIG_MUST_EXPLORE_APIS;
 extern std::vector<std::string> CONFIG_INDIRECT_APIS;
 extern std::map<std::string, std::string> CRITICAL_INDIRECT_TARGETS;
 
-extern std::set<std::string> SmallTalkReadAPINames;
-extern std::set<std::string> SmallTalkWriteAPINames;
-
-const std::string ST_ANON_FUNC_NAME = "st.anonfun.";
-const std::string ST_BUILT_IN_CRITICAL_LOCK = "st.critical:";
-const std::string ST_GLOBAL_VAR_NAME = "global_";
-const std::string ST_LOCAL_VAR_NAME = "local_";
-const std::string ST_GLOBAL_OP_NAME = "global_op_";
 const std::string SOL_BUILT_IN_NAME = "sol.";  // for all the built-in sol function
 const std::string SOL_BUILT_IN_MODEL_NAME = "sol.model.";
-const std::string ST_BUILT_IN_MODEL_NEW_TEMP = "st.model.newTemp";
-const std::string ST_BUILT_IN_MODEL_NEW_OBJECT = "st.model.newObject";
-const std::string ST_BUILT_IN_MODEL_INST_VAR = "st.model.instVar";
-const std::string ST_BUILT_IN_MODEL_CLASS_VAR = "st.model.classVar";
-const std::string ST_BUILT_IN_MODEL_PARENT_SCOPE = "st.model.parentScope";
-const std::string ST_BUILT_IN_MODEL_PARENT_VAR = "st.model.parentVar";
-const std::string ST_BUILT_IN_MODEL_OPAQUE_ASSIGN = "st.model.opaqueAssign";
-const std::string ST_BUILT_IN_MODEL_BINARY_OP = "st.model.binaryop";
-const std::string ST_BUILT_IN_FORK = "st.fork";
-const std::string ST_BUILT_IN_FORK_AT = "st.forkAt:";
-const std::string ST_BUILT_IN_FORK_AT_NAMED = "st.forkAt:named:";
-const std::string ST_BUILT_IN_MODEL_BLOCK_PARAM = "st.model.blockParam";
 
 const std::set<llvm::StringRef> AUTHORITY_NAMES{"authority", "admin"};
 const std::set<llvm::StringRef> USER_NAMES{"user", "payer"};
@@ -221,10 +201,7 @@ bool GraphBLASModel::isInvokingAnOrigin(const ctx *prevCtx, const Instruction *I
             if (fun->getName().startswith(ThreadAPIRewriter::getCanonicalizedAPIPrefix())) {
                 return true;
             }
-            // JEFF: smalltalk
-            if (fun->getName().startswith(ST_BUILT_IN_FORK)) {
-                return true;
-            }
+
             std::string demangled = getDemangledName(fun->getName());
 
             if (demangled.rfind("std::thread::thread<", 0) == 0 ||
@@ -329,29 +306,6 @@ void GraphBLASModel::interceptHeapAllocSite(const aser::CtxFunction<aser::ctx> *
     }
 }
 
-llvm::Function *GraphBLASModel::findSmallTalkThreadStart(aser::CallSite &CS, unsigned int pos) {
-    auto value = LangModel::findSmallTalkThreadHandler(CS, pos);
-    if (auto funStart = dyn_cast_or_null<Function>(value)) {
-        return funStart;
-    } else if (auto gv = dyn_cast_or_null<GlobalVariable>(value)) {
-        // llvm::outs() << "global variable: " << *gv << "\n";
-        if (auto anonFuncData = dyn_cast_or_null<ConstantDataArray>(gv->getInitializer())) {
-            auto valueName = anonFuncData->getAsString();
-            // llvm::outs() << "anonFuncData: " << *anonFuncData << " valueName: " << valueName << "\n";
-
-            // get function
-            auto thisModule = CS.getCalledFunction()->getParent();
-            if (auto funStart = thisModule->getFunction(valueName)) {
-                // llvm::outs() << "funStart: " << *funStart << "\n";
-
-                return funStart;
-            }
-        }
-    }
-
-    return nullptr;
-}
-
 const StringRef GraphBLASModel::findGlobalString(const llvm::Value *value) {
     if (value) {
         if (auto user = dyn_cast<llvm::User>(value)) {
@@ -367,22 +321,6 @@ const StringRef GraphBLASModel::findGlobalString(const llvm::Value *value) {
         }
     }
     return "";
-}
-llvm::Value *GraphBLASModel::findSmallTalkThreadHandler(aser::CallSite &CS, unsigned int pos) {
-    auto gepAnonFunc = CS.getArgOperand(pos);  // CS.getNumArgOperands() - 1
-    // llvm::outs() << "gepAnonFunc: " << *gepAnonFunc << "\n";
-    if (auto call = dyn_cast<llvm::CallBase>(gepAnonFunc)) {
-        return call->getCalledFunction();
-    } else if (auto user = dyn_cast<llvm::User>(gepAnonFunc))
-        return user->getOperand(0);
-    // if (auto GEP = dyn_cast<GetElementPtrInst>(gepAnonFunc)) {
-    //     llvm::outs() << "GEP: " << *GEP << "\n";
-    //     if (auto anonFunc = GEP->getPointerOperand()) {
-    //         llvm::outs() << "anonFunc: " << *anonFunc << "\n";
-    //         return anonFunc;
-    //     }
-    // }
-    return nullptr;
 }
 
 std::map<const llvm::Instruction *, const llvm::Function *> sigActionHandlerMap;
@@ -598,172 +536,9 @@ InterceptResult GraphBLASModel::interceptFunction(const ctx *calleeCtx, const ct
             // this should never happen for signal handlers
             return {nullptr, InterceptResult::Option::IGNORE_FUN};
         }
-    } else if (LangModel::isSmallTalkFork(callsite) || LangModel::isSmallTalkForkAt(callsite) ||
-               LangModel::isSmallTalkForkAtNamed(callsite)) {
-        aser::CallSite CS(callsite);
-        F = LangModel::findSmallTalkThreadStart(CS);
     } else if (F->isDeclaration()) {
-        // for smalltalk normal calls
         if (LangModel::isRustNormalCall(callsite)) {
             aser::CallSite CS(callsite);
-            // model st.repeat
-            if (F->getName().equals("st.repeat")) {
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS)) {
-                    // TODO: connect arguments
-
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.repeat: " << funStart->getName() << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            } else if (F->getName().equals("st.critical:")) {
-                // special for locks
-                // if (callee->getFunction()->getName().startswith(ST_BUILT_IN_CRITICAL_LOCK))
-                {
-                    auto lockObj = CS.getArgOperand(0);
-                    // llvm::outs() << "st.critical lock: " << *lockObj << "\n";
-                    if (isa<CallBase>(lockObj)) {
-                        auto lock = dyn_cast<CallBase>(lockObj);
-                        auto key = lock->getCalledFunction()->getName();
-                        key = key.substr(3);
-                        // llvm::outs() << "st.critical key: " << key << "\n";
-                        if (mapObjects.find(key) == mapObjects.end()) {
-                            ObjNode *sharedObj = MMT::template allocateAnonObj<PT>(
-                                this->getMemModel(), callerCtx, this->getLLVMModule()->getDataLayout(),
-                                lockObj->getType(), lockObj,
-                                true);  // init the object recursively if it is an aggeragate type
-                            mapObjects[key] = sharedObj;
-                        }
-                        ObjNode *sharedObj = mapObjects.at(key);
-                        auto dst = this->getPtrNode(calleeCtx, lockObj);
-                        this->consGraph->addConstraints(sharedObj, dst, Constraints::addr_of);
-                    }
-                }
-
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS, 1)) {
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.critical: " << funStart->getName() << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            } else if (F->getName().equals("st.ifNil:")) {
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS, 1)) {
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.ifNil: " << funStart->getName() << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            } else if (F->getName().equals("st.isNil:")) {
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS, 1)) {
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.isNil: " << funStart->getName() << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            } else if (F->getName().equals("st.do:")) {
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS, 1)) {
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.do: " << funStart->getName() << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            } else if (F->getName().equals("st.to:do:")) {
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS, 2)) {
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.to:do: " << funStart->getName() << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            } else if (F->getName().equals("st.select:")) {
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS, 1)) {
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.select: " << funStart->getName() << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            } else if (F->getName().equals("st.valueNowOrOnUnwindDo:")) {
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS, 1)) {
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.valueNowOrOnUnwindDo: " << funStart->getName()
-                                     << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            } else if (F->getName().equals("st.collect:")) {
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS, 1)) {
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.collect: " << funStart->getName() << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            } else if (F->getName().equals("st.keysAndValuesDo:")) {
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS, 1)) {
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.keysAndValuesDo: " << funStart->getName()
-                                     << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            } else if (F->getName().equals("st.and:")) {
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS, 1)) {
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.and: " << funStart->getName() << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            } else if (F->getName().equals("st.ifTrue:")) {
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS, 1)) {
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.ifTrue: " << funStart->getName() << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            } else if (F->getName().equals("st.ifFalse:")) {
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS, 1)) {
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.ifFalse: " << funStart->getName() << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            } else if (F->getName().equals("st.whileTrue:")) {
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS, 1)) {
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.whileTrue: " << funStart->getName() << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            } else if (F->getName().equals("st.whileFalse:")) {
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS, 1)) {
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.whileFalse: " << funStart->getName() << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            } else if (F->getName().equals("st.ifTrue:ifFalse:")) {
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS, 2)) {
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.ifTrue:ifFalse: " << funStart->getName()
-                                     << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            } else if (F->getName().equals("st.handle:do:")) {
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS, 1)) {
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.handle:do: " << funStart->getName() << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            } else if (F->getName().equals("st.on:do:")) {
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS, 2)) {
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.on:do: " << funStart->getName() << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            } else if (F->getName().equals("st.at:ifAbsentPut:")) {
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS, 2)) {
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.at:ifAbsentPut: " << funStart->getName()
-                                     << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            } else if (F->getName().equals("st.at:ifAbsent:")) {
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS, 2)) {
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.at:ifAbsent: " << funStart->getName() << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            } else if (F->getName().equals("st.sortBlock:")) {
-                if (auto funStart = LangModel::findSmallTalkThreadStart(CS, 1)) {
-                    if (DEBUG_RUST_API)
-                        llvm::outs() << "[smalltalk] found target of st.sortBlock: " << funStart->getName() << "\n";
-                    return {funStart, InterceptResult::Option::EXPAND_BODY};
-                }
-            }
-
             if (DEBUG_RUST_API) llvm::outs() << "TODO: intercepting sol library call: " << F->getName() << "\n";
 
             // TODO: find target of callsite
@@ -901,167 +676,6 @@ bool GraphBLASModel::interceptCallSite(const CtxFunction<ctx> *caller, const Ctx
     // the rule of context evolution should be obeyed.
     aser::CallSite CS(callsite);
     assert(CS.isCallOrInvoke());
-
-    if (callee->getFunction()->getName().startswith(SOL_BUILT_IN_NAME)) {
-        // llvm::outs() << "!!! interceptCallSite fo st callee: " << callee->getFunction()->getName() << "\n";
-        if (callee->getFunction()->getName().startswith(SOL_BUILT_IN_MODEL_NAME)) {
-            if (callee->getFunction()->getName().equals(ST_BUILT_IN_MODEL_OPAQUE_ASSIGN)) {
-                auto *dst = this->getPtrNode(caller->getContext(), CS.getArgOperand(0));
-                auto *src = this->getPtrNode(caller->getContext(), CS.getArgOperand(1));
-                this->consGraph->addConstraints(src, dst, Constraints::copy);
-                return true;
-            } else if (callee->getFunction()->getName().equals(ST_BUILT_IN_MODEL_NEW_TEMP) ||
-                       callee->getFunction()->getName().startswith(ST_BUILT_IN_MODEL_NEW_OBJECT)) {
-                auto gepOpaqueObj = CS.getArgOperand(CS.getNumArgOperands() - 1);
-                if (auto user = dyn_cast<llvm::User>(gepOpaqueObj)) {
-                    if (auto opaqueObj = dyn_cast_or_null<GlobalVariable>(user->getOperand(0))) {
-                        ObjNode *sharedObj = MMT::template allocateHeapObj<PT>(
-                            this->getMemModel(), caller->getContext(), callsite, this->getLLVMModule()->getDataLayout(),
-                            opaqueObj->getType());  //->getPointerElementType()
-                        auto *dst = this->getPtrNode(caller->getContext(), callsite);
-                        this->consGraph->addConstraints(sharedObj, dst, Constraints::addr_of);
-                    }
-                }
-            } else if (callee->getFunction()->getName().startswith(ST_BUILT_IN_MODEL_BLOCK_PARAM)) {
-            } else if (callee->getFunction()->getName().equals(ST_BUILT_IN_MODEL_PARENT_VAR)) {
-                auto gepOpaqueObj = CS.getArgOperand(CS.getNumArgOperands() - 1);
-                if (auto user = dyn_cast<llvm::User>(gepOpaqueObj)) {
-                    if (auto opaqueObj = dyn_cast_or_null<GlobalVariable>(user->getOperand(0))) {
-                        auto key = opaqueObj->getName();
-                        auto v0 = CS.getArgOperand(0);
-                        auto pair = std::make_pair(key, v0);
-                        if (mapParentObjects.find(pair) == mapParentObjects.end()) {
-                            ObjNode *obj = MMT::template allocateAnonObj<PT>(
-                                this->getMemModel(), caller->getContext(), this->getLLVMModule()->getDataLayout(),
-                                opaqueObj->getType(), v0,
-                                true);  // init the object recursively if it is an aggeragate type
-                            mapParentObjects[pair] = obj;
-                        }
-                        auto sharedObj = mapParentObjects[pair];
-
-                        auto src = this->getPtrNode(caller->getContext(), gepOpaqueObj);
-                        auto dst = this->getPtrNode(caller->getContext(), callsite);
-                        // this->consGraph->addConstraints(sharedObj, src, Constraints::addr_of);
-                        this->consGraph->addConstraints(src, dst, Constraints::copy);
-                    }
-                }
-
-            } else if (callee->getFunction()->getName().equals(ST_BUILT_IN_MODEL_CLASS_VAR)) {
-                auto gepOpaqueObj = CS.getArgOperand(CS.getNumArgOperands() - 1);
-                if (auto user = dyn_cast<llvm::User>(gepOpaqueObj)) {
-                    if (auto opaqueObj = dyn_cast_or_null<GlobalVariable>(user->getOperand(0))) {
-                        auto key = opaqueObj->getName();
-                        if (mapObjects.find(key) == mapObjects.end()) {
-                            ObjNode *obj = MMT::template allocateAnonObj<PT>(
-                                this->getMemModel(), CT::getGlobalCtx(), this->getLLVMModule()->getDataLayout(),
-                                opaqueObj->getType(), opaqueObj,
-                                true);  // init the object recursively if it is an aggeragate type
-                            mapObjects[key] = obj;
-                        }
-                        ObjNode *sharedObj = mapObjects.at(key);
-                        auto dst = this->getPtrNode(caller->getContext(), callsite);
-                        this->consGraph->addConstraints(sharedObj, dst, Constraints::addr_of);
-                    }
-                }
-            } else if (callee->getFunction()->getName().equals(ST_BUILT_IN_MODEL_INST_VAR)) {
-                // callee->getFunction()->getName().equals(ST_BUILT_IN_MODEL_NEW_TEMP) ||
-                // callee->getFunction()->getName().startswith(ST_BUILT_IN_MODEL_NEW_OBJECT) ||
-                auto gepOpaqueObj = CS.getArgOperand(CS.getNumArgOperands() - 1);
-                // llvm::outs() << "!!! interceptCallSite fo callee st model: " << callee->getFunction()->getName()
-                //              << " gepOpaqueObj:" << *gepOpaqueObj << "\n";
-                if (auto user = dyn_cast<llvm::User>(gepOpaqueObj))
-                // if (auto GEP = dyn_cast<GetElementPtrInst>(gepOpaqueObj))
-                {
-                    // llvm::outs() << "GetElementPtrInst: " << *GEP << "\n";
-                    // llvm::outs() << "user: " << *user << "\n";
-                    if (auto opaqueObj = dyn_cast_or_null<GlobalVariable>(user->getOperand(0))) {
-                        auto key = opaqueObj->getName();
-                        // llvm::outs() << "inserting opaque object for key: " << key << "\n";
-                        if (mapObjects.find(key) == mapObjects.end()) {
-                            ObjNode *sharedObj =
-                                MMT::template allocateHeapObj<PT>(this->getMemModel(), CT::getGlobalCtx(), callsite,
-                                                                  this->getLLVMModule()->getDataLayout(),
-                                                                  opaqueObj->getType());  //->getPointerElementType()
-                            mapObjects[key] = sharedObj;
-                        }
-                        ObjNode *sharedObj = mapObjects.at(key);
-                        auto src = this->getPtrNode(caller->getContext(), gepOpaqueObj);
-                        auto dst = this->getPtrNode(caller->getContext(), callsite);
-                        // this->consGraph->addConstraints(sharedObj, src, Constraints::addr_of);
-                        this->consGraph->addConstraints(src, dst, Constraints::copy);
-
-                        auto globalInstVar = this->getPtrNode(CT::getGlobalCtx(), opaqueObj);
-                        this->consGraph->addConstraints(dst, globalInstVar, Constraints::copy);
-                    }
-                }
-            }
-            return true;
-        } else if (callee->getFunction()->getName().startswith(ST_ANON_FUNC_NAME)) {
-            if (DEBUG_RUST_API) {
-                llvm::outs() << "interceptCallSite: " << *callsite << "\n";
-                if (caller->getFunction()->hasName())
-                    llvm::outs() << "caller: " << caller->getName() << "\n";
-                else
-                    llvm::outs() << "caller is null! function: " << *caller->getFunction() << "\n";
-
-                llvm::outs() << "callee: " << callee->getName() << "\n";
-            }
-            if (caller->getFunction()->arg_size() > 0) {
-                PtrNode *src = this->getPtrNodeOrNull(caller->getContext(), caller->getFunction()->arg_begin());
-                PtrNode *dst = this->getPtrNodeOrNull(callee->getContext(), callee->getFunction()->arg_begin());
-                if (src && dst) {
-                    this->consGraph->addConstraints(src, dst, Constraints::copy);
-                }
-            }
-
-            // TODO: for st.fork connect arguments from st.model.blockParam
-
-            // connect caller-callee parameter starting from 2nd..
-            // call @st.model.blockParam(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @st.anonfun.main.2.1, i64
-            // 0, i64 0), i8* %4, i8* %2)
-            // define i8* @st.anonfun.main.2(i8* %0, i8* %1, i8* %2)
-
-            auto prevInst = callsite->getPrevNonDebugInstruction();
-            if (prevInst && llvm::isa<CallBase>(prevInst)) {
-                if (llvm::cast<CallBase>(prevInst)->getCalledFunction()->getName().startswith(
-                        ST_BUILT_IN_MODEL_BLOCK_PARAM)) {
-                    aser::CallSite CS(prevInst);
-                    int blockParamSize = CS.getNumArgOperands();
-                    if (blockParamSize > 1) {  // only care about parameters
-
-                        auto funStart = LangModel::findSmallTalkThreadStart(CS);
-                        // llvm::outs() << "ST_BUILT_IN_FORK: " << *callsite << " funStart: " << funStart->getName() <<
-                        // "\n";
-                        int argNum = funStart->arg_size();
-                        // for st.forkAt:   blockParamSize == argNum
-                        // for st.forkAt:   blockParamSize == argNum
-                        if (blockParamSize == argNum) {
-                            for (int i = 1; i < argNum; i++) {
-                                PtrNode *actual = this->getOrCreatePtrNode(caller->getContext(), CS.getArgOperand(i));
-                                PtrNode *formal =
-                                    this->getOrCreatePtrNode(callee->getContext(), funStart->arg_begin() + i);
-                                if (formal == nullptr) {
-                                    llvm::outs() << "formal nullptr: " << i << " func: " << *funStart << "\n";
-                                    continue;
-                                } else {
-                                    // llvm::outs() << "addConstraints(actual, formal, Constraints::copy): " << i <<
-                                    // "\n";
-                                    this->consGraph->addConstraints(actual, formal, Constraints::copy);
-                                }
-                            }
-                        } else {
-                            llvm::outs() << "!!! something is wrong blockParamSize: " << blockParamSize
-                                         << " anonFunc argNum: " << argNum << " inst: " << *callsite << "\n";
-                        }
-                    }
-                }
-            }
-
-            return true;
-        } else if (callee->getFunction()->getName().startswith(ST_BUILT_IN_FORK)) {
-            return true;
-        }
-    }
 
     if (isRegisterSignal(callsite) || isRegisterSignalAction(callsite)) {
         return true;
@@ -1493,14 +1107,7 @@ bool GraphBLASModel::isSyncCall(const llvm::Instruction *inst) {
     }
 }
 bool GraphBLASModel::isSyncCall(const Function *F) {
-    auto name = F->getName();
-
-    return name.startswith("st.critical:") || name.startswith(ST_BUILT_IN_FORK) || name.startswith("pthread_") ||
-           name.startswith("sem_") || name.startswith(".coderrect.mutex.");
-}
-bool GraphBLASModel::isSmalltalkForkCall(const Function *F) {
-    auto name = F->getName();
-    return name.startswith(ST_BUILT_IN_FORK);
+    return false;
 }
 bool GraphBLASModel::isSemaphoreWait(const llvm::Instruction *inst) {
     aser::CallSite CS(inst);
@@ -1639,73 +1246,10 @@ bool GraphBLASModel::isRustNormalCall(const llvm::Instruction *inst) {
     if (CS.isIndirectCall()) {
         return false;
     } else {
-        return !isSmallTalkReadOrWriteAPI(inst) && GraphBLASModel::isRustNormalCall(CS.getCalledFunction());
+        return GraphBLASModel::isRustNormalCall(CS.getCalledFunction());
     }
-}
-bool GraphBLASModel::isSmallTalkAnonAPI(const llvm::Function *func) {
-    return func->getName().startswith(ST_ANON_FUNC_NAME);
 }
 bool GraphBLASModel::isRustModelAPI(const llvm::Function *func) {
     return func->getName().startswith(SOL_BUILT_IN_MODEL_NAME);
 }
-bool GraphBLASModel::isSmallTalkModelAPI(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return GraphBLASModel::isRustModelAPI(CS.getCalledFunction());
-    }
-}
 bool GraphBLASModel::isRustAPI(const llvm::Function *func) { return func->getName().startswith(SOL_BUILT_IN_NAME); }
-bool GraphBLASModel::isSmallTalkForkAt(const llvm::Function *func) {
-    return func->getName().equals(ST_BUILT_IN_FORK_AT);
-}
-bool GraphBLASModel::isSmallTalkForkAtNamed(const llvm::Function *func) {
-    return func->getName().equals(ST_BUILT_IN_FORK_AT_NAMED);
-}
-bool GraphBLASModel::isSmallTalkFork(const llvm::Function *func) { return func->getName().equals(ST_BUILT_IN_FORK); }
-
-bool GraphBLASModel::isSmallTalkFork(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return GraphBLASModel::isSmallTalkFork(CS.getCalledFunction());
-    }
-}
-bool GraphBLASModel::isSmallTalkForkAt(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return GraphBLASModel::isSmallTalkForkAt(CS.getCalledFunction());
-    }
-}
-bool GraphBLASModel::isSmallTalkForkAtNamed(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return GraphBLASModel::isSmallTalkForkAtNamed(CS.getCalledFunction());
-    }
-}
-
-bool GraphBLASModel::isSmallTalkReadOrWriteAPI(const llvm::Instruction *inst) {
-    aser::CallSite CS(inst);
-    if (CS.isIndirectCall()) {
-        return false;
-    } else {
-        return isSmallTalkReadAPI(CS.getCalledFunction()) || isSmallTalkWriteAPI(CS.getCalledFunction());
-    }
-}
-bool GraphBLASModel::isSmallTalkReadAPI(const llvm::Function *func) {
-    return std::find(SmallTalkReadAPINames.begin(), SmallTalkReadAPINames.end(), func->getName()) !=
-           SmallTalkReadAPINames.end();
-    // return containsAny(func->getName(), SmallTalkReadAPINames);
-}
-
-bool GraphBLASModel::isSmallTalkWriteAPI(const llvm::Function *func) {
-    return std::find(SmallTalkWriteAPINames.begin(), SmallTalkWriteAPINames.end(), func->getName()) !=
-           SmallTalkWriteAPINames.end();
-    // return containsAny(func->getName(), SmallTalkWriteAPINames);
-}

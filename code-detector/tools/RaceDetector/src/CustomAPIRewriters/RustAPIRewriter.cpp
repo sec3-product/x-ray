@@ -208,10 +208,6 @@ void rewriteIndirectTargets(Module *M) {
 namespace aser {
 
 void RustAPIRewriter::rewriteModule(llvm::Module *M) {
-    // start to rewrite the declare smalltalk apis, such as
-    // declare i8* @st.initializeFrom(i8*)
-    // llvm::outs() << "\nOKAY: let's RustAPIRewriter::rewriteModule!\n";
-
     rewriteIndirectTargets(M);
 }
 

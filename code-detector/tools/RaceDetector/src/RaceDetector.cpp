@@ -267,13 +267,6 @@ const llvm::Function *getFunctionMatchStartEndName(llvm::StringRef startName,
   }
   return nullptr;
 }
-// for smalltalk
-std::set<std::string> SmallTalkReadAPINames{"st.next", "st.get:", "st.size",
-                                            "st.notEmpty", "st.includes:"};
-std::set<std::string> SmallTalkWriteAPINames{
-    "st.nextPut:", "st.removeKey:", "st.at:put:", "st.removeFirst", "st.add:"};
-
-std::set<std::string> SmallTalkCTRemoteClasses;
 
 vector<string> DEBUG_FOCUS_VEC;
 

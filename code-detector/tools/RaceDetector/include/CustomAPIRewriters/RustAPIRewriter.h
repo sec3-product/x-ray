@@ -1,5 +1,5 @@
-#ifndef ASER_PTA_SMALLTALKAPIWRITER_H
-#define ASER_PTA_SMALLTALKAPIWRITER_H
+#ifndef ASER_PTA_RUSTAPIWRITER_H
+#define ASER_PTA_RUSTAPIWRITER_H
 
 namespace llvm {
 class Module;
@@ -14,4 +14,4 @@ public:
 
 }  // namespace aser
 
-#endif  // ASER_PTA_SMALLTALKAPIWRITER_H
+#endif  // ASER_PTA_RUSTAPIWRITER_H
