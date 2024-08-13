@@ -121,8 +121,6 @@ bool DEBUG_API;
 bool DEBUG_CALL_STACK;
 bool DEBUG_LOCK_STACK;
 bool DEBUG_DUMP_LOCKSET;
-bool DEBUG_INDIRECT_CALL;
-bool DEBUG_INDIRECT_CALL_ALL;
 bool DEBUG_RACE;
 bool DEBUG_THREAD;
 bool DEBUG_OMP_RACE;
@@ -165,11 +163,6 @@ cl::opt<bool> ConfigShowLockStack("show-lock-stack",
 cl::opt<bool> ConfigDumpLockSet("debug-dump-lockset",
                                 cl::desc("Print lock set in the graph"));
 
-cl::opt<bool> ConfigDebugIndirectCall("debug-indirect",
-                                      cl::desc("Turn on debug indirect call"));
-cl::opt<bool>
-    ConfigDebugIndirectCallAll("debug-indirect-all",
-                               cl::desc("Turn on debug indirect call"));
 cl::opt<bool> ConfigDebugPTA("debug-pta",
                              cl::desc("Turn on debug pointer analysis"));
 cl::opt<bool> ConfigDebugPTAVerbose(
@@ -799,8 +792,6 @@ int main(int argc, char **argv) {
   DEBUG_CALL_STACK = ConfigDebugCS | ConfigShowCallStack;
   DEBUG_LOCK_STACK = ConfigShowLockStack;
   DEBUG_DUMP_LOCKSET = ConfigDumpLockSet;
-  DEBUG_INDIRECT_CALL = ConfigDebugIndirectCall || ConfigDebugIndirectCallAll;
-  DEBUG_INDIRECT_CALL_ALL = ConfigDebugIndirectCallAll;
   DEBUG_LOCK = ConfigDebugLock;
   DEBUG_LOCK_STR = ConfigDebugLockStr;
   DEBUG_RUST_API = ConfigDebugRustAPI;

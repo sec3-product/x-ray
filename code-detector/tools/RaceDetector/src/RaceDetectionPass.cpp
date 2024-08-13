@@ -52,8 +52,6 @@ extern bool CONFIG_LOOP_UNROLL;
 extern bool CONFIG_IGNORE_READ_WRITE_RACES;
 extern bool CONFIG_IGNORE_WRITE_WRITE_RACES;
 
-extern bool DEBUG_INDIRECT_CALL;
-extern bool DEBUG_INDIRECT_CALL_ALL;
 extern bool DEBUG_CALL_STACK;
 extern bool DEBUG_RUST_API;
 extern bool PRINT_IMMEDIATELY;
@@ -74,6 +72,7 @@ llvm::StringRef stripSelfAccountName(llvm::StringRef account_name) {
     account_name = account_name.substr(5);
   return account_name;
 }
+
 llvm::StringRef stripCtxAccountsName(llvm::StringRef account_name) {
   if (account_name.contains("ctx.accounts.")) {
     // for anchor if not matched..
@@ -85,6 +84,7 @@ llvm::StringRef stripCtxAccountsName(llvm::StringRef account_name) {
   }
   return account_name;
 }
+
 llvm::StringRef stripToAccountInfo(llvm::StringRef account_name) {
   auto found = account_name.find(".to_account_info()");
   if (found != string::npos) {
@@ -95,6 +95,7 @@ llvm::StringRef stripToAccountInfo(llvm::StringRef account_name) {
   }
   return account_name;
 }
+
 llvm::StringRef getStructName(llvm::StringRef valueName) {
   // Context<'_, '_, '_, 'info, Auth<'info>>
   auto found_left = valueName.find("<");
@@ -110,6 +111,7 @@ llvm::StringRef getStructName(llvm::StringRef valueName) {
   }
   return struct_name;
 }
+
 llvm::StringRef stripDotKey(llvm::StringRef valueName) {
   auto foundDotKey = valueName.find(".key");
   if (foundDotKey != string::npos)
@@ -123,6 +125,7 @@ llvm::StringRef stripAtErrorAccountName(llvm::StringRef valueName) {
     valueName = valueName.substr(0, foundAt);
   return valueName;
 }
+
 llvm::StringRef stripAccountName(llvm::StringRef valueName) {
   if (valueName.empty())
     return valueName;
@@ -131,6 +134,7 @@ llvm::StringRef stripAccountName(llvm::StringRef valueName) {
     valueName = valueName.substr(1);
   return valueName;
 }
+
 llvm::StringRef findMacroAccount(llvm::StringRef account) {
   // find account
   account = stripAccountName(account);
@@ -146,6 +150,7 @@ llvm::StringRef findMacroAccount(llvm::StringRef account) {
   }
   return account;
 }
+
 llvm::StringRef stripAll(llvm::StringRef account_name) {
   account_name = stripAccountName(account_name);
   account_name = stripCtxAccountsName(account_name);
@@ -254,11 +259,13 @@ bool RaceDetectionPass::hasValueLessMoreThan(const llvm::Value *value,
     return true;
   return false;
 }
+
 bool isUpper(const std::string &s) {
   return std::all_of(s.begin(), s.end(), [](unsigned char c) {
     return std::isupper(c) || c == '_';
   });
 }
+
 bool is_all_capital_or_number(const std::string &s) {
   std::string::const_iterator it = s.begin();
   while (it != s.end() &&
@@ -281,6 +288,7 @@ bool is_number(const std::string &s) {
 bool is_constant(const std::string &s) {
   return is_number(s) || is_all_capital(s);
 }
+
 bool RaceDetectionPass::isSafeType(const llvm::Function *func,
                                    const llvm::Value *value) {
   if (auto arg = llvm::dyn_cast<llvm::Argument>(value)) {
@@ -291,6 +299,7 @@ bool RaceDetectionPass::isSafeType(const llvm::Function *func,
   }
   return false;
 }
+
 bool RaceDetectionPass::isSafeVariable(const llvm::Function *func,
                                        const llvm::Value *value) {
   if (auto arg = dyn_cast<Argument>(value)) {
@@ -317,6 +326,7 @@ bool RaceDetectionPass::isSafeVariable(const llvm::Function *func,
   }
   return false;
 }
+
 const llvm::Function *
 RaceDetectionPass::findCallStackNonAnonFunc(const Event *e) {
   auto func = e->getInst()->getFunction();
@@ -332,6 +342,7 @@ RaceDetectionPass::findCallStackNonAnonFunc(const Event *e) {
   }
   return func;
 }
+
 llvm::StringRef RaceDetectionPass::findCallStackAccountAliasName(
     const llvm::Function *func, const Event *e, llvm::StringRef valueName,
     bool stripKey) {
@@ -443,6 +454,7 @@ llvm::StringRef RaceDetectionPass::findCallStackAccountAliasName(
   valueName = stripCtxAccountsName(valueName);
   return valueName;
 }
+
 void RaceDetectionPass::addCheckKeyEqual(const aser::ctx *ctx, TID tid,
                                          const llvm::Instruction *inst,
                                          StaticThread *thread, CallSite &CS) {
@@ -553,6 +565,7 @@ void RaceDetectionPass::addCheckKeyEqual(const aser::ctx *ctx, TID tid,
     }
   }
 }
+
 void RaceDetectionPass::handleConditionalCheck0(const aser::ctx *ctx, TID tid,
                                                 const llvm::Function *func,
                                                 const llvm::Instruction *inst,
@@ -878,6 +891,7 @@ void RaceDetectionPass::handleConditionalCheck0(const aser::ctx *ctx, TID tid,
     //}
   }
 }
+
 void RaceDetectionPass::updateKeyEqualMap(StaticThread *thread, const Event *e,
                                           bool isEqual, bool isNotEqual,
                                           llvm::StringRef valueName1,
@@ -926,6 +940,7 @@ void RaceDetectionPass::updateKeyEqualMap(StaticThread *thread, const Event *e,
     thread->assertOtherEqualMap[pair] = e;
   }
 }
+
 static unsigned int call_stack_level = 0;
 
 static string DEBUG_STRING_SPACE = "";
@@ -4099,6 +4114,7 @@ void RaceDetectionPass::initStructFunctions() {
   }
   // next, consolidate all anchor accounts per each thread
 }
+
 void RaceDetectionPass::detectUntrustfulAccounts(TID tid) {
   auto curThread = StaticThread::getThreadByTID(tid);
   // TODO now, detect vulnerabilities in each thread
@@ -4598,6 +4614,7 @@ void RaceDetectionPass::detectUntrustfulAccounts(TID tid) {
     }
   }
 }
+
 void RaceDetectionPass::detectAccountsCosplay(const aser::ctx *ctx, TID tid) {
   // find one with user-provided seeds
   for (auto account : userProvidedInputStringPDAAccounts) {
@@ -4793,49 +4810,15 @@ StaticThread *RaceDetectionPass::forkNewThread(ForkEvent *forkEvent) {
 }
 
 extern unsigned int NUM_OF_ATTACK_VECTORS;
+
 bool RaceDetectionPass::runOnModule(llvm::Module &module) {
   thisModule = &module;
   // initialization
   getAnalysis<PointerAnalysisPass<PTA>>().analyze(&module);
   this->pta = getAnalysis<PointerAnalysisPass<PTA>>().getPTA();
-  // this->langModel = pta->getLangModel();
   this->tbaa = &getAnalysis<TypeBasedAAWrapperPass>().getResult();
 
   const CallGraphTy *callGraph = pta->getCallGraph();
-
-  if (DEBUG_INDIRECT_CALL) {
-    set<const Instruction *> reported;
-
-    for (auto node : *pta->getCallGraph()) {
-      if (node->isIndirectCall()) {
-        auto indirectCalls = node->getTargetFunPtr()->getResolvedTarget();
-        auto inst = node->getTargetFunPtr()->getCallSite();
-        auto func = inst->getFunction();
-        if (indirectCalls.empty()) {
-          if (reported.find(inst) != reported.end()) {
-            continue;
-          } else {
-            reported.insert(inst);
-          }
-
-          llvm::outs() << "Failed to resolve any indirect call in func: "
-                       << demangle(func->getName().str()) << " at "
-                       << getSourceLoc(inst).sig() << "\n"
-                       << getSourceLoc(inst).getSnippet() << "\n";
-        } else if (DEBUG_INDIRECT_CALL_ALL && indirectCalls.size() > 1) {
-          for (auto fun : indirectCalls) {
-            llvm::outs() << "Resolved indirect call: funcName="
-                         << demangle(fun->getName().str()) << "\n";
-          }
-          llvm::outs() << "Hitting an indirect call (" << indirectCalls.size()
-                       << " resolved calls in total) in func: "
-                       << demangle(func->getName().str()) << " at "
-                       << getSourceLoc(inst).sig() << "\n"
-                       << getSourceLoc(inst).getSnippet() << "\n";
-        }
-      }
-    }
-  }
 
   initStructFunctions();
 
@@ -4851,7 +4834,6 @@ bool RaceDetectionPass::runOnModule(llvm::Module &module) {
   threadList.push(mainThread);
 
   LOG_INFO("Start Race Detection");
-  // llvm::outs() << "Start Race Detection\n";
   logger::newPhaseSpinner("Detecting Vulnerabilities");
 
   LOG_INFO("Start Building SHB");
