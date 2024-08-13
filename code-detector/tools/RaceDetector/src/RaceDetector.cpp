@@ -6,6 +6,7 @@
 #include <conflib/conflib.h>
 #include <llvm/Analysis/AssumptionCache.h>
 #include <llvm/Analysis/TypeBasedAliasAnalysis.h>
+#include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/IRPrintingPasses.h>
 #include <llvm/IR/LLVMContext.h>  // for llvm LLVMContext
 #include <llvm/IR/LegacyPassManager.h>
@@ -25,7 +26,6 @@
 #include <libloaderapi.h>
 #endif
 
-#include "OpenLib.h"
 #include "PTAModels/ExtFunctionManager.h"
 #include "PTAModels/GraphBLASModel.h"
 #include "RaceDetectionPass.h"
@@ -182,7 +182,6 @@ cl::opt<bool> ConfigDebugLockStr("debug-lock-str",
                                  cl::desc("Turn on debug lock string"));
 cl::opt<bool> ConfigDebugRustAPI("debug-sol",
                                  cl::desc("Turn on debug sol api"));
-cl::opt<bool> ConfigDebugAPI("debug-api", cl::desc("Turn on debug open API"));
 
 cl::opt<bool> ConfigDebugHB("debug-hb",
                             cl::desc("Turn on debug happens-before"));
@@ -235,7 +234,6 @@ int SAME_FUNC_BUDGET_SIZE;  // keep at most x times per func per thread 10 by
                             // default
 int FUNC_COUNT_BUDGET;      // 100,000 by default
 
-bool USE_FAKE_MAIN = true;
 map<string, string> NONE_PARALLEL_FUNCTIONS;
 
 bool CONFIG_IGNORE_READ_WRITE_RACES = false;
@@ -322,56 +320,6 @@ logger::LoggingConfig initLoggingConf() {
     config.enableTerminal = true;
     config.enableProgress = false;
   }
-
-  return config;
-}
-
-openlib::OpenLibConfig initOpenLibConf(Module *module) {
-  openlib::OpenLibConfig config;
-  config.module = module;
-  auto entrys = conflib::Get<vector<jsoncons::json>>("openlib.entryPoints", {});
-
-  for (jsoncons::json &j : entrys) {
-    switch (j.kind()) {
-      case jsoncons::value_kind::short_string_value:
-      case jsoncons::value_kind::long_string_value:
-      case jsoncons::value_kind::byte_string_value: {
-        string name = j.as<std::string>();
-        config.entryPoints.emplace_back(name);
-        break;
-      }
-      default: {
-        auto entryMap =
-            j.as<std::map<std::string, std::map<std::string, bool>>>();
-        for (auto &[name, properties] : entryMap) {
-          bool runOnce = false;
-          auto onceIt = properties.find("once");
-          if (onceIt != properties.end()) {
-            runOnce = onceIt->second;
-          }
-
-          bool argShared = true;
-          auto argSharedIt = properties.find("arg_shared");
-          if (argSharedIt != properties.end()) {
-            argShared = argSharedIt->second;
-          }
-
-          bool isParallel = true;
-          auto parallelIt = properties.find("parallel");
-          if (parallelIt != properties.end()) {
-            isParallel = parallelIt->second;
-          }
-
-          config.entryPoints.emplace_back(name, runOnce, argShared, isParallel);
-        }
-        break;
-      }
-    }
-  }
-
-  config.mode = 0;
-  auto apiLimit = conflib::Get<uint32_t>("openlib.limit", 999);
-  config.apiLimit = apiLimit;
 
   return config;
 }
@@ -666,6 +614,55 @@ void computeDeclareIdAddresses(Module *module) {
   }
 }
 
+static void createBuilderCallFunction(llvm::IRBuilder<> &builder, llvm::Function *f) {
+    std::vector<llvm::Value *> Args;
+    auto it = f->arg_begin();
+    auto ie = f->arg_end();
+
+    for (; it != ie; it++) {
+        if (it->getType()->isPointerTy()) {
+            llvm::AllocaInst *allocaInst =
+                builder.CreateAlloca(dyn_cast<PointerType>(it->getType())->getPointerElementType(), 0, "");
+            Args.push_back(allocaInst);
+        } else {
+            llvm::APInt zero(32, 0);
+            Args.push_back(llvm::Constant::getIntegerValue(builder.getInt32Ty(), zero));
+        }
+    }
+    llvm::ArrayRef<llvm::Value *> argsRef(Args);
+    builder.CreateCall(f, argsRef, "");
+}
+
+static void createFakeMain(llvm::Module *module) {
+    // let's create a fake main func here and add it to the module IR
+    // in the fake main, call each entry point func
+    llvm::IRBuilder<> builder(module->getContext());
+    // create fake main with type int(i32 argc, i8** argv)
+    auto functionType = llvm::FunctionType::get(builder.getInt32Ty(),
+                                                {builder.getInt32Ty(), builder.getInt8PtrTy()->getPointerTo()}, false);
+    llvm::Function *mainFunction =
+        llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, "cr_main", module);
+    llvm::BasicBlock *entryBB = llvm::BasicBlock::Create(module->getContext(), "entrypoint", mainFunction);
+    builder.SetInsertPoint(entryBB);
+
+    llvm::Function *realMainFun = module->getFunction("main");
+    if (realMainFun && !realMainFun->isDeclaration()) {
+        if (realMainFun->getFunctionType() == functionType) {
+            // create a call to real main using fake main's argc, argv if possible
+            llvm::SmallVector<Value *, 2> args;
+            for (auto &arg : mainFunction->args()) {
+                args.push_back(&arg);
+            }
+            builder.CreateCall(realMainFun, args, "");
+        } else {
+            createBuilderCallFunction(builder, realMainFun);
+        }
+    }
+
+    // cr_main return
+    builder.CreateRet(llvm::ConstantInt::get(builder.getInt32Ty(), 0));
+}
+
 int main(int argc, char **argv) {
   // llvm::outs() << sizeof(std::pair<NodeID, NodeID>) << ", " <<
   // sizeof(std::pair<void *, void *>); return 1;
@@ -860,7 +857,6 @@ int main(int argc, char **argv) {
   DEBUG_LOCK = ConfigDebugLock;
   DEBUG_LOCK_STR = ConfigDebugLockStr;
   DEBUG_RUST_API = ConfigDebugRustAPI;
-  DEBUG_API = ConfigDebugAPI;
   DEBUG_HB = ConfigDebugHB;
   DEBUG_RACE_EVENT = ConfigDebugEvent;
   DEBUG_HAPPEN_IN_PARALLEL = ConfigDebugHappenInParallel;
@@ -951,20 +947,8 @@ int main(int argc, char **argv) {
   if (!DebugIR) {
     // us
     rewriteUserSpecifiedAPI(module.get());
-  }
 
-  if (!DebugIR) {
-    // TODO: probably make main configurable through conflib?
-    if (USE_FAKE_MAIN) {
-      auto openLibConfig = initOpenLibConf(module.get());
-      openlib::createFakeMain(openLibConfig);
-    } else {
-      llvm::Function *entryFun = module->getFunction("main");
-      if (entryFun == nullptr || entryFun->isDeclaration()) {
-        llvm::errs() << "Fatal Error: 'main' function cannot be found!\n";
-        return 1;
-      }
-    }
+    createFakeMain(module.get());
   }
 
   // Dump IR to file

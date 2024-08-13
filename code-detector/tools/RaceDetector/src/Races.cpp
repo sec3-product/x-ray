@@ -34,24 +34,12 @@ extern vector<string> LOW_PRIORITY_FILE_NAMES;
 extern vector<string> LOW_PRIORITY_VAR_NAMES;
 extern vector<string> HIGH_PRIORITY_FILE_NAMES;
 extern vector<string> HIGH_PRIORITY_VAR_NAMES;
-extern bool USE_FAKE_MAIN;
 extern bool PRINT_IMMEDIATELY;
 extern bool TERMINATE_IMMEDIATELY;
-extern std::string CR_FUNC_NAME;
-extern std::string CR_ALLOC_OBJ_RECUR;
+
 // Not to limit the number of bugs we collected
 // by default we only collect at most 25 cases for each type of bug
 static bool nolimit = false;
-
-// NOTE: for api callback, remove coderrect_cb. from stack trace
-void cleanCallStackTrace(std::vector<std::string> &st1, std::vector<std::string> &st2) {
-    if (st1.size() > 2 && st1[1].find(CR_FUNC_NAME) == 0) {
-        st1.erase(st1.begin(), st1.begin() + 2);
-    }
-    if (st2.size() > 2 && st2[1].find(CR_FUNC_NAME) == 0) {
-        st2.erase(st2.begin(), st2.begin() + 2);
-    }
-}
 
 /* --------------------------------
 
@@ -93,7 +81,6 @@ void aser::OrderViolation::collect(const MemAccessEvent *e1, const MemAccessEven
     if (customizedFilterIgnoreLocations(e1, e2, IGNORED_LOCATION_ALL)) return;
     P = customizedPriorityAdjust(P, sharedObjLoc.getName(), srcInfo1, srcInfo2, st1, st2, LOW_PRIORITY_FILE_NAMES,
                                  HIGH_PRIORITY_FILE_NAMES, LOW_PRIORITY_VAR_NAMES, HIGH_PRIORITY_VAR_NAMES);
-    cleanCallStackTrace(st1, st2);
 #pragma omp critical(ovfilter)
     {
         ovfilter.insert(sig1);

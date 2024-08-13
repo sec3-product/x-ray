@@ -311,19 +311,6 @@ void GraphBLASModel::interceptHeapAllocSite(const aser::CtxFunction<aser::ctx> *
         this->consGraph->addConstraints(fakePtr, ptr, Constraints::store);
         return;
     } else if (heapModel.isHeapAllocFun(callee->getFunction())) {
-        if (callee->getFunction()->getName().equals(CR_ALLOC_OBJ_RECUR)) {
-            Type *type = heapModel.inferHeapAllocType(callee->getFunction(), callsite);
-
-            PtrNode *ptr = this->getPtrNode(caller->getContext(), callsite);
-            ObjNode *obj = MMT::template allocateAnonObj<PT>(
-                this->getMemModel(), caller->getContext(), this->getLLVMModule()->getDataLayout(),
-                type == nullptr ? nullptr : type, callsite,
-                true);  // init the object recursively if it is an aggeragate type
-
-            this->consGraph->addConstraints(obj, ptr, Constraints::addr_of);
-            return;
-        }
-
         if (callee->getFunction()->getName().equals("f90_alloc04_chka_i8") ||
             callee->getFunction()->getName().equals("f90_ptr_alloc04a_i8")) {
             PtrNode *ptr = this->getPtrNode(caller->getContext(), llvm::cast<CallBase>(callsite)->getArgOperand(4));

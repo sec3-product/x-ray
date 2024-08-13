@@ -29,7 +29,6 @@ set(racedetect-component
         src/CustomAPIRewriters/RewriteUserSpecifiedAPI.cpp
         src/RDUtil.cpp
         src/Races.cpp
-        src/OpenLib.cpp
         src/LocksetManager.cpp
         src/PTAModels/ExtFunctionManager.cpp
         src/PTAModels/GraphBLASModel.cpp

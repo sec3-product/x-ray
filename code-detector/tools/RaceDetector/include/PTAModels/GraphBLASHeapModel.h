@@ -13,8 +13,6 @@
 #include "aser/Util/Log.h"
 #include "aser/Util/Util.h"
 
-extern std::string CR_ALLOC_OBJ_RECUR;
-
 namespace aser {
 
 class GraphBLASHeapModel : public DefaultHeapModel {
@@ -57,14 +55,6 @@ public:
     // we used the next bitcast instruction as the heap object's element type
     // if we can not find it, return null.
     llvm::Type *inferHeapAllocType(const llvm::Function *fun, const llvm::Instruction *allocSite) const {
-        if (fun->getName().equals(CR_ALLOC_OBJ_RECUR) ||
-            USER_HEAP_API.find(fun->getName().split(".").first) != USER_HEAP_API.end()) {
-            // user specified APIs
-            // we do not know which args is used for size
-            // model them as *unlimited* unbounded array by passing -1 to sizeArgNo
-            return DefaultHeapModel::inferMallocType(fun, allocSite, -1);
-        }
-
         if (DefaultHeapModel::isHeapAllocFun(fun)) {
             // if already handled by default heap model
             return DefaultHeapModel::inferHeapAllocType(fun, allocSite);
