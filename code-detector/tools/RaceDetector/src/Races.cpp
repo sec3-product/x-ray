@@ -5,7 +5,6 @@
 #include <fstream>
 
 #include "RDUtil.h"
-#include "ReportTemplate/DeadLock.h"
 
 #define DEFAULT_BUDGET 25
 
@@ -214,11 +213,6 @@ void aser::DeadLock::printAll() {
 void aser::DeadLock::printSummary() { info("detected " + to_string(deadlocks.size()) + " deadlocks in total."); }
 
 void aser::DeadLock::print() {
-    // tplPrint(DLTemplate, to_json());
-    // do not use the template due to crashes
-    // dlTraces std::vector<std::vector<SourceInfo>> &traces
-    // locks std::vector<SourceInfo> &locks,
-
     // TODO show full call stack
     outs() << "\nFound a potential deadlock:\n";
     // int lockId=1;
