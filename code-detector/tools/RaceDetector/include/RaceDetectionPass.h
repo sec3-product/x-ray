@@ -5,17 +5,22 @@
 #ifndef RACEDETECTOR_RACEDETECTIONPASS_H
 #define RACEDETECTOR_RACEDETECTIONPASS_H
 
+#include <stdint.h>
+
+#include <set>
+#include <string>
+#include <vector>
+
 #include <llvm/Analysis/ScopedNoAliasAA.h>
 #include <llvm/Analysis/TypeBasedAliasAnalysis.h>
+#include <llvm/InitializePasses.h>
 #include <llvm/IR/Module.h>
 #include <llvm/Pass.h>
 #include <llvm/Transforms/Utils/Local.h>
-#include <stdint.h>
 
+#include "aser/PointerAnalysis/PointerAnalysisPass.h"
 #include "PTAModels/GraphBLASModel.h"
 #include "RDUtil.h"
-#include "aser/PointerAnalysis/PointerAnalysisPass.h"
-#include "llvm/InitializePasses.h"
 
 namespace aser {
 
@@ -23,6 +28,7 @@ namespace aser {
 class Event;
 class ReachGraph;
 class StaticThread;
+
 class RaceDetectionPass : public llvm::ModulePass {
 private:
     const llvm::Module *thisModule;
@@ -37,8 +43,6 @@ private:
     bool isInLoop() { return for_loop_counter > 0; }
 
     std::set<const llvm::Function *> exploredIndirectTarget;
-    std::set<const llvm::Function *> sigHandlers;
-    std::map<const llvm::Instruction *, uint8_t> threadStartInstCount;
     std::set<const llvm::Function *> threadStartFunctions;
 
     bool addThreadStartFunction(const llvm::Function *func) {
@@ -249,6 +253,9 @@ private:
     bool mayBeExclusive(const Event *const e1, const Event *const e2);
 
 public:
+    explicit RaceDetectionPass() : llvm::ModulePass(ID) {
+    }
+
     // A per thread callEventTrace
     // each callEvent has an endID
     // endID represents the last EventID belongs to the current function
@@ -281,8 +288,6 @@ public:
     // reachability graph (static happens-before graph)
     ReachGraph *graph;
     static char ID;
-    explicit RaceDetectionPass() : llvm::ModulePass(ID) { /*threadNum = 1;*/
-    }
 
     void getAnalysisUsage(llvm::AnalysisUsage &AU) const override {
         AU.addRequired<PointerAnalysisPass<PTA>>();  // need pointer analysis
@@ -290,46 +295,19 @@ public:
         AU.setPreservesAll();  // does not transform the LLVM module.
     }
 
-    llvm::TypeBasedAAResult &getTbaa() const { return *tbaa; }
-
     bool runOnModule(llvm::Module &module) override;
 
     StaticThread *forkNewThread(ForkEvent *forkEvent);
 
-    // add the current read/write event to their corresponding heap object
-    // this is for finding shared heap object later
-    void addReadOrWrite(TID tid, MemAccessEvent *e, bool isWrite);
-
-    void findSharedVariables();
-
-    void shrinkSharedVariables();
-
-    void detectRace();
-    void detectDeadlock();
     void detectRaceCondition(const aser::ctx *ctx, TID tid);
     void detectDeadCode(const aser::ctx *ctx, TID tid);
     void detectAccountsCosplay(const aser::ctx *ctx, TID tid);
-    bool isThreadCurrentCallStackInLoop(TID tid);
-
-    // Return true if e1 and e2 share a lock. (Either directly or mayalias lock objects)
-    bool sharesLock(const Event *const e1, const Event *const e2) const;
-    // return true if tid1 and tid2 may run in parallel
-    // return false if they must not run in parallel (the result will be cached)
-    bool mayRunInParallel(TID tid1, TID tid2);
-    bool enumerateRacePair(std::vector<MemAccessEvent *> &wset, std::vector<MemAccessEvent *> &xset, const ObjTy *obj,
-                           bool isWriteWrite, const std::vector<MemAccessEvent *> &rset);
 
     void printStatistics();
-
-    std::string getRaceSig(const llvm::Instruction *inst1, const llvm::Instruction *inst2);
-
-    std::string getRaceSrcSig(SourceInfo *srcInfo1, SourceInfo *srcInfo2);
 
     void traverseFunction(const aser::ctx *ctx, const llvm::Function *f, StaticThread *thread,
                           std::vector<const llvm::Function *> &callStack,
                           std::map<uint8_t, const llvm::Constant *> *constArgs = nullptr);
-
-    PTA *getPointerAnalysis() const { return pta; }
 };
 
 }  // namespace aser

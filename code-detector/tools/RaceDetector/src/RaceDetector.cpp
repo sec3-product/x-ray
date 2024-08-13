@@ -358,6 +358,7 @@ void initRaceDetect() {
   UnSafeOperation::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
   CosplayAccounts::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
 }
+
 unsigned int NUM_OF_FUNCTIONS = 0;
 unsigned int NUM_OF_ATTACK_VECTORS = 0;
 unsigned int NUM_OF_IR_LINES = 0;
