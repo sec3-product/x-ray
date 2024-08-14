@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 #include <llvm/Support/CommandLine.h>
 
-#include "aser/Util/Log.h"
+#include "Util/Log.h"
 
 using namespace aser;
 using namespace llvm;

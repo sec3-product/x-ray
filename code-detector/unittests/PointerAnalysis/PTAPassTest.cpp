@@ -11,7 +11,7 @@
 #include "aser/PointerAnalysis/Models/MemoryModel/FieldSensitive/FSMemModel.h"
 #include "aser/PointerAnalysis/PointerAnalysisPass.h"
 #include "aser/PointerAnalysis/Solver/PartialUpdateSolver.h"
-#include "aser/PreProcessing/Passes/InsertGlobalCtorCallPass.h"
+#include "PreProcessing/Passes/InsertGlobalCtorCallPass.h"
 
 using namespace llvm;
 using namespace aser;
