@@ -67,9 +67,10 @@ public:
     VULNERABLE_SIGNED_INTEGER_I128
   };
 
-  static std::map<std::string, std::map<std::string, std::string>>
-      SOLANA_SVE_DB;
-  static void init(std::map<std::string, std::map<std::string, std::string>>);
+  using Database = std::map<std::string, std::map<std::string, std::string>>;
+
+  static Database SOLANA_SVE_DB;
+  static void init(Database);
 
   static std::map<SVE::Type, std::string> sveTypeIdMap;
   static std::set<std::string> disabledCheckers;

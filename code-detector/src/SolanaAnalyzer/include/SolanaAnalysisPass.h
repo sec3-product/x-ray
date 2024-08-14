@@ -17,8 +17,9 @@
 
 #include "Graph/Event.h"
 #include "PTAModels/GraphBLASModel.h"
-#include "StaticThread.h"
 #include "PointerAnalysis/PointerAnalysisPass.h"
+#include "SVE.h"
+#include "StaticThread.h"
 
 namespace aser {
 
@@ -305,6 +306,8 @@ private:
 public:
   explicit SolanaAnalysisPass() : llvm::ModulePass(ID) {}
 
+  void initialize(SVE::Database sves, int limit);
+
   // A per thread callEventTrace
   // each callEvent has an endID
   // endID represents the last EventID belongs to the current function
@@ -339,6 +342,7 @@ public:
   PTA *pta;
   // reachability graph (static happens-before graph)
   ReachGraph *graph;
+
   static char ID;
 
   void getAnalysisUsage(llvm::AnalysisUsage &AU) const override {

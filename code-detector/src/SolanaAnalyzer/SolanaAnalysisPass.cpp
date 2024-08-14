@@ -17,6 +17,7 @@
 #include "Rules/Races.h"
 #include "Rules/UnsafeOperation.h"
 #include "Rules/UntrustfulAccount.h"
+#include "SVE.h"
 #include "StaticThread.h"
 #include "Util/Log.h"
 
@@ -34,24 +35,6 @@ extern bool anchorVersionTooOld;
 extern bool splVersionTooOld;
 extern bool solanaVersionTooOld;
 
-extern bool CONFIG_NO_OMP;
-extern bool CONFIG_NO_MISSED_OMP;
-extern bool CONFIG_NO_FILTER;
-extern bool CONFIG_SKIP_CONSTRUCTOR;
-extern bool CONFIG_OPEN_API;
-extern bool CONFIG_SKIP_SINGLE_THREAD;
-extern bool CONFIG_CHECK_IDENTICAL_WRITE;
-extern bool CONFIG_NO_AV;
-extern bool CONFIG_NO_OV;
-extern bool CONFIG_IGNORE_LOCK;
-extern bool CONFIG_NO_MISS_MATCH_API;
-extern bool CONFIG_NO_FALSE_ALIAS;
-extern bool CONFIG_NO_PRODUCER_CONSUMER;
-extern bool CONFIG_LOOP_UNROLL;
-extern bool CONFIG_IGNORE_READ_WRITE_RACES;
-extern bool CONFIG_IGNORE_WRITE_WRITE_RACES;
-
-extern bool DEBUG_CALL_STACK;
 extern bool DEBUG_RUST_API;
 extern bool PRINT_IMMEDIATELY;
 
@@ -239,6 +222,17 @@ getProgramIdAccountName(const llvm::Instruction *inst) {
     }
   }
   return std::make_pair("", inst);
+}
+
+void SolanaAnalysisPass::initialize(SVE::Database sves, int limit) {
+  SVE::init(sves);
+
+  auto unlimited = (limit == -1);
+  OrderViolation::init(limit, unlimited);
+  DeadLock::init(limit, unlimited);
+  UntrustfulAccount::init(limit, unlimited);
+  UnsafeOperation::init(limit, unlimited);
+  CosplayAccounts::init(limit, unlimited);
 }
 
 bool SolanaAnalysisPass::hasValueLessMoreThan(const llvm::Value *value,
@@ -1071,6 +1065,7 @@ bool SolanaAnalysisPass::mayBeExclusive(const Event *const e1,
   }
   return false;
 }
+
 // inline all the calls and make copies on different threads.
 void SolanaAnalysisPass::traverseFunction(
     const aser::ctx *ctx, const Function *func0, StaticThread *thread,
@@ -1097,20 +1092,6 @@ void SolanaAnalysisPass::traverseFunction(
     }
     threadNFuncMap[tid] = count;
     callStack.push_back(func);
-    if (DEBUG_CALL_STACK) { //+ " push "
-      auto funcName = demangle(func->getName().str());
-      if (funcName.find("__cxx_global_") == string::npos &&
-          funcName.find("boost::") == string::npos &&
-          funcName.find("__gnu_cxx::") ==
-              string::npos) { // skip std:: and boost::
-        llvm::outs() << DEBUG_STRING_SPACE + "thread" << tid
-                     << " push " + funcName + " level: " << call_stack_level
-                     << ""
-                     << "\n";
-        DEBUG_STRING_SPACE += "  ";
-        call_stack_level++;
-      }
-    }
   } else {
     return;
   }
@@ -3957,21 +3938,6 @@ void SolanaAnalysisPass::traverseFunction(
   callStack.pop_back();
   if (cur_trie)
     cur_trie = cur_trie->parent; // return to its parent
-
-  if (DEBUG_CALL_STACK) {
-    auto funcName = demangle(func->getName().str());
-    if (funcName.find("__cxx_global_") == string::npos &&
-        funcName.find("boost::") == string::npos &&
-        funcName.find("gnu_cxx::") == string::npos) { // skip std:: and boost::
-      DEBUG_STRING_SPACE.pop_back();
-      DEBUG_STRING_SPACE.pop_back();
-
-      call_stack_level--;
-      llvm::outs() << DEBUG_STRING_SPACE + "thread" << tid
-                   << " pop " + funcName + " level: " << call_stack_level
-                   << "\n";
-    }
-  }
 }
 
 void SolanaAnalysisPass::traverseFunctionWrapper(

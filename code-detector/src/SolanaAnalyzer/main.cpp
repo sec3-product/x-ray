@@ -1,3 +1,9 @@
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <PointerAnalysis/PointerAnalysisPass.h>
 #include <Util/Log.h>
 #include <conflib/conflib.h>
 #include <llvm/Analysis/AssumptionCache.h>
@@ -21,10 +27,6 @@
 
 #include "CustomAPIRewriters/RustAPIRewriter.h"
 #include "PTAModels/GraphBLASModel.h"
-#include "Rules/CosplayAccounts.h"
-#include "Rules/Races.h"
-#include "Rules/UnsafeOperation.h"
-#include "Rules/UntrustfulAccount.h"
 #include "SVE.h"
 #include "SolanaAnalysisPass.h"
 
@@ -47,36 +49,19 @@ cl::opt<bool> ConfigDumpIR("dump-ir", cl::desc("Dump the modified ir file"));
 cl::opt<bool>
     ConfigNoFilter("no-filter",
                    cl::desc("Turn off the filtering for race report"));
-cl::opt<bool>
-    ConfigIncludeAtomic("include-atomics",
-                        cl::desc("Include races on atomic operations"));
 cl::opt<std::string> ConfigOutputPath("o", cl::desc("JSON output path"),
                                       cl::value_desc("path"));
-cl::opt<bool> ConfigNoOMP("nomp",
-                          cl::desc("Turn off the OpenMP race detection"));
-cl::opt<bool>
-    ConfigNoAV("no-av", cl::desc("Turn off the atomicity violation detection"));
 cl::opt<bool> ConfigNoOV("no-ov",
                          cl::desc("Turn off the order violation detection"));
 cl::opt<bool> ConfigCheckIdenticalWrites(
     "check-identical-writes",
     cl::desc("Turn on detecting races bewteen identical writes"),
     cl::init(true));
-cl::opt<bool> ConfigNoMissedOMP("no-missed-omp",
-                                cl::desc("Do not scan for missed omp regions"));
-cl::opt<bool>
-    ConfigNoMissAPI("no-miss-match-api",
-                    cl::desc("Turn off the miss-match api detection"));
 cl::opt<bool> ConfigDebugLog("v", cl::desc("Turn off log to file"));
+
 cl::opt<int> ConfigReportLimit("limit",
                                cl::desc("Max number of races can be reported"),
                                cl::value_desc("number"), cl::init(-1));
-
-cl::opt<bool> ConfigIgnoreReadWriteRaces("ignore-rw",
-                                         cl::desc("Ignore read-write races"));
-cl::opt<bool> ConfigIgnoreWriteWriteRaces("ignore-ww",
-                                          cl::desc("Ignore write-write races"));
-
 cl::opt<bool>
     ConfigNoReportLimit("no-limit",
                         cl::desc("No limit for the number of races reported"));
@@ -85,14 +70,6 @@ cl::opt<size_t> MaxIndirectTarget(
     "max-indirect-target", cl::init(2),
     cl::desc("max number of indirect call target that can be resolved by "
              "indirect call"));
-cl::opt<bool> ConfigNoFalseAlias("Xno-false-alias",
-                                 cl::desc("Turn off checking false alias"));
-cl::opt<bool>
-    ConfigNoProducerConsumer("Xno-producer-consumer",
-                             cl::desc("Turn off checking producer consumer"));
-cl::opt<bool> ConfigEntryPointOnce(
-    "entry-point-once",
-    cl::desc("Create only one thread for each entry point"));
 cl::opt<bool>
     ConfigPrintImmediately("Xprint-fast",
                            cl::desc("Print races immediately on terminal"));
@@ -106,37 +83,24 @@ cl::opt<bool> ConfigShowDetail("Xshow-race-detail",
 cl::opt<bool> ConfigShowAllTerminal(
     "t", cl::desc("show race detail and summary on the terminal"));
 
+// PointerAnalysis/Models/MemoryModel/FieldSensitive/FSMemModel.h wants it.
 cl::opt<size_t> PTAAnonLimit(
     "Xpta-anon-limit", cl::init(10000),
     cl::desc("max number of anonymous abjects to allocate in pointer analysis. "
              "(Use this if "
              "missed omp takes too much memory)"));
 
-bool DEBUG_LOCK; // default is false
-bool DEBUG_LOCK_STR;
 bool DEBUG_RUST_API;
-bool DEBUG_API;
+bool DEBUG_HB;       // Referenced by Graph/ReachabilityEngine.h.
+bool DEBUG_LOCK_STR; // Referenced by LocksetManager.cpp.
 
-bool DEBUG_CALL_STACK;
-bool DEBUG_LOCK_STACK;
-bool DEBUG_DUMP_LOCKSET;
-bool DEBUG_RACE;
-bool DEBUG_THREAD;
-bool DEBUG_OMP_RACE;
-bool DEBUG_HB;
-bool DEBUG_RACE_EVENT; // DEBUG_EVENT is defined on windows already
-bool DEBUG_HAPPEN_IN_PARALLEL;
-bool DEBUG_PTA;
-bool DEBUG_PTA_VERBOSE;
+bool DEBUG_PTA;         // Referenced by PointerAnalysisPass.cpp.
+bool DEBUG_PTA_VERBOSE; // Referenced by PointerAnalysisPass.cpp.
 bool USE_MAIN_CALLSTACK_HEURISTIC;
-bool CONFIG_CTX_INSENSITIVE_PTA;
-bool ENABLE_OLD_OMP_ALIAS_ANALYSIS = true;
-bool FORTRAN_IR_MODE = false;
-bool OPT_QUICK_CHECK = true;               // default is false
-bool OPT_SAME_THREAD_AT_MOST_TWICE = true; // default is true
+
 bool PRINT_IMMEDIATELY = false;
 bool TERMINATE_IMMEDIATELY = false;
-bool CONFIG_SKIP_SINGLE_THREAD = false;
+
 // if fast is enabled, we will do aggressive performance optimization
 cl::opt<bool> CONFIG_FAST_MODE("fast", cl::desc("Use fast detection mode"));
 // if fast is enabled, we will do aggressive performance optimization
@@ -145,22 +109,6 @@ cl::opt<bool> CONFIG_EXHAUST_MODE("full",
 
 cl::opt<bool> ConfigIgnoreRepeatedMainCallStack(
     "skip-repeat-cs", cl::desc("Skip repeated call stack in main thread"));
-cl::opt<bool>
-    ConfigNoOrigin("no-origin",
-                   cl::desc("Use context-insensitive pointer analysis"));
-cl::opt<bool> ConfigDebugThread("debug-threads",
-                                cl::desc("Turn on debug thread logs"));
-cl::opt<bool> ConfigDebugRace("debug-race",
-                              cl::desc("Turn on debug race logs"));
-cl::opt<bool> ConfigDebugOMPRace("debug-omp-race",
-                                 cl::desc("Turn on debug openmp race logs"));
-cl::opt<bool> ConfigDebugCS("debug-cs", cl::desc("Turn on debug call stack"));
-cl::opt<bool> ConfigShowCallStack("show-call-stack",
-                                  cl::desc("Print call stack in the graph"));
-cl::opt<bool> ConfigShowLockStack("show-lock-stack",
-                                  cl::desc("Print lock stack in the graph"));
-cl::opt<bool> ConfigDumpLockSet("debug-dump-lockset",
-                                cl::desc("Print lock set in the graph"));
 
 cl::opt<bool> ConfigDebugPTA("debug-pta",
                              cl::desc("Turn on debug pointer analysis"));
@@ -168,67 +116,25 @@ cl::opt<bool> ConfigDebugPTAVerbose(
     "debug-pta-verbose",
     cl::desc("Turn on debug pointer analysis verbose mode"));
 
-cl::list<std::string> ConfigDebugDebugDebug("debug-focus", cl::CommaSeparated,
-                                            cl::desc("debug focus mode"));
-
-cl::opt<bool> ConfigDebugLock("debug-lock", cl::desc("Turn on debug lock set"));
-cl::opt<bool> ConfigDebugLockStr("debug-lock-str",
-                                 cl::desc("Turn on debug lock string"));
 cl::opt<bool> ConfigDebugRustAPI("debug-sol",
                                  cl::desc("Turn on debug sol api"));
 
-cl::opt<bool> ConfigDebugHB("debug-hb",
-                            cl::desc("Turn on debug happens-before"));
-cl::opt<bool> ConfigDebugEvent("debug-event",
-                               cl::desc("Turn on debug read-write"));
-cl::opt<bool>
-    ConfigDebugHappenInParallel("debug-hip",
-                                cl::desc("Turn on debug happen-in-parallel"));
-cl::opt<bool> ConfigIngoreLock("no-lock",
-                               cl::desc("Turn off the lockset check"));
-cl::opt<bool>
-    ConfigNoPathSensitive("no-ps",
-                          cl::desc("Turn off path-sensitive analysis"));
-
-cl::opt<bool> ConfigNoOldOMPAliasAnalysis(
-    "Xno-old-omp-alias", cl::desc("Turn off the old OMPIndexAlias analysis"));
-cl::opt<bool>
-    CONFIG_NO_KEYWORD_FILTER("Xno-svfFilter",
-                             cl::desc("Turn off keyword filter in SVF pass"));
-cl::opt<bool> ConfigFlowFilter("flowFilter", cl::desc("Enable flow filter"));
 cl::opt<bool>
     ConfigDisableProgress("no-progress",
                           cl::desc("Does not print spinner progress"));
 
 bool CONFIG_CHECK_UncheckedAccount;
 
-bool CONFIG_NO_OMP;
-bool CONFIG_NO_AV;
-bool CONFIG_NO_OV;
-bool CONFIG_NO_MISSED_OMP;
 bool CONFIG_NO_FILTER;
 bool CONFIG_CHECK_IDENTICAL_WRITE;
-bool CONFIG_INCLUDE_ATOMIC;
 bool CONFIG_NO_REPORT_LIMIT;
 bool CONFIG_SHOW_SUMMARY;
 bool CONFIG_SHOW_DETAIL;
-bool CONFIG_IGNORE_LOCK;
 bool CONFIG_LOOP_UNROLL;
-bool CONFIG_NO_FALSE_ALIAS;
-bool CONFIG_NO_PRODUCER_CONSUMER;
 
-bool CONFIG_ENTRY_POINT_SINGLE_TIME;
-// NOTE: temporary config option, turn off path-sensitive
-bool CONFIG_NO_PS;
-bool CONFIG_SKIP_CONSTRUCTOR;
-
-int MAX_CALLSTACK_DEPTH;   // -1 (no limit) by default
 int SAME_FUNC_BUDGET_SIZE; // keep at most x times per func per thread 10 by
                            // default
 int FUNC_COUNT_BUDGET;     // 100,000 by default
-
-bool CONFIG_IGNORE_READ_WRITE_RACES = false;
-bool CONFIG_IGNORE_WRITE_WRITE_RACES = false;
 
 // for solana
 std::map<llvm::StringRef, const llvm::Function *> FUNC_NAME_MAP;
@@ -291,42 +197,16 @@ logger::LoggingConfig initLoggingConf() {
   return config;
 }
 
-void initRaceDetect() {
-  CONFIG_IGNORE_READ_WRITE_RACES =
-      ConfigIgnoreReadWriteRaces |
-      conflib::Get<bool>("ignoreReadWriteRaces", false);
-  CONFIG_IGNORE_WRITE_WRITE_RACES =
-      ConfigIgnoreWriteWriteRaces |
-      conflib::Get<bool>("ignoreWriteWriteRaces", false);
-
-  auto reportLimit = conflib::Get<int>("raceLimit", -1);
-  if (reportLimit != -1) {
-    ConfigReportLimit = reportLimit;
-  }
-  OrderViolation::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
-  DeadLock::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
-  UntrustfulAccount::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
-  UnsafeOperation::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
-  CosplayAccounts::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
-}
-
 unsigned int NUM_OF_FUNCTIONS = 0;
 unsigned int NUM_OF_ATTACK_VECTORS = 0;
 unsigned int NUM_OF_IR_LINES = 0;
 unsigned int TOTAL_SOL_COST = 0;
 unsigned int TOTAL_SOL_TIME = 0;
+
 static std::unique_ptr<Module>
 loadFile(const std::string &FN, LLVMContext &Context, bool abortOnFail) {
   SMDiagnostic Err;
-  std::unique_ptr<Module> Result;
-  if (DebugIR) {
-    // false to ignore potentially broken IR, our preprocessing passes will make
-    // the IR unreadable Result = parseIRFile(FN, Err, Context, false);
-    Result = parseIRFile(FN, Err, Context);
-  } else {
-    Result = parseIRFile(FN, Err, Context);
-  }
-
+  std::unique_ptr<Module> Result = parseIRFile(FN, Err, Context);
   if (!Result) {
     if (abortOnFail) {
       Err.print("racedetect", llvm::errs());
@@ -336,6 +216,7 @@ loadFile(const std::string &FN, LLVMContext &Context, bool abortOnFail) {
     LOG_ERROR("error loading file: {}", FN);
     return nullptr;
   }
+
   // count line number
   {
     std::ifstream myfile(FN);
@@ -397,7 +278,7 @@ int versionCompare(string v1, string v2) {      // v1: the real version: ^0.20.1
   return 0;
 }
 
-map<StringRef, StringRef> CARGO_TOML_CONFIG_MAP;
+std::map<StringRef, StringRef> CARGO_TOML_CONFIG_MAP;
 bool hasOverFlowChecks = false;
 bool anchorVersionTooOld = false;
 bool splVersionTooOld = false;
@@ -486,7 +367,7 @@ string exec(string command) {
   return result;
 }
 
-map<std::string, vector<AccountIDL>> IDL_INSTRUCTION_ACCOUNTS;
+map<std::string, std::vector<AccountIDL>> IDL_INSTRUCTION_ACCOUNTS;
 void loadIDLInstructionAccounts(std::string api_name, jsoncons::json j) {
   // llvm::outs() << "accounts: " << j.as_string() << "\n";
   if (j.is_array()) {
@@ -569,6 +450,11 @@ void computeDeclareIdAddresses(Module *module) {
   }
 }
 
+// TODO: This should not live here.
+static llvm::RegisterPass<PointerAnalysisPass<PTA>>
+    PAP("Pointer Analysis Wrapper Pass", "Pointer Analysis Wrapper Pass", true,
+        true);
+
 static void createBuilderCallFunction(llvm::IRBuilder<> &builder,
                                       llvm::Function *f) {
   std::vector<llvm::Value *> Args;
@@ -639,27 +525,14 @@ int main(int argc, char **argv) {
   // function as well!
   auto heapAPIs =
       conflib::Get<std::vector<std::string>>("heapAllocFunctions", {});
+  GraphBLASHeapModel::init(heapAPIs);
 
-  // Initialize Solana SVEs.
-  auto configured =
-      conflib::Get<std::map<std::string, std::map<std::string, std::string>>>(
-          "solana.sve", {});
-  SVE::init(configured);
-
-  MAX_CALLSTACK_DEPTH = conflib::Get<int>("maxCallStackDepth", -1);
   SAME_FUNC_BUDGET_SIZE = conflib::Get<int>("sameFunctionBudget", 10);
   FUNC_COUNT_BUDGET = conflib::Get<int>("functionCountBudget", 20000);
 
-  GraphBLASHeapModel::init(heapAPIs);
-
-  auto enableOMP = conflib::Get<bool>("enableOpenMP", true);
-  auto enableAV = conflib::Get<bool>("enableAtomicityViolation", true);
-  auto enableOV = conflib::Get<bool>("enableOrderViolation", true);
   auto enableIdenticalWrites =
       conflib::Get<bool>("enableIdenticalWrites", false);
-  auto enableLockSet = conflib::Get<bool>("enableLockSet", true);
   auto enableFilter = conflib::Get<bool>("enableFilter", true);
-  auto enableLoopUnroll = conflib::Get<bool>("enableLoopUnroll", false);
   auto enableImmediatePrint =
       conflib::Get<bool>("report.enableTerminal", false);
   auto enableShowRaceSummary =
@@ -667,46 +540,25 @@ int main(int argc, char **argv) {
   auto enableShowRaceDetail =
       conflib::Get<bool>("enablePrintRaceDetail", false);
 
-  auto entryPointOnce = conflib::Get<bool>("entryPoint.once", false);
-
   CONFIG_CHECK_UncheckedAccount =
       conflib::Get<bool>("solana.account.UncheckedAccount", true);
 
-  CONFIG_NO_OMP = ConfigNoOMP | !enableOMP;
-  CONFIG_NO_AV = ConfigNoAV | !enableAV;
-  CONFIG_NO_OV = ConfigNoOV | !enableOV;
-  CONFIG_NO_MISSED_OMP = ConfigNoMissedOMP; // TODO: add conflib check as well
   CONFIG_CHECK_IDENTICAL_WRITE =
       ConfigCheckIdenticalWrites | enableIdenticalWrites;
 
-  CONFIG_INCLUDE_ATOMIC =
-      ConfigIncludeAtomic | conflib::Get<bool>("includeAtomics", false);
   CONFIG_NO_FILTER = ConfigNoFilter | !enableFilter;
   CONFIG_NO_REPORT_LIMIT =
       ConfigNoReportLimit | (conflib::Get<int>("raceLimit", -1) < 0);
-  CONFIG_IGNORE_LOCK = ConfigIngoreLock | !enableLockSet;
-  CONFIG_NO_FALSE_ALIAS = ConfigNoFalseAlias;
-  CONFIG_NO_PRODUCER_CONSUMER = ConfigNoProducerConsumer;
 
-  CONFIG_ENTRY_POINT_SINGLE_TIME = ConfigEntryPointOnce | entryPointOnce;
+  auto reportLimit = conflib::Get<int>("raceLimit", -1);
+  if (reportLimit != -1) {
+    ConfigReportLimit = reportLimit;
+  }
 
-  DEBUG_RACE = ConfigDebugRace;
-  DEBUG_THREAD = ConfigDebugThread;
-  DEBUG_OMP_RACE = ConfigDebugOMPRace;
-  DEBUG_CALL_STACK = ConfigDebugCS | ConfigShowCallStack;
-  DEBUG_LOCK_STACK = ConfigShowLockStack;
-  DEBUG_DUMP_LOCKSET = ConfigDumpLockSet;
-  DEBUG_LOCK = ConfigDebugLock;
-  DEBUG_LOCK_STR = ConfigDebugLockStr;
   DEBUG_RUST_API = ConfigDebugRustAPI;
-  DEBUG_HB = ConfigDebugHB;
-  DEBUG_RACE_EVENT = ConfigDebugEvent;
-  DEBUG_HAPPEN_IN_PARALLEL = ConfigDebugHappenInParallel;
   DEBUG_PTA_VERBOSE = ConfigDebugPTAVerbose;
   DEBUG_PTA = ConfigDebugPTA | DEBUG_PTA_VERBOSE;
   USE_MAIN_CALLSTACK_HEURISTIC = ConfigIgnoreRepeatedMainCallStack;
-  CONFIG_CTX_INSENSITIVE_PTA = ConfigNoOrigin;
-  ENABLE_OLD_OMP_ALIAS_ANALYSIS = !ConfigNoOldOMPAliasAnalysis;
 
   PRINT_IMMEDIATELY =
       ConfigPrintImmediately | enableImmediatePrint | ConfigShowAllTerminal;
@@ -718,27 +570,13 @@ int main(int argc, char **argv) {
 
   // by default, set the pts size to 999
   PTSTrait<PtsTy>::setPTSSizeLimit(9); // set pts size limit to 999
+
   if (CONFIG_FAST_MODE) {
-    CONFIG_CTX_INSENSITIVE_PTA = true;
     MaxIndirectTarget = 1;
   } else if (CONFIG_EXHAUST_MODE) {
-    // use origin-sensitive PTA
-    CONFIG_CTX_INSENSITIVE_PTA = false;
     // no limit to indirect target
     MaxIndirectTarget = 999;
-    // no quick check optimization
-    OPT_QUICK_CHECK = false;
-    // no same thread limit two optimization
-    OPT_SAME_THREAD_AT_MOST_TWICE = false;
-    // no filtering??
-    // CONFIG_NO_FILTER = true;
   }
-
-  CONFIG_NO_PS = ConfigNoPathSensitive;
-  CONFIG_SKIP_CONSTRUCTOR = conflib::Get<bool>("skipConstructors", true);
-  CONFIG_SKIP_SINGLE_THREAD = conflib::Get<bool>("skipSingleThreaded", false);
-
-  initRaceDetect();
 
   LOG_INFO("Loading IR From File: {}", TargetModulePath);
   logger::newPhaseSpinner("Loading IR From File");
@@ -767,7 +605,6 @@ int main(int argc, char **argv) {
 
   if (!DebugIR) {
     RustAPIRewriter::rewriteModule(module.get());
-
     createFakeMain(module.get());
   }
 
@@ -787,7 +624,12 @@ int main(int argc, char **argv) {
 
   llvm::legacy::PassManager analysisPasses;
   analysisPasses.add(new PointerAnalysisPass<PTA>());
-  analysisPasses.add(new SolanaAnalysisPass());
+
+  auto analyzer = new SolanaAnalysisPass();
+  auto sves = conflib::Get<SVE::Database>("solana.sve", {});
+  analyzer->initialize(sves, ConfigReportLimit);
+
+  analysisPasses.add(analyzer);
 
   computeCargoTomlConfig(module.get());
   computeDeclareIdAddresses(module.get());
@@ -795,7 +637,3 @@ int main(int argc, char **argv) {
 
   return 0;
 }
-
-static llvm::RegisterPass<PointerAnalysisPass<PTA>>
-    PAP("Pointer Analysis Wrapper Pass", "Pointer Analysis Wrapper Pass", true,
-        true);

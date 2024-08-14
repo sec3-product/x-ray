@@ -30,9 +30,9 @@ bool SVE::isCheckerDisabled(SVE::Type type) {
   return (disabledCheckers.find(id) != disabledCheckers.end());
 }
 
-std::map<std::string, std::map<std::string, std::string>> SVE::SOLANA_SVE_DB;
+SVE::Database SVE::SOLANA_SVE_DB;
 
-void SVE::init(std::map<std::string, std::map<std::string, std::string>> sves) {
+void SVE::init(Database sves) {
   std::set<std::string> freeSVEs;
   addTypeID("1001", Type::MISS_SIGNER);
   freeSVEs.insert("1001");
