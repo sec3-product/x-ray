@@ -36,13 +36,17 @@ set(racedetect-component
 )
 
 include_directories(
-    ${INSTALL_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/utils/jsoncons/include
 )
 
-add_library(racedetect-lib ${racedetect-component})
-target_link_libraries(racedetect-lib aser)
+add_library(racedetect-lib
+    ${racedetect-component})
+
+target_link_libraries(racedetect-lib
+    PointerAnalysis
+    Util
+)
 
 add_executable(racedetect
     main.cpp
@@ -52,7 +56,6 @@ add_executable(racedetect
 # the racedetect needs to be linked before aser
 
 target_link_libraries(racedetect racedetect-lib)
-target_link_libraries(racedetect aser)
 target_link_libraries(racedetect conflib)
 target_link_libraries(racedetect ${llvm_libs})
 #target_link_libraries(racedetect omp)
