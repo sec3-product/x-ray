@@ -23,8 +23,6 @@ extern llvm::cl::opt<std::string> ConfigOutputPath;
 extern cl::opt<std::string> TargetModulePath;
 extern bool CONFIG_NO_FILTER;
 
-extern std::map<std::string, std::map<std::string, std::string>> SOLANA_SVE_DB;
-
 extern bool PRINT_IMMEDIATELY;
 extern bool TERMINATE_IMMEDIATELY;
 
@@ -246,29 +244,6 @@ json &aser::DeadLock::to_json() {
 
 /* --------------------------------
 
-           SVE Types
-
------------------------------------ */
-std::map<SVE::Type, std::string> aser::SVE::sveTypeIdMap;
-
-void SVE::addTypeID(std::string ID, SVE::Type type) { sveTypeIdMap[type] = ID; }
-
-std::string SVE::getTypeID(SVE::Type type) {
-  if (sveTypeIdMap.find(type) != sveTypeIdMap.end())
-    return sveTypeIdMap.at(type);
-  else
-    return "";
-}
-
-std::set<std::string> aser::SVE::disabledCheckers;
-void SVE::addDisabledChecker(std::string ID) { disabledCheckers.insert(ID); }
-bool SVE::isCheckerDisabled(SVE::Type type) {
-  auto id = SVE::getTypeID(type);
-  return (disabledCheckers.find(id) != disabledCheckers.end());
-}
-
-/* --------------------------------
-
            CosplayAccounts
 
 ----------------------------------- */
@@ -398,9 +373,9 @@ aser::CosplayAccounts::CosplayAccounts(SourceInfo &srcInfo1,
     : apiInst1(srcInfo1), apiInst2(srcInfo2), errorMsg(msg), type(t), p(P),
       ignore(isIgnored), hide(isHidden) {
   id = SVE::getTypeID(t);
-  name = SOLANA_SVE_DB[id]["name"];
-  description = SOLANA_SVE_DB[id]["description"];
-  url = SOLANA_SVE_DB[id]["url"];
+  name = SVE::SOLANA_SVE_DB[id]["name"];
+  description = SVE::SOLANA_SVE_DB[id]["description"];
+  url = SVE::SOLANA_SVE_DB[id]["url"];
 }
 
 json aser::CosplayAccounts::to_json() {
@@ -696,9 +671,9 @@ aser::UntrustfulAccount::UntrustfulAccount(std::string account,
     : apiInst(srcInfo), errorMsg(msg), type(t), accountName(account), p(P),
       ignore(isIgnored), hide(isHidden) {
   id = SVE::getTypeID(t);
-  name = SOLANA_SVE_DB[id]["name"];
-  description = SOLANA_SVE_DB[id]["description"];
-  url = SOLANA_SVE_DB[id]["url"];
+  name = SVE::SOLANA_SVE_DB[id]["name"];
+  description = SVE::SOLANA_SVE_DB[id]["description"];
+  url = SVE::SOLANA_SVE_DB[id]["url"];
 }
 
 json aser::UntrustfulAccount::to_json() {
@@ -933,9 +908,9 @@ aser::UnSafeOperation::UnSafeOperation(SourceInfo &srcInfo, std::string msg,
     : apiInst(srcInfo), errorMsg(msg), type(t), p(P), ignore(isIgnored),
       hide(isHidden) {
   id = SVE::getTypeID(t);
-  name = SOLANA_SVE_DB[id]["name"];
-  description = SOLANA_SVE_DB[id]["description"];
-  url = SOLANA_SVE_DB[id]["url"];
+  name = SVE::SOLANA_SVE_DB[id]["name"];
+  description = SVE::SOLANA_SVE_DB[id]["description"];
+  url = SVE::SOLANA_SVE_DB[id]["url"];
 }
 
 json aser::UnSafeOperation::to_json() {

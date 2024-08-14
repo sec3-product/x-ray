@@ -29,6 +29,7 @@ set(racedetect-component
     src/Races.cpp
     src/SourceInfo.cpp
     src/StaticThread.cpp
+    src/SVE.cpp
 )
 
 include_directories(

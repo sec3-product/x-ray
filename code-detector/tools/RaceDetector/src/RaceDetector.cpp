@@ -27,6 +27,7 @@
 #include "PTAModels/GraphBLASModel.h"
 #include "RaceDetectionPass.h"
 #include "Races.h"
+#include "SVE.h"
 
 using namespace llvm;
 using namespace aser;
@@ -111,7 +112,6 @@ cl::opt<size_t> PTAAnonLimit(
     cl::desc("max number of anonymous abjects to allocate in pointer analysis. "
              "(Use this if "
              "missed omp takes too much memory)"));
-cl::opt<string> SOTERIA_PLAN("plan", cl::desc("soteria plan"));
 
 bool DEBUG_LOCK; // default is false
 bool DEBUG_LOCK_STR;
@@ -232,7 +232,6 @@ bool CONFIG_IGNORE_READ_WRITE_RACES = false;
 bool CONFIG_IGNORE_WRITE_WRITE_RACES = false;
 
 // for solana
-std::map<std::string, std::map<std::string, std::string>> SOLANA_SVE_DB;
 std::map<llvm::StringRef, const llvm::Function *> FUNC_NAME_MAP;
 const llvm::Function *getFunctionFromPartialName(llvm::StringRef partialName) {
   for (auto [name, func] : FUNC_NAME_MAP) {
@@ -642,105 +641,11 @@ int main(int argc, char **argv) {
   auto heapAPIs =
       conflib::Get<std::vector<std::string>>("heapAllocFunctions", {});
 
-  // for solana sve
-  // initialize SVEIDMap
-  {
-    std::set<std::string> freeSVEs;
-    SVE::addTypeID("1001", SVE::Type::MISS_SIGNER);
-    freeSVEs.insert("1001");
-    SVE::addTypeID("1002", SVE::Type::MISS_OWNER);
-    freeSVEs.insert("1002");
-    SVE::addTypeID("1003", SVE::Type::OVERFLOW_ADD);
-    freeSVEs.insert("1003");
-    SVE::addTypeID("1004", SVE::Type::OVERFLOW_SUB);
-    freeSVEs.insert("1004");
-    SVE::addTypeID("1005", SVE::Type::OVERFLOW_MUL);
-    freeSVEs.insert("1005");
-    SVE::addTypeID("1006", SVE::Type::OVERFLOW_DIV);
-    freeSVEs.insert("1006");
-    SVE::addTypeID("1007", SVE::Type::ACCOUNT_UNVALIDATED_BORROWED);
-    SVE::addTypeID("1008", SVE::Type::ACCOUNT_DUPLICATE);
-    SVE::addTypeID("1009", SVE::Type::ACCOUNT_CLOSE);
-    SVE::addTypeID("1010", SVE::Type::COSPLAY_FULL);
-    freeSVEs.insert("1010");
-    SVE::addTypeID("1011", SVE::Type::COSPLAY_PARTIAL);
-    SVE::addTypeID("1012", SVE::Type::DIV_BY_ZERO);
-    freeSVEs.insert("1012");
-    SVE::addTypeID("1013", SVE::Type::REINIT);
-    SVE::addTypeID("1014", SVE::Type::BUMP_SEED);
-    // freeSVEs.insert("1014");
-    SVE::addTypeID("1015", SVE::Type::INSECURE_PDA_SHARING);
-    SVE::addTypeID("1016", SVE::Type::ARBITRARY_CPI);
-    freeSVEs.insert("1016");
-    SVE::addTypeID("1017", SVE::Type::MALICIOUS_SIMULATION);
-    SVE::addTypeID("1018", SVE::Type::UNSAFE_SYSVAR_API);
-    freeSVEs.insert("1018");
-    SVE::addTypeID("1019", SVE::Type::ACCOUNT_UNVALIDATED_OTHER);
-    SVE::addTypeID("1020", SVE::Type::OUTDATED_DEPENDENCY);
-    SVE::addTypeID("1021", SVE::Type::UNSAFE_RUST);
-    SVE::addTypeID("1022", SVE::Type::OVERPAY);
-    SVE::addTypeID("1023", SVE::Type::STALE_PRICE_FEED);
-    SVE::addTypeID("1024", SVE::Type::MISS_INIT_TOKEN_MINT);
-    SVE::addTypeID("1025", SVE::Type::MISS_RENT_EXEMPT);
-    SVE::addTypeID("1026", SVE::Type::MISS_FREEZE_AUTHORITY);
-    SVE::addTypeID("1027", SVE::Type::FLASHLOAN_RISK);
-    SVE::addTypeID("1028", SVE::Type::BIDIRECTIONAL_ROUNDING);
-    SVE::addTypeID("1029", SVE::Type::CAST_TRUNCATE);
-    SVE::addTypeID("1030", SVE::Type::ACCOUNT_UNVALIDATED_PDA);
-    SVE::addTypeID("1031", SVE::Type::ACCOUNT_UNVALIDATED_DESTINATION);
-    SVE::addTypeID("1032", SVE::Type::ACCOUNT_INCORRECT_AUTHORITY);
-    SVE::addTypeID("1033", SVE::Type::INSECURE_INIT_IF_NEEDED);
-    freeSVEs.insert("1033");
-    SVE::addTypeID("1034", SVE::Type::INSECURE_SPL_TOKEN_CPI);
-    SVE::addTypeID("1035", SVE::Type::INSECURE_ASSOCIATED_TOKEN);
-    SVE::addTypeID("1036", SVE::Type::INSECURE_ACCOUNT_REALLOC);
-    freeSVEs.insert("1036");
-    SVE::addTypeID("1037", SVE::Type::PDA_SEEDS_COLLISIONS);
-    SVE::addTypeID("2001", SVE::Type::INCORRECT_BREAK_LOGIC);
-    SVE::addTypeID("2002", SVE::Type::INCORRECT_CONDITION_CHECK);
-    SVE::addTypeID("2003", SVE::Type::EXPONENTIAL_CALCULATION);
-    SVE::addTypeID("2004", SVE::Type::INCORRECT_DIVISION_LOGIC);
-    SVE::addTypeID("2005", SVE::Type::INCORRECT_TOKEN_CALCULATION);
-    SVE::addTypeID("3002", SVE::Type::CRITICAL_REDUNDANT_CODE);
-    SVE::addTypeID("3005", SVE::Type::MISS_CPI_RELOAD);
-    SVE::addTypeID("3006", SVE::Type::MISS_ACCESS_CONTROL_UNSTAKE);
-    SVE::addTypeID("3007", SVE::Type::ORDER_RACE_CONDITION);
-    SVE::addTypeID("3008", SVE::Type::ACCOUNT_IDL_INCOMPATIBLE_ADD);
-    freeSVEs.insert("3008");
-    SVE::addTypeID("3009", SVE::Type::ACCOUNT_IDL_INCOMPATIBLE_MUT);
-    freeSVEs.insert("3009");
-    SVE::addTypeID("3010", SVE::Type::ACCOUNT_IDL_INCOMPATIBLE_ORDER);
-    freeSVEs.insert("3010");
-    SVE::addTypeID("10001", SVE::Type::REENTRANCY_ETHER);
-    SVE::addTypeID("10002", SVE::Type::ARBITRARY_SEND_ERC20);
-    SVE::addTypeID("10003", SVE::Type::SUISIDE_SELFDESTRUCT);
-    SVE::addTypeID("20001", SVE::Type::MISS_INIT_UNIQUE_ADMIN_CHECK);
-    SVE::addTypeID("20002", SVE::Type::BIT_SHIFT_OVERFLOW);
-    SVE::addTypeID("20003", SVE::Type::DIV_PRECISION_LOSS);
-    SVE::addTypeID("20004", SVE::Type::VULNERABLE_SIGNED_INTEGER_I128);
-    bool isFreePlan = (SOTERIA_PLAN == "free");
-    SOLANA_SVE_DB =
-        conflib::Get<std::map<std::string, std::map<std::string, std::string>>>(
-            "solana.sve", {});
-    for (auto &[key, valueMap] : SOLANA_SVE_DB) {
-      auto name = valueMap["name"];
-      auto description = valueMap["description"];
-      auto url = valueMap["url"];
-      auto on = valueMap["on"];
-      auto free = valueMap["free"];
-      if (on == "false" ||
-          (isFreePlan &&
-           (free != "true" && freeSVEs.find(key) == freeSVEs.end())))
-        SVE::addDisabledChecker(key);
-      else {
-        if (DEBUG_RUST_API)
-          llvm::outs() << "ID: " << key << " \n    name: " << name
-                       << "\n    description: " << description
-                       << "\n    url: " << url << "\n";
-      }
-    }
-    // llvm::outs() << "SOTERIA_PLAN: " << SOTERIA_PLAN << "\n";
-  }
+  // Initialize Solana SVEs.
+  auto configured =
+      conflib::Get<std::map<std::string, std::map<std::string, std::string>>>(
+          "solana.sve", {});
+  SVE::init(configured);
 
   MAX_CALLSTACK_DEPTH = conflib::Get<int>("maxCallStackDepth", -1);
   SAME_FUNC_BUDGET_SIZE = conflib::Get<int>("sameFunctionBudget", 10);
