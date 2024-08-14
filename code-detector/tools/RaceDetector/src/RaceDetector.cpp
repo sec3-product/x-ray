@@ -26,7 +26,9 @@
 #include "CustomAPIRewriters/RustAPIRewriter.h"
 #include "PTAModels/GraphBLASModel.h"
 #include "RaceDetectionPass.h"
+#include "Rules/CosplayAccounts.h"
 #include "Rules/Races.h"
+#include "Rules/UnsafeOperation.h"
 #include "Rules/UntrustfulAccount.h"
 #include "SVE.h"
 
@@ -308,7 +310,7 @@ void initRaceDetect() {
   OrderViolation::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
   DeadLock::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
   UntrustfulAccount::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
-  UnSafeOperation::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
+  UnsafeOperation::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
   CosplayAccounts::init(ConfigReportLimit, CONFIG_NO_REPORT_LIMIT);
 }
 

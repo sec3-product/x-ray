@@ -17,7 +17,9 @@
 #include "Graph/ReachGraph.h"
 #include "Graph/Trie.h"
 #include "PTAModels/GraphBLASModel.h"
+#include "Rules/CosplayAccounts.h"
 #include "Rules/Races.h"
+#include "Rules/UnsafeOperation.h"
 #include "Rules/UntrustfulAccount.h"
 #include "StaticThread.h"
 #include "aser/Util/Log.h"
@@ -242,6 +244,7 @@ getProgramIdAccountName(const llvm::Instruction *inst) {
   }
   return std::make_pair("", inst);
 }
+
 bool RaceDetectionPass::hasValueLessMoreThan(const llvm::Value *value,
                                              const llvm::Instruction *inst,
                                              bool isLess) {
@@ -1982,7 +1985,7 @@ void RaceDetectionPass::traverseFunction(
                                       "sol.Pubkey::default.")) {
                                 // sol.Pubkey::default.0
                                 auto e = graph->createReadEvent(ctx, inst, tid);
-                                UnSafeOperation::collect(
+                                UnsafeOperation::collect(
                                     e, callEventTraces,
                                     SVE::Type::INCORRECT_BREAK_LOGIC, 10);
                               }
@@ -3386,7 +3389,7 @@ void RaceDetectionPass::traverseFunction(
                     isArgument || dyn_cast<CallBase>(value2)) {
                   if (!isSafeType(func, value) && !isSafeType(func, value2)) {
                     auto e = graph->createReadEvent(ctx, inst, tid);
-                    UnSafeOperation::collect(e, callEventTraces,
+                    UnsafeOperation::collect(e, callEventTraces,
                                              SVE::Type::OVERFLOW_ADD, 8);
                   }
                 } else {
@@ -3394,7 +3397,7 @@ void RaceDetectionPass::traverseFunction(
                     if (!isSafeVariable(func, value) &&
                         !hasValueLessMoreThan(value, inst, true)) {
                       auto e = graph->createReadEvent(ctx, inst, tid);
-                      UnSafeOperation::collect(e, callEventTraces,
+                      UnsafeOperation::collect(e, callEventTraces,
                                                SVE::Type::OVERFLOW_ADD, 8);
                     }
                   }
@@ -3422,7 +3425,7 @@ void RaceDetectionPass::traverseFunction(
                 if (isa<Argument>(value) || isa<Argument>(value2)) {
                   if (!isSafeType(func, value) && !isSafeType(func, value2)) {
                     auto e = graph->createReadEvent(ctx, inst, tid);
-                    UnSafeOperation::collect(e, callEventTraces,
+                    UnsafeOperation::collect(e, callEventTraces,
                                              SVE::Type::OVERFLOW_SUB, 8);
                   }
                 } else {
@@ -3431,7 +3434,7 @@ void RaceDetectionPass::traverseFunction(
                     if (!isSafeVariable(func, value) &&
                         !hasValueLessMoreThan(value, inst, false)) {
                       auto e = graph->createReadEvent(ctx, inst, tid);
-                      UnSafeOperation::collect(e, callEventTraces,
+                      UnsafeOperation::collect(e, callEventTraces,
                                                SVE::Type::OVERFLOW_SUB, 8);
                     }
                   } else if (valueName2.contains("fee")) {
@@ -3442,7 +3445,7 @@ void RaceDetectionPass::traverseFunction(
                         line_above.find(valueName2.str()) !=
                             std::string::npos) {
                       auto e = graph->createReadEvent(ctx, inst, tid);
-                      UnSafeOperation::collect(e, callEventTraces,
+                      UnsafeOperation::collect(e, callEventTraces,
                                                SVE::Type::OVERFLOW_SUB, 8);
                     }
                   }
@@ -3456,7 +3459,7 @@ void RaceDetectionPass::traverseFunction(
                   if (!isSafeType(func, value1) && !isSafeType(func, value2)) {
                     if (!isSafeVariable(func, value1)) {
                       auto e = graph->createReadEvent(ctx, inst, tid);
-                      UnSafeOperation::collect(e, callEventTraces,
+                      UnsafeOperation::collect(e, callEventTraces,
                                                SVE::Type::OVERFLOW_ADD, 8);
                     }
                   }
@@ -3470,7 +3473,7 @@ void RaceDetectionPass::traverseFunction(
                   if (!isSafeType(func, value1) && !isSafeType(func, value2)) {
                     if (!isSafeVariable(func, value1)) {
                       auto e = graph->createReadEvent(ctx, inst, tid);
-                      UnSafeOperation::collect(e, callEventTraces,
+                      UnsafeOperation::collect(e, callEventTraces,
                                                SVE::Type::OVERFLOW_SUB, 8);
                     }
                   }
@@ -3482,7 +3485,7 @@ void RaceDetectionPass::traverseFunction(
                       if (CS2.getTargetFunction()->getName().startswith(
                               "sol.lamports.")) {
                         auto e = graph->createReadEvent(ctx, inst, tid);
-                        UnSafeOperation::collect(e, callEventTraces,
+                        UnsafeOperation::collect(e, callEventTraces,
                                                  SVE::Type::OVERFLOW_SUB, 8);
                       }
                     }
@@ -3496,7 +3499,7 @@ void RaceDetectionPass::traverseFunction(
                 if (isa<Argument>(value1) || isa<Argument>(value2)) {
                   if (!isSafeType(func, value1) && !isSafeType(func, value2)) {
                     auto e = graph->createReadEvent(ctx, inst, tid);
-                    UnSafeOperation::collect(e, callEventTraces,
+                    UnsafeOperation::collect(e, callEventTraces,
                                              SVE::Type::OVERFLOW_MUL, 6);
                   }
                 }
@@ -3508,7 +3511,7 @@ void RaceDetectionPass::traverseFunction(
                 if (isa<Argument>(value2)) {
                   if (!isSafeType(func, value2)) {
                     auto e = graph->createReadEvent(ctx, inst, tid);
-                    UnSafeOperation::collect(e, callEventTraces,
+                    UnsafeOperation::collect(e, callEventTraces,
                                              SVE::Type::OVERFLOW_DIV, 5);
                   }
                 }
@@ -3529,7 +3532,7 @@ void RaceDetectionPass::traverseFunction(
                       if (liquidity_.contains("liquidity") &&
                           balance_.contains("balance")) {
                         auto e = graph->createReadEvent(ctx, inst, tid);
-                        UnSafeOperation::collect(
+                        UnsafeOperation::collect(
                             e, callEventTraces,
                             SVE::Type::INCORRECT_TOKEN_CALCULATION, 9);
                       }
@@ -3538,7 +3541,7 @@ void RaceDetectionPass::traverseFunction(
                       if (srcInfo.getSourceLine().find(" as u") ==
                           string::npos) {
                         auto e = graph->createReadEvent(ctx, inst, tid);
-                        UnSafeOperation::collect(e, callEventTraces,
+                        UnsafeOperation::collect(e, callEventTraces,
                                                  SVE::Type::DIV_PRECISION_LOSS,
                                                  8);
                       }
@@ -3558,7 +3561,7 @@ void RaceDetectionPass::traverseFunction(
                     if (CS2.getTargetFunction()->getName().startswith(
                             "sol.checked_")) {
                       auto e = graph->createReadEvent(ctx, inst, tid);
-                      UnSafeOperation::collect(
+                      UnsafeOperation::collect(
                           e, callEventTraces,
                           SVE::Type::INCORRECT_DIVISION_LOGIC, 8);
                     }
@@ -3579,7 +3582,7 @@ void RaceDetectionPass::traverseFunction(
                               signature) &&
                           !CS2.getTargetFunction()->getName().contains(
                               ".anon")) {
-                        UnSafeOperation::collect(e, callEventTraces,
+                        UnsafeOperation::collect(e, callEventTraces,
                                                  SVE::Type::FLASHLOAN_RISK, 9);
                         break;
                       }
@@ -3607,7 +3610,7 @@ void RaceDetectionPass::traverseFunction(
                     // if (DEBUG_RUST_API)
                     // llvm::outs() << "CAST_TRUNCATE: " << targetName << "\n";
                     auto e = graph->createReadEvent(ctx, inst, tid);
-                    UnSafeOperation::collect(e, callEventTraces,
+                    UnsafeOperation::collect(e, callEventTraces,
                                              SVE::Type::CAST_TRUNCATE, 8);
                   }
                 }
@@ -3649,7 +3652,7 @@ void RaceDetectionPass::traverseFunction(
                   }
                   if (isPossibleTruncate) {
                     auto e = graph->createReadEvent(ctx, inst, tid);
-                    UnSafeOperation::collect(e, callEventTraces,
+                    UnsafeOperation::collect(e, callEventTraces,
                                              SVE::Type::CAST_TRUNCATE, 8);
                   }
                 }
@@ -3669,7 +3672,7 @@ void RaceDetectionPass::traverseFunction(
                 if (isPossibleRoundingError &&
                     !thread->isOnceOnlyOwnerOnlyInstruction) {
                   auto e = graph->createReadEvent(ctx, inst, tid);
-                  UnSafeOperation::collect(
+                  UnsafeOperation::collect(
                       e, callEventTraces, SVE::Type::BIDIRECTIONAL_ROUNDING, 8);
                 }
               } else if (CS.getTargetFunction()->getName().startswith(
@@ -3691,7 +3694,7 @@ void RaceDetectionPass::traverseFunction(
                 if (isPossibleRoundingError &&
                     !thread->isOnceOnlyOwnerOnlyInstruction) {
                   auto e = graph->createReadEvent(ctx, inst, tid);
-                  UnSafeOperation::collect(
+                  UnsafeOperation::collect(
                       e, callEventTraces, SVE::Type::BIDIRECTIONAL_ROUNDING, 8);
                 }
               } else if (CS.getTargetFunction()->getName().contains(
@@ -3879,7 +3882,7 @@ void RaceDetectionPass::traverseFunction(
                   if (valueName.contains(".accounts.") &&
                       valueName.contains("price")) {
                     auto e = graph->createReadEvent(ctx, inst, tid);
-                    UnSafeOperation::collect(e, callEventTraces,
+                    UnsafeOperation::collect(e, callEventTraces,
                                              SVE::Type::FLASHLOAN_RISK, 9);
                   }
                 }
@@ -4522,10 +4525,10 @@ void RaceDetectionPass::detectUntrustfulAccounts(TID tid) {
       if (result != 0) {
         auto e = curThread->accountsMap[accountName];
         if (result < 0)
-          UnSafeOperation::collect(e, callEventTraces,
+          UnsafeOperation::collect(e, callEventTraces,
                                    SVE::Type::ACCOUNT_IDL_INCOMPATIBLE_ADD, 7);
         else if (result > 0)
-          UnSafeOperation::collect(e, callEventTraces,
+          UnsafeOperation::collect(e, callEventTraces,
                                    SVE::Type::ACCOUNT_IDL_INCOMPATIBLE_MUT, 7);
       }
     }
@@ -4767,7 +4770,7 @@ void RaceDetectionPass::detectRaceCondition(const aser::ctx *ctx, TID tid) {
                 // llvm::errs() << "==============inst1: " << *inst1 <<
                 // "!============\n";
                 auto e1 = graph->createApiReadEvent(ctx, inst1, tid);
-                UnSafeOperation::collect(e1, callEventTraces,
+                UnsafeOperation::collect(e1, callEventTraces,
                                          SVE::Type::ORDER_RACE_CONDITION, 9);
               }
             }
@@ -4948,14 +4951,14 @@ bool RaceDetectionPass::runOnModule(llvm::Module &module) {
 
   if (CONFIG_SHOW_DETAIL && !PRINT_IMMEDIATELY) {
     UntrustfulAccount::printAll();
-    UnSafeOperation::printAll();
+    UnsafeOperation::printAll();
     CosplayAccounts::printAll();
   }
 
   // TODO design? by default always report summary
   if (CONFIG_SHOW_SUMMARY) {
     UntrustfulAccount::printSummary();
-    UnSafeOperation::printSummary();
+    UnsafeOperation::printSummary();
     CosplayAccounts::printSummary();
   }
   outputJSON();
