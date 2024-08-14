@@ -438,11 +438,6 @@ void computeDeclareIdAddresses(Module *module) {
   }
 }
 
-// TODO: This should not live here.
-static llvm::RegisterPass<PointerAnalysisPass<PTA>>
-    PAP("Pointer Analysis Wrapper Pass", "Pointer Analysis Wrapper Pass", true,
-        true);
-
 static void createBuilderCallFunction(llvm::IRBuilder<> &builder,
                                       llvm::Function *f) {
   std::vector<llvm::Value *> Args;
@@ -607,6 +602,7 @@ int main(int argc, char **argv) {
   logger::newPhaseSpinner("Running Pointer Analysis");
 
   llvm::legacy::PassManager analysisPasses;
+  registerPointerAnalysisPass<PTA>();
   analysisPasses.add(new PointerAnalysisPass<PTA>());
 
   auto analyzer = new SolanaAnalysisPass();
