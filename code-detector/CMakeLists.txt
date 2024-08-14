@@ -88,8 +88,7 @@ include_directories(
     utils/jsoncons/include
     utils)
 
-add_subdirectory(lib)
-add_subdirectory(tools)
+add_subdirectory(src)
 add_subdirectory(utils/conflib)
 
 # unit tests

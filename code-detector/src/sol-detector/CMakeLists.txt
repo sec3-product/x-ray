@@ -22,17 +22,17 @@ llvm_map_components_to_libnames(llvm_libs
         mc)
 
 set(racedetect-component
-    src/CustomAPIRewriters/RustAPIRewriter.cpp
-    src/LocksetManager.cpp
-    src/LogColor.cpp
-    src/PTAModels/GraphBLASModel.cpp
-    src/Rules/CosplayAccounts.cpp
-    src/Rules/Races.cpp
-    src/Rules/UnsafeOperation.cpp
-    src/Rules/UntrustfulAccount.cpp
-    src/SourceInfo.cpp
-    src/StaticThread.cpp
-    src/SVE.cpp
+    CustomAPIRewriters/RustAPIRewriter.cpp
+    LocksetManager.cpp
+    LogColor.cpp
+    PTAModels/GraphBLASModel.cpp
+    Rules/CosplayAccounts.cpp
+    Rules/Races.cpp
+    Rules/UnsafeOperation.cpp
+    Rules/UntrustfulAccount.cpp
+    SourceInfo.cpp
+    StaticThread.cpp
+    SVE.cpp
 )
 
 include_directories(
@@ -44,7 +44,10 @@ include_directories(
 add_library(racedetect-lib ${racedetect-component})
 add_dependencies(racedetect-lib aser)
 
-add_executable(racedetect src/RaceDetector.cpp src/RaceDetectionPass.cpp)
+add_executable(racedetect
+    RaceDetector.cpp
+    RaceDetectionPass.cpp
+)
 
 # the racedetect needs to be linked before aser
 

@@ -1,50 +1,46 @@
 #include "CustomAPIRewriters/RustAPIRewriter.h"
 
+#include <map>
+#include <set>
+#include <string>
+
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
-#include <map>
-
 #include "LogColor.h"
 #include "PTAModels/GraphBLASModel.h"
-#include "aser/Util/Demangler.h"
 #include "aser/Util/Util.h"
-#include "conflib/conflib.h"
-
-using namespace std;
-using namespace llvm;
 
 extern bool DEBUG_RUST_API;
 
 namespace aser {
-StringRef stripSolFileName(StringRef originalName, bool isDeclare) {
-  {
-    // oracles.refresh_oracle_price.3$1
-    //=> refresh_oracle_price.3
-    auto splited = originalName.find(".");
-    auto splited1 = originalName.find("::");
-    if (splited < splited1) {
-      originalName = originalName.substr(splited + 1);
-    } else {
-      // for create_cdp_vault::handler.2
-      if (!isDeclare && !originalName.contains("::handler."))
-        originalName = originalName.substr(splited1 + 2);
-    }
-    auto splited2 = originalName.find("$");
-    if (splited2 != string::npos) {
-      originalName = originalName.substr(0, splited2);
-    }
-    // Self::borrow.4
-    auto splited3 = originalName.find("Self::");
-    if (splited3 != string::npos) {
-      originalName = originalName.substr(splited3 + 6);
-    }
+
+llvm::StringRef stripSolFileName(llvm::StringRef originalName, bool isDeclare) {
+  // oracles.refresh_oracle_price.3$1
+  //=> refresh_oracle_price.3
+  auto splited = originalName.find(".");
+  auto splited1 = originalName.find("::");
+  if (splited < splited1) {
+    originalName = originalName.substr(splited + 1);
+  } else {
+    // for create_cdp_vault::handler.2
+    if (!isDeclare && !originalName.contains("::handler."))
+      originalName = originalName.substr(splited1 + 2);
+  }
+  auto splited2 = originalName.find("$");
+  if (splited2 != std::string::npos) {
+    originalName = originalName.substr(0, splited2);
+  }
+  // Self::borrow.4
+  auto splited3 = originalName.find("Self::");
+  if (splited3 != std::string::npos) {
+    originalName = originalName.substr(splited3 + 6);
   }
 
   // strip Processor::<{TOKEN_COUNT}>::process.3
   auto found_ = originalName.find(">::");
-  if (found_ != string::npos) {
+  if (found_ != std::string::npos) {
     if (DEBUG_RUST_API)
       llvm::outs() << "originalName >:: : " << originalName << "\n";
     originalName = originalName.substr(found_ + 3);
@@ -58,49 +54,46 @@ StringRef stripSolFileName(StringRef originalName, bool isDeclare) {
       !originalName.endswith("::of_token.2")) // skip sol.handler_...::process
   {                                           // Pool::swap.2
     auto found = originalName.find("::");
-    if (found != string::npos) {
+    if (found != std::string::npos) {
       originalName = originalName.substr(found + 2);
     }
   }
   return originalName;
 }
 
-void rewriteIndirectTargets(Module *M) {
-  IRBuilder<> builder(M->getContext());
+void rewriteIndirectTargets(llvm::Module *M) {
+  llvm::IRBuilder<> builder(M->getContext());
   // 1. find all the rust functions, put them into three maps
   std::map<llvm::StringRef, std::set<llvm::Function *>> solDeclaredFunctionsMap;
   std::map<llvm::StringRef, std::set<llvm::Function *>> solIndexedFunctionsMap;
-  for (Function &F : *M) {
-    // if (LangModel::isRustAPI(&F))
-    {
-      if (F.isDeclaration()) {
-        if (LangModel::isRustNormalCall(&F)) {
-          // llvm::outs() << "declare: " << F.getName() << "\n";
-          auto name = stripSolFileName(F.getName(), true);
-          // function_name
-          // sol.instructions::create_cdp_vault::handler.2
-          // create_cdp_vault::handler.2
-          auto splited = name.find("::handler.");
-          if (splited != string::npos) {
-            name = name.substr(splited + 2);
-          }
-          solDeclaredFunctionsMap[name].insert(&F);
-          if (DEBUG_RUST_API)
-            if (F.getName().contains("handler.2"))
-              llvm::outs() << "decl: " << F.getName() << " -> " << name << "\n";
-        }
-      } else {
+  for (llvm::Function &F : *M) {
+    if (F.isDeclaration()) {
+      if (aser::LangModel::isRustNormalCall(&F)) {
+        // llvm::outs() << "declare: " << F.getName() << "\n";
+        auto name = stripSolFileName(F.getName(), true);
+        // function_name
+        // sol.instructions::create_cdp_vault::handler.2
         // create_cdp_vault::handler.2
-        auto name = stripSolFileName(F.getName(), false);
-        if (name.startswith("handler.")) {
-          name = F.getName();
+        auto splited = name.find("::handler.");
+        if (splited != std::string::npos) {
+          name = name.substr(splited + 2);
         }
-        solIndexedFunctionsMap[name].insert(&F);
-        solIndexedFunctionsMap[F.getName()].insert(&F);
+        solDeclaredFunctionsMap[name].insert(&F);
         if (DEBUG_RUST_API)
           if (F.getName().contains("handler.2"))
-            llvm::outs() << "impl: " << F.getName() << " -> " << name << "\n";
+            llvm::outs() << "decl: " << F.getName() << " -> " << name << "\n";
       }
+    } else {
+      // create_cdp_vault::handler.2
+      auto name = stripSolFileName(F.getName(), false);
+      if (name.startswith("handler.")) {
+        name = F.getName();
+      }
+      solIndexedFunctionsMap[name].insert(&F);
+      solIndexedFunctionsMap[F.getName()].insert(&F);
+      if (DEBUG_RUST_API)
+        if (F.getName().contains("handler.2"))
+          llvm::outs() << "impl: " << F.getName() << " -> " << name << "\n";
     }
   }
   for (auto [name, declareFuncs] : solDeclaredFunctionsMap) {
@@ -169,9 +162,9 @@ void rewriteIndirectTargets(Module *M) {
       }
       if (!targetFunctions.empty()) {
         auto entryBB =
-            BasicBlock::Create(M->getContext(), "sol.call", declareF);
+            llvm::BasicBlock::Create(M->getContext(), "sol.call", declareF);
         builder.SetInsertPoint(entryBB);
-        CallInst *replaced = nullptr;
+        llvm::CallInst *replaced = nullptr;
         for (auto targetF : targetFunctions) {
           // F.addFnAttr(Attribute::AlwaysInline);
           if (DEBUG_RUST_API)
@@ -182,8 +175,8 @@ void rewriteIndirectTargets(Module *M) {
           if (declareF->arg_size() == targetF->arg_size()) {
             SmallVector<Value *, 8> args;
             for (int i = 0; i < declareF->arg_size(); i++) {
-              Value *actual = declareF->arg_begin() + i;
-              Value *formal = targetF->arg_begin() + i;
+              llvm::Value *actual = declareF->arg_begin() + i;
+              llvm::Value *formal = targetF->arg_begin() + i;
 
               if (actual->getType() != formal->getType()) {
                 args.push_back(
@@ -195,7 +188,8 @@ void rewriteIndirectTargets(Module *M) {
 
             replaced = builder.CreateCall(
                 targetF->getFunctionType(), targetF, args, "",
-                targetF->getMetadata(Metadata::MetadataKind::DILocationKind));
+                targetF->getMetadata(
+                    llvm::Metadata::MetadataKind::DILocationKind));
           } else {
             // not compatible
             if (DEBUG_RUST_API)
@@ -213,10 +207,6 @@ void rewriteIndirectTargets(Module *M) {
     }
   }
 }
-
-} // namespace aser
-
-namespace aser {
 
 void RustAPIRewriter::rewriteModule(llvm::Module *M) {
   rewriteIndirectTargets(M);
