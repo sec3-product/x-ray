@@ -1,7 +1,3 @@
-//
-// Created by peiming on 11/15/19.
-//
-
 #include <Util/Log.h>
 #include <conflib/conflib.h>
 #include <llvm/Analysis/AssumptionCache.h>
@@ -30,7 +26,7 @@
 #include "Rules/UnsafeOperation.h"
 #include "Rules/UntrustfulAccount.h"
 #include "SVE.h"
-#include "SolanaAnalyzorPass.h"
+#include "SolanaAnalysisPass.h"
 
 using namespace llvm;
 using namespace aser;
@@ -791,7 +787,7 @@ int main(int argc, char **argv) {
 
   llvm::legacy::PassManager analysisPasses;
   analysisPasses.add(new PointerAnalysisPass<PTA>());
-  analysisPasses.add(new RaceDetectionPass());
+  analysisPasses.add(new SolanaAnalysisPass());
 
   computeCargoTomlConfig(module.get());
   computeDeclareIdAddresses(module.get());

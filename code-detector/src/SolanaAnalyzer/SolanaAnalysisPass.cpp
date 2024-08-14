@@ -1,4 +1,4 @@
-#include "SolanaAnalyzorPass.h"
+#include "SolanaAnalysisPass.h"
 
 #include <chrono>
 #include <queue>
@@ -157,7 +157,7 @@ llvm::StringRef stripAll(llvm::StringRef account_name) {
   return account_name;
 }
 
-llvm::StringRef RaceDetectionPass::findNewStructAccountName(
+llvm::StringRef SolanaAnalysisPass::findNewStructAccountName(
     TID tid, const llvm::Instruction *inst, const llvm::StringRef name) {
   llvm::StringRef account_name;
   // from: self.order_vault_account.to_account_info().clone(),
@@ -241,7 +241,7 @@ getProgramIdAccountName(const llvm::Instruction *inst) {
   return std::make_pair("", inst);
 }
 
-bool RaceDetectionPass::hasValueLessMoreThan(const llvm::Value *value,
+bool SolanaAnalysisPass::hasValueLessMoreThan(const llvm::Value *value,
                                              const llvm::Instruction *inst,
                                              bool isLess) {
   auto symbol = "<";
@@ -289,7 +289,7 @@ bool is_constant(const std::string &s) {
   return is_number(s) || is_all_capital(s);
 }
 
-bool RaceDetectionPass::isSafeType(const llvm::Function *func,
+bool SolanaAnalysisPass::isSafeType(const llvm::Function *func,
                                    const llvm::Value *value) {
   if (auto arg = llvm::dyn_cast<llvm::Argument>(value)) {
     auto type = funcArgTypesMap[func][arg->getArgNo()].second;
@@ -300,7 +300,7 @@ bool RaceDetectionPass::isSafeType(const llvm::Function *func,
   return false;
 }
 
-bool RaceDetectionPass::isSafeVariable(const llvm::Function *func,
+bool SolanaAnalysisPass::isSafeVariable(const llvm::Function *func,
                                        const llvm::Value *value) {
   if (auto arg = dyn_cast<Argument>(value)) {
     auto valueName = funcArgTypesMap[func][arg->getArgNo()].first;
@@ -328,7 +328,7 @@ bool RaceDetectionPass::isSafeVariable(const llvm::Function *func,
 }
 
 const llvm::Function *
-RaceDetectionPass::findCallStackNonAnonFunc(const Event *e) {
+SolanaAnalysisPass::findCallStackNonAnonFunc(const Event *e) {
   auto func = e->getInst()->getFunction();
   // skip .anon.
   if (func->getName().contains(".anon.")) {
@@ -343,7 +343,7 @@ RaceDetectionPass::findCallStackNonAnonFunc(const Event *e) {
   return func;
 }
 
-llvm::StringRef RaceDetectionPass::findCallStackAccountAliasName(
+llvm::StringRef SolanaAnalysisPass::findCallStackAccountAliasName(
     const llvm::Function *func, const Event *e, llvm::StringRef valueName,
     bool stripKey) {
   if (DEBUG_RUST_API)
@@ -455,7 +455,7 @@ llvm::StringRef RaceDetectionPass::findCallStackAccountAliasName(
   return valueName;
 }
 
-void RaceDetectionPass::addCheckKeyEqual(const aser::ctx *ctx, TID tid,
+void SolanaAnalysisPass::addCheckKeyEqual(const aser::ctx *ctx, TID tid,
                                          const llvm::Instruction *inst,
                                          StaticThread *thread, CallSite &CS) {
   if (DEBUG_RUST_API)
@@ -566,7 +566,7 @@ void RaceDetectionPass::addCheckKeyEqual(const aser::ctx *ctx, TID tid,
   }
 }
 
-void RaceDetectionPass::handleConditionalCheck0(const aser::ctx *ctx, TID tid,
+void SolanaAnalysisPass::handleConditionalCheck0(const aser::ctx *ctx, TID tid,
                                                 const llvm::Function *func,
                                                 const llvm::Instruction *inst,
                                                 StaticThread *thread,
@@ -892,7 +892,7 @@ void RaceDetectionPass::handleConditionalCheck0(const aser::ctx *ctx, TID tid,
   }
 }
 
-void RaceDetectionPass::updateKeyEqualMap(StaticThread *thread, const Event *e,
+void SolanaAnalysisPass::updateKeyEqualMap(StaticThread *thread, const Event *e,
                                           bool isEqual, bool isNotEqual,
                                           llvm::StringRef valueName1,
                                           llvm::StringRef valueName2) {
@@ -950,7 +950,7 @@ static unsigned int FUNC_COUNT_PROGRESS_THESHOLD = 10000;
 
 static aser::trie::TrieNode *cur_trie;
 
-bool RaceDetectionPass::mayBeExclusive(const Event *const e1,
+bool SolanaAnalysisPass::mayBeExclusive(const Event *const e1,
                                        const Event *const e2) {
   std::vector<CallEvent *> callStack1, callStack2;
   getCallEventStackUntilMain(e1, callEventTraces, callStack1);
@@ -1072,7 +1072,7 @@ bool RaceDetectionPass::mayBeExclusive(const Event *const e1,
   return false;
 }
 // inline all the calls and make copies on different threads.
-void RaceDetectionPass::traverseFunction(
+void SolanaAnalysisPass::traverseFunction(
     const aser::ctx *ctx, const Function *func0, StaticThread *thread,
     vector<const Function *> &callStack,
     map<uint8_t, const llvm::Constant *> *valMap) {
@@ -3974,7 +3974,7 @@ void RaceDetectionPass::traverseFunction(
   }
 }
 
-void RaceDetectionPass::traverseFunctionWrapper(
+void SolanaAnalysisPass::traverseFunctionWrapper(
     const aser::ctx *ctx, StaticThread *thread,
     vector<const Function *> &callStack, const Instruction *inst,
     const Function *f, map<uint8_t, const Constant *> *valMap) {
@@ -4074,7 +4074,7 @@ void RaceDetectionPass::traverseFunctionWrapper(
   }
 }
 
-void RaceDetectionPass::initStructFunctions() {
+void SolanaAnalysisPass::initStructFunctions() {
   // find all functions with
   auto &functionList = thisModule->getFunctionList();
 
@@ -4115,7 +4115,7 @@ void RaceDetectionPass::initStructFunctions() {
   // next, consolidate all anchor accounts per each thread
 }
 
-void RaceDetectionPass::detectUntrustfulAccounts(TID tid) {
+void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
   auto curThread = StaticThread::getThreadByTID(tid);
   // TODO now, detect vulnerabilities in each thread
   auto funcName = curThread->startFunc->getName();
@@ -4615,7 +4615,7 @@ void RaceDetectionPass::detectUntrustfulAccounts(TID tid) {
   }
 }
 
-void RaceDetectionPass::detectAccountsCosplay(const aser::ctx *ctx, TID tid) {
+void SolanaAnalysisPass::detectAccountsCosplay(const aser::ctx *ctx, TID tid) {
   // find one with user-provided seeds
   for (auto account : userProvidedInputStringPDAAccounts) {
     if (DEBUG_RUST_API)
@@ -4709,7 +4709,7 @@ void RaceDetectionPass::detectAccountsCosplay(const aser::ctx *ctx, TID tid) {
   }
 }
 
-void RaceDetectionPass::detectRaceCondition(const aser::ctx *ctx, TID tid) {
+void SolanaAnalysisPass::detectRaceCondition(const aser::ctx *ctx, TID tid) {
   for (auto [funcCancel, cancelAccounts] :
        potentialCancelOrderRelatedAccountsMap) {
     if (DEBUG_RUST_API)
@@ -4777,7 +4777,7 @@ void RaceDetectionPass::detectRaceCondition(const aser::ctx *ctx, TID tid) {
   }
 }
 
-StaticThread *RaceDetectionPass::forkNewThread(ForkEvent *forkEvent) {
+StaticThread *SolanaAnalysisPass::forkNewThread(ForkEvent *forkEvent) {
   aser::CallSite forkSite(forkEvent->getInst());
   assert(forkSite.isCallOrInvoke());
 
@@ -4811,7 +4811,7 @@ StaticThread *RaceDetectionPass::forkNewThread(ForkEvent *forkEvent) {
 
 extern unsigned int NUM_OF_ATTACK_VECTORS;
 
-bool RaceDetectionPass::runOnModule(llvm::Module &module) {
+bool SolanaAnalysisPass::runOnModule(llvm::Module &module) {
   thisModule = &module;
   // initialization
   getAnalysis<PointerAnalysisPass<PTA>>().analyze(&module);
@@ -4962,7 +4962,7 @@ bool RaceDetectionPass::runOnModule(llvm::Module &module) {
 }
 
 // add inter-thread HB edges (fork) for SHB Graph
-TID RaceDetectionPass::addNewThread(ForkEvent *forkEvent) {
+TID SolanaAnalysisPass::addNewThread(ForkEvent *forkEvent) {
   auto t = forkNewThread(forkEvent);
   if (t) {
     threadList.push(t);
@@ -4974,8 +4974,8 @@ TID RaceDetectionPass::addNewThread(ForkEvent *forkEvent) {
     return 0;
 }
 
-char RaceDetectionPass::ID = 0;
-static RegisterPass<RaceDetectionPass> RD(
+char SolanaAnalysisPass::ID = 0;
+static RegisterPass<SolanaAnalysisPass> RD(
     "Race Detection",
     "Abstract programs into constraint callgraph with corresponding language "
     "models",

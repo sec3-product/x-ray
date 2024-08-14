@@ -11,7 +11,7 @@
 
 #include "Event.h"
 #include "ReachabilityEngine.h"
-#include "SolanaAnalyzorPass.h"
+#include "SolanaAnalysisPass.h"
 #include "SourceInfo.h"
 
 namespace aser {
@@ -34,7 +34,7 @@ enum class LockState : uint8_t {
 
 class ReachGraph {
 private:
-  RaceDetectionPass &pass;
+  SolanaAnalysisPass &pass;
   // a cached graph connectivity engine
   aser::ReachabilityEngine reachEngine;
   // for each thread (TID), we record the sync point (NodeID)
@@ -83,7 +83,7 @@ private:
   }
 
 public:
-  ReachGraph(RaceDetectionPass &pass)
+  ReachGraph(SolanaAnalysisPass &pass)
       : pass(pass), locksetManager(*(pass.pta)){
 
                     };

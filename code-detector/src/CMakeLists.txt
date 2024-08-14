@@ -1,4 +1,4 @@
 add_subdirectory(PointerAnalysis)
 add_subdirectory(PreProcessing)
-add_subdirectory(SolanaAnalyzor)
+add_subdirectory(SolanaAnalyzer)
 add_subdirectory(Util)

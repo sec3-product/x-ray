@@ -25,7 +25,7 @@ namespace aser {
 class Event;
 class ReachGraph;
 
-class RaceDetectionPass : public llvm::ModulePass {
+class SolanaAnalysisPass : public llvm::ModulePass {
 private:
   const llvm::Module *thisModule;
   // Type-based Alias Analysis
@@ -303,7 +303,7 @@ private:
   bool mayBeExclusive(const Event *const e1, const Event *const e2);
 
 public:
-  explicit RaceDetectionPass() : llvm::ModulePass(ID) {}
+  explicit SolanaAnalysisPass() : llvm::ModulePass(ID) {}
 
   // A per thread callEventTrace
   // each callEvent has an endID
