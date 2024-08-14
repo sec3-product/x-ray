@@ -8,7 +8,6 @@
 #include <nlohmann/json.hpp>
 
 #include "Graph/Event.h"
-#include "RDUtil.h"
 #include "SVE.h"
 #include "SourceInfo.h"
 

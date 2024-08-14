@@ -9,7 +9,7 @@
 #include <llvm/Support/raw_ostream.h>
 
 #include "Graph/Event.h"
-#include "RDUtil.h"
+#include "LogColor.h"
 
 using namespace aser;
 

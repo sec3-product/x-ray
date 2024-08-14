@@ -2,7 +2,7 @@
 
 #include <fstream>
 
-#include "RDUtil.h"
+#include "LogColor.h"
 #include "Rules/UntrustfulAccount.h"
 
 #define DEFAULT_BUDGET 25

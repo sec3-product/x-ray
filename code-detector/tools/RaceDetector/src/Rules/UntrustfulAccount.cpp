@@ -9,13 +9,12 @@
 #include <llvm/IR/Value.h>
 #include <nlohmann/json.hpp>
 
-#include "RDUtil.h" // info
+#include "LogColor.h" // info
 #include "SourceInfo.h"
 
 #define DEFAULT_BUDGET 25
 
 using namespace aser;
-using namespace std;
 using namespace llvm;
 
 using json = nlohmann::json;
@@ -35,7 +34,7 @@ static bool nolimit = false;
 
 // static fields
 uint aser::UntrustfulAccount::budget = DEFAULT_BUDGET;
-vector<UntrustfulAccount> aser::UntrustfulAccount::untrustfulAccounts;
+std::vector<UntrustfulAccount> aser::UntrustfulAccount::untrustfulAccounts;
 std::set<const llvm::Value *> aser::UntrustfulAccount::apiSigs;
 std::set<std::string> aser::UntrustfulAccount::cpiSigs;
 
@@ -49,8 +48,8 @@ void aser::UntrustfulAccount::init(int configReportLimit,
   nolimit = configNoReportLimit;
 }
 
-string aser::UntrustfulAccount::getErrorMsg(SVE::Type type) {
-  string msg;
+std::string aser::UntrustfulAccount::getErrorMsg(SVE::Type type) {
+  std::string msg;
   switch (type) {
   case SVE::Type::ACCOUNT_UNVALIDATED_BORROWED:
     msg = "The account is not validated before parsing its data:";
@@ -175,7 +174,8 @@ bool aser::UntrustfulAccount::filterByCallStack(std::vector<std::string> &st0) {
 
 void aser::UntrustfulAccount::collect(
     llvm::StringRef accountName, const Event *e,
-    map<TID, vector<CallEvent *>> &callEventTraces, SVE::Type type, int P) {
+    std::map<TID, std::vector<CallEvent *>> &callEventTraces, SVE::Type type,
+    int P) {
   SourceInfo srcInfo = getSourceLoc(e->getInst());
   if (filter(type, srcInfo))
     return;
@@ -210,8 +210,6 @@ void aser::UntrustfulAccount::collect(
     if (isUntrustfulIgnored)
       isIgnored = true;
   }
-  // std::vector<std::string> st = getStackTrace(e, callEventTraces,
-  // srcInfo.isCpp());
   std::vector<std::string> st;
   TID tid = e->getTID();
   EventID id = e->getID();
@@ -295,7 +293,7 @@ void aser::UntrustfulAccount::printAll() {
 }
 
 void aser::UntrustfulAccount::printSummary() {
-  info("detected " + to_string(untrustfulAccounts.size()) +
+  info("detected " + std::to_string(untrustfulAccounts.size()) +
        " untrustful accounts in total.");
 }
 

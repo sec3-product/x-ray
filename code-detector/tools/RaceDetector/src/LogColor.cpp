@@ -1,30 +1,26 @@
-#include "RDUtil.h"
+#include "LogColor.h"
 
 #include <ctime>
 #include <fstream>
-#include <iomanip>
 #include <sstream>
+#include <string>
 
-#include "SourceInfo.h"
-#include "aser/Util/Demangler.h"
-
-using namespace aser;
-using namespace llvm;
+#include "llvm/Support/raw_ostream.h"
 
 /* --------------------------------
 
-        pure util functions
+        log util functions
 
 ----------------------------------- */
 
 void aser::highlight(std::string msg) {
-  llvm::outs().changeColor(raw_ostream::Colors::YELLOW);
+  llvm::outs().changeColor(llvm::raw_ostream::Colors::YELLOW);
   llvm::outs() << msg << "\n"; // add line break
   llvm::outs().resetColor();
 }
 
 void aser::info(std::string msg, bool newline) {
-  llvm::outs().changeColor(raw_ostream::Colors::GREEN);
+  llvm::outs().changeColor(llvm::raw_ostream::Colors::GREEN);
   if (newline) {
     llvm::outs() << msg << "\n";
   } else {
@@ -34,7 +30,7 @@ void aser::info(std::string msg, bool newline) {
 }
 
 void aser::error(std::string msg) {
-  llvm::outs().changeColor(raw_ostream::Colors::RED);
+  llvm::outs().changeColor(llvm::raw_ostream::Colors::RED);
   llvm::outs() << msg << "\n";
   llvm::outs().resetColor();
 }
@@ -50,4 +46,3 @@ std::string aser::getCurrentTimeStr() {
   std::string str(buf);
   return str;
 }
-

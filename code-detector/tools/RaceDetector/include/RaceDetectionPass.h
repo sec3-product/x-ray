@@ -1,9 +1,4 @@
-//
-// Created by peiming on 11/15/19.
-//
-
-#ifndef RACEDETECTOR_RACEDETECTIONPASS_H
-#define RACEDETECTOR_RACEDETECTIONPASS_H
+#pragma once
 
 #include <stdint.h>
 
@@ -22,16 +17,13 @@
 
 #include "Graph/Event.h"
 #include "PTAModels/GraphBLASModel.h"
-#include "RDUtil.h"
 #include "StaticThread.h"
 #include "aser/PointerAnalysis/PointerAnalysisPass.h"
 
 namespace aser {
 
-// forward declaration
 class Event;
 class ReachGraph;
-class StaticThread;
 
 class RaceDetectionPass : public llvm::ModulePass {
 private:
@@ -372,4 +364,3 @@ public:
 };
 
 } // namespace aser
-#endif

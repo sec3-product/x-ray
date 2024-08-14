@@ -6,8 +6,8 @@
 
 #include <map>
 
+#include "LogColor.h"
 #include "PTAModels/GraphBLASModel.h"
-#include "RDUtil.h"
 #include "aser/Util/Demangler.h"
 #include "aser/Util/Util.h"
 #include "conflib/conflib.h"
