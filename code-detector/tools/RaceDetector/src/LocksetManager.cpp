@@ -2,7 +2,7 @@
 
 #include "Graph/Event.h"
 #include "PTAModels/GraphBLASModel.h"
-#include "Races.h"
+#include "SourceInfo.h"
 
 extern bool DEBUG_LOCK_STR; // for debug only
 
@@ -30,6 +30,7 @@ void LocksetManager::dumpCurrentLockset(bool isLock, LocksetManager::ID id) {
     }
   }
 }
+
 LocksetManager::ID
 LocksetManager::getRetrofitLockSetID(std::vector<const ObjTy *> pts,
                                      LocksetManager::ID id) {

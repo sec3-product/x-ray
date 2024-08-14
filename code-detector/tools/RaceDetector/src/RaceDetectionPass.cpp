@@ -17,7 +17,8 @@
 #include "Graph/ReachGraph.h"
 #include "Graph/Trie.h"
 #include "PTAModels/GraphBLASModel.h"
-#include "Races.h"
+#include "Rules/Races.h"
+#include "Rules/UntrustfulAccount.h"
 #include "StaticThread.h"
 #include "aser/Util/Log.h"
 

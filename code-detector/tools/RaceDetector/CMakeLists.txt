@@ -26,7 +26,8 @@ set(racedetect-component
     src/LocksetManager.cpp
     src/PTAModels/GraphBLASModel.cpp
     src/RDUtil.cpp
-    src/Races.cpp
+    src/Rules/Races.cpp
+    src/Rules/UntrustfulAccount.cpp
     src/SourceInfo.cpp
     src/StaticThread.cpp
     src/SVE.cpp

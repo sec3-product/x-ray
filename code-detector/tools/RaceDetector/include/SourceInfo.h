@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <string>
 #include <utility>
 #include <vector>
@@ -11,7 +12,6 @@
 #include <llvm/Support/Casting.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Transforms/Utils/Local.h>
-
 #include <nlohmann/json.hpp>
 
 #include "Graph/Event.h"
@@ -118,6 +118,17 @@ public:
     }
     return false;
   }
+};
+
+// implicitly used by nlohmann/json
+inline void to_json(json &j, const SourceInfo &si) {
+  j = json{{"line", si.getLine()},
+           {"col", si.getCol()},
+           {"filename", si.getFilename()},
+           {"dir", si.getDir()},
+           {"sourceLine", si.getSourceLine()},
+           {"snippet", si.getSnippet()},
+           {"stacktrace", si.getStackTrace()}};
 };
 
 // ----------------------------------

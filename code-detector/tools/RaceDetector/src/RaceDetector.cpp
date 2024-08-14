@@ -26,7 +26,8 @@
 #include "CustomAPIRewriters/RustAPIRewriter.h"
 #include "PTAModels/GraphBLASModel.h"
 #include "RaceDetectionPass.h"
-#include "Races.h"
+#include "Rules/Races.h"
+#include "Rules/UntrustfulAccount.h"
 #include "SVE.h"
 
 using namespace llvm;
