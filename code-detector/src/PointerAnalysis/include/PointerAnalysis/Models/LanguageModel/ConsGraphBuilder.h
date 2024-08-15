@@ -19,7 +19,6 @@
 #include "PointerAnalysis/Program/CallSite.h"
 #include "PointerAnalysis/Program/CtxModule.h"
 #include "PointerAnalysis/Program/Pointer.h"
-#include "PreProcessing/Passes/RemoveExceptionHandlerPass.h"
 #include "Util/CtxInstVisitor.h"
 #include "Util/GraphWriter.h"
 #include "Util/Log.h"
