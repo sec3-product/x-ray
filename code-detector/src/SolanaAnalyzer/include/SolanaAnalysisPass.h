@@ -18,6 +18,7 @@
 #include "Graph/Event.h"
 #include "PTAModels/GraphBLASModel.h"
 #include "PointerAnalysis/PointerAnalysisPass.h"
+#include "Rules/Ruleset.h"
 #include "SVE.h"
 #include "StaticThread.h"
 
@@ -27,6 +28,68 @@ class Event;
 class ReachGraph;
 
 class SolanaAnalysisPass : public llvm::ModulePass {
+public:
+  explicit SolanaAnalysisPass() : llvm::ModulePass(ID) {}
+  static char ID;
+
+  void initialize(SVE::Database sves, int limit);
+
+  // A per thread callEventTrace
+  // each callEvent has an endID
+  // endID represents the last EventID belongs to the current function
+  // the call stack of an event is computed in the following way:
+  // 1. get the callEventTrace from the current thread
+  // 2. traverse the callEvents from the start of the trace
+  // 3. the endID of a callEvent >= the target event ID
+  // 4. push this callEvent into the stack trace
+  // 5. stop when we hit a callEvent whose ID is larger than the target event ID
+  std::map<TID, std::vector<CallEvent *>> callEventTraces;
+  std::vector<const Function *> callStack;
+
+  // Abstract Object ~> Thread Id ~> Event (read/write insts)
+  std::vector<const ObjTy *> objs;
+  llvm::DenseMap<const ObjTy *, unsigned int> objIdxCache;
+  std::map<unsigned int, std::map<TID, std::vector<MemAccessEvent *>>>
+      memWrites;
+  std::map<unsigned int, std::map<TID, std::vector<MemAccessEvent *>>> memReads;
+
+  std::vector<unsigned int> sharedObjIdxs;
+  std::map<unsigned int, std::map<TID, std::vector<MemAccessEvent *>>>
+      memWritesMask;
+  std::map<unsigned int, std::map<TID, std::vector<MemAccessEvent *>>>
+      memReadsMask;
+
+  std::map<const llvm::Value *, ForkEvent *> threadIDValueMap;
+  std::map<const llvm::Value *, std::set<ForkEvent *>> threadIDValue2ndMap;
+  std::map<StringRef, ForkEvent *> threadIDValueNameMap;
+  std::map<TID, TID> twinTids; // if two identical threads are created in a loop
+  std::map<const llvm::Function *, ForkEvent *> threadIDFunctionMap;
+
+  PTA *pta;
+  // reachability graph (static happens-before graph)
+  ReachGraph *graph;
+
+  void getAnalysisUsage(llvm::AnalysisUsage &AU) const override {
+    AU.addRequired<PointerAnalysisPass<PTA>>(); // need pointer analysis
+    AU.addRequired<llvm::TypeBasedAAWrapperPass>();
+    AU.setPreservesAll(); // does not transform the LLVM module.
+  }
+
+  bool runOnModule(llvm::Module &module) override;
+
+  StaticThread *forkNewThread(ForkEvent *forkEvent);
+
+  void detectRaceCondition(const aser::ctx *ctx, TID tid);
+  void detectDeadCode(const aser::ctx *ctx, TID tid);
+  void detectAccountsCosplay(const aser::ctx *ctx, TID tid);
+
+  void printStatistics();
+
+  void traverseFunction(
+      const aser::ctx *ctx, const llvm::Function *f, StaticThread *thread,
+      std::vector<const llvm::Function *> &callStack,
+      std::map<uint8_t, const llvm::Constant *> *constArgs = nullptr);
+
 private:
   const llvm::Module *thisModule;
   // Type-based Alias Analysis
@@ -81,13 +144,15 @@ private:
     }
     return false;
   }
-  std::map<const llvm::Function *,
-           std::vector<std::pair<llvm::StringRef, llvm::StringRef>>>
-      funcArgTypesMap;
+
+  FuncArgTypesMap funcArgTypesMap;
+
+  // TODO: Drop the following three functions.
   bool hasValueLessMoreThan(const llvm::Value *value,
                             const llvm::Instruction *inst, bool isLess);
   bool isSafeType(const llvm::Function *func, const llvm::Value *value);
   bool isSafeVariable(const llvm::Function *func, const llvm::Value *value);
+
   // list of forked thread that haven't been visited yet
   std::queue<StaticThread *> threadList;
   std::map<const llvm::Function *,
@@ -97,6 +162,7 @@ private:
            std::vector<std::pair<llvm::StringRef, llvm::StringRef>>>
       anchorStructFunctionFieldsMap;
   void initStructFunctions();
+
   bool accountTypeContainsMoreThanOneMint(llvm::StringRef struct_name) {
     auto num_mints = 0;
     std::string func_struct_name =
@@ -114,10 +180,12 @@ private:
 
     return false;
   }
+
   bool isAnchorStructFunction(const llvm::Function *func) {
     return anchorStructFunctionFieldsMap.find(func) !=
            anchorStructFunctionFieldsMap.end();
   }
+
   bool isAnchorTokenProgram(llvm::StringRef accountName) {
     for (auto [func, fieldTypes] : anchorStructFunctionFieldsMap) {
       for (auto pair : fieldTypes) {
@@ -283,6 +351,13 @@ private:
                                const llvm::Function *func,
                                const llvm::Instruction *inst,
                                StaticThread *thread, const llvm::Value *value);
+#if 0
+  void handlePlusEqual(const aser::ctx *ctx, TID tid,
+                       const llvm::Function *func,
+                       const llvm::Instruction *inst, StaticThread *thread,
+                       const CallSite &CS);
+#endif
+
   const llvm::Function *findCallStackNonAnonFunc(const Event *e);
   llvm::StringRef findCallStackAccountAliasName(const llvm::Function *func,
                                                 const Event *e,
@@ -303,68 +378,7 @@ private:
       exclusiveFunctionsMap;
   bool mayBeExclusive(const Event *const e1, const Event *const e2);
 
-public:
-  explicit SolanaAnalysisPass() : llvm::ModulePass(ID) {}
-
-  void initialize(SVE::Database sves, int limit);
-
-  // A per thread callEventTrace
-  // each callEvent has an endID
-  // endID represents the last EventID belongs to the current function
-  // the call stack of an event is computed in the following way:
-  // 1. get the callEventTrace from the current thread
-  // 2. traverse the callEvents from the start of the trace
-  // 3. the endID of a callEvent >= the target event ID
-  // 4. push this callEvent into the stack trace
-  // 5. stop when we hit a callEvent whose ID is larger than the target event ID
-  std::map<TID, std::vector<CallEvent *>> callEventTraces;
-  std::vector<const Function *> callStack;
-
-  // Abstract Object ~> Thread Id ~> Event (read/write insts)
-  std::vector<const ObjTy *> objs;
-  llvm::DenseMap<const ObjTy *, unsigned int> objIdxCache;
-  std::map<unsigned int, std::map<TID, std::vector<MemAccessEvent *>>>
-      memWrites;
-  std::map<unsigned int, std::map<TID, std::vector<MemAccessEvent *>>> memReads;
-
-  std::vector<unsigned int> sharedObjIdxs;
-  std::map<unsigned int, std::map<TID, std::vector<MemAccessEvent *>>>
-      memWritesMask;
-  std::map<unsigned int, std::map<TID, std::vector<MemAccessEvent *>>>
-      memReadsMask;
-
-  std::map<const llvm::Value *, ForkEvent *> threadIDValueMap;
-  std::map<const llvm::Value *, std::set<ForkEvent *>> threadIDValue2ndMap;
-  std::map<StringRef, ForkEvent *> threadIDValueNameMap;
-  std::map<TID, TID> twinTids; // if two identical threads are created in a loop
-  std::map<const llvm::Function *, ForkEvent *> threadIDFunctionMap;
-
-  PTA *pta;
-  // reachability graph (static happens-before graph)
-  ReachGraph *graph;
-
-  static char ID;
-
-  void getAnalysisUsage(llvm::AnalysisUsage &AU) const override {
-    AU.addRequired<PointerAnalysisPass<PTA>>(); // need pointer analysis
-    AU.addRequired<llvm::TypeBasedAAWrapperPass>();
-    AU.setPreservesAll(); // does not transform the LLVM module.
-  }
-
-  bool runOnModule(llvm::Module &module) override;
-
-  StaticThread *forkNewThread(ForkEvent *forkEvent);
-
-  void detectRaceCondition(const aser::ctx *ctx, TID tid);
-  void detectDeadCode(const aser::ctx *ctx, TID tid);
-  void detectAccountsCosplay(const aser::ctx *ctx, TID tid);
-
-  void printStatistics();
-
-  void traverseFunction(
-      const aser::ctx *ctx, const llvm::Function *f, StaticThread *thread,
-      std::vector<const llvm::Function *> &callStack,
-      std::map<uint8_t, const llvm::Constant *> *constArgs = nullptr);
+  Ruleset nonRustModelRuleset;
 };
 
 } // namespace aser

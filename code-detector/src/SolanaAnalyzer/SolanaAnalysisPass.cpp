@@ -3,6 +3,7 @@
 #include <chrono>
 #include <queue>
 
+#include <PointerAnalysis/Program/CallSite.h>
 #include <llvm/ADT/IndexedMap.h>
 #include <llvm/ADT/SCCIterator.h>
 #include <llvm/Analysis/CFG.h>
@@ -17,6 +18,7 @@
 #include "Graph/ReachGraph.h"
 #include "Graph/Trie.h"
 #include "PTAModels/GraphBLASModel.h"
+#include "Rules/RulesetFactory.h"
 #include "SVE.h"
 #include "StaticThread.h"
 #include "Util/Log.h"
@@ -227,6 +229,9 @@ getProgramIdAccountName(const llvm::Instruction *inst) {
 void SolanaAnalysisPass::initialize(SVE::Database sves, int limit) {
   SVE::init(sves);
 
+  // Initialize the rulesets.
+  nonRustModelRuleset = RulesetFactory::createRustModelRuleset();
+
   auto unlimited = (limit == -1);
   OrderViolation::init(limit, unlimited);
   DeadLock::init(limit, unlimited);
@@ -254,32 +259,35 @@ bool SolanaAnalysisPass::hasValueLessMoreThan(const llvm::Value *value,
   return false;
 }
 
-bool isUpper(const std::string &s) {
+static bool isUpper(const std::string &s) {
   return std::all_of(s.begin(), s.end(), [](unsigned char c) {
     return std::isupper(c) || c == '_';
   });
 }
 
-bool is_all_capital_or_number(const std::string &s) {
+static bool is_all_capital_or_number(const std::string &s) {
   std::string::const_iterator it = s.begin();
   while (it != s.end() &&
          (std::isupper(*it) || std::isdigit(*it) || *it == '_'))
     ++it;
   return !s.empty() && it == s.end();
 }
-bool is_all_capital(const std::string &s) {
+
+static bool is_all_capital(const std::string &s) {
   std::string::const_iterator it = s.begin();
   while (it != s.end() && (std::isupper(*it) || *it == '_'))
     ++it;
   return !s.empty() && it == s.end();
 }
-bool is_number(const std::string &s) {
+
+static bool is_number(const std::string &s) {
   std::string::const_iterator it = s.begin();
   while (it != s.end() && std::isdigit(*it))
     ++it;
   return !s.empty() && it == s.end();
 }
-bool is_constant(const std::string &s) {
+
+static bool is_constant(const std::string &s) {
   return is_number(s) || is_all_capital(s);
 }
 
@@ -1078,23 +1086,24 @@ void SolanaAnalysisPass::traverseFunction(
   // llvm::outs() << "SOLANA traverseFunction: " << func->getName() << "\n";
 
   // simulating call stack
-  if (find(callStack.begin(), callStack.end(), func) == callStack.end()) {
-    // FIXME: unsound heuristic
-    int count = threadNFuncMap[tid];
-    count++;
-    if (count % FUNC_COUNT_PROGRESS_THESHOLD == 0) {
-      LOG_DEBUG("thread {} traversed {} functions", tid, count);
-      if (FUNC_COUNT_BUDGET != -1 && count == FUNC_COUNT_BUDGET) {
-        // PEIMING: simply return here, as func has not been pushed into
-        // callstack yet
-        return;
-      }
-    }
-    threadNFuncMap[tid] = count;
-    callStack.push_back(func);
-  } else {
+  if (find(callStack.begin(), callStack.end(), func) != callStack.end()) {
     return;
   }
+
+  // FIXME: unsound heuristic
+  int count = threadNFuncMap[tid];
+  count++;
+  if (count % FUNC_COUNT_PROGRESS_THESHOLD == 0) {
+    LOG_DEBUG("thread {} traversed {} functions", tid, count);
+    if (FUNC_COUNT_BUDGET != -1 && count == FUNC_COUNT_BUDGET) {
+      // PEIMING: simply return here, as func has not been pushed into
+      // callstack yet
+      return;
+    }
+  }
+  threadNFuncMap[tid] = count;
+  callStack.push_back(func);
+
   bool isMacroArrayRefUsedInFunction = false;
   // LOG_DEBUG("thread {} enter func : {}", tid,
   // demangle(func->getName().str()));
@@ -1119,14 +1128,15 @@ void SolanaAnalysisPass::traverseFunction(
           }
         }
 
-      } else if (isa<CallBase>(inst)) {
+      } else if (isa<llvm::CallBase>(inst)) {
         CallSite CS(inst);
 
         if (!CS.isIndirectCall()) {
           if (LangModel::isRustAPI(CS.getCalledFunction())) {
             auto targetFuncName = CS.getCalledFunction()->getName();
-            if (targetFuncName.startswith("sol.iter."))
+            if (targetFuncName.startswith("sol.iter.")) {
               continue;
+            }
 
             if (CS.getTargetFunction()->getName().startswith("sol.match.")) {
               if (DEBUG_RUST_API)
@@ -1171,12 +1181,12 @@ void SolanaAnalysisPass::traverseFunction(
                     }
                   }
                 }
-              } else {
               }
               continue;
             }
 
             if (LangModel::isRustModelAPI(CS.getCalledFunction())) {
+
               if (CS.getCalledFunction()->getName().startswith(
                       "sol.model.opaqueAssign")) {
                 auto value = CS.getArgOperand(0);
@@ -2171,261 +2181,248 @@ void SolanaAnalysisPass::traverseFunction(
                                         CS.getCalledFunction());
               }
 
-            } else {
-              if (DEBUG_RUST_API)
+            } else { // !isRustModelAPI(CS.getCalledFunction())
+
+              if (DEBUG_RUST_API) {
                 llvm::outs() << "analyzing sol call: "
                              << CS.getCalledFunction()->getName() << "\n";
+              }
 
-              if (func->getName().startswith("sol.model.anchor.program.")) {
-                // IMPORTANT: creating a new thread
-                auto e = graph->createForkEvent(ctx, inst, tid);
-                thread->addForkSite(e);
-                auto newtid = addNewThread(e);
-                // for the new thread, set funcArgTypesMap
-                if (newtid > 0) {
-                  auto newThread = StaticThread::getThreadByTID(newtid);
-                  bool added = addThreadStartFunction(newThread->startFunc);
-                  for (int i = 0; i < CS.getNumArgOperands(); i++) {
-                    auto value_i = CS.getArgOperand(i);
-                    auto valuename_i = LangModel::findGlobalString(value_i);
-                    auto found = valuename_i.find(":");
-                    if (found != string::npos) {
-                      auto name = valuename_i.substr(0, found);
-                      auto type = valuename_i.substr(found + 1);
-                      if (DEBUG_RUST_API)
-                        llvm::outs() << "New funcArg name: " << name
-                                     << " type: " << type << "\n";
-                      auto pair = std::make_pair(name, type);
-                      funcArgTypesMap[newThread->startFunc].push_back(pair);
-                      // user-provided Strings
-                      if (type.contains("String")) {
-                        newThread->userProvidedInputStrings.insert(name);
-                      }
-                    }
-                  }
-                }
+              auto createReadEventFunc =
+                  std::bind(&aser::ReachGraph::createReadEvent, graph, ctx,
+                            std::placeholders::_1, tid);
+              auto isInLoop = std::bind(&SolanaAnalysisPass::isInLoop, this);
+              auto collectUnsafeOperationFunc =
+                  std::bind(&UnsafeOperation::collect, std::placeholders::_1,
+                            callEventTraces, std::placeholders::_2,
+                            std::placeholders::_3);
+              RuleContext RC(func, inst, funcArgTypesMap, thread,
+                             createReadEventFunc, isInLoop,
+                             collectUnsafeOperationFunc);
 
-                //@"ctx:Context<LogMessage>"
-                auto value = CS.getArgOperand(0);
-                auto valueName = LangModel::findGlobalString(value);
-                auto struct_name = getStructName(valueName);
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "anchor struct_name: " << struct_name << "\n";
-                std::string func_struct_name =
-                    "sol.model.struct.anchor." + struct_name.str();
-                // checking issues in @sol.model.struct.anchor.LogMessage
-                auto func_struct = thisModule->getFunction(func_struct_name);
-                if (func_struct) {
-                  auto lastThread = threadList.back();
-                  lastThread->anchor_struct_function = func_struct;
-                  traverseFunctionWrapper(ctx, thread, callStack, inst,
-                                          func_struct);
-                }
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.sol_memset.3")) {
-                auto value = CS.getArgOperand(0);
-                // TODO source_account_data
-                if (auto callValue = dyn_cast<CallBase>(value)) {
-                  CallSite CS2(callValue);
-                  auto value1 = CS2.getArgOperand(0);
-                  auto valueName = LangModel::findGlobalString(value1);
-                  if (valueName.find(".data") != string::npos) {
-                    auto e = graph->createReadEvent(ctx, inst, tid);
-                    auto account = valueName;
-                    auto found = valueName.find(".");
-                    if (found != string::npos)
-                      account = valueName.substr(0, found);
-                    if (!thread->isInAccountsMap(account))
-                      account = findCallStackAccountAliasName(func, e, account);
-                    thread->memsetDataMap[account] = e;
-                    auto found1 = account.find(".accounts.");
-                    if (found1 != string::npos) {
-                      auto account1 = account.substr(found1 + 10);
-                      thread->memsetDataMap[account1] = e;
-                    }
-                  }
-                }
-              } else if (CS.getTargetFunction()->getName().equals(
-                             "sol.position.2")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.position: " << *inst << "\n";
-
-                auto value = CS.getArgOperand(1);
-                if (auto callValue = dyn_cast<CallBase>(value)) {
-                  // handleConditionalCheck(ctx, tid, inst, thread, callValue);
-                  handleConditionalCheck0(ctx, tid, func, inst, thread, value);
-                }
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.Ok.1")) {
-                auto value = CS.getArgOperand(0);
-                auto valueName = LangModel::findGlobalString(value);
-                auto e = graph->createReadEvent(ctx, inst, tid);
-                auto funcx = findCallStackNonAnonFunc(e);
-                if (!valueName.empty())
-                  thread->updateMostRecentFuncReturn(funcx, valueName);
-              } else if (CS.getTargetFunction()->getName().contains(
-                             "::keccak::hashv.")) {
-                auto value = CS.getArgOperand(0);
-                auto valueName = LangModel::findGlobalString(value);
-                if (valueName.contains(",")) {
-                  auto e = graph->createReadEvent(ctx, inst, tid);
-                  llvm::SmallVector<StringRef, 8> valueName_vec;
-                  valueName.split(valueName_vec, ',', -1, false);
-                  for (auto value_ : valueName_vec) {
-                    auto found = value_.find(".key");
-                    if (found != string::npos) {
-                      auto account = value_.substr(0, found);
-                      account = stripAll(account);
-                      auto pair = std::make_pair(account, account);
-                      thread->assertKeyEqualMap[pair] = e;
-                    }
-                  }
-                }
-              } else if (CS.getTargetFunction()->getName().equals("sol.if")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.if: " << *inst << "\n";
-
-                auto value = CS.getArgOperand(0);
-                bool handled = false;
-                // for && and ||
-                if (auto callValue = dyn_cast<CallBase>(value)) {
-                  CallSite CS2(callValue);
-                  if (CS2.getTargetFunction()->getName().equals("sol.&&") ||
-                      CS2.getTargetFunction()->getName().equals("sol.||")) {
-                    handleConditionalCheck0(ctx, tid, func, inst, thread,
-                                            CS2.getArgOperand(0));
-                    handleConditionalCheck0(ctx, tid, func, inst, thread,
-                                            CS2.getArgOperand(1));
-                    handled = true;
-                  }
-                }
-                if (!handled)
-                  handleConditionalCheck0(ctx, tid, func, inst, thread, value);
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.&&")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.&&: " << *inst << "\n";
-                auto e = graph->createReadEvent(ctx, inst, tid);
-                for (int i = 0; i <= 1; i++) {
-                  auto value = CS.getArgOperand(i);
-                  auto valueName = LangModel::findGlobalString(value);
-                  if (valueName.find(".is_signer") != string::npos) {
-                    auto account = valueName;
-                    auto found = valueName.find(".");
-                    if (found != string::npos)
-                      account = valueName.substr(0, found);
-
-                    if (!thread->isInAccountsMap(account)) {
-                      account = findCallStackAccountAliasName(func, e, account);
-                    }
-                    thread->asssertSignerMap[account] = e;
-                  }
-                }
-
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.!")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.!: " << *inst << "\n";
-                auto e = graph->createReadEvent(ctx, inst, tid);
-                for (int i = 0; i <= 0; i++) {
-                  auto value = CS.getArgOperand(i);
-                  auto valueName = LangModel::findGlobalString(value);
-                  if (valueName.find(".is_signer") != string::npos) {
-                    auto account = valueName;
-                    auto found = valueName.find(".");
-                    if (found != string::npos)
-                      account = valueName.substr(0, found);
-
-                    if (!thread->isInAccountsMap(account)) {
-                      account = findCallStackAccountAliasName(func, e, account);
-                    }
-                    thread->asssertSignerMap[account] = e;
-                  }
-                }
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.get_account_data.2")) {
-                auto e = graph->createReadEvent(ctx, inst, tid);
-
-                auto value1 = CS.getArgOperand(0);
-                auto account1 = LangModel::findGlobalString(value1);
-                if (auto arg1 = dyn_cast<Argument>(value1))
-                  account1 = funcArgTypesMap[func][arg1->getArgNo()].first;
-
-                auto value2 = CS.getArgOperand(1);
-                auto account2 = LangModel::findGlobalString(value2);
-                if (auto arg2 = dyn_cast<Argument>(value2))
-                  account2 = funcArgTypesMap[func][arg2->getArgNo()].first;
-
-                if (!thread->isInAccountsMap(account1)) {
-                  account1 = findCallStackAccountAliasName(func, e, account1);
-                }
-                if (!thread->isInAccountsMap(account2)) {
-                  account2 = findCallStackAccountAliasName(func, e, account2);
-                }
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.get_account_data: account1: " << account1
-                               << " account2: " << account2 << "\n";
-
-                auto pair = std::make_pair(account1, account1);
-                thread->assertOwnerEqualMap[pair] = e;
-
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.next_account_info.")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "next_account_info: " << *inst << "\n";
-                auto value = CS.getArgOperand(0);
-                auto valueName = LangModel::findGlobalString(value);
-
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.Pubkey::find_program_address.")) {
-                auto value = CS.getArgOperand(0);
-                auto valueName = LangModel::findGlobalString(value);
-                auto e = graph->createReadEvent(ctx, inst, tid);
-
-                // seeds: "[key.to_le_bytes().as_ref(),&[bump]]
-                // llvm::outs() << "account: " << valueName << "\n";
-                auto nextInst = inst->getNextNonDebugInstruction();
-                if (auto callValue = dyn_cast<CallBase>(nextInst)) {
-                  CallSite CS2(callValue);
-                  if (CS2.getTargetFunction()->getName().startswith(
-                          "sol.model.opaqueAssign")) {
-                    auto bumpName =
-                        LangModel::findGlobalString(CS2.getArgOperand(0));
-                    //(claim_account_key,claim_account_bump)
-                    auto found = bumpName.find(",");
-                    if (found != string::npos) {
-                      auto pda_address = bumpName.substr(0, found).drop_front();
-                      if (DEBUG_RUST_API)
-                        llvm::outs() << "pda_address: " << pda_address << "\n";
-                      if (pda_address != "_")
-                        thread->asssertProgramAddressMap[pda_address] = e;
-                      bumpName = bumpName.substr(found + 1);
-                      bumpName = bumpName.drop_back();
-                    }
-                    auto nextInst2 = nextInst->getNextNonDebugInstruction();
-                    if (auto callValue2 = dyn_cast<CallBase>(nextInst2)) {
-                      CallSite CS3(callValue2);
-                      if (CS3.getTargetFunction()->getName().startswith(
-                              "sol.require.!2")) {
-                        auto cons =
-                            LangModel::findGlobalString(CS3.getArgOperand(0));
-                        auto found = cons.find(bumpName);
-                        if (found != string::npos) {
-                          auto pair = std::make_pair(bumpName, cons);
-                          thread->assertBumpEqualMap[pair] = e;
+              if (!nonRustModelRuleset.evaluate(RC, CS)) {
+                // No matching rules. Traverse into the callee.
+                // traverseFunctionWrapper(ctx, thread, callStack, inst,
+                //                         CS.getCalledFunction());
+                //
+                // TODO: Drop the following if-s and just use the above lines
+                // instead.
+                if (func->getName().startswith("sol.model.anchor.program.")) {
+                  // IMPORTANT: creating a new thread
+                  auto e = graph->createForkEvent(ctx, inst, tid);
+                  thread->addForkSite(e);
+                  auto newtid = addNewThread(e);
+                  // for the new thread, set funcArgTypesMap
+                  if (newtid > 0) {
+                    auto newThread = StaticThread::getThreadByTID(newtid);
+                    bool added = addThreadStartFunction(newThread->startFunc);
+                    for (int i = 0; i < CS.getNumArgOperands(); i++) {
+                      auto value_i = CS.getArgOperand(i);
+                      auto valuename_i = LangModel::findGlobalString(value_i);
+                      auto found = valuename_i.find(":");
+                      if (found != string::npos) {
+                        auto name = valuename_i.substr(0, found);
+                        auto type = valuename_i.substr(found + 1);
+                        if (DEBUG_RUST_API)
+                          llvm::outs() << "New funcArg name: " << name
+                                       << " type: " << type << "\n";
+                        auto pair = std::make_pair(name, type);
+                        funcArgTypesMap[newThread->startFunc].push_back(pair);
+                        // user-provided Strings
+                        if (type.contains("String")) {
+                          newThread->userProvidedInputStrings.insert(name);
                         }
                       }
                     }
                   }
-                }
 
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.Pubkey::create_program_address.")) {
-                auto value = CS.getArgOperand(0);
-                auto valueName = LangModel::findGlobalString(value);
-                auto e = graph->createReadEvent(ctx, inst, tid);
-                if (valueName.contains("bump")) {
-                  bool bumpAdded = false;
+                  //@"ctx:Context<LogMessage>"
+                  auto value = CS.getArgOperand(0);
+                  auto valueName = LangModel::findGlobalString(value);
+                  auto struct_name = getStructName(valueName);
+                  if (DEBUG_RUST_API)
+                    llvm::outs()
+                        << "anchor struct_name: " << struct_name << "\n";
+                  std::string func_struct_name =
+                      "sol.model.struct.anchor." + struct_name.str();
+                  // checking issues in @sol.model.struct.anchor.LogMessage
+                  auto func_struct = thisModule->getFunction(func_struct_name);
+                  if (func_struct) {
+                    auto lastThread = threadList.back();
+                    lastThread->anchor_struct_function = func_struct;
+                    traverseFunctionWrapper(ctx, thread, callStack, inst,
+                                            func_struct);
+                  }
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.sol_memset.3")) {
+                  auto value = CS.getArgOperand(0);
+                  // TODO source_account_data
+                  if (auto callValue = dyn_cast<CallBase>(value)) {
+                    CallSite CS2(callValue);
+                    auto value1 = CS2.getArgOperand(0);
+                    auto valueName = LangModel::findGlobalString(value1);
+                    if (valueName.find(".data") != string::npos) {
+                      auto e = graph->createReadEvent(ctx, inst, tid);
+                      auto account = valueName;
+                      auto found = valueName.find(".");
+                      if (found != string::npos)
+                        account = valueName.substr(0, found);
+                      if (!thread->isInAccountsMap(account))
+                        account =
+                            findCallStackAccountAliasName(func, e, account);
+                      thread->memsetDataMap[account] = e;
+                      auto found1 = account.find(".accounts.");
+                      if (found1 != string::npos) {
+                        auto account1 = account.substr(found1 + 10);
+                        thread->memsetDataMap[account1] = e;
+                      }
+                    }
+                  }
+                } else if (CS.getTargetFunction()->getName().equals(
+                               "sol.position.2")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "sol.position: " << *inst << "\n";
+
+                  auto value = CS.getArgOperand(1);
+                  if (auto callValue = dyn_cast<CallBase>(value)) {
+                    // handleConditionalCheck(ctx, tid, inst, thread,
+                    // callValue);
+                    handleConditionalCheck0(ctx, tid, func, inst, thread,
+                                            value);
+                  }
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.Ok.1")) {
+                  auto value = CS.getArgOperand(0);
+                  auto valueName = LangModel::findGlobalString(value);
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+                  auto funcx = findCallStackNonAnonFunc(e);
+                  if (!valueName.empty())
+                    thread->updateMostRecentFuncReturn(funcx, valueName);
+                } else if (CS.getTargetFunction()->getName().contains(
+                               "::keccak::hashv.")) {
+                  auto value = CS.getArgOperand(0);
+                  auto valueName = LangModel::findGlobalString(value);
+                  if (valueName.contains(",")) {
+                    auto e = graph->createReadEvent(ctx, inst, tid);
+                    llvm::SmallVector<StringRef, 8> valueName_vec;
+                    valueName.split(valueName_vec, ',', -1, false);
+                    for (auto value_ : valueName_vec) {
+                      auto found = value_.find(".key");
+                      if (found != string::npos) {
+                        auto account = value_.substr(0, found);
+                        account = stripAll(account);
+                        auto pair = std::make_pair(account, account);
+                        thread->assertKeyEqualMap[pair] = e;
+                      }
+                    }
+                  }
+                } else if (CS.getTargetFunction()->getName().equals("sol.if")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "sol.if: " << *inst << "\n";
+
+                  auto value = CS.getArgOperand(0);
+                  bool handled = false;
+                  // for && and ||
+                  if (auto callValue = dyn_cast<CallBase>(value)) {
+                    CallSite CS2(callValue);
+                    if (CS2.getTargetFunction()->getName().equals("sol.&&") ||
+                        CS2.getTargetFunction()->getName().equals("sol.||")) {
+                      handleConditionalCheck0(ctx, tid, func, inst, thread,
+                                              CS2.getArgOperand(0));
+                      handleConditionalCheck0(ctx, tid, func, inst, thread,
+                                              CS2.getArgOperand(1));
+                      handled = true;
+                    }
+                  }
+                  if (!handled)
+                    handleConditionalCheck0(ctx, tid, func, inst, thread,
+                                            value);
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.&&")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "sol.&&: " << *inst << "\n";
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+                  for (int i = 0; i <= 1; i++) {
+                    auto value = CS.getArgOperand(i);
+                    auto valueName = LangModel::findGlobalString(value);
+                    if (valueName.find(".is_signer") != string::npos) {
+                      auto account = valueName;
+                      auto found = valueName.find(".");
+                      if (found != string::npos)
+                        account = valueName.substr(0, found);
+
+                      if (!thread->isInAccountsMap(account)) {
+                        account =
+                            findCallStackAccountAliasName(func, e, account);
+                      }
+                      thread->asssertSignerMap[account] = e;
+                    }
+                  }
+
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.!")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "sol.!: " << *inst << "\n";
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+                  for (int i = 0; i <= 0; i++) {
+                    auto value = CS.getArgOperand(i);
+                    auto valueName = LangModel::findGlobalString(value);
+                    if (valueName.find(".is_signer") != string::npos) {
+                      auto account = valueName;
+                      auto found = valueName.find(".");
+                      if (found != string::npos)
+                        account = valueName.substr(0, found);
+
+                      if (!thread->isInAccountsMap(account)) {
+                        account =
+                            findCallStackAccountAliasName(func, e, account);
+                      }
+                      thread->asssertSignerMap[account] = e;
+                    }
+                  }
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.get_account_data.2")) {
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+
+                  auto value1 = CS.getArgOperand(0);
+                  auto account1 = LangModel::findGlobalString(value1);
+                  if (auto arg1 = dyn_cast<Argument>(value1))
+                    account1 = funcArgTypesMap[func][arg1->getArgNo()].first;
+
+                  auto value2 = CS.getArgOperand(1);
+                  auto account2 = LangModel::findGlobalString(value2);
+                  if (auto arg2 = dyn_cast<Argument>(value2))
+                    account2 = funcArgTypesMap[func][arg2->getArgNo()].first;
+
+                  if (!thread->isInAccountsMap(account1)) {
+                    account1 = findCallStackAccountAliasName(func, e, account1);
+                  }
+                  if (!thread->isInAccountsMap(account2)) {
+                    account2 = findCallStackAccountAliasName(func, e, account2);
+                  }
+                  if (DEBUG_RUST_API)
+                    llvm::outs()
+                        << "sol.get_account_data: account1: " << account1
+                        << " account2: " << account2 << "\n";
+
+                  auto pair = std::make_pair(account1, account1);
+                  thread->assertOwnerEqualMap[pair] = e;
+
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.next_account_info.")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "next_account_info: " << *inst << "\n";
+                  auto value = CS.getArgOperand(0);
+                  auto valueName = LangModel::findGlobalString(value);
+
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.Pubkey::find_program_address.")) {
+                  auto value = CS.getArgOperand(0);
+                  auto valueName = LangModel::findGlobalString(value);
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+
+                  // seeds: "[key.to_le_bytes().as_ref(),&[bump]]
+                  // llvm::outs() << "account: " << valueName << "\n";
                   auto nextInst = inst->getNextNonDebugInstruction();
                   if (auto callValue = dyn_cast<CallBase>(nextInst)) {
                     CallSite CS2(callValue);
@@ -2433,1477 +2430,1515 @@ void SolanaAnalysisPass::traverseFunction(
                             "sol.model.opaqueAssign")) {
                       auto bumpName =
                           LangModel::findGlobalString(CS2.getArgOperand(0));
-                      auto pair = std::make_pair(bumpName, valueName);
-                      thread->accountsBumpMap[pair] = e;
-                      bumpAdded = true;
+                      //(claim_account_key,claim_account_bump)
+                      auto found = bumpName.find(",");
+                      if (found != string::npos) {
+                        auto pda_address =
+                            bumpName.substr(0, found).drop_front();
+                        if (DEBUG_RUST_API)
+                          llvm::outs()
+                              << "pda_address: " << pda_address << "\n";
+                        if (pda_address != "_")
+                          thread->asssertProgramAddressMap[pda_address] = e;
+                        bumpName = bumpName.substr(found + 1);
+                        bumpName = bumpName.drop_back();
+                      }
+                      auto nextInst2 = nextInst->getNextNonDebugInstruction();
+                      if (auto callValue2 = dyn_cast<CallBase>(nextInst2)) {
+                        CallSite CS3(callValue2);
+                        if (CS3.getTargetFunction()->getName().startswith(
+                                "sol.require.!2")) {
+                          auto cons =
+                              LangModel::findGlobalString(CS3.getArgOperand(0));
+                          auto found = cons.find(bumpName);
+                          if (found != string::npos) {
+                            auto pair = std::make_pair(bumpName, cons);
+                            thread->assertBumpEqualMap[pair] = e;
+                          }
+                        }
+                      }
                     }
                   }
-                  if (!bumpAdded) {
-                    auto pair = std::make_pair("bump", valueName);
-                    thread->accountsBumpMap[pair] = e;
-                  }
-                }
-                if (valueName.startswith("[")) {
-                  llvm::SmallVector<StringRef, 8> accounts_vec;
-                  valueName.split(accounts_vec, ',', -1, false);
-                  for (auto valueName_x : accounts_vec) {
-                    if (valueName_x.contains(".key")) {
-                      valueName_x =
-                          valueName_x.substr(0, valueName_x.find(".key"));
-                      valueName_x = stripAll(valueName_x);
-                      accountsSeedProgramAddressMap[valueName_x] = e;
-                    }
-                  }
-                }
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.realloc.3")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.realloc: " << *inst << "\n";
-                auto value = CS.getArgOperand(0);
-                auto valueName = LangModel::findGlobalString(value);
-                auto accountName = stripAll(valueName);
-                if (solanaVersionTooOld) {
+
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.Pubkey::create_program_address.")) {
+                  auto value = CS.getArgOperand(0);
+                  auto valueName = LangModel::findGlobalString(value);
                   auto e = graph->createReadEvent(ctx, inst, tid);
-                  UntrustfulAccount::collect(
-                      accountName, e, callEventTraces,
-                      SVE::Type::INSECURE_ACCOUNT_REALLOC, 7);
-                }
+                  if (valueName.contains("bump")) {
+                    bool bumpAdded = false;
+                    auto nextInst = inst->getNextNonDebugInstruction();
+                    if (auto callValue = dyn_cast<CallBase>(nextInst)) {
+                      CallSite CS2(callValue);
+                      if (CS2.getTargetFunction()->getName().startswith(
+                              "sol.model.opaqueAssign")) {
+                        auto bumpName =
+                            LangModel::findGlobalString(CS2.getArgOperand(0));
+                        auto pair = std::make_pair(bumpName, valueName);
+                        thread->accountsBumpMap[pair] = e;
+                        bumpAdded = true;
+                      }
+                    }
+                    if (!bumpAdded) {
+                      auto pair = std::make_pair("bump", valueName);
+                      thread->accountsBumpMap[pair] = e;
+                    }
+                  }
+                  if (valueName.startswith("[")) {
+                    llvm::SmallVector<StringRef, 8> accounts_vec;
+                    valueName.split(accounts_vec, ',', -1, false);
+                    for (auto valueName_x : accounts_vec) {
+                      if (valueName_x.contains(".key")) {
+                        valueName_x =
+                            valueName_x.substr(0, valueName_x.find(".key"));
+                        valueName_x = stripAll(valueName_x);
+                        accountsSeedProgramAddressMap[valueName_x] = e;
+                      }
+                    }
+                  }
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.realloc.3")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "sol.realloc: " << *inst << "\n";
+                  auto value = CS.getArgOperand(0);
+                  auto valueName = LangModel::findGlobalString(value);
+                  auto accountName = stripAll(valueName);
+                  if (solanaVersionTooOld) {
+                    auto e = graph->createReadEvent(ctx, inst, tid);
+                    UntrustfulAccount::collect(
+                        accountName, e, callEventTraces,
+                        SVE::Type::INSECURE_ACCOUNT_REALLOC, 7);
+                  }
 
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.spl_token::instruction::transfer") ||
-                         CS.getTargetFunction()->getName().startswith(
-                             "sol.spl_token::instruction::burn") ||
-                         CS.getTargetFunction()->getName().startswith(
-                             "sol.spl_token::instruction::mint_to")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "spl_token::instruction:: " << *inst << "\n";
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.spl_token::instruction::transfer") ||
+                           CS.getTargetFunction()->getName().startswith(
+                               "sol.spl_token::instruction::burn") ||
+                           CS.getTargetFunction()->getName().startswith(
+                               "sol.spl_token::instruction::mint_to")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs()
+                        << "spl_token::instruction:: " << *inst << "\n";
 
-                auto value = CS.getArgOperand(0);
-                auto valueName = LangModel::findGlobalString(value);
-                auto e = graph->createReadEvent(ctx, inst, tid);
-                if (!valueName.contains("spl_token::")) {
+                  auto value = CS.getArgOperand(0);
+                  auto valueName = LangModel::findGlobalString(value);
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+                  if (!valueName.contains("spl_token::")) {
+                    if (auto arg = dyn_cast<Argument>(value))
+                      valueName = funcArgTypesMap[func][arg->getArgNo()].first;
+
+                    auto accountName = valueName;
+                    auto found = valueName.find_last_of(".");
+                    if (found != string::npos)
+                      accountName = valueName.substr(0, found);
+                    accountName = stripCtxAccountsName(accountName);
+                    // for anchor Program<'info, Token>
+                    if (!thread->isAccountKeyValidated(accountName)) {
+                      if (!thread->isInAccountsMap(accountName)) {
+                        accountName =
+                            findCallStackAccountAliasName(func, e, valueName);
+                      }
+                      // llvm::outs() << "spl_token account: " << accountName <<
+                      // "\n";
+                      if (!valueName.empty() &&
+                          !valueName.contains("spl_token::") &&
+                          !thread->isAccountKeyValidated(accountName) &&
+                          !isAnchorTokenProgram(accountName)) {
+                        // llvm::errs()<< "==============VULNERABLE: arbitrary
+                        // spl_token account!============\n"; turn this off for
+                        // newer versions spl 3.1.1
+                        if (splVersionTooOld)
+                          UntrustfulAccount::collect(
+                              accountName, e, callEventTraces,
+                              SVE::Type::INSECURE_SPL_TOKEN_CPI, 7);
+                      }
+                    }
+                  }
+                  if (CS.getNumArgOperands() > 3) {
+                    std::vector<llvm::StringRef> accountNames;
+                    for (int i = 1; i < 4; i++) {
+                      auto value_i = CS.getArgOperand(i);
+                      auto accountName_i = LangModel::findGlobalString(value_i);
+                      auto foundDot = accountName_i.find_last_of(".");
+                      // strip .key
+                      if (foundDot != string::npos)
+                        accountName_i = accountName_i.substr(0, foundDot);
+                      accountName_i = stripAll(accountName_i);
+                      thread->accountsInvokedMap[accountName_i] = e;
+                      // spl_token::instruction::burn
+                      if (!thread->isInAccountsMap(accountName_i)) {
+                        accountName_i = findCallStackAccountAliasName(
+                            func, e, accountName_i);
+                        thread->accountsInvokedMap[accountName_i] = e;
+                      }
+
+                      // for anchor
+                      auto foundAnchor = accountName_i.find(".accounts.");
+                      if (foundAnchor != string::npos) {
+                        // accountName_i = accountName_i.substr(0,
+                        // accountName_i.find_last_of(".")); strip ctx.accounts.
+                        accountName_i = stripCtxAccountsName(accountName_i);
+                        thread->accountsInvokedMap[accountName_i] = e;
+                      }
+                      accountNames.push_back(accountName_i);
+                      if (DEBUG_RUST_API)
+                        llvm::outs() << "accountsInvokedMap accountName_i: "
+                                     << accountName_i << "\n";
+                    }
+                    // now check if source_token_account.key ==
+                    // destination_token_account.key
+                    if (CS.getTargetFunction()->getName().startswith(
+                            "sol.spl_token::instruction::transfer")) {
+                      auto from = accountNames[0];
+                      auto to = accountNames[1];
+                      // TODO check from and to have equality constraints
+                      // llvm::outs() << "TODO from: " << from << " to: " << to
+                      // <<
+                      // "\n";
+                      auto pair = std::make_pair(from, to);
+                      thread->tokenTransferFromToMap[pair] = e;
+                      // UntrustfulAccount::collect(e, callEventTraces,
+                      // SVE::Type::ACCOUNT_DUPLICATE, 9);
+                    }
+                  }
+
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.spl_token::instruction::mint_to")) {
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.spl_token::instruction::approve")) {
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.spl_token::instruction::transfer_"
+                               "checked")) {
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.spl_token::instruction::mint_to_checked")) {
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.spl_token::instruction::approve_checked")) {
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.Rent::from_account_info.") ||
+                           CS.getTargetFunction()->getName().startswith(
+                               "sol.Clock::from_account_info.")) {
+                  auto value = CS.getArgOperand(0);
+                  auto valueName = LangModel::findGlobalString(value);
                   if (auto arg = dyn_cast<Argument>(value))
                     valueName = funcArgTypesMap[func][arg->getArgNo()].first;
 
-                  auto accountName = valueName;
-                  auto found = valueName.find_last_of(".");
-                  if (found != string::npos)
-                    accountName = valueName.substr(0, found);
-                  accountName = stripCtxAccountsName(accountName);
-                  // for anchor Program<'info, Token>
-                  if (!thread->isAccountKeyValidated(accountName)) {
-                    if (!thread->isInAccountsMap(accountName)) {
-                      accountName =
+                  if (!valueName.empty()) {
+                    auto e = graph->createReadEvent(ctx, inst, tid);
+                    if (!thread->isInAccountsMap(valueName)) {
+                      valueName =
                           findCallStackAccountAliasName(func, e, valueName);
                     }
-                    // llvm::outs() << "spl_token account: " << accountName <<
-                    // "\n";
-                    if (!valueName.empty() &&
-                        !valueName.contains("spl_token::") &&
-                        !thread->isAccountKeyValidated(accountName) &&
-                        !isAnchorTokenProgram(accountName)) {
-                      // llvm::errs()<< "==============VULNERABLE: arbitrary
-                      // spl_token account!============\n"; turn this off for
-                      // newer versions spl 3.1.1
-                      if (splVersionTooOld)
-                        UntrustfulAccount::collect(
-                            accountName, e, callEventTraces,
-                            SVE::Type::INSECURE_SPL_TOKEN_CPI, 7);
-                    }
+                    auto pair = std::make_pair(valueName, valueName);
+                    thread->assertKeyEqualMap[pair] = e;
                   }
-                }
-                if (CS.getNumArgOperands() > 3) {
-                  std::vector<llvm::StringRef> accountNames;
-                  for (int i = 1; i < 4; i++) {
-                    auto value_i = CS.getArgOperand(i);
-                    auto accountName_i = LangModel::findGlobalString(value_i);
-                    auto foundDot = accountName_i.find_last_of(".");
-                    // strip .key
-                    if (foundDot != string::npos)
-                      accountName_i = accountName_i.substr(0, foundDot);
-                    accountName_i = stripAll(accountName_i);
-                    thread->accountsInvokedMap[accountName_i] = e;
-                    // spl_token::instruction::burn
-                    if (!thread->isInAccountsMap(accountName_i)) {
-                      accountName_i =
-                          findCallStackAccountAliasName(func, e, accountName_i);
-                      thread->accountsInvokedMap[accountName_i] = e;
-                    }
-
-                    // for anchor
-                    auto foundAnchor = accountName_i.find(".accounts.");
-                    if (foundAnchor != string::npos) {
-                      // accountName_i = accountName_i.substr(0,
-                      // accountName_i.find_last_of(".")); strip ctx.accounts.
-                      accountName_i = stripCtxAccountsName(accountName_i);
-                      thread->accountsInvokedMap[accountName_i] = e;
-                    }
-                    accountNames.push_back(accountName_i);
-                    if (DEBUG_RUST_API)
-                      llvm::outs() << "accountsInvokedMap accountName_i: "
-                                   << accountName_i << "\n";
+                } else if (CS.getTargetFunction()->getName().contains(
+                               "sysvar::instructions::")) {
+                  auto targetName = CS.getTargetFunction()->getName();
+                  if (!targetName.contains("_checked.")) {
+                    auto e = graph->createReadEvent(ctx, inst, tid);
+                    UntrustfulAccount::collect(targetName, e, callEventTraces,
+                                               SVE::Type::UNSAFE_SYSVAR_API,
+                                               10);
                   }
-                  // now check if source_token_account.key ==
-                  // destination_token_account.key
-                  if (CS.getTargetFunction()->getName().startswith(
-                          "sol.spl_token::instruction::transfer")) {
-                    auto from = accountNames[0];
-                    auto to = accountNames[1];
-                    // TODO check from and to have equality constraints
-                    // llvm::outs() << "TODO from: " << from << " to: " << to <<
-                    // "\n";
-                    auto pair = std::make_pair(from, to);
-                    thread->tokenTransferFromToMap[pair] = e;
-                    // UntrustfulAccount::collect(e, callEventTraces,
-                    // SVE::Type::ACCOUNT_DUPLICATE, 9);
-                  }
-                }
-
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.spl_token::instruction::mint_to")) {
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.spl_token::instruction::approve")) {
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.spl_token::instruction::transfer_checked")) {
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.spl_token::instruction::mint_to_checked")) {
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.spl_token::instruction::approve_checked")) {
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.Rent::from_account_info.") ||
-                         CS.getTargetFunction()->getName().startswith(
-                             "sol.Clock::from_account_info.")) {
-                auto value = CS.getArgOperand(0);
-                auto valueName = LangModel::findGlobalString(value);
-                if (auto arg = dyn_cast<Argument>(value))
-                  valueName = funcArgTypesMap[func][arg->getArgNo()].first;
-
-                if (!valueName.empty()) {
-                  auto e = graph->createReadEvent(ctx, inst, tid);
-                  if (!thread->isInAccountsMap(valueName)) {
-                    valueName =
-                        findCallStackAccountAliasName(func, e, valueName);
-                  }
-                  auto pair = std::make_pair(valueName, valueName);
-                  thread->assertKeyEqualMap[pair] = e;
-                }
-              } else if (CS.getTargetFunction()->getName().contains(
-                             "sysvar::instructions::")) {
-                auto targetName = CS.getTargetFunction()->getName();
-                if (!targetName.contains("_checked.")) {
-                  auto e = graph->createReadEvent(ctx, inst, tid);
-                  UntrustfulAccount::collect(targetName, e, callEventTraces,
-                                             SVE::Type::UNSAFE_SYSVAR_API, 10);
-                }
-                // sol.solana_program::sysvar::instructions::load_current_index_checked
-                // https://twitter.com/samczsun/status/1489044984296792064
-              } else if (CS.getTargetFunction()->getName().contains(
-                             "program::invoke")) {
-                auto value = CS.getArgOperand(0);
-                if (auto callValue = dyn_cast<CallBase>(value)) {
-                  CallSite CS2(callValue);
-                  if (CS2.getTargetFunction()->getName().startswith(
-                          "sol.create_associated_token_account.")) {
-                    auto value1 = CS.getArgOperand(1);
-                    auto valueName = LangModel::findGlobalString(value1);
-                    // split
-                    llvm::SmallVector<StringRef, 8> accounts_vec;
-                    valueName.split(accounts_vec, ',', -1, false);
-                    if (accounts_vec.size() > 3) {
-                      auto associate_account = accounts_vec[2];
-                      associate_account = stripToAccountInfo(associate_account);
-                      auto foundClone = associate_account.find(".clone()");
-                      if (foundClone != string::npos)
+                  // sol.solana_program::sysvar::instructions::load_current_index_checked
+                  // https://twitter.com/samczsun/status/1489044984296792064
+                } else if (CS.getTargetFunction()->getName().contains(
+                               "program::invoke")) {
+                  auto value = CS.getArgOperand(0);
+                  if (auto callValue = dyn_cast<CallBase>(value)) {
+                    CallSite CS2(callValue);
+                    if (CS2.getTargetFunction()->getName().startswith(
+                            "sol.create_associated_token_account.")) {
+                      auto value1 = CS.getArgOperand(1);
+                      auto valueName = LangModel::findGlobalString(value1);
+                      // split
+                      llvm::SmallVector<StringRef, 8> accounts_vec;
+                      valueName.split(accounts_vec, ',', -1, false);
+                      if (accounts_vec.size() > 3) {
+                        auto associate_account = accounts_vec[2];
                         associate_account =
-                            associate_account.substr(0, foundClone);
-                      if (DEBUG_RUST_API)
-                        llvm::outs() << "sol.create_associated_token_account: "
-                                     << associate_account << "\n";
-                      auto e = graph->createReadEvent(ctx, inst, tid);
-                      // pool_associated_staked_token_account.to_account_info().clone()
-                      thread->accountsInvokedMap[associate_account] = e;
-                    }
-                  }
-                }
-
-              } else if (CS.getTargetFunction()->getName().equals(
-                             "sol.stake::instruction::split.4")) {
-                auto e = graph->createReadEvent(ctx, inst, tid);
-                for (int i = 1; i <= 1; i++) {
-                  auto value = CS.getArgOperand(i);
-                  auto valueName = LangModel::findGlobalString(value);
-                  // if this is parameter
-                  if (valueName.empty()) {
-                    if (auto arg = dyn_cast<Argument>(value)) {
-                      valueName = funcArgTypesMap[func][arg->getArgNo()].first;
-                    }
-                  }
-                  thread->accountsInvokedMap[valueName] = e;
-
-                  if (DEBUG_RUST_API)
-                    llvm::outs()
-                        << "sol.stake::instruction::split: " << valueName
-                        << "\n";
-                  // if not in accounts, find aliases..
-                  if (!thread->isInAccountsMap(valueName)) {
-                    auto valueName_j =
-                        findCallStackAccountAliasName(func, e, valueName);
-                    // from_user_lamports_info
-                    thread->accountsInvokedMap[valueName_j] = e;
-                  }
-                }
-
-              } else if (CS.getTargetFunction()->getName().equals(
-                             "sol.stake::instruction::delegate_stake.3")) {
-                auto e = graph->createReadEvent(ctx, inst, tid);
-                for (int i = 0; i <= 2; i++) {
-                  auto value = CS.getArgOperand(i);
-                  auto valueName = LangModel::findGlobalString(value);
-                  // if this is parameter
-                  if (valueName.empty()) {
-                    if (auto arg = dyn_cast<Argument>(value)) {
-                      valueName = funcArgTypesMap[func][arg->getArgNo()].first;
-                    }
-                  }
-                  thread->accountsInvokedMap[valueName] = e;
-
-                  if (DEBUG_RUST_API)
-                    llvm::outs()
-                        << "sol.stake::instruction:: " << valueName << "\n";
-                  // if not in accounts, find aliases..
-                  if (!thread->isInAccountsMap(valueName)) {
-                    auto valueName_j =
-                        findCallStackAccountAliasName(func, e, valueName);
-                    // from_user_lamports_info
-                    thread->accountsInvokedMap[valueName_j] = e;
-                  }
-                }
-
-              } else if (CS.getTargetFunction()->getName().equals(
-                             "sol.stake::instruction::authorize.5")) {
-                auto e = graph->createReadEvent(ctx, inst, tid);
-                for (int i = 0; i <= 2; i++) {
-                  auto value = CS.getArgOperand(i);
-                  auto valueName = LangModel::findGlobalString(value);
-                  // if this is parameter
-                  if (valueName.empty()) {
-                    if (auto arg = dyn_cast<Argument>(value)) {
-                      valueName = funcArgTypesMap[func][arg->getArgNo()].first;
+                            stripToAccountInfo(associate_account);
+                        auto foundClone = associate_account.find(".clone()");
+                        if (foundClone != string::npos)
+                          associate_account =
+                              associate_account.substr(0, foundClone);
+                        if (DEBUG_RUST_API)
+                          llvm::outs()
+                              << "sol.create_associated_token_account: "
+                              << associate_account << "\n";
+                        auto e = graph->createReadEvent(ctx, inst, tid);
+                        // pool_associated_staked_token_account.to_account_info().clone()
+                        thread->accountsInvokedMap[associate_account] = e;
+                      }
                     }
                   }
 
-                  thread->accountsInvokedMap[valueName] = e;
-
-                  if (DEBUG_RUST_API)
-                    llvm::outs()
-                        << "sol.stake::instruction::authorize: " << valueName
-                        << "\n";
-                  // if not in accounts, find aliases..
-                  if (!thread->isInAccountsMap(valueName)) {
-                    auto valueName_j =
-                        findCallStackAccountAliasName(func, e, valueName);
-                    // from_user_lamports_info
-                    thread->accountsInvokedMap[valueName_j] = e;
-                  }
-                }
-
-              } else if (CS.getTargetFunction()->getName().equals(
-                             "sol.stake::instruction::withdraw.5")) {
-                auto e = graph->createReadEvent(ctx, inst, tid);
-                // withdrawer_pubkey: &Pubkey,
-                // destination_lamports_info
-                for (int i = 1; i <= 2; i++) {
-                  auto value = CS.getArgOperand(i);
-                  auto valueName = LangModel::findGlobalString(value);
-                  // if this is parameter
-                  if (valueName.empty()) {
-                    if (auto arg = dyn_cast<Argument>(value)) {
-                      valueName = funcArgTypesMap[func][arg->getArgNo()].first;
+                } else if (CS.getTargetFunction()->getName().equals(
+                               "sol.stake::instruction::split.4")) {
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+                  for (int i = 1; i <= 1; i++) {
+                    auto value = CS.getArgOperand(i);
+                    auto valueName = LangModel::findGlobalString(value);
+                    // if this is parameter
+                    if (valueName.empty()) {
+                      if (auto arg = dyn_cast<Argument>(value)) {
+                        valueName =
+                            funcArgTypesMap[func][arg->getArgNo()].first;
+                      }
                     }
-                  }
-                  thread->accountsInvokedMap[valueName] = e;
+                    thread->accountsInvokedMap[valueName] = e;
 
-                  if (DEBUG_RUST_API)
-                    llvm::outs()
-                        << "sol.stake::instruction::withdraw: " << valueName
-                        << "\n";
-                  // if not in accounts, find aliases..
-                  if (!thread->isInAccountsMap(valueName)) {
-                    auto valueName_j =
-                        findCallStackAccountAliasName(func, e, valueName);
-                    // from_user_lamports_info
-                    thread->accountsInvokedMap[valueName_j] = e;
-                  }
-                }
-
-              } else if (CS.getTargetFunction()->getName().contains(
-                             "system_instruction::transfer")) {
-                // TODO track parameter passing
-                auto value = CS.getArgOperand(0);
-                auto valueName = LangModel::findGlobalString(value);
-                auto found = valueName.find_last_of(".");
-                if (found != string::npos)
-                  valueName = valueName.substr(0, found);
-                // if this is parameter
-                if (valueName.empty()) {
-                  if (auto arg = dyn_cast<Argument>(value)) {
-                    valueName = funcArgTypesMap[func][arg->getArgNo()].first;
-                  }
-                }
-                auto e = graph->createReadEvent(ctx, inst, tid);
-                thread->accountsInvokedMap[valueName] = e;
-
-                if (DEBUG_RUST_API)
-                  llvm::outs()
-                      << "system_instruction::transfer source: " << valueName
-                      << "\n";
-                // if not in accounts, find aliases..
-                if (!thread->isInAccountsMap(valueName)) {
-                  auto valueName_j =
-                      findCallStackAccountAliasName(func, e, valueName);
-                  // from_user_lamports_info
-                  thread->accountsInvokedMap[valueName_j] = e;
-                }
-
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "//sol.transfer_ctx")) {
-                auto value = CS.getArgOperand(0);
-                auto valueName = LangModel::findGlobalString(value);
-                if (DEBUG_RUST_API)
-                  llvm::outs()
-                      << "TODO sol.transfer_ctx: " << valueName << "\n";
-                //
-                auto e = graph->createReadEvent(ctx, inst, tid);
-                thread->accountsInvokedMap["authority"] = e;
-
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.CpiContext::new.")) {
-                auto value = CS.getArgOperand(1);
-                auto valueName = LangModel::findGlobalString(value);
-                auto found = valueName.find("authority:");
-                // authority:self.authority.to_account_info()
-                if (found != string::npos)
-                  valueName = valueName.substr(found);
-                valueName = stripToAccountInfo(valueName);
-                // self.market_authority.clone(),
-                found = valueName.find(".clone()");
-                if (found != string::npos)
-                  valueName = valueName.substr(0, found);
-                valueName = stripSelfAccountName(valueName);
-                auto account = valueName;
-
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.CpiContext::new.: " << valueName << "\n";
-                //
-                auto e = graph->createReadEvent(ctx, inst, tid);
-                thread->accountsInvokedMap[account] = e;
-                if (!thread->isInAccountsMap(account)) {
-                  auto valueName_j =
-                      findCallStackAccountAliasName(func, e, account);
-                  // from_user_lamports_info
-                  thread->accountsInvokedMap[valueName_j] = e;
-                }
-
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.borrow_mut.")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "borrow_mut: " << *inst << "\n";
-                auto value = CS.getArgOperand(0);
-                auto valueName = LangModel::findGlobalString(value);
-                // llvm::outs() << "data: " << valueName << "\n";
-                auto e = graph->createReadEvent(ctx, inst, tid);
-                // ctx.accounts.candy_machine
-                auto account = stripCtxAccountsName(valueName);
-                auto found = account.find_last_of(".");
-                if (found != string::npos)
-                  account = account.substr(0, found);
-                if (!thread->isInAccountsMap(account))
-                  account = findCallStackAccountAliasName(func, e, account);
-
-                if (valueName.find(".data") != string::npos) {
-                  thread->borrowDataMutMap[account] = e;
-                  // llvm::outs()
-                  //     << "borrow_mut account: " << account << " valueName: "
-                  //     << valueName << "\n";
-
-                  auto found1 = account.find(".accounts.");
-                  if (found1 != string::npos) {
-                    auto account1 = stripCtxAccountsName(account);
-                    thread->borrowDataMutMap[account1] = e;
-                  }
-                } else if (valueName.find(".lamports") != string::npos) {
-                  thread->borrowLamportsMutMap[account] = e;
-
-                } else {
-                  thread->borrowOtherMutMap[account] = e;
-                }
-
-                // if (auto user = dyn_cast<llvm::User>(value)) {
-                //     auto globalVar = user->getOperand(0);
-                //     if (auto gv =
-                //     dyn_cast_or_null<GlobalVariable>(globalVar)) {
-                //         // llvm::outs() << "global variable: " << *gv <<
-                //         "\n"; if (auto globalData =
-                //                 dyn_cast_or_null<ConstantDataArray>(gv->getInitializer()))
-                //                 {
-                //             auto valueName = globalData->getAsString();
-                //             llvm::outs() << "data: " << valueName << "\n";
-                //         }
-                //     }
-                // }
-                // important
-                // could be passed from call parameters
-                auto account_ = findCallStackAccountAliasName(func, e, account);
-                if (!account_.empty())
-                  account = account_;
-                if (!account.empty())
-                  if (!thread->isInAccountOrStructAccountMap(account))
-                    thread->accountsMap[account] = e;
-
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.serialize.")) {
-                // create an object of a class
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.serialize: " << *inst << "\n";
-                auto value = CS.getArgOperand(0);
-                auto valueName = LangModel::findGlobalString(value);
-                auto e = graph->createReadEvent(ctx, inst, tid);
-                auto account = valueName;
-                thread->borrowDataMutMap[account] = e;
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.try_borrow_mut_data.")) {
-                // create an object of a class
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.try_borrow_mut_data: " << *inst << "\n";
-                auto value = CS.getArgOperand(0);
-                auto valueName = LangModel::findGlobalString(value);
-                auto e = graph->createReadEvent(ctx, inst, tid);
-                auto account = valueName;
-                thread->borrowDataMutMap[account] = e;
-
-                auto account_ = findCallStackAccountAliasName(func, e, account);
-                if (!account_.empty())
-                  account = account_;
-                // important
-                account = stripCtxAccountsName(valueName);
-                if (!account.empty())
-                  if (!thread->isInAccountOrStructAccountMap(account))
-                    thread->accountsMap[account] = e;
-
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.borrow.") ||
-                         CS.getTargetFunction()->getName().startswith(
-                             "sol.try_borrow_data.")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.borrow: " << *inst << "\n";
-                auto value = CS.getArgOperand(0);
-                auto valueName = LangModel::findGlobalString(value);
-                auto e = graph->createReadEvent(ctx, inst, tid);
-                // ctx.accounts.candy_machine
-                auto account = stripCtxAccountsName(valueName);
-                auto found = account.find_last_of(".");
-                if (found != string::npos)
-                  account = account.substr(0, found);
-
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "valueName: " << valueName
-                               << " account: " << account << "\n";
-
-                if (valueName.find(".data") != string::npos) {
-                  bool isBorrow = true;
-                  if (valueName.find("borrow_mut") != string::npos)
-                    isBorrow = false;
-                  if (isBorrow)
-                    thread->borrowDataMap[account] = e;
-                  else
-                    thread->borrowDataMutMap[account] = e;
-                  // for Anchor: extract accounts from Anchor names
-                  auto found1 = account.find(".accounts.");
-                  if (found1 != string::npos) {
-                    auto account1 = stripCtxAccountsName(account);
-                    if (isBorrow)
-                      thread->borrowDataMap[account1] = e;
-                    else
-                      thread->borrowDataMutMap[account1] = e;
                     if (DEBUG_RUST_API)
-                      llvm::outs() << "account1: " << account1 << "\n";
+                      llvm::outs()
+                          << "sol.stake::instruction::split: " << valueName
+                          << "\n";
+                    // if not in accounts, find aliases..
+                    if (!thread->isInAccountsMap(valueName)) {
+                      auto valueName_j =
+                          findCallStackAccountAliasName(func, e, valueName);
+                      // from_user_lamports_info
+                      thread->accountsInvokedMap[valueName_j] = e;
+                    }
                   }
 
-                } else if (valueName.find(".lamports") != string::npos) {
-                  thread->borrowLamportsMap[account] = e;
+                } else if (CS.getTargetFunction()->getName().equals(
+                               "sol.stake::instruction::delegate_stake.3")) {
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+                  for (int i = 0; i <= 2; i++) {
+                    auto value = CS.getArgOperand(i);
+                    auto valueName = LangModel::findGlobalString(value);
+                    // if this is parameter
+                    if (valueName.empty()) {
+                      if (auto arg = dyn_cast<Argument>(value)) {
+                        valueName =
+                            funcArgTypesMap[func][arg->getArgNo()].first;
+                      }
+                    }
+                    thread->accountsInvokedMap[valueName] = e;
 
-                } else {
-                  thread->borrowOtherMap[account] = e;
-                }
+                    if (DEBUG_RUST_API)
+                      llvm::outs()
+                          << "sol.stake::instruction:: " << valueName << "\n";
+                    // if not in accounts, find aliases..
+                    if (!thread->isInAccountsMap(valueName)) {
+                      auto valueName_j =
+                          findCallStackAccountAliasName(func, e, valueName);
+                      // from_user_lamports_info
+                      thread->accountsInvokedMap[valueName_j] = e;
+                    }
+                  }
 
-                auto account_ = findCallStackAccountAliasName(func, e, account);
-                if (!account_.empty())
-                  account = account_;
+                } else if (CS.getTargetFunction()->getName().equals(
+                               "sol.stake::instruction::authorize.5")) {
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+                  for (int i = 0; i <= 2; i++) {
+                    auto value = CS.getArgOperand(i);
+                    auto valueName = LangModel::findGlobalString(value);
+                    // if this is parameter
+                    if (valueName.empty()) {
+                      if (auto arg = dyn_cast<Argument>(value)) {
+                        valueName =
+                            funcArgTypesMap[func][arg->getArgNo()].first;
+                      }
+                    }
 
-                // ctx.accounts.pyth_oracle_price.try_borrow_data()?;
-                // accs.instruction_acc.try_borrow_mut_data()?
-                // important
-                account = stripCtxAccountsName(account);
-                if (!account.empty()) {
-                  if (!thread->isInAccountOrStructAccountMap(account)) {
-                    // find where account is defined
-                    // let fee_collector_account_b =
-                    // ctx.remaining_accounts.get(1).unwrap();
-                    bool remainingAccountChecked = false;
-                    if (auto prevInst = inst->getPrevNonDebugInstruction()) {
-                      if (auto callValue2 = dyn_cast<CallBase>(prevInst)) {
-                        CallSite CS2(callValue2);
-                        if (CS2.getTargetFunction()->getName().startswith(
-                                "sol.model.opaqueAssign")) {
-                          auto value1 = CS2.getArgOperand(0);
-                          auto valueName1 = LangModel::findGlobalString(value1);
-                          if (account == valueName1) {
-                            auto value2 = CS2.getArgOperand(1);
-                            if (auto callValue3 = dyn_cast<CallBase>(value2)) {
-                              CallSite CS3(callValue3);
-                              if (CS3.getTargetFunction()->getName().startswith(
-                                      "sol.unwrap.1")) {
-                                auto value3 = CS3.getArgOperand(0);
-                                if (auto callValue4 =
-                                        dyn_cast<CallBase>(value3)) {
-                                  CallSite CS4(callValue4);
-                                  if (CS4.getTargetFunction()
-                                          ->getName()
-                                          .startswith("sol.get.2")) {
-                                    auto value41 = CS4.getArgOperand(0);
-                                    auto valueName41 =
-                                        LangModel::findGlobalString(value41);
-                                    auto value42 = CS4.getArgOperand(1);
-                                    auto valueName42 =
-                                        LangModel::findGlobalString(value42);
-                                    auto accountSig = valueName41.str() +
-                                                      ".get(" +
-                                                      valueName42.str();
-                                    if (thread->isAccountOwnerValidated(
-                                            accountSig) ||
-                                        isAnchorDataAccount(accountSig)) {
-                                      remainingAccountChecked = true;
-                                      // llvm::outs()
-                                      //     << "remainingAccountChecked: "
-                                      //     << remainingAccountChecked << "\n";
+                    thread->accountsInvokedMap[valueName] = e;
+
+                    if (DEBUG_RUST_API)
+                      llvm::outs()
+                          << "sol.stake::instruction::authorize: " << valueName
+                          << "\n";
+                    // if not in accounts, find aliases..
+                    if (!thread->isInAccountsMap(valueName)) {
+                      auto valueName_j =
+                          findCallStackAccountAliasName(func, e, valueName);
+                      // from_user_lamports_info
+                      thread->accountsInvokedMap[valueName_j] = e;
+                    }
+                  }
+
+                } else if (CS.getTargetFunction()->getName().equals(
+                               "sol.stake::instruction::withdraw.5")) {
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+                  // withdrawer_pubkey: &Pubkey,
+                  // destination_lamports_info
+                  for (int i = 1; i <= 2; i++) {
+                    auto value = CS.getArgOperand(i);
+                    auto valueName = LangModel::findGlobalString(value);
+                    // if this is parameter
+                    if (valueName.empty()) {
+                      if (auto arg = dyn_cast<Argument>(value)) {
+                        valueName =
+                            funcArgTypesMap[func][arg->getArgNo()].first;
+                      }
+                    }
+                    thread->accountsInvokedMap[valueName] = e;
+
+                    if (DEBUG_RUST_API)
+                      llvm::outs()
+                          << "sol.stake::instruction::withdraw: " << valueName
+                          << "\n";
+                    // if not in accounts, find aliases..
+                    if (!thread->isInAccountsMap(valueName)) {
+                      auto valueName_j =
+                          findCallStackAccountAliasName(func, e, valueName);
+                      // from_user_lamports_info
+                      thread->accountsInvokedMap[valueName_j] = e;
+                    }
+                  }
+
+                } else if (CS.getTargetFunction()->getName().contains(
+                               "system_instruction::transfer")) {
+                  // TODO track parameter passing
+                  auto value = CS.getArgOperand(0);
+                  auto valueName = LangModel::findGlobalString(value);
+                  auto found = valueName.find_last_of(".");
+                  if (found != string::npos)
+                    valueName = valueName.substr(0, found);
+                  // if this is parameter
+                  if (valueName.empty()) {
+                    if (auto arg = dyn_cast<Argument>(value)) {
+                      valueName = funcArgTypesMap[func][arg->getArgNo()].first;
+                    }
+                  }
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+                  thread->accountsInvokedMap[valueName] = e;
+
+                  if (DEBUG_RUST_API)
+                    llvm::outs()
+                        << "system_instruction::transfer source: " << valueName
+                        << "\n";
+                  // if not in accounts, find aliases..
+                  if (!thread->isInAccountsMap(valueName)) {
+                    auto valueName_j =
+                        findCallStackAccountAliasName(func, e, valueName);
+                    // from_user_lamports_info
+                    thread->accountsInvokedMap[valueName_j] = e;
+                  }
+
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "//sol.transfer_ctx")) {
+                  auto value = CS.getArgOperand(0);
+                  auto valueName = LangModel::findGlobalString(value);
+                  if (DEBUG_RUST_API)
+                    llvm::outs()
+                        << "TODO sol.transfer_ctx: " << valueName << "\n";
+                  //
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+                  thread->accountsInvokedMap["authority"] = e;
+
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.CpiContext::new.")) {
+                  auto value = CS.getArgOperand(1);
+                  auto valueName = LangModel::findGlobalString(value);
+                  auto found = valueName.find("authority:");
+                  // authority:self.authority.to_account_info()
+                  if (found != string::npos)
+                    valueName = valueName.substr(found);
+                  valueName = stripToAccountInfo(valueName);
+                  // self.market_authority.clone(),
+                  found = valueName.find(".clone()");
+                  if (found != string::npos)
+                    valueName = valueName.substr(0, found);
+                  valueName = stripSelfAccountName(valueName);
+                  auto account = valueName;
+
+                  if (DEBUG_RUST_API)
+                    llvm::outs()
+                        << "sol.CpiContext::new.: " << valueName << "\n";
+                  //
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+                  thread->accountsInvokedMap[account] = e;
+                  if (!thread->isInAccountsMap(account)) {
+                    auto valueName_j =
+                        findCallStackAccountAliasName(func, e, account);
+                    // from_user_lamports_info
+                    thread->accountsInvokedMap[valueName_j] = e;
+                  }
+
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.borrow_mut.")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "borrow_mut: " << *inst << "\n";
+                  auto value = CS.getArgOperand(0);
+                  auto valueName = LangModel::findGlobalString(value);
+                  // llvm::outs() << "data: " << valueName << "\n";
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+                  // ctx.accounts.candy_machine
+                  auto account = stripCtxAccountsName(valueName);
+                  auto found = account.find_last_of(".");
+                  if (found != string::npos)
+                    account = account.substr(0, found);
+                  if (!thread->isInAccountsMap(account))
+                    account = findCallStackAccountAliasName(func, e, account);
+
+                  if (valueName.find(".data") != string::npos) {
+                    thread->borrowDataMutMap[account] = e;
+                    // llvm::outs()
+                    //     << "borrow_mut account: " << account << " valueName:
+                    //     "
+                    //     << valueName << "\n";
+
+                    auto found1 = account.find(".accounts.");
+                    if (found1 != string::npos) {
+                      auto account1 = stripCtxAccountsName(account);
+                      thread->borrowDataMutMap[account1] = e;
+                    }
+                  } else if (valueName.find(".lamports") != string::npos) {
+                    thread->borrowLamportsMutMap[account] = e;
+
+                  } else {
+                    thread->borrowOtherMutMap[account] = e;
+                  }
+
+                  // if (auto user = dyn_cast<llvm::User>(value)) {
+                  //     auto globalVar = user->getOperand(0);
+                  //     if (auto gv =
+                  //     dyn_cast_or_null<GlobalVariable>(globalVar)) {
+                  //         // llvm::outs() << "global variable: " << *gv <<
+                  //         "\n"; if (auto globalData =
+                  //                 dyn_cast_or_null<ConstantDataArray>(gv->getInitializer()))
+                  //                 {
+                  //             auto valueName = globalData->getAsString();
+                  //             llvm::outs() << "data: " << valueName << "\n";
+                  //         }
+                  //     }
+                  // }
+                  // important
+                  // could be passed from call parameters
+                  auto account_ =
+                      findCallStackAccountAliasName(func, e, account);
+                  if (!account_.empty())
+                    account = account_;
+                  if (!account.empty())
+                    if (!thread->isInAccountOrStructAccountMap(account))
+                      thread->accountsMap[account] = e;
+
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.serialize.")) {
+                  // create an object of a class
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "sol.serialize: " << *inst << "\n";
+                  auto value = CS.getArgOperand(0);
+                  auto valueName = LangModel::findGlobalString(value);
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+                  auto account = valueName;
+                  thread->borrowDataMutMap[account] = e;
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.try_borrow_mut_data.")) {
+                  // create an object of a class
+                  if (DEBUG_RUST_API)
+                    llvm::outs()
+                        << "sol.try_borrow_mut_data: " << *inst << "\n";
+                  auto value = CS.getArgOperand(0);
+                  auto valueName = LangModel::findGlobalString(value);
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+                  auto account = valueName;
+                  thread->borrowDataMutMap[account] = e;
+
+                  auto account_ =
+                      findCallStackAccountAliasName(func, e, account);
+                  if (!account_.empty())
+                    account = account_;
+                  // important
+                  account = stripCtxAccountsName(valueName);
+                  if (!account.empty())
+                    if (!thread->isInAccountOrStructAccountMap(account))
+                      thread->accountsMap[account] = e;
+
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.borrow.") ||
+                           CS.getTargetFunction()->getName().startswith(
+                               "sol.try_borrow_data.")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "sol.borrow: " << *inst << "\n";
+                  auto value = CS.getArgOperand(0);
+                  auto valueName = LangModel::findGlobalString(value);
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+                  // ctx.accounts.candy_machine
+                  auto account = stripCtxAccountsName(valueName);
+                  auto found = account.find_last_of(".");
+                  if (found != string::npos)
+                    account = account.substr(0, found);
+
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "valueName: " << valueName
+                                 << " account: " << account << "\n";
+
+                  if (valueName.find(".data") != string::npos) {
+                    bool isBorrow = true;
+                    if (valueName.find("borrow_mut") != string::npos)
+                      isBorrow = false;
+                    if (isBorrow)
+                      thread->borrowDataMap[account] = e;
+                    else
+                      thread->borrowDataMutMap[account] = e;
+                    // for Anchor: extract accounts from Anchor names
+                    auto found1 = account.find(".accounts.");
+                    if (found1 != string::npos) {
+                      auto account1 = stripCtxAccountsName(account);
+                      if (isBorrow)
+                        thread->borrowDataMap[account1] = e;
+                      else
+                        thread->borrowDataMutMap[account1] = e;
+                      if (DEBUG_RUST_API)
+                        llvm::outs() << "account1: " << account1 << "\n";
+                    }
+
+                  } else if (valueName.find(".lamports") != string::npos) {
+                    thread->borrowLamportsMap[account] = e;
+
+                  } else {
+                    thread->borrowOtherMap[account] = e;
+                  }
+
+                  auto account_ =
+                      findCallStackAccountAliasName(func, e, account);
+                  if (!account_.empty())
+                    account = account_;
+
+                  // ctx.accounts.pyth_oracle_price.try_borrow_data()?;
+                  // accs.instruction_acc.try_borrow_mut_data()?
+                  // important
+                  account = stripCtxAccountsName(account);
+                  if (!account.empty()) {
+                    if (!thread->isInAccountOrStructAccountMap(account)) {
+                      // find where account is defined
+                      // let fee_collector_account_b =
+                      // ctx.remaining_accounts.get(1).unwrap();
+                      bool remainingAccountChecked = false;
+                      if (auto prevInst = inst->getPrevNonDebugInstruction()) {
+                        if (auto callValue2 = dyn_cast<CallBase>(prevInst)) {
+                          CallSite CS2(callValue2);
+                          if (CS2.getTargetFunction()->getName().startswith(
+                                  "sol.model.opaqueAssign")) {
+                            auto value1 = CS2.getArgOperand(0);
+                            auto valueName1 =
+                                LangModel::findGlobalString(value1);
+                            if (account == valueName1) {
+                              auto value2 = CS2.getArgOperand(1);
+                              if (auto callValue3 =
+                                      dyn_cast<CallBase>(value2)) {
+                                CallSite CS3(callValue3);
+                                if (CS3.getTargetFunction()
+                                        ->getName()
+                                        .startswith("sol.unwrap.1")) {
+                                  auto value3 = CS3.getArgOperand(0);
+                                  if (auto callValue4 =
+                                          dyn_cast<CallBase>(value3)) {
+                                    CallSite CS4(callValue4);
+                                    if (CS4.getTargetFunction()
+                                            ->getName()
+                                            .startswith("sol.get.2")) {
+                                      auto value41 = CS4.getArgOperand(0);
+                                      auto valueName41 =
+                                          LangModel::findGlobalString(value41);
+                                      auto value42 = CS4.getArgOperand(1);
+                                      auto valueName42 =
+                                          LangModel::findGlobalString(value42);
+                                      auto accountSig = valueName41.str() +
+                                                        ".get(" +
+                                                        valueName42.str();
+                                      if (thread->isAccountOwnerValidated(
+                                              accountSig) ||
+                                          isAnchorDataAccount(accountSig)) {
+                                        remainingAccountChecked = true;
+                                        // llvm::outs()
+                                        //     << "remainingAccountChecked: "
+                                        //     << remainingAccountChecked <<
+                                        //     "\n";
+                                      }
                                     }
                                   }
+                                } else if (CS3.getTargetFunction()
+                                               ->getName()
+                                               .startswith(
+                                                   "sol.to_account_info.1")) {
+                                  // let instruction_sysvar_account =
+                                  // &ctx.accounts.instruction_sysvar_account;
+                                  // let instruction_sysvar_account_info =
+                                  // instruction_sysvar_account.to_account_info();
+                                  // let instruction_sysvar =
+                                  // instruction_sysvar_account_info.data.borrow();
+                                  auto value3 = CS3.getArgOperand(0);
+                                  auto valueName3 =
+                                      LangModel::findGlobalString(value3);
+                                  valueName3 = stripAll(valueName3);
+                                  if (thread->isAccountKeyValidated(
+                                          valueName3) ||
+                                      isAnchorDataAccount(valueName3)) {
+                                    remainingAccountChecked = true;
+                                  }
+                                  thread->accountAliasesMap[account].insert(
+                                      valueName3);
+                                  if (DEBUG_RUST_API)
+                                    llvm::outs()
+                                        << "account: " << account
+                                        << " aliasAccount: " << valueName3
+                                        << "\n";
+                                  // llvm::outs() << "valueName3: " <<
+                                  // valueName3
+                                  // << "\n";
                                 }
-                              } else if (CS3.getTargetFunction()
-                                             ->getName()
-                                             .startswith(
-                                                 "sol.to_account_info.1")) {
-                                // let instruction_sysvar_account =
-                                // &ctx.accounts.instruction_sysvar_account; let
-                                // instruction_sysvar_account_info =
-                                // instruction_sysvar_account.to_account_info();
-                                // let instruction_sysvar =
-                                // instruction_sysvar_account_info.data.borrow();
-                                auto value3 = CS3.getArgOperand(0);
-                                auto valueName3 =
-                                    LangModel::findGlobalString(value3);
-                                valueName3 = stripAll(valueName3);
-                                if (thread->isAccountKeyValidated(valueName3) ||
-                                    isAnchorDataAccount(valueName3)) {
-                                  remainingAccountChecked = true;
-                                }
-                                thread->accountAliasesMap[account].insert(
-                                    valueName3);
-                                if (DEBUG_RUST_API)
-                                  llvm::outs()
-                                      << "account: " << account
-                                      << " aliasAccount: " << valueName3
-                                      << "\n";
-                                // llvm::outs() << "valueName3: " << valueName3
-                                // << "\n";
                               }
                             }
                           }
                         }
                       }
-                    }
-                    if (!remainingAccountChecked)
-                      thread->accountsMap[account] = e;
-                  }
-                }
-
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.require.!2")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.require.!: " << *inst << "\n";
-                // merkle_proof::verify(proof,distributor.root,node.0)
-                auto value = CS.getArgOperand(0);
-                auto valueName = LangModel::findGlobalString(value);
-                if (valueName.contains("::verify(")) {
-                  auto found = valueName.find("(");
-                  auto params = valueName.substr(found);
-                  llvm::SmallVector<StringRef, 8> value_vec;
-                  params.split(value_vec, ',', -1, false);
-
-                  auto funcName = valueName.substr(0, found).str() + "." +
-                                  std::to_string(value_vec.size());
-                  // llvm::outs() << "func_require: " << funcName << "\n";
-                  auto func_require = thisModule->getFunction(funcName);
-                  if (func_require) {
-                    // llvm::outs() << "found func_require: " << funcName <<
-                    // "\n";
-                    traverseFunctionWrapper(ctx, thread, callStack, inst,
-                                            func_require);
-                  }
-                }
-                // TODO parse more
-
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.assert.")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "assert: " << *inst << "\n";
-                auto value = CS.getArgOperand(0);
-                auto valueName = LangModel::findGlobalString(value);
-                // llvm::outs() << "data: " << valueName << "\n";
-                // self.user_underlying_token_account.is_native()
-                auto account = stripSelfAccountName(valueName);
-                auto found = account.find(".");
-                if (found != string::npos)
-                  account = account.substr(0, found);
-
-                auto e = graph->createReadEvent(ctx, inst, tid);
-                if (!thread->isInAccountsMap(account)) {
-                  account = findCallStackAccountAliasName(func, e, account);
-                }
-                if (valueName.find(".is_signer") != string::npos) {
-                  thread->asssertSignerMap[account] = e;
-                } else if (valueName.find(".data_is_empty") != string::npos) {
-                  thread->hasInitializedCheck = true;
-                } else {
-                  thread->asssertOtherMap[account] = e;
-                }
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.assert_eq.") ||
-                         CS.getTargetFunction()->getName().startswith(
-                             "sol.ne.2") ||
-                         CS.getTargetFunction()->getName().startswith(
-                             "sol.eq.2") ||
-                         CS.getTargetFunction()->getName().contains(
-                             "_keys_eq.") ||
-                         CS.getTargetFunction()->getName().contains(
-                             "_keys_neq.") ||
-                         CS.getTargetFunction()->getName().contains(
-                             "_keys_equal.") ||
-                         CS.getTargetFunction()->getName().contains(
-                             "_keys_not_equal.")) {
-                // CS.getTargetFunction()->getName().startswith("sol.assert_eq.")
-                // ||
-                //        CS.getTargetFunction()->getName().startswith("sol.assert_keys_eq.2")
-                //        ||
-                //        CS.getTargetFunction()->getName().startswith("sol.require_keys_eq.2")
-                //        ||
-                //        CS.getTargetFunction()->getName().startswith("sol.require_keys_neq.2")
-                //        ||
-                //        CS.getTargetFunction()->getName().startswith("sol.check_keys_equal.2")
-                //        ||
-                //        CS.getTargetFunction()->getName().startswith("sol.check_keys_not_equal.2")
-                addCheckKeyEqual(ctx, tid, inst, thread, CS);
-
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.assert_owner.")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "assert_owner: " << *inst << "\n";
-                if (CS.getNumArgOperands() >= 2) {
-                  auto value1 = CS.getArgOperand(0);
-                  auto valueName1 = LangModel::findGlobalString(value1);
-                  valueName1 = stripAll(valueName1);
-                  auto value2 = CS.getArgOperand(1);
-                  auto valueName2 = LangModel::findGlobalString(value2);
-                  auto pair = std::make_pair(valueName1, valueName2);
-                  auto e = graph->createReadEvent(ctx, inst, tid);
-                  thread->assertOwnerEqualMap[pair] = e;
-                }
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.assert_signer.")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "assert_signer: " << *inst << "\n";
-                if (CS.getNumArgOperands() >= 1) {
-                  auto value1 = CS.getArgOperand(0);
-                  auto valueName1 = LangModel::findGlobalString(value1);
-                  auto account = stripAll(valueName1);
-                  auto e = graph->createReadEvent(ctx, inst, tid);
-                  thread->asssertSignerMap[account] = e;
-                }
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.get.2")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.get.2: " << *inst << "\n";
-                auto value1 = CS.getArgOperand(0);
-                auto valueName1 = LangModel::findGlobalString(value1);
-                if (valueName1.contains(".remaining_accounts")) {
-                  if (auto nextInst = inst->getNextNonDebugInstruction()) {
-                    if (auto callValue2 = dyn_cast<CallBase>(nextInst)) {
-                      CallSite CS2(callValue2);
-                      if (CS2.getTargetFunction()->getName().startswith(
-                              "sol.unwrap.1") &&
-                          CS2.getArgOperand(0) == inst) {
-                        if (auto nextInst2 =
-                                nextInst->getNextNonDebugInstruction()) {
-                          if (auto callValue3 = dyn_cast<CallBase>(nextInst2)) {
-                            CallSite CS3(callValue3);
-                            if (CS3.getTargetFunction()->getName().startswith(
-                                    "sol.model.opaqueAssign") &&
-                                CS3.getArgOperand(1) == nextInst) {
-                              // check
-                              auto value2 = CS.getArgOperand(1);
-                              auto valueName2 =
-                                  LangModel::findGlobalString(value2);
-                              auto accountSig =
-                                  ".remaining_accounts.get(" + valueName2.str();
-                              if (thread->isAccountOwnerValidated(accountSig)) {
-                                auto value3 = CS3.getArgOperand(0);
-                                auto valueName3 =
-                                    LangModel::findGlobalString(value3);
-                                auto pair =
-                                    std::make_pair(valueName3, accountSig);
-                                auto e =
-                                    graph->createReadEvent(ctx, nextInst2, tid);
-                                thread->assertOwnerEqualMap[pair] = e;
-                              }
-                            }
-                          }
-                        }
-                      }
+                      if (!remainingAccountChecked)
+                        thread->accountsMap[account] = e;
                     }
                   }
-                }
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.validate.!2")) {
-                //            let want_destination_information_addr =
-                //            self.get_destination_information_address(ctx);
-                // validate!(
-                //     ctx.accounts.destination_platform_information.key(),
-                //     &want_destination_information_addr
-                // );
-                auto value1 = CS.getArgOperand(0);
-                auto valueName1 = LangModel::findGlobalString(value1);
 
-                // @"ctx.accounts.receiving_underlying_token_account.key().ne(&ctx.accounts.vault_withdraw_queue.key())
-
-                auto value2 = CS.getArgOperand(1);
-                auto valueName2 = LangModel::findGlobalString(value2);
-                // llvm::outs() << "sol.validate.2 valueName1: " << valueName1
-                //              << " valueName2: " << valueName2 << "\n";
-                auto e = graph->createReadEvent(ctx, inst, tid);
-                if (valueName2.endswith("true") ||
-                    valueName2.endswith("false")) {
-                  if (valueName1.contains(".ne(")) {
-                    auto x1 = valueName1.substr(0, valueName1.find(".ne("));
-                    auto x2 = valueName1.substr(valueName1.find(".ne(") + 4);
-                    // llvm::outs() << "updateKeyEqualMap x1: " << x1
-                    //       << " x2: " << x2 << "\n";
-                    updateKeyEqualMap(thread, e, false, true, x1, x2);
-                  }
-                } else {
-                  addCheckKeyEqual(ctx, tid, inst, thread, CS);
-                  if (valueName2.endswith("_addr") ||
-                      valueName2.endswith("_address")) {
-                    if (auto prevInst = inst->getPrevNonDebugInstruction()) {
-                      if (auto callValue3 = dyn_cast<CallBase>(prevInst)) {
-                        CallSite CS3(callValue3);
-                        if (CS3.getTargetFunction()->getName().equals(
-                                "sol.model.opaqueAssign")) {
-                          auto account = stripCtxAccountsName(valueName1);
-                          auto found = account.find_last_of(".");
-                          if (found != string::npos)
-                            account = account.substr(0, found);
-                          accountsPDAMap[account] = e;
-                          if (DEBUG_RUST_API)
-                            llvm::outs()
-                                << "accountsPDAMap account: " << account
-                                << "\n";
-                        }
-                      }
-                    }
-                  }
-                }
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.reload.1")) {
-                auto value1 = CS.getArgOperand(0);
-                auto valueName1 = LangModel::findGlobalString(value1);
-                if (valueName1.contains("ctx.")) {
-                  auto account = stripCtxAccountsName(valueName1);
-                  auto e = graph->createReadEvent(ctx, inst, tid);
-                  thread->accountsReloadedInInstructionMap[account] = e;
-                }
-              } else if (CS.getTargetFunction()->getName().equals("sol.>") ||
-                         CS.getTargetFunction()->getName().equals("sol.<")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.>: " << *inst << "\n";
-                if (CS.getNumArgOperands() > 1) {
-                  auto value1 = CS.getArgOperand(0);
-                  auto value2 = CS.getArgOperand(1);
-                  auto valueName1 = LangModel::findGlobalString(value1);
-                  auto valueName2 = LangModel::findGlobalString(value2);
-                  if (valueName1.startswith("ctx.") &&
-                      valueName1.endswith(".amount")) {
-                    auto account = stripAll(valueName1);
-                    account = account.substr(0, account.find("."));
-                    if (thread->isTokenTransferFromToAccount(account) &&
-                        !thread->isAccountReloaded(account)) {
-                      auto e = graph->createReadEvent(ctx, inst, tid);
-                      UntrustfulAccount::collect(account, e, callEventTraces,
-                                                 SVE::Type::MISS_CPI_RELOAD, 6);
-                    }
-                  }
-                }
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.>=") ||
-                         CS.getTargetFunction()->getName().startswith(
-                             "sol.<=")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.>=: " << *inst << "\n";
-                auto value1 = CS.getArgOperand(0);
-                auto value2 = CS.getArgOperand(1);
-                auto valueName1 = LangModel::findGlobalString(value1);
-                auto valueName2 = LangModel::findGlobalString(value2);
-
-                if (valueName1.contains("slot") &&
-                    valueName2.contains("slot") &&
-                    !valueName2.contains("price")) {
-                  auto e = graph->createReadEvent(ctx, inst, tid);
-                  UntrustfulAccount::collect(valueName1, e, callEventTraces,
-                                             SVE::Type::MALICIOUS_SIMULATION,
-                                             11);
-                }
-
-              } else if (CS.getTargetFunction()->getName().equals("sol.==")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.==: " << *inst << "\n";
-                auto value1 = CS.getArgOperand(0);
-                auto value2 = CS.getArgOperand(1);
-                if (auto key1_inst = dyn_cast<CallBase>(value1)) {
-                  if (auto key2_inst = dyn_cast<CallBase>(value2)) {
-                    CallSite CS1(key1_inst);
-                    CallSite CS2(key2_inst);
-                    if (CS1.getTargetFunction()->getName().startswith(
-                            "sol.key.1") &&
-                        CS2.getTargetFunction()->getName().startswith(
-                            "sol.key.1")) {
-                      auto valueName1 =
-                          LangModel::findGlobalString(CS1.getArgOperand(0));
-                      auto valueName2 =
-                          LangModel::findGlobalString(CS2.getArgOperand(0));
-                      auto account1 = stripAll(valueName1);
-                      auto account2 = stripAll(valueName2);
-                      auto pairx = std::make_pair(account1, account2);
-                      auto e = graph->createReadEvent(ctx, inst, tid);
-                      thread->checkDuplicateAccountKeyEqualMap[pairx] = e;
-                    }
-                  }
-                }
-              } else if (CS.getTargetFunction()->getName().equals(
-                             "sol.contains.2")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.contains.2: " << *inst << "\n";
-                if (func->getName().contains("::verify")) {
-                  auto e = graph->createReadEvent(ctx, inst, tid);
-                  auto value1 = CS.getArgOperand(0);
-                  auto value2 = CS.getArgOperand(1);
-                  auto valueName1 = LangModel::findGlobalString(value1);
-                  auto valueName2 = LangModel::findGlobalString(value2);
-                  if (valueName1.empty() && isa<Argument>(value1)) {
-                    if (auto arg1 = dyn_cast<Argument>(value1)) {
-                      valueName1 =
-                          funcArgTypesMap[func][arg1->getArgNo()].first;
-                    }
-                  }
-                  if (valueName2.empty() && isa<Argument>(value2)) {
-                    if (auto arg2 = dyn_cast<Argument>(value2)) {
-                      valueName2 =
-                          funcArgTypesMap[func][arg2->getArgNo()].first;
-                    }
-                  }
-                  valueName1 =
-                      findCallStackAccountAliasName(func, e, valueName1);
-                  valueName2 =
-                      findCallStackAccountAliasName(func, e, valueName2);
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.require.!2")) {
                   if (DEBUG_RUST_API)
-                    llvm::outs() << "sol.contains.2 verified: " << valueName2
-                                 << " " << valueName1 << "\n";
-                  auto pairx = std::make_pair(valueName2, valueName1);
-                  thread->accountContainsVerifiedMap[pairx] = e;
-                }
-              } else if (CS.getTargetFunction()->getName().equals("sol.+=")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.+=: " << *inst << "\n";
-                auto value = CS.getArgOperand(0);
-                if (auto call_inst = dyn_cast<CallBase>(value)) {
-                  CallSite CS2(call_inst);
-                  if (CS2.getTargetFunction()->getName().startswith(
-                          "sol.borrow_mut.")) {
-                    if (DEBUG_RUST_API)
-                      llvm::outs() << "borrow_mut: " << *value << "\n";
-                    auto value2 = CS2.getArgOperand(0);
+                    llvm::outs() << "sol.require.!: " << *inst << "\n";
+                  // merkle_proof::verify(proof,distributor.root,node.0)
+                  auto value = CS.getArgOperand(0);
+                  auto valueName = LangModel::findGlobalString(value);
+                  if (valueName.contains("::verify(")) {
+                    auto found = valueName.find("(");
+                    auto params = valueName.substr(found);
+                    llvm::SmallVector<StringRef, 8> value_vec;
+                    params.split(value_vec, ',', -1, false);
 
-                    auto valueName = LangModel::findGlobalString(value2);
-                    if (DEBUG_RUST_API)
-                      llvm::outs() << "data: " << valueName << "\n";
-                    auto e = graph->createReadEvent(ctx, inst, tid);
-                    thread->accountLamportsUpdateMap[valueName] = e;
-                  }
-                }
-                auto value2 = CS.getArgOperand(1);
-                auto valueName2 = LangModel::findGlobalString(value2);
-                bool isArgument = false;
-                if (valueName2.contains(".")) {
-                  //+= bet_order_account.stake;
-                  valueName2 = valueName2.substr(0, valueName2.find("."));
-                  for (auto pair : funcArgTypesMap[func]) {
-                    if (pair.first.contains(valueName2)) {
-                      isArgument = true;
-                      break;
+                    auto funcName = valueName.substr(0, found).str() + "." +
+                                    std::to_string(value_vec.size());
+                    // llvm::outs() << "func_require: " << funcName << "\n";
+                    auto func_require = thisModule->getFunction(funcName);
+                    if (func_require) {
+                      // llvm::outs() << "found func_require: " << funcName <<
+                      // "\n";
+                      traverseFunctionWrapper(ctx, thread, callStack, inst,
+                                              func_require);
                     }
                   }
-                }
-                if (isa<Argument>(value) || isa<Argument>(value2) ||
-                    isArgument || dyn_cast<CallBase>(value2)) {
-                  if (!isSafeType(func, value) && !isSafeType(func, value2)) {
-                    auto e = graph->createReadEvent(ctx, inst, tid);
-                    UnsafeOperation::collect(e, callEventTraces,
-                                             SVE::Type::OVERFLOW_ADD, 8);
+                  // TODO parse more
+
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.assert.")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "assert: " << *inst << "\n";
+                  auto value = CS.getArgOperand(0);
+                  auto valueName = LangModel::findGlobalString(value);
+                  // llvm::outs() << "data: " << valueName << "\n";
+                  // self.user_underlying_token_account.is_native()
+                  auto account = stripSelfAccountName(valueName);
+                  auto found = account.find(".");
+                  if (found != string::npos)
+                    account = account.substr(0, found);
+
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+                  if (!thread->isInAccountsMap(account)) {
+                    account = findCallStackAccountAliasName(func, e, account);
                   }
-                } else {
-                  if (valueName2.equals("1") && !isInLoop()) {
-                    if (!isSafeVariable(func, value) &&
-                        !hasValueLessMoreThan(value, inst, true)) {
-                      auto e = graph->createReadEvent(ctx, inst, tid);
-                      UnsafeOperation::collect(e, callEventTraces,
-                                               SVE::Type::OVERFLOW_ADD, 8);
+                  if (valueName.find(".is_signer") != string::npos) {
+                    thread->asssertSignerMap[account] = e;
+                  } else if (valueName.find(".data_is_empty") != string::npos) {
+                    thread->hasInitializedCheck = true;
+                  } else {
+                    thread->asssertOtherMap[account] = e;
+                  }
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.assert_eq.") ||
+                           CS.getTargetFunction()->getName().startswith(
+                               "sol.ne.2") ||
+                           CS.getTargetFunction()->getName().startswith(
+                               "sol.eq.2") ||
+                           CS.getTargetFunction()->getName().contains(
+                               "_keys_eq.") ||
+                           CS.getTargetFunction()->getName().contains(
+                               "_keys_neq.") ||
+                           CS.getTargetFunction()->getName().contains(
+                               "_keys_equal.") ||
+                           CS.getTargetFunction()->getName().contains(
+                               "_keys_not_equal.")) {
+                  // CS.getTargetFunction()->getName().startswith("sol.assert_eq.")
+                  // ||
+                  //        CS.getTargetFunction()->getName().startswith("sol.assert_keys_eq.2")
+                  //        ||
+                  //        CS.getTargetFunction()->getName().startswith("sol.require_keys_eq.2")
+                  //        ||
+                  //        CS.getTargetFunction()->getName().startswith("sol.require_keys_neq.2")
+                  //        ||
+                  //        CS.getTargetFunction()->getName().startswith("sol.check_keys_equal.2")
+                  //        ||
+                  //        CS.getTargetFunction()->getName().startswith("sol.check_keys_not_equal.2")
+                  addCheckKeyEqual(ctx, tid, inst, thread, CS);
+
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.assert_owner.")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "assert_owner: " << *inst << "\n";
+                  if (CS.getNumArgOperands() >= 2) {
+                    auto value1 = CS.getArgOperand(0);
+                    auto valueName1 = LangModel::findGlobalString(value1);
+                    valueName1 = stripAll(valueName1);
+                    auto value2 = CS.getArgOperand(1);
+                    auto valueName2 = LangModel::findGlobalString(value2);
+                    auto pair = std::make_pair(valueName1, valueName2);
+                    auto e = graph->createReadEvent(ctx, inst, tid);
+                    thread->assertOwnerEqualMap[pair] = e;
+                  }
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.assert_signer.")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "assert_signer: " << *inst << "\n";
+                  if (CS.getNumArgOperands() >= 1) {
+                    auto value1 = CS.getArgOperand(0);
+                    auto valueName1 = LangModel::findGlobalString(value1);
+                    auto account = stripAll(valueName1);
+                    auto e = graph->createReadEvent(ctx, inst, tid);
+                    thread->asssertSignerMap[account] = e;
+                  }
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.get.2")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "sol.get.2: " << *inst << "\n";
+                  auto value1 = CS.getArgOperand(0);
+                  auto valueName1 = LangModel::findGlobalString(value1);
+                  if (valueName1.contains(".remaining_accounts")) {
+                    if (auto nextInst = inst->getNextNonDebugInstruction()) {
+                      if (auto callValue2 = dyn_cast<CallBase>(nextInst)) {
+                        CallSite CS2(callValue2);
+                        if (CS2.getTargetFunction()->getName().startswith(
+                                "sol.unwrap.1") &&
+                            CS2.getArgOperand(0) == inst) {
+                          if (auto nextInst2 =
+                                  nextInst->getNextNonDebugInstruction()) {
+                            if (auto callValue3 =
+                                    dyn_cast<CallBase>(nextInst2)) {
+                              CallSite CS3(callValue3);
+                              if (CS3.getTargetFunction()->getName().startswith(
+                                      "sol.model.opaqueAssign") &&
+                                  CS3.getArgOperand(1) == nextInst) {
+                                // check
+                                auto value2 = CS.getArgOperand(1);
+                                auto valueName2 =
+                                    LangModel::findGlobalString(value2);
+                                auto accountSig = ".remaining_accounts.get(" +
+                                                  valueName2.str();
+                                if (thread->isAccountOwnerValidated(
+                                        accountSig)) {
+                                  auto value3 = CS3.getArgOperand(0);
+                                  auto valueName3 =
+                                      LangModel::findGlobalString(value3);
+                                  auto pair =
+                                      std::make_pair(valueName3, accountSig);
+                                  auto e = graph->createReadEvent(
+                                      ctx, nextInst2, tid);
+                                  thread->assertOwnerEqualMap[pair] = e;
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
                     }
                   }
-                }
-              } else if (CS.getTargetFunction()->getName().equals("sol.-=")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.-=: " << *inst << "\n";
-                auto value = CS.getArgOperand(0);
-                if (auto call_inst = dyn_cast<CallBase>(value)) {
-                  CallSite CS2(call_inst);
-                  if (CS2.getTargetFunction()->getName().startswith(
-                          "sol.borrow_mut.")) {
-                    if (DEBUG_RUST_API)
-                      llvm::outs() << "borrow_mut: " << *value << "\n";
-                    auto value2 = CS2.getArgOperand(0);
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.validate.!2")) {
+                  //            let want_destination_information_addr =
+                  //            self.get_destination_information_address(ctx);
+                  // validate!(
+                  //     ctx.accounts.destination_platform_information.key(),
+                  //     &want_destination_information_addr
+                  // );
+                  auto value1 = CS.getArgOperand(0);
+                  auto valueName1 = LangModel::findGlobalString(value1);
 
-                    auto valueName = LangModel::findGlobalString(value2);
-                    if (DEBUG_RUST_API)
-                      llvm::outs() << "data: " << valueName << "\n";
-                    auto e = graph->createReadEvent(ctx, inst, tid);
-                    thread->accountLamportsUpdateMap[valueName] = e;
-                  }
-                }
-                auto value2 = CS.getArgOperand(1);
-                if (isa<Argument>(value) || isa<Argument>(value2)) {
-                  if (!isSafeType(func, value) && !isSafeType(func, value2)) {
-                    auto e = graph->createReadEvent(ctx, inst, tid);
-                    UnsafeOperation::collect(e, callEventTraces,
-                                             SVE::Type::OVERFLOW_SUB, 8);
-                  }
-                } else {
+                  // @"ctx.accounts.receiving_underlying_token_account.key().ne(&ctx.accounts.vault_withdraw_queue.key())
+
+                  auto value2 = CS.getArgOperand(1);
                   auto valueName2 = LangModel::findGlobalString(value2);
-                  if (valueName2.equals("1") && !isInLoop()) {
-                    if (!isSafeVariable(func, value) &&
-                        !hasValueLessMoreThan(value, inst, false)) {
+                  // llvm::outs() << "sol.validate.2 valueName1: " << valueName1
+                  //              << " valueName2: " << valueName2 << "\n";
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+                  if (valueName2.endswith("true") ||
+                      valueName2.endswith("false")) {
+                    if (valueName1.contains(".ne(")) {
+                      auto x1 = valueName1.substr(0, valueName1.find(".ne("));
+                      auto x2 = valueName1.substr(valueName1.find(".ne(") + 4);
+                      // llvm::outs() << "updateKeyEqualMap x1: " << x1
+                      //       << " x2: " << x2 << "\n";
+                      updateKeyEqualMap(thread, e, false, true, x1, x2);
+                    }
+                  } else {
+                    addCheckKeyEqual(ctx, tid, inst, thread, CS);
+                    if (valueName2.endswith("_addr") ||
+                        valueName2.endswith("_address")) {
+                      if (auto prevInst = inst->getPrevNonDebugInstruction()) {
+                        if (auto callValue3 = dyn_cast<CallBase>(prevInst)) {
+                          CallSite CS3(callValue3);
+                          if (CS3.getTargetFunction()->getName().equals(
+                                  "sol.model.opaqueAssign")) {
+                            auto account = stripCtxAccountsName(valueName1);
+                            auto found = account.find_last_of(".");
+                            if (found != string::npos)
+                              account = account.substr(0, found);
+                            accountsPDAMap[account] = e;
+                            if (DEBUG_RUST_API)
+                              llvm::outs()
+                                  << "accountsPDAMap account: " << account
+                                  << "\n";
+                          }
+                        }
+                      }
+                    }
+                  }
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.reload.1")) {
+                  auto value1 = CS.getArgOperand(0);
+                  auto valueName1 = LangModel::findGlobalString(value1);
+                  if (valueName1.contains("ctx.")) {
+                    auto account = stripCtxAccountsName(valueName1);
+                    auto e = graph->createReadEvent(ctx, inst, tid);
+                    thread->accountsReloadedInInstructionMap[account] = e;
+                  }
+                } else if (CS.getTargetFunction()->getName().equals("sol.>") ||
+                           CS.getTargetFunction()->getName().equals("sol.<")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "sol.>: " << *inst << "\n";
+                  if (CS.getNumArgOperands() > 1) {
+                    auto value1 = CS.getArgOperand(0);
+                    auto value2 = CS.getArgOperand(1);
+                    auto valueName1 = LangModel::findGlobalString(value1);
+                    auto valueName2 = LangModel::findGlobalString(value2);
+                    if (valueName1.startswith("ctx.") &&
+                        valueName1.endswith(".amount")) {
+                      auto account = stripAll(valueName1);
+                      account = account.substr(0, account.find("."));
+                      if (thread->isTokenTransferFromToAccount(account) &&
+                          !thread->isAccountReloaded(account)) {
+                        auto e = graph->createReadEvent(ctx, inst, tid);
+                        UntrustfulAccount::collect(account, e, callEventTraces,
+                                                   SVE::Type::MISS_CPI_RELOAD,
+                                                   6);
+                      }
+                    }
+                  }
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.>=") ||
+                           CS.getTargetFunction()->getName().startswith(
+                               "sol.<=")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "sol.>=: " << *inst << "\n";
+                  auto value1 = CS.getArgOperand(0);
+                  auto value2 = CS.getArgOperand(1);
+                  auto valueName1 = LangModel::findGlobalString(value1);
+                  auto valueName2 = LangModel::findGlobalString(value2);
+
+                  if (valueName1.contains("slot") &&
+                      valueName2.contains("slot") &&
+                      !valueName2.contains("price")) {
+                    auto e = graph->createReadEvent(ctx, inst, tid);
+                    UntrustfulAccount::collect(valueName1, e, callEventTraces,
+                                               SVE::Type::MALICIOUS_SIMULATION,
+                                               11);
+                  }
+
+                } else if (CS.getTargetFunction()->getName().equals("sol.==")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "sol.==: " << *inst << "\n";
+                  auto value1 = CS.getArgOperand(0);
+                  auto value2 = CS.getArgOperand(1);
+                  if (auto key1_inst = dyn_cast<CallBase>(value1)) {
+                    if (auto key2_inst = dyn_cast<CallBase>(value2)) {
+                      CallSite CS1(key1_inst);
+                      CallSite CS2(key2_inst);
+                      if (CS1.getTargetFunction()->getName().startswith(
+                              "sol.key.1") &&
+                          CS2.getTargetFunction()->getName().startswith(
+                              "sol.key.1")) {
+                        auto valueName1 =
+                            LangModel::findGlobalString(CS1.getArgOperand(0));
+                        auto valueName2 =
+                            LangModel::findGlobalString(CS2.getArgOperand(0));
+                        auto account1 = stripAll(valueName1);
+                        auto account2 = stripAll(valueName2);
+                        auto pairx = std::make_pair(account1, account2);
+                        auto e = graph->createReadEvent(ctx, inst, tid);
+                        thread->checkDuplicateAccountKeyEqualMap[pairx] = e;
+                      }
+                    }
+                  }
+                } else if (CS.getTargetFunction()->getName().equals(
+                               "sol.contains.2")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "sol.contains.2: " << *inst << "\n";
+                  if (func->getName().contains("::verify")) {
+                    auto e = graph->createReadEvent(ctx, inst, tid);
+                    auto value1 = CS.getArgOperand(0);
+                    auto value2 = CS.getArgOperand(1);
+                    auto valueName1 = LangModel::findGlobalString(value1);
+                    auto valueName2 = LangModel::findGlobalString(value2);
+                    if (valueName1.empty() && isa<Argument>(value1)) {
+                      if (auto arg1 = dyn_cast<Argument>(value1)) {
+                        valueName1 =
+                            funcArgTypesMap[func][arg1->getArgNo()].first;
+                      }
+                    }
+                    if (valueName2.empty() && isa<Argument>(value2)) {
+                      if (auto arg2 = dyn_cast<Argument>(value2)) {
+                        valueName2 =
+                            funcArgTypesMap[func][arg2->getArgNo()].first;
+                      }
+                    }
+                    valueName1 =
+                        findCallStackAccountAliasName(func, e, valueName1);
+                    valueName2 =
+                        findCallStackAccountAliasName(func, e, valueName2);
+                    if (DEBUG_RUST_API)
+                      llvm::outs() << "sol.contains.2 verified: " << valueName2
+                                   << " " << valueName1 << "\n";
+                    auto pairx = std::make_pair(valueName2, valueName1);
+                    thread->accountContainsVerifiedMap[pairx] = e;
+                  }
+                } else if (CS.getTargetFunction()->getName().equals("sol.+=")) {
+                  // No-op; this is handled by the rulset.
+                } else if (CS.getTargetFunction()->getName().equals("sol.-=")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "sol.-=: " << *inst << "\n";
+                  auto value = CS.getArgOperand(0);
+                  if (auto call_inst = dyn_cast<CallBase>(value)) {
+                    CallSite CS2(call_inst);
+                    if (CS2.getTargetFunction()->getName().startswith(
+                            "sol.borrow_mut.")) {
+                      if (DEBUG_RUST_API)
+                        llvm::outs() << "borrow_mut: " << *value << "\n";
+                      auto value2 = CS2.getArgOperand(0);
+
+                      auto valueName = LangModel::findGlobalString(value2);
+                      if (DEBUG_RUST_API)
+                        llvm::outs() << "data: " << valueName << "\n";
+                      auto e = graph->createReadEvent(ctx, inst, tid);
+                      thread->accountLamportsUpdateMap[valueName] = e;
+                    }
+                  }
+                  auto value2 = CS.getArgOperand(1);
+                  if (isa<Argument>(value) || isa<Argument>(value2)) {
+                    if (!isSafeType(func, value) && !isSafeType(func, value2)) {
                       auto e = graph->createReadEvent(ctx, inst, tid);
                       UnsafeOperation::collect(e, callEventTraces,
                                                SVE::Type::OVERFLOW_SUB, 8);
                     }
-                  } else if (valueName2.contains("fee")) {
-                    // tricky base_fee, last line < base_fee
-                    SourceInfo srcInfo = getSourceLoc(inst);
-                    auto line_above = getSourceLinesForSoteria(srcInfo, 1);
-                    if (line_above.find("<") != std::string::npos &&
-                        line_above.find(valueName2.str()) !=
-                            std::string::npos) {
-                      auto e = graph->createReadEvent(ctx, inst, tid);
-                      UnsafeOperation::collect(e, callEventTraces,
-                                               SVE::Type::OVERFLOW_SUB, 8);
-                    }
-                  }
-                }
-              } else if (CS.getTargetFunction()->getName().equals("sol.+")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.+: " << *inst << "\n";
-                auto value1 = CS.getArgOperand(0);
-                auto value2 = CS.getArgOperand(1);
-                if (isa<Argument>(value1) || isa<Argument>(value2)) {
-                  if (!isSafeType(func, value1) && !isSafeType(func, value2)) {
-                    if (!isSafeVariable(func, value1)) {
-                      auto e = graph->createReadEvent(ctx, inst, tid);
-                      UnsafeOperation::collect(e, callEventTraces,
-                                               SVE::Type::OVERFLOW_ADD, 8);
-                    }
-                  }
-                }
-              } else if (CS.getTargetFunction()->getName().equals("sol.-")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.-: " << *inst << "\n";
-                auto value1 = CS.getArgOperand(0);
-                auto value2 = CS.getArgOperand(1);
-                if (isa<Argument>(value1) || isa<Argument>(value2)) {
-                  if (!isSafeType(func, value1) && !isSafeType(func, value2)) {
-                    if (!isSafeVariable(func, value1)) {
-                      auto e = graph->createReadEvent(ctx, inst, tid);
-                      UnsafeOperation::collect(e, callEventTraces,
-                                               SVE::Type::OVERFLOW_SUB, 8);
-                    }
-                  }
-                } else {
-                  auto valueName = LangModel::findGlobalString(value2);
-                  if (valueName.contains("rent")) {
-                    if (auto lamport_inst = dyn_cast<CallBase>(value1)) {
-                      CallSite CS2(lamport_inst);
-                      if (CS2.getTargetFunction()->getName().startswith(
-                              "sol.lamports.")) {
+                  } else {
+                    auto valueName2 = LangModel::findGlobalString(value2);
+                    if (valueName2.equals("1") && !isInLoop()) {
+                      if (!isSafeVariable(func, value) &&
+                          !hasValueLessMoreThan(value, inst, false)) {
+                        auto e = graph->createReadEvent(ctx, inst, tid);
+                        UnsafeOperation::collect(e, callEventTraces,
+                                                 SVE::Type::OVERFLOW_SUB, 8);
+                      }
+                    } else if (valueName2.contains("fee")) {
+                      // tricky base_fee, last line < base_fee
+                      SourceInfo srcInfo = getSourceLoc(inst);
+                      auto line_above = getSourceLinesForSoteria(srcInfo, 1);
+                      if (line_above.find("<") != std::string::npos &&
+                          line_above.find(valueName2.str()) !=
+                              std::string::npos) {
                         auto e = graph->createReadEvent(ctx, inst, tid);
                         UnsafeOperation::collect(e, callEventTraces,
                                                  SVE::Type::OVERFLOW_SUB, 8);
                       }
                     }
                   }
-                }
-              } else if (CS.getTargetFunction()->getName().equals("sol.*")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.*: " << *inst << "\n";
-                auto value1 = CS.getArgOperand(0);
-                auto value2 = CS.getArgOperand(1);
-                if (isa<Argument>(value1) || isa<Argument>(value2)) {
-                  if (!isSafeType(func, value1) && !isSafeType(func, value2)) {
-                    auto e = graph->createReadEvent(ctx, inst, tid);
-                    UnsafeOperation::collect(e, callEventTraces,
-                                             SVE::Type::OVERFLOW_MUL, 6);
+                } else if (CS.getTargetFunction()->getName().equals("sol.+")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "sol.+: " << *inst << "\n";
+                  auto value1 = CS.getArgOperand(0);
+                  auto value2 = CS.getArgOperand(1);
+                  if (isa<Argument>(value1) || isa<Argument>(value2)) {
+                    if (!isSafeType(func, value1) &&
+                        !isSafeType(func, value2)) {
+                      if (!isSafeVariable(func, value1)) {
+                        auto e = graph->createReadEvent(ctx, inst, tid);
+                        UnsafeOperation::collect(e, callEventTraces,
+                                                 SVE::Type::OVERFLOW_ADD, 8);
+                      }
+                    }
                   }
-                }
-              } else if (CS.getTargetFunction()->getName().equals("sol./")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol./: " << *inst << "\n";
-                auto value1 = CS.getArgOperand(0);
-                auto value2 = CS.getArgOperand(1);
-                if (isa<Argument>(value2)) {
-                  if (!isSafeType(func, value2)) {
-                    auto e = graph->createReadEvent(ctx, inst, tid);
-                    UnsafeOperation::collect(e, callEventTraces,
-                                             SVE::Type::OVERFLOW_DIV, 5);
+                } else if (CS.getTargetFunction()->getName().equals("sol.-")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "sol.-: " << *inst << "\n";
+                  auto value1 = CS.getArgOperand(0);
+                  auto value2 = CS.getArgOperand(1);
+                  if (isa<Argument>(value1) || isa<Argument>(value2)) {
+                    if (!isSafeType(func, value1) &&
+                        !isSafeType(func, value2)) {
+                      if (!isSafeVariable(func, value1)) {
+                        auto e = graph->createReadEvent(ctx, inst, tid);
+                        UnsafeOperation::collect(e, callEventTraces,
+                                                 SVE::Type::OVERFLOW_SUB, 8);
+                      }
+                    }
+                  } else {
+                    auto valueName = LangModel::findGlobalString(value2);
+                    if (valueName.contains("rent")) {
+                      if (auto lamport_inst = dyn_cast<CallBase>(value1)) {
+                        CallSite CS2(lamport_inst);
+                        if (CS2.getTargetFunction()->getName().startswith(
+                                "sol.lamports.")) {
+                          auto e = graph->createReadEvent(ctx, inst, tid);
+                          UnsafeOperation::collect(e, callEventTraces,
+                                                   SVE::Type::OVERFLOW_SUB, 8);
+                        }
+                      }
+                    }
                   }
-                }
-                if (auto value = dyn_cast<CallBase>(CS.getArgOperand(0))) {
-                  CallSite CS2(value);
-                  if (CS2.getTargetFunction()->getName().equals("sol.*")) {
-                    auto valueName2 =
-                        LangModel::findGlobalString(CS.getArgOperand(1));
-                    // llvm::outs() << "move./ valueName2: " << valueName2 <<
-                    // "\n";
-                    if (valueName2.contains("total") &&
-                        valueName2.contains("upply")) {
-                      // amount0 = (liquidity * balance0) / _totalSupply
-                      auto liquidity_ =
-                          LangModel::findGlobalString(CS2.getArgOperand(0));
-                      auto balance_ =
-                          LangModel::findGlobalString(CS2.getArgOperand(1));
-                      if (liquidity_.contains("liquidity") &&
-                          balance_.contains("balance")) {
+                } else if (CS.getTargetFunction()->getName().equals("sol.*")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "sol.*: " << *inst << "\n";
+                  auto value1 = CS.getArgOperand(0);
+                  auto value2 = CS.getArgOperand(1);
+                  if (isa<Argument>(value1) || isa<Argument>(value2)) {
+                    if (!isSafeType(func, value1) &&
+                        !isSafeType(func, value2)) {
+                      auto e = graph->createReadEvent(ctx, inst, tid);
+                      UnsafeOperation::collect(e, callEventTraces,
+                                               SVE::Type::OVERFLOW_MUL, 6);
+                    }
+                  }
+                } else if (CS.getTargetFunction()->getName().equals("sol./")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "sol./: " << *inst << "\n";
+                  auto value1 = CS.getArgOperand(0);
+                  auto value2 = CS.getArgOperand(1);
+                  if (isa<Argument>(value2)) {
+                    if (!isSafeType(func, value2)) {
+                      auto e = graph->createReadEvent(ctx, inst, tid);
+                      UnsafeOperation::collect(e, callEventTraces,
+                                               SVE::Type::OVERFLOW_DIV, 5);
+                    }
+                  }
+                  if (auto value = dyn_cast<CallBase>(CS.getArgOperand(0))) {
+                    CallSite CS2(value);
+                    if (CS2.getTargetFunction()->getName().equals("sol.*")) {
+                      auto valueName2 =
+                          LangModel::findGlobalString(CS.getArgOperand(1));
+                      // llvm::outs() << "move./ valueName2: " << valueName2 <<
+                      // "\n";
+                      if (valueName2.contains("total") &&
+                          valueName2.contains("upply")) {
+                        // amount0 = (liquidity * balance0) / _totalSupply
+                        auto liquidity_ =
+                            LangModel::findGlobalString(CS2.getArgOperand(0));
+                        auto balance_ =
+                            LangModel::findGlobalString(CS2.getArgOperand(1));
+                        if (liquidity_.contains("liquidity") &&
+                            balance_.contains("balance")) {
+                          auto e = graph->createReadEvent(ctx, inst, tid);
+                          UnsafeOperation::collect(
+                              e, callEventTraces,
+                              SVE::Type::INCORRECT_TOKEN_CALCULATION, 9);
+                        }
+                      } else if (!is_constant(valueName2.str())) {
+                        SourceInfo srcInfo = getSourceLoc(inst);
+                        if (srcInfo.getSourceLine().find(" as u") ==
+                            string::npos) {
+                          auto e = graph->createReadEvent(ctx, inst, tid);
+                          UnsafeOperation::collect(
+                              e, callEventTraces, SVE::Type::DIV_PRECISION_LOSS,
+                              8);
+                        }
+                      }
+                    }
+                  }
+
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.checked_div.")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "sol.checked_div: " << *inst << "\n";
+
+                  if (isInLoop() && CS.getNumArgOperands() > 1) {
+                    auto value = CS.getArgOperand(1);
+                    if (auto denominator_inst = dyn_cast<CallBase>(value)) {
+                      CallSite CS2(denominator_inst);
+                      if (CS2.getTargetFunction()->getName().startswith(
+                              "sol.checked_")) {
                         auto e = graph->createReadEvent(ctx, inst, tid);
                         UnsafeOperation::collect(
                             e, callEventTraces,
-                            SVE::Type::INCORRECT_TOKEN_CALCULATION, 9);
-                      }
-                    } else if (!is_constant(valueName2.str())) {
-                      SourceInfo srcInfo = getSourceLoc(inst);
-                      if (srcInfo.getSourceLine().find(" as u") ==
-                          string::npos) {
-                        auto e = graph->createReadEvent(ctx, inst, tid);
-                        UnsafeOperation::collect(e, callEventTraces,
-                                                 SVE::Type::DIV_PRECISION_LOSS,
-                                                 8);
+                            SVE::Type::INCORRECT_DIVISION_LOGIC, 8);
                       }
                     }
                   }
-                }
-
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.checked_div.")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.checked_div: " << *inst << "\n";
-
-                if (isInLoop() && CS.getNumArgOperands() > 1) {
-                  auto value = CS.getArgOperand(1);
-                  if (auto denominator_inst = dyn_cast<CallBase>(value)) {
-                    CallSite CS2(denominator_inst);
-                    if (CS2.getTargetFunction()->getName().startswith(
-                            "sol.checked_")) {
-                      auto e = graph->createReadEvent(ctx, inst, tid);
-                      UnsafeOperation::collect(
-                          e, callEventTraces,
-                          SVE::Type::INCORRECT_DIVISION_LOGIC, 8);
-                    }
-                  }
-                }
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "//sol.checked_mul.")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.checked_mul: " << *inst << "\n";
-                auto signature = "price_for_supply";
-                if (func->getName().contains(signature)) {
-                  for (auto idx = callEventTraces[tid].size() - 1; idx >= 0;
-                       idx--) {
-                    auto e = callEventTraces[tid][idx];
-                    if (auto call_inst = dyn_cast<CallBase>(e->getInst())) {
-                      CallSite CS2(call_inst);
-                      if (CS2.getTargetFunction()->getName().contains(
-                              signature) &&
-                          !CS2.getTargetFunction()->getName().contains(
-                              ".anon")) {
-                        UnsafeOperation::collect(e, callEventTraces,
-                                                 SVE::Type::FLASHLOAN_RISK, 9);
-                        break;
-                      }
-                    }
-                  }
-                }
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.into.")) {
-                // sol.into.1
-              } else if (CS.getTargetFunction()->getName().contains(
-                             "::from.1") ||
-                         CS.getTargetFunction()->getName().contains(
-                             "::try_from.1")) {
-                //
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.to_u32.") ||
-                         CS.getTargetFunction()->getName().startswith(
-                             "sol.to_u64.")) {
-                if (auto value = dyn_cast<CallBase>(CS.getArgOperand(0))) {
-                  CallSite CS2(value);
-                  auto targetName = CS2.getTargetFunction()->getName();
-                  // llvm::outs() << "sol.to_u64 targetName: " << targetName <<
-                  // "\n";
-                  if (targetName == "sol.*") {
-                    // if (DEBUG_RUST_API)
-                    // llvm::outs() << "CAST_TRUNCATE: " << targetName << "\n";
-                    auto e = graph->createReadEvent(ctx, inst, tid);
-                    UnsafeOperation::collect(e, callEventTraces,
-                                             SVE::Type::CAST_TRUNCATE, 8);
-                  }
-                }
-              } else if (CS.getTargetFunction()->getName().equals(
-                             "sol.typecast")) {
-                auto value1 = CS.getArgOperand(0); // royalty
-                auto valueName1 = LangModel::findGlobalString(value1);
-                if (!valueName1.empty() && !valueName1.equals("self")) {
-                  auto value2 = CS.getArgOperand(1); // u64
-                  bool isPossibleTruncate = false;
-                  for (auto pair : funcArgTypesMap[func]) {
-                    if (pair.first.contains(valueName1)) {
-                      auto type1 = pair.second;
-                      if (type1.contains("Option<")) {
-                        type1 = type1.substr(7);
-                        type1 = type1.substr(0, type1.str().length() - 1);
-                      }
-                      auto type2 = LangModel::findGlobalString(value2);
-                      if ((type1.startswith("u") || type1.startswith("i")) &&
-                          (type2.startswith("u") || type2.startswith("i"))) {
-                        if (type1 == "usize")
-                          type1 = "u64";
-                        if (type2 == "usize")
-                          type2 = "u64";
-                        if (DEBUG_RUST_API)
-                          llvm::outs() << "sol.typecast type1: " << type1
-                                       << " type2: " << type2 << "\n";
-                        int size1 = stoi(type1.str().substr(1));
-                        int size2 = stoi(type2.str().substr(1));
-                        if (DEBUG_RUST_API)
-                          llvm::outs() << "sol.typecast size1: " << size1
-                                       << " size2: " << size2 << "\n";
-                        if (size1 > size2) {
-                          isPossibleTruncate = true;
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "//sol.checked_mul.")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "sol.checked_mul: " << *inst << "\n";
+                  auto signature = "price_for_supply";
+                  if (func->getName().contains(signature)) {
+                    for (auto idx = callEventTraces[tid].size() - 1; idx >= 0;
+                         idx--) {
+                      auto e = callEventTraces[tid][idx];
+                      if (auto call_inst = dyn_cast<CallBase>(e->getInst())) {
+                        CallSite CS2(call_inst);
+                        if (CS2.getTargetFunction()->getName().contains(
+                                signature) &&
+                            !CS2.getTargetFunction()->getName().contains(
+                                ".anon")) {
+                          UnsafeOperation::collect(
+                              e, callEventTraces, SVE::Type::FLASHLOAN_RISK, 9);
                           break;
                         }
                       }
                     }
                   }
-                  if (isPossibleTruncate) {
-                    auto e = graph->createReadEvent(ctx, inst, tid);
-                    UnsafeOperation::collect(e, callEventTraces,
-                                             SVE::Type::CAST_TRUNCATE, 8);
-                  }
-                }
-
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.to_imprecise.")) {
-                bool isPossibleRoundingError = true;
-                if (auto value = dyn_cast<CallBase>(CS.getArgOperand(0))) {
-                  CallSite CS2(value);
-                  auto targetName = CS2.getTargetFunction()->getName();
-                  // sol.floor. OR sol.ceil.
-                  if (DEBUG_RUST_API)
-                    llvm::outs()
-                        << "sol.to_imprecise from: " << targetName << "\n";
-                  isPossibleRoundingError = false;
-                }
-                if (isPossibleRoundingError &&
-                    !thread->isOnceOnlyOwnerOnlyInstruction) {
-                  auto e = graph->createReadEvent(ctx, inst, tid);
-                  UnsafeOperation::collect(
-                      e, callEventTraces, SVE::Type::BIDIRECTIONAL_ROUNDING, 8);
-                }
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.try_round_")) {
-                // sol.try_round_u64.1
-                bool isPossibleRoundingError = true;
-                if (auto nextInst = inst->getNextNonDebugInstruction()) {
-                  if (auto nextInst_call = dyn_cast<CallBase>(nextInst)) {
-                    CallSite CS2(nextInst_call);
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.into.")) {
+                  // sol.into.1
+                } else if (CS.getTargetFunction()->getName().contains(
+                               "::from.1") ||
+                           CS.getTargetFunction()->getName().contains(
+                               "::try_from.1")) {
+                  //
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.to_u32.") ||
+                           CS.getTargetFunction()->getName().startswith(
+                               "sol.to_u64.")) {
+                  if (auto value = dyn_cast<CallBase>(CS.getArgOperand(0))) {
+                    CallSite CS2(value);
                     auto targetName = CS2.getTargetFunction()->getName();
-                    if (targetName.startswith("sol.max.") ||
-                        targetName.startswith("sol.min."))
-                      isPossibleRoundingError = false;
-                    if (DEBUG_RUST_API)
-                      llvm::outs()
-                          << "sol.try_round_ from: " << targetName << "\n";
+                    // llvm::outs() << "sol.to_u64 targetName: " << targetName
+                    // <<
+                    // "\n";
+                    if (targetName == "sol.*") {
+                      // if (DEBUG_RUST_API)
+                      // llvm::outs() << "CAST_TRUNCATE: " << targetName <<
+                      // "\n";
+                      auto e = graph->createReadEvent(ctx, inst, tid);
+                      UnsafeOperation::collect(e, callEventTraces,
+                                               SVE::Type::CAST_TRUNCATE, 8);
+                    }
                   }
-                }
-                if (isPossibleRoundingError &&
-                    !thread->isOnceOnlyOwnerOnlyInstruction) {
-                  auto e = graph->createReadEvent(ctx, inst, tid);
-                  UnsafeOperation::collect(
-                      e, callEventTraces, SVE::Type::BIDIRECTIONAL_ROUNDING, 8);
-                }
-              } else if (CS.getTargetFunction()->getName().contains(
-                             "::check_account_owner.2")) {
-                auto value1 = CS.getArgOperand(0); // program_id
-                auto valueName1 = LangModel::findGlobalString(value1);
-
-                if (auto arg1 = dyn_cast<Argument>(value1)) {
-                  valueName1 = funcArgTypesMap[func][arg1->getArgNo()].first;
-                  if (DEBUG_RUST_API)
-                    llvm::outs()
-                        << "check_account_owner valueName1: " << valueName1
-                        << "\n";
-                }
-                auto value2 = CS.getArgOperand(1); // account
-                auto valueName2 = LangModel::findGlobalString(value2);
-                if (auto arg2 = dyn_cast<Argument>(value2)) {
-                  valueName2 = funcArgTypesMap[func][arg2->getArgNo()].first;
-                  if (DEBUG_RUST_API)
-                    llvm::outs()
-                        << "check_account_owner valueName2: " << valueName2
-                        << "\n";
-                }
-
-                auto pair = std::make_pair(valueName1, valueName2);
-                auto e = graph->createReadEvent(ctx, inst, tid);
-                thread->assertOwnerEqualMap[pair] = e;
-
-              } else if (CS.getTargetFunction()->getName().contains(
-                             "::validate_owner.")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "validate_owner: " << *inst << "\n";
-                if (CS.getNumArgOperands() > 2) {
-                  auto value1 = CS.getArgOperand(0); // program_id
-                  auto value2 = CS.getArgOperand(1); // authority
-                  auto value3 = CS.getArgOperand(2); // authority_info
-                  // auto value4 = CS.getArgOperand(3);  //
-                  auto valueName2 = LangModel::findGlobalString(value2);
-                  if (auto arg2 = dyn_cast<Argument>(value2))
-                    valueName2 = funcArgTypesMap[func][arg2->getArgNo()].first;
-                  auto valueName3 = LangModel::findGlobalString(value3);
-                  if (auto arg3 = dyn_cast<Argument>(value3))
-                    valueName3 = funcArgTypesMap[func][arg3->getArgNo()].first;
-
-                  if (!valueName2.empty() || !valueName3.empty()) {
-                    auto pair = std::make_pair(valueName2, valueName3);
-                    auto e = graph->createReadEvent(ctx, inst, tid);
-                    thread->assertOwnerEqualMap[pair] = e;
-                    thread->assertKeyEqualMap[pair] = e;
-                    // in addition, owner_account_info.is_signer)
-                    thread->asssertSignerMap[valueName3] = e;
-
-                    if (DEBUG_RUST_API)
-                      llvm::outs() << "valueName2: " << valueName2
-                                   << " valueName3: " << valueName3 << "\n";
-                  }
-                }
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.require_eq.!")) {
-                auto value1 = CS.getArgOperand(0); // mint_info.key
-                auto value2 = CS.getArgOperand(1); // dest_account.base.mint
-                auto valueName1 = LangModel::findGlobalString(value1);
-                if (auto arg1 = dyn_cast<Argument>(value1))
-                  valueName1 = funcArgTypesMap[func][arg1->getArgNo()].first;
-                auto valueName2 = LangModel::findGlobalString(value2);
-                if (auto arg2 = dyn_cast<Argument>(value2))
-                  valueName2 = funcArgTypesMap[func][arg2->getArgNo()].first;
-
-                if (!valueName1.empty() && !valueName2.empty()) {
-                  if (valueName1.contains(".owner") &&
-                      valueName2.contains("::ID")) {
-                    auto e = graph->createReadEvent(ctx, inst, tid);
-                    valueName1 = stripAll(valueName1);
-                    auto foundComma = valueName2.find(",");
-                    if (foundComma != string::npos)
-                      valueName2 = valueName2.substr(0, foundComma);
-                    auto pair = std::make_pair(valueName1, valueName2);
-                    thread->assertOwnerEqualMap[pair] = e;
-                  }
-                }
-              } else if (CS.getTargetFunction()->getName().contains(
-                             "cmp_pubkeys.2")) {
-                auto value1 = CS.getArgOperand(0); // mint_info.key
-                auto value2 = CS.getArgOperand(1); // dest_account.base.mint
-                auto valueName1 = LangModel::findGlobalString(value1);
-                if (auto arg1 = dyn_cast<Argument>(value1))
-                  valueName1 = funcArgTypesMap[func][arg1->getArgNo()].first;
-                auto valueName2 = LangModel::findGlobalString(value2);
-                if (auto arg2 = dyn_cast<Argument>(value2))
-                  valueName2 = funcArgTypesMap[func][arg2->getArgNo()].first;
-
-                if (!valueName1.empty() && !valueName2.empty()) {
-                  auto e = graph->createReadEvent(ctx, inst, tid);
-
-                  if (DEBUG_RUST_API)
-                    llvm::outs()
-                        << "sol.cmp_pubkeys.2 valueName1: " << valueName1
-                        << " valueName2: " << valueName2 << "\n";
-
-                  auto pair = std::make_pair(valueName1, valueName2);
-                  thread->assertKeyEqualMap[pair] = e;
-                  auto pair2 = std::make_pair(valueName2, valueName1);
-                  thread->assertKeyEqualMap[pair2] = e;
-                  // TODO: owner check
-                  if (valueName1.contains(".owner") ||
-                      valueName2.contains(".owner"))
-                    thread->assertOwnerEqualMap[pair] = e;
-                }
-              } else if (CS.getTargetFunction()->getName().startswith(
-                             "sol.invoke_signed.") ||
-                         CS.getTargetFunction()->getName().startswith(
-                             "sol.invoke.")) {
-                auto value = CS.getArgOperand(0);
-                // find all accounts invoked
-                if (!isa<CallBase>(value))
-                  value = inst->getPrevNonDebugInstruction();
-                auto e = graph->createReadEvent(ctx, inst, tid);
-
-                if (auto call_inst = dyn_cast<CallBase>(value)) {
-                  auto value2 = value;
-                  CallSite CS2(call_inst);
-                  if (CS2.getTargetFunction()->getName().startswith(
-                          "sol.model.opaqueAssign")) {
-                    value2 = CS2.getArgOperand(1);
-                  }
-                  if (auto call_inst2 = dyn_cast<CallBase>(value2)) {
-                    CallSite CS3(call_inst2);
-                    if (CS3.getTargetFunction()->getName().contains(
-                            "instruction::")) {
-                      auto valuex = CS.getArgOperand(1);
-                      auto valueNameX = LangModel::findGlobalString(valuex);
-                      // split
-                      valueNameX = valueNameX.substr(1, valueNameX.size() - 2);
-                      if (DEBUG_RUST_API)
-                        llvm::outs()
-                            << "sol.invoke: valueNameX: " << valueNameX << "\n";
-                      llvm::SmallVector<StringRef, 8> value_vec;
-                      valueNameX.split(value_vec, ',', -1, false);
-                      for (auto value_ : value_vec) {
-                        auto foundClone = value_.find(".clone");
-                        if (foundClone != string::npos)
-                          value_ = value_.substr(0, foundClone);
-                        if (DEBUG_RUST_API)
-                          llvm::outs()
-                              << "sol.invoke: value_: " << value_ << "\n";
-                        thread->accountsInvokedMap[value_] = e;
-                        if (!thread->isInAccountsMap(value_)) {
-                          value_ =
-                              findCallStackAccountAliasName(func, e, value_);
-                          thread->accountsInvokedMap[value_] = e;
+                } else if (CS.getTargetFunction()->getName().equals(
+                               "sol.typecast")) {
+                  auto value1 = CS.getArgOperand(0); // royalty
+                  auto valueName1 = LangModel::findGlobalString(value1);
+                  if (!valueName1.empty() && !valueName1.equals("self")) {
+                    auto value2 = CS.getArgOperand(1); // u64
+                    bool isPossibleTruncate = false;
+                    for (auto pair : funcArgTypesMap[func]) {
+                      if (pair.first.contains(valueName1)) {
+                        auto type1 = pair.second;
+                        if (type1.contains("Option<")) {
+                          type1 = type1.substr(7);
+                          type1 = type1.substr(0, type1.str().length() - 1);
+                        }
+                        auto type2 = LangModel::findGlobalString(value2);
+                        if ((type1.startswith("u") || type1.startswith("i")) &&
+                            (type2.startswith("u") || type2.startswith("i"))) {
+                          if (type1 == "usize")
+                            type1 = "u64";
+                          if (type2 == "usize")
+                            type2 = "u64";
+                          if (DEBUG_RUST_API)
+                            llvm::outs() << "sol.typecast type1: " << type1
+                                         << " type2: " << type2 << "\n";
+                          int size1 = stoi(type1.str().substr(1));
+                          int size2 = stoi(type2.str().substr(1));
+                          if (DEBUG_RUST_API)
+                            llvm::outs() << "sol.typecast size1: " << size1
+                                         << " size2: " << size2 << "\n";
+                          if (size1 > size2) {
+                            isPossibleTruncate = true;
+                            break;
+                          }
                         }
                       }
                     }
+                    if (isPossibleTruncate) {
+                      auto e = graph->createReadEvent(ctx, inst, tid);
+                      UnsafeOperation::collect(e, callEventTraces,
+                                               SVE::Type::CAST_TRUNCATE, 8);
+                    }
                   }
-                } else {
-                  if (DEBUG_RUST_API)
-                    llvm::outs()
-                        << "sol.invoke: failed to find invoked accounts: "
-                        << *value << "\n";
-                }
 
-                // find program_id for sol.invoke_signed.
-                if (CS.getTargetFunction()->getName().startswith(
-                        "sol.invoke_signed.")) {
-                  auto pair = getProgramIdAccountName(inst);
-                  if (!pair.first.empty() &&
-                      !thread->isAccountKeyValidated(pair.first)) {
-                    auto e2 = graph->createReadEvent(ctx, pair.second, tid);
-                    UntrustfulAccount::collect(pair.first, e2, callEventTraces,
-                                               SVE::Type::ARBITRARY_CPI, 9);
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.to_imprecise.")) {
+                  bool isPossibleRoundingError = true;
+                  if (auto value = dyn_cast<CallBase>(CS.getArgOperand(0))) {
+                    CallSite CS2(value);
+                    auto targetName = CS2.getTargetFunction()->getName();
+                    // sol.floor. OR sol.ceil.
+                    if (DEBUG_RUST_API)
+                      llvm::outs()
+                          << "sol.to_imprecise from: " << targetName << "\n";
+                    isPossibleRoundingError = false;
                   }
-                }
-              } else if (CS.getTargetFunction()->getName().contains(
-                             "//initialized")) {
-                if (DEBUG_RUST_API)
-                  llvm::outs() << "sol.initialized: " << *inst << "\n";
-                thread->hasInitializedCheck = true;
-
-              } else {
-                // check price_for_supply
-                auto signature = "price_for_supply.";
-                if (CS.getTargetFunction()->getName().contains(signature)) {
-                  auto value = CS.getArgOperand(0);
-                  auto valueName = LangModel::findGlobalString(value);
-                  if (valueName.contains(".accounts.") &&
-                      valueName.contains("price")) {
+                  if (isPossibleRoundingError &&
+                      !thread->isOnceOnlyOwnerOnlyInstruction) {
                     auto e = graph->createReadEvent(ctx, inst, tid);
                     UnsafeOperation::collect(e, callEventTraces,
-                                             SVE::Type::FLASHLOAN_RISK, 9);
+                                             SVE::Type::BIDIRECTIONAL_ROUNDING,
+                                             8);
                   }
-                }
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.try_round_")) {
+                  // sol.try_round_u64.1
+                  bool isPossibleRoundingError = true;
+                  if (auto nextInst = inst->getNextNonDebugInstruction()) {
+                    if (auto nextInst_call = dyn_cast<CallBase>(nextInst)) {
+                      CallSite CS2(nextInst_call);
+                      auto targetName = CS2.getTargetFunction()->getName();
+                      if (targetName.startswith("sol.max.") ||
+                          targetName.startswith("sol.min."))
+                        isPossibleRoundingError = false;
+                      if (DEBUG_RUST_API)
+                        llvm::outs()
+                            << "sol.try_round_ from: " << targetName << "\n";
+                    }
+                  }
+                  if (isPossibleRoundingError &&
+                      !thread->isOnceOnlyOwnerOnlyInstruction) {
+                    auto e = graph->createReadEvent(ctx, inst, tid);
+                    UnsafeOperation::collect(e, callEventTraces,
+                                             SVE::Type::BIDIRECTIONAL_ROUNDING,
+                                             8);
+                  }
+                } else if (CS.getTargetFunction()->getName().contains(
+                               "::check_account_owner.2")) {
+                  auto value1 = CS.getArgOperand(0); // program_id
+                  auto valueName1 = LangModel::findGlobalString(value1);
 
-                if (CS.getTargetFunction()->getName().contains("initialized")) {
+                  if (auto arg1 = dyn_cast<Argument>(value1)) {
+                    valueName1 = funcArgTypesMap[func][arg1->getArgNo()].first;
+                    if (DEBUG_RUST_API)
+                      llvm::outs()
+                          << "check_account_owner valueName1: " << valueName1
+                          << "\n";
+                  }
+                  auto value2 = CS.getArgOperand(1); // account
+                  auto valueName2 = LangModel::findGlobalString(value2);
+                  if (auto arg2 = dyn_cast<Argument>(value2)) {
+                    valueName2 = funcArgTypesMap[func][arg2->getArgNo()].first;
+                    if (DEBUG_RUST_API)
+                      llvm::outs()
+                          << "check_account_owner valueName2: " << valueName2
+                          << "\n";
+                  }
+
+                  auto pair = std::make_pair(valueName1, valueName2);
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+                  thread->assertOwnerEqualMap[pair] = e;
+
+                } else if (CS.getTargetFunction()->getName().contains(
+                               "::validate_owner.")) {
+                  if (DEBUG_RUST_API)
+                    llvm::outs() << "validate_owner: " << *inst << "\n";
+                  if (CS.getNumArgOperands() > 2) {
+                    auto value1 = CS.getArgOperand(0); // program_id
+                    auto value2 = CS.getArgOperand(1); // authority
+                    auto value3 = CS.getArgOperand(2); // authority_info
+                    // auto value4 = CS.getArgOperand(3);  //
+                    auto valueName2 = LangModel::findGlobalString(value2);
+                    if (auto arg2 = dyn_cast<Argument>(value2))
+                      valueName2 =
+                          funcArgTypesMap[func][arg2->getArgNo()].first;
+                    auto valueName3 = LangModel::findGlobalString(value3);
+                    if (auto arg3 = dyn_cast<Argument>(value3))
+                      valueName3 =
+                          funcArgTypesMap[func][arg3->getArgNo()].first;
+
+                    if (!valueName2.empty() || !valueName3.empty()) {
+                      auto pair = std::make_pair(valueName2, valueName3);
+                      auto e = graph->createReadEvent(ctx, inst, tid);
+                      thread->assertOwnerEqualMap[pair] = e;
+                      thread->assertKeyEqualMap[pair] = e;
+                      // in addition, owner_account_info.is_signer)
+                      thread->asssertSignerMap[valueName3] = e;
+
+                      if (DEBUG_RUST_API)
+                        llvm::outs() << "valueName2: " << valueName2
+                                     << " valueName3: " << valueName3 << "\n";
+                    }
+                  }
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.require_eq.!")) {
+                  auto value1 = CS.getArgOperand(0); // mint_info.key
+                  auto value2 = CS.getArgOperand(1); // dest_account.base.mint
+                  auto valueName1 = LangModel::findGlobalString(value1);
+                  if (auto arg1 = dyn_cast<Argument>(value1))
+                    valueName1 = funcArgTypesMap[func][arg1->getArgNo()].first;
+                  auto valueName2 = LangModel::findGlobalString(value2);
+                  if (auto arg2 = dyn_cast<Argument>(value2))
+                    valueName2 = funcArgTypesMap[func][arg2->getArgNo()].first;
+
+                  if (!valueName1.empty() && !valueName2.empty()) {
+                    if (valueName1.contains(".owner") &&
+                        valueName2.contains("::ID")) {
+                      auto e = graph->createReadEvent(ctx, inst, tid);
+                      valueName1 = stripAll(valueName1);
+                      auto foundComma = valueName2.find(",");
+                      if (foundComma != string::npos)
+                        valueName2 = valueName2.substr(0, foundComma);
+                      auto pair = std::make_pair(valueName1, valueName2);
+                      thread->assertOwnerEqualMap[pair] = e;
+                    }
+                  }
+                } else if (CS.getTargetFunction()->getName().contains(
+                               "cmp_pubkeys.2")) {
+                  auto value1 = CS.getArgOperand(0); // mint_info.key
+                  auto value2 = CS.getArgOperand(1); // dest_account.base.mint
+                  auto valueName1 = LangModel::findGlobalString(value1);
+                  if (auto arg1 = dyn_cast<Argument>(value1))
+                    valueName1 = funcArgTypesMap[func][arg1->getArgNo()].first;
+                  auto valueName2 = LangModel::findGlobalString(value2);
+                  if (auto arg2 = dyn_cast<Argument>(value2))
+                    valueName2 = funcArgTypesMap[func][arg2->getArgNo()].first;
+
+                  if (!valueName1.empty() && !valueName2.empty()) {
+                    auto e = graph->createReadEvent(ctx, inst, tid);
+
+                    if (DEBUG_RUST_API)
+                      llvm::outs()
+                          << "sol.cmp_pubkeys.2 valueName1: " << valueName1
+                          << " valueName2: " << valueName2 << "\n";
+
+                    auto pair = std::make_pair(valueName1, valueName2);
+                    thread->assertKeyEqualMap[pair] = e;
+                    auto pair2 = std::make_pair(valueName2, valueName1);
+                    thread->assertKeyEqualMap[pair2] = e;
+                    // TODO: owner check
+                    if (valueName1.contains(".owner") ||
+                        valueName2.contains(".owner"))
+                      thread->assertOwnerEqualMap[pair] = e;
+                  }
+                } else if (CS.getTargetFunction()->getName().startswith(
+                               "sol.invoke_signed.") ||
+                           CS.getTargetFunction()->getName().startswith(
+                               "sol.invoke.")) {
+                  auto value = CS.getArgOperand(0);
+                  // find all accounts invoked
+                  if (!isa<CallBase>(value))
+                    value = inst->getPrevNonDebugInstruction();
+                  auto e = graph->createReadEvent(ctx, inst, tid);
+
+                  if (auto call_inst = dyn_cast<CallBase>(value)) {
+                    auto value2 = value;
+                    CallSite CS2(call_inst);
+                    if (CS2.getTargetFunction()->getName().startswith(
+                            "sol.model.opaqueAssign")) {
+                      value2 = CS2.getArgOperand(1);
+                    }
+                    if (auto call_inst2 = dyn_cast<CallBase>(value2)) {
+                      CallSite CS3(call_inst2);
+                      if (CS3.getTargetFunction()->getName().contains(
+                              "instruction::")) {
+                        auto valuex = CS.getArgOperand(1);
+                        auto valueNameX = LangModel::findGlobalString(valuex);
+                        // split
+                        valueNameX =
+                            valueNameX.substr(1, valueNameX.size() - 2);
+                        if (DEBUG_RUST_API)
+                          llvm::outs()
+                              << "sol.invoke: valueNameX: " << valueNameX
+                              << "\n";
+                        llvm::SmallVector<StringRef, 8> value_vec;
+                        valueNameX.split(value_vec, ',', -1, false);
+                        for (auto value_ : value_vec) {
+                          auto foundClone = value_.find(".clone");
+                          if (foundClone != string::npos)
+                            value_ = value_.substr(0, foundClone);
+                          if (DEBUG_RUST_API)
+                            llvm::outs()
+                                << "sol.invoke: value_: " << value_ << "\n";
+                          thread->accountsInvokedMap[value_] = e;
+                          if (!thread->isInAccountsMap(value_)) {
+                            value_ =
+                                findCallStackAccountAliasName(func, e, value_);
+                            thread->accountsInvokedMap[value_] = e;
+                          }
+                        }
+                      }
+                    }
+                  } else {
+                    if (DEBUG_RUST_API)
+                      llvm::outs()
+                          << "sol.invoke: failed to find invoked accounts: "
+                          << *value << "\n";
+                  }
+
+                  // find program_id for sol.invoke_signed.
+                  if (CS.getTargetFunction()->getName().startswith(
+                          "sol.invoke_signed.")) {
+                    auto pair = getProgramIdAccountName(inst);
+                    if (!pair.first.empty() &&
+                        !thread->isAccountKeyValidated(pair.first)) {
+                      auto e2 = graph->createReadEvent(ctx, pair.second, tid);
+                      UntrustfulAccount::collect(pair.first, e2,
+                                                 callEventTraces,
+                                                 SVE::Type::ARBITRARY_CPI, 9);
+                    }
+                  }
+                } else if (CS.getTargetFunction()->getName().contains(
+                               "//initialized")) {
                   if (DEBUG_RUST_API)
                     llvm::outs() << "sol.initialized: " << *inst << "\n";
                   thread->hasInitializedCheck = true;
-                }
-                if (CS.getTargetFunction()->getName().startswith(
-                        "sol.check_") ||
-                    CS.getTargetFunction()->getName().startswith(
-                        "sol.validate_")) {
-                  if (DEBUG_RUST_API)
-                    llvm::outs() << "sol.check_: " << *inst << "\n";
-                  // heuristics for interprocedural call
-                  // for any parameter that is an account name, set it validated
-                  if (CS.getNumArgOperands() > 0) {
-                    auto e = graph->createReadEvent(ctx, inst, tid);
-                    for (auto i = 0; i < CS.getNumArgOperands(); i++) {
-                      auto value = CS.getArgOperand(i);
-                      auto valueName = LangModel::findGlobalString(value);
-                      if (!valueName.empty()) {
-                        auto pair = std::make_pair(valueName, valueName);
-                        thread->assertKeyEqualMap[pair] = e;
-                      }
-                      if (DEBUG_RUST_API)
-                        llvm::outs() << CS.getTargetFunction()->getName()
-                                     << " check_account: " << valueName << "\n";
+
+                } else {
+                  // check price_for_supply
+                  auto signature = "price_for_supply.";
+                  if (CS.getTargetFunction()->getName().contains(signature)) {
+                    auto value = CS.getArgOperand(0);
+                    auto valueName = LangModel::findGlobalString(value);
+                    if (valueName.contains(".accounts.") &&
+                        valueName.contains("price")) {
+                      auto e = graph->createReadEvent(ctx, inst, tid);
+                      UnsafeOperation::collect(e, callEventTraces,
+                                               SVE::Type::FLASHLOAN_RISK, 9);
                     }
                   }
-                  // let's still check its content - for signer
+
+                  if (CS.getTargetFunction()->getName().contains(
+                          "initialized")) {
+                    if (DEBUG_RUST_API)
+                      llvm::outs() << "sol.initialized: " << *inst << "\n";
+                    thread->hasInitializedCheck = true;
+                  }
+                  if (CS.getTargetFunction()->getName().startswith(
+                          "sol.check_") ||
+                      CS.getTargetFunction()->getName().startswith(
+                          "sol.validate_")) {
+                    if (DEBUG_RUST_API)
+                      llvm::outs() << "sol.check_: " << *inst << "\n";
+                    // heuristics for interprocedural call
+                    // for any parameter that is an account name, set it
+                    // validated
+                    if (CS.getNumArgOperands() > 0) {
+                      auto e = graph->createReadEvent(ctx, inst, tid);
+                      for (auto i = 0; i < CS.getNumArgOperands(); i++) {
+                        auto value = CS.getArgOperand(i);
+                        auto valueName = LangModel::findGlobalString(value);
+                        if (!valueName.empty()) {
+                          auto pair = std::make_pair(valueName, valueName);
+                          thread->assertKeyEqualMap[pair] = e;
+                        }
+                        if (DEBUG_RUST_API)
+                          llvm::outs()
+                              << CS.getTargetFunction()->getName()
+                              << " check_account: " << valueName << "\n";
+                      }
+                    }
+                    // let's still check its content - for signer
+                  }
+                  traverseFunctionWrapper(ctx, thread, callStack, inst,
+                                          CS.getCalledFunction());
                 }
-                traverseFunctionWrapper(ctx, thread, callStack, inst,
-                                        CS.getCalledFunction());
               }
             }
-          } else {
+          } else { // !isRustAPI
             // skip intrinsic such as llvm.dbg.
             if (!CS.getCalledFunction()->isIntrinsic()) {
               traverseFunctionWrapper(ctx, thread, callStack, inst,
                                       CS.getCalledFunction());
             }
           }
-        } else {
+        } else { // CS.isIndirectCall()
           // handling indirect function calls (calling function pointer)
           auto cs = pta->getInDirectCallSite(ctx, inst);
           auto indirectCalls = cs->getResolvedTarget();
@@ -3935,8 +3970,9 @@ void SolanaAnalysisPass::traverseFunction(
   // LOG_DEBUG("thread {} exit func : {}", tid,
   // demangle(func->getName().str()));
   callStack.pop_back();
-  if (cur_trie)
+  if (cur_trie) {
     cur_trie = cur_trie->parent; // return to its parent
+  }
 }
 
 void SolanaAnalysisPass::traverseFunctionWrapper(
@@ -4047,11 +4083,11 @@ void SolanaAnalysisPass::initStructFunctions() {
     auto func = &function;
     if (!func->isDeclaration() &&
         func->getName().startswith("sol.model.struct.")) {
-      bool isAnchor = func->getName().startswith("sol.model.struct.anchor.");
-      // if (!func->getName().startswith("sol.model.struct.anchor.")) {
       auto func_struct_name = func->getName();
       if (DEBUG_RUST_API)
         llvm::outs() << "func_struct_name: " << func_struct_name << "\n";
+
+      bool isAnchor = func_struct_name.startswith("sol.model.struct.anchor.");
       std::vector<std::pair<llvm::StringRef, llvm::StringRef>> fieldTypes;
       for (auto &BB : *func) {
         for (auto &I : BB) {
@@ -4778,6 +4814,7 @@ extern unsigned int NUM_OF_ATTACK_VECTORS;
 
 bool SolanaAnalysisPass::runOnModule(llvm::Module &module) {
   thisModule = &module;
+
   // initialization
   getAnalysis<PointerAnalysisPass<PTA>>().analyze(&module);
   this->pta = getAnalysis<PointerAnalysisPass<PTA>>().getPTA();

@@ -8,6 +8,8 @@ set(SOLANA_ANALYZER_SOURCES
     LocksetManager.cpp
     LogColor.cpp
     PTAModels/GraphBLASModel.cpp
+    Rules/OverflowAdd.cpp
+    Rules/Rule.cpp
     SolanaAnalysisPass.cpp
     SourceInfo.cpp
     StaticThread.cpp

@@ -33,60 +33,9 @@ enum class LockState : uint8_t {
 };
 
 class ReachGraph {
-private:
-  SolanaAnalysisPass &pass;
-  // a cached graph connectivity engine
-  aser::ReachabilityEngine reachEngine;
-  // for each thread (TID), we record the sync point (NodeID)
-  std::map<TID, std::vector<EventID>> syncData;
-
-  // for data ownership transfer detection
-  std::map<TID, std::map<const llvm::Instruction *,
-                         std::set<const MemAccessEvent *>>>
-      instr2MemEvents;
-
-  // Track lockset info
-  LocksetManager locksetManager;
-  // FIXME:
-  // this is a heuristic to fix for contorl-flow related
-  // the pattern we want to handle:
-  // ```
-  // kmpc_critical()
-  // if (xxx) {
-  //     kmpc_end_critical()
-  // }
-  // ... do something here
-  // kmpc_end_critical()
-  // ```
-  // NOTE: pthread cannot be handled by this pattern
-  // because there will always a load before pthread_mutex_unlock
-  // (to read the lock object)
-  // FIXME: will this cause some locks to hold forever?
-
-  std::map<std::vector<const ObjTy *>, UnLockState> lockSetUnlockState;
-
-  void addUnlockRegionMemAccessIfNecessary(MemAccessEvent *e) {
-    // track instruction to memory accesses
-    instr2MemEvents[e->getTID()][e->getInst()].insert(e);
-
-    // this may be expensive, but we do not know how to avoid it
-    for (auto &[pts, state] : lockSetUnlockState) {
-      if (state.lastUnlockPtr) {
-        state.unlockRegionMemAccesses.insert(e);
-      }
-    }
-  }
-
-  void resetLockStateforNewThread() {
-    locksetManager.resetCurLocksetAndId();
-    lockSetUnlockState.clear();
-  }
-
 public:
   ReachGraph(SolanaAnalysisPass &pass)
-      : pass(pass), locksetManager(*(pass.pta)){
-
-                    };
+      : pass(pass), locksetManager(*(pass.pta)) {}
 
   void startTraverseNewThread() { resetLockStateforNewThread(); }
 
@@ -193,6 +142,54 @@ public:
                         std::to_string(tid2) + "s");
   }
 
+private:
+  SolanaAnalysisPass &pass;
+  // a cached graph connectivity engine
+  aser::ReachabilityEngine reachEngine;
+  // for each thread (TID), we record the sync point (NodeID)
+  std::map<TID, std::vector<EventID>> syncData;
+
+  // for data ownership transfer detection
+  std::map<TID, std::map<const llvm::Instruction *,
+                         std::set<const MemAccessEvent *>>>
+      instr2MemEvents;
+
+  // Track lockset info
+  LocksetManager locksetManager;
+  // FIXME:
+  // this is a heuristic to fix for contorl-flow related
+  // the pattern we want to handle:
+  // ```
+  // kmpc_critical()
+  // if (xxx) {
+  //     kmpc_end_critical()
+  // }
+  // ... do something here
+  // kmpc_end_critical()
+  // ```
+  // NOTE: pthread cannot be handled by this pattern
+  // because there will always a load before pthread_mutex_unlock
+  // (to read the lock object)
+  // FIXME: will this cause some locks to hold forever?
+
+  std::map<std::vector<const ObjTy *>, UnLockState> lockSetUnlockState;
+
+  void addUnlockRegionMemAccessIfNecessary(MemAccessEvent *e) {
+    // track instruction to memory accesses
+    instr2MemEvents[e->getTID()][e->getInst()].insert(e);
+
+    // this may be expensive, but we do not know how to avoid it
+    for (auto &[pts, state] : lockSetUnlockState) {
+      if (state.lastUnlockPtr) {
+        state.unlockRegionMemAccesses.insert(e);
+      }
+    }
+  }
+
+  void resetLockStateforNewThread() {
+    locksetManager.resetCurLocksetAndId();
+    lockSetUnlockState.clear();
+  }
 }; // class ReachGraph
 
 } // namespace aser
