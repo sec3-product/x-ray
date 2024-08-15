@@ -6,24 +6,18 @@
 #include <PointerAnalysis/PointerAnalysisPass.h>
 #include <Util/Log.h>
 #include <conflib/conflib.h>
-#include <llvm/Analysis/AssumptionCache.h>
-#include <llvm/Analysis/TypeBasedAliasAnalysis.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/IRPrintingPasses.h>
 #include <llvm/IR/LLVMContext.h> // for llvm LLVMContext
 #include <llvm/IR/LegacyPassManager.h>
-#include <llvm/IR/Mangler.h>
-#include <llvm/IR/Verifier.h>
 #include <llvm/IRReader/IRReader.h> // IR reader for bit file
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FormatVariadic.h>
 #include <llvm/Support/InitLLVM.h>
 #include <llvm/Support/Path.h>
-#include <llvm/Support/Regex.h>
 #include <llvm/Support/Signals.h>   // signal for command line
 #include <llvm/Support/SourceMgr.h> // for SMDiagnostic
-#include <llvm/Transforms/IPO/AlwaysInliner.h>
 
 #include "CustomAPIRewriters/RustAPIRewriter.h"
 #include "PTAModels/GraphBLASModel.h"
@@ -34,10 +28,6 @@ using namespace llvm;
 using namespace aser;
 using namespace std;
 
-cl::opt<bool> DebugIR("debug-ir",
-                      cl::desc("Load from modified.ll directly, no "
-                               "preprocessing and openlib rewriting"),
-                      cl::init(false));
 cl::opt<bool> NoLinkStub("no-stub", cl::desc("Do not link stub files"),
                          cl::init(true));
 cl::opt<bool> SkipOverflowChecks("skip-overflow",
@@ -283,8 +273,8 @@ bool hasOverFlowChecks = false;
 bool anchorVersionTooOld = false;
 bool splVersionTooOld = false;
 bool solanaVersionTooOld = false;
-void computeCargoTomlConfig(Module *module) {
-  // st.class.metadata
+
+static void computeCargoTomlConfig(Module *module) {
   auto f = module->getFunction("sol.model.cargo.toml");
   if (f) {
     for (auto &BB : *f) {
@@ -298,8 +288,6 @@ void computeCargoTomlConfig(Module *module) {
 
           auto valueName1 = LangModel::findGlobalString(v1);
           auto valueName2 = LangModel::findGlobalString(v2);
-          // llvm::outs() << "key: " << valueName1 << "\n";
-          // llvm::outs() << "value: " << valueName2 << "\n";
           if (SkipOverflowChecks) {
             hasOverFlowChecks = true;
           } else {
@@ -480,6 +468,7 @@ static void createFakeMain(llvm::Module *module) {
   // let's create a fake main func here and add it to the module IR
   // in the fake main, call each entry point func
   llvm::IRBuilder<> builder(module->getContext());
+
   // create fake main with type int(i32 argc, i8** argv)
   auto functionType = llvm::FunctionType::get(
       builder.getInt32Ty(),
@@ -582,14 +571,14 @@ int main(int argc, char **argv) {
   logger::newPhaseSpinner("Loading IR From File");
 
   LLVMContext Context;
-  // load it now as we need the triple information to determine which stub to
-  // link
   auto module = loadFile(TargetModulePath, Context, true);
   module->setModuleIdentifier("coderrect.stub.pid" + std::to_string(getpid()));
 
-  // Initialize passes
-  PassRegistry &Registry = *PassRegistry::getPassRegistry();
+  LOG_INFO("Running Transformation Passes");
+  logger::newPhaseSpinner("Running Transformation Passes");
 
+  // Initialize passes, which are required by later passes.
+  PassRegistry &Registry = *PassRegistry::getPassRegistry();
   initializeCore(Registry);
   initializeScalarOpts(Registry);
   initializeIPO(Registry);
@@ -600,15 +589,10 @@ int main(int argc, char **argv) {
   initializeInstrumentation(Registry);
   initializeTarget(Registry);
 
-  LOG_INFO("Running Compiler Optimization Passes");
-  logger::newPhaseSpinner("Running Compiler Optimization Passes");
+  RustAPIRewriter::rewriteModule(module.get());
+  createFakeMain(module.get());
 
-  if (!DebugIR) {
-    RustAPIRewriter::rewriteModule(module.get());
-    createFakeMain(module.get());
-  }
-
-  // Dump IR to file
+  // Dump updated IR to file if requested.
   if (ConfigDumpIR) {
     std::error_code err;
     llvm::raw_fd_ostream outfile("modified.ll", err, llvm::sys::fs::OF_None);

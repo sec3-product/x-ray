@@ -236,8 +236,8 @@ void SolanaAnalysisPass::initialize(SVE::Database sves, int limit) {
 }
 
 bool SolanaAnalysisPass::hasValueLessMoreThan(const llvm::Value *value,
-                                             const llvm::Instruction *inst,
-                                             bool isLess) {
+                                              const llvm::Instruction *inst,
+                                              bool isLess) {
   auto symbol = "<";
   if (!isLess)
     symbol = ">";
@@ -284,7 +284,7 @@ bool is_constant(const std::string &s) {
 }
 
 bool SolanaAnalysisPass::isSafeType(const llvm::Function *func,
-                                   const llvm::Value *value) {
+                                    const llvm::Value *value) {
   if (auto arg = llvm::dyn_cast<llvm::Argument>(value)) {
     auto type = funcArgTypesMap[func][arg->getArgNo()].second;
     if (isUpper(type.str()) || type.size() >= 5 || type.startswith("i") ||
@@ -295,7 +295,7 @@ bool SolanaAnalysisPass::isSafeType(const llvm::Function *func,
 }
 
 bool SolanaAnalysisPass::isSafeVariable(const llvm::Function *func,
-                                       const llvm::Value *value) {
+                                        const llvm::Value *value) {
   if (auto arg = dyn_cast<Argument>(value)) {
     auto valueName = funcArgTypesMap[func][arg->getArgNo()].first;
     // current_timestamp - self.last_timestamp
@@ -450,8 +450,8 @@ llvm::StringRef SolanaAnalysisPass::findCallStackAccountAliasName(
 }
 
 void SolanaAnalysisPass::addCheckKeyEqual(const aser::ctx *ctx, TID tid,
-                                         const llvm::Instruction *inst,
-                                         StaticThread *thread, CallSite &CS) {
+                                          const llvm::Instruction *inst,
+                                          StaticThread *thread, CallSite &CS) {
   if (DEBUG_RUST_API)
     llvm::outs() << "assert_eq: " << *inst << "\n";
   // only deal with two or more arguments
@@ -561,10 +561,10 @@ void SolanaAnalysisPass::addCheckKeyEqual(const aser::ctx *ctx, TID tid,
 }
 
 void SolanaAnalysisPass::handleConditionalCheck0(const aser::ctx *ctx, TID tid,
-                                                const llvm::Function *func,
-                                                const llvm::Instruction *inst,
-                                                StaticThread *thread,
-                                                const llvm::Value *value) {
+                                                 const llvm::Function *func,
+                                                 const llvm::Instruction *inst,
+                                                 StaticThread *thread,
+                                                 const llvm::Value *value) {
   bool isAssertKeyAdded = false;
   if (auto callValue = dyn_cast<CallBase>(value)) {
     CallSite CS2(callValue);
@@ -887,9 +887,9 @@ void SolanaAnalysisPass::handleConditionalCheck0(const aser::ctx *ctx, TID tid,
 }
 
 void SolanaAnalysisPass::updateKeyEqualMap(StaticThread *thread, const Event *e,
-                                          bool isEqual, bool isNotEqual,
-                                          llvm::StringRef valueName1,
-                                          llvm::StringRef valueName2) {
+                                           bool isEqual, bool isNotEqual,
+                                           llvm::StringRef valueName1,
+                                           llvm::StringRef valueName2) {
   valueName1 = stripAccountName(valueName1);
   valueName2 = stripAccountName(valueName2);
   if (DEBUG_RUST_API)
@@ -945,7 +945,7 @@ static unsigned int FUNC_COUNT_PROGRESS_THESHOLD = 10000;
 static aser::trie::TrieNode *cur_trie;
 
 bool SolanaAnalysisPass::mayBeExclusive(const Event *const e1,
-                                       const Event *const e2) {
+                                        const Event *const e2) {
   std::vector<CallEvent *> callStack1, callStack2;
   getCallEventStackUntilMain(e1, callEventTraces, callStack1);
   getCallEventStackUntilMain(e2, callEventTraces, callStack2);
@@ -1104,7 +1104,6 @@ void SolanaAnalysisPass::traverseFunction(
          ++BI) {
       // traverse each instruction
       const Instruction *inst = cast<Instruction>(BI);
-      // LOG_DEBUG("RaceDetect Analyzing Inst. inst={}", *inst);
       if (isa<ReturnInst>(inst)) {
         if (inst->getNumOperands() > 0 && isa<LoadInst>(inst->getOperand(0))) {
           auto v = inst->getOperand(0);
@@ -4799,12 +4798,10 @@ bool SolanaAnalysisPass::runOnModule(llvm::Module &module) {
   // start traversing with the main thread
   threadList.push(mainThread);
 
-  LOG_INFO("Start Race Detection");
+  LOG_INFO("Start Analyzing");
   logger::newPhaseSpinner("Detecting Vulnerabilities");
 
   LOG_INFO("Start Building SHB");
-  // llvm::outs() << "Start Building SHB\n";
-  // logger::newPhaseSpinner("Building Static Happens-Before Graph");
   auto shb_start = std::chrono::steady_clock::now();
 
   // stop traversing the program until no new thread is found
@@ -4864,10 +4861,6 @@ bool SolanaAnalysisPass::runOnModule(llvm::Module &module) {
     if (ptCreate != nullptr) {
       ptCreate->setEndID(Event::getLargestEventID());
     }
-
-    // if (tid != 0) {
-    //     detectUntrustfulAccounts(curThread->getTID());
-    // }
   }
 
   if (threadSet.size() == 1) {
@@ -4888,8 +4881,9 @@ bool SolanaAnalysisPass::runOnModule(llvm::Module &module) {
         }
       }
     }
-    for (auto tid = 1; tid < threadSet.size(); tid++)
+    for (auto tid = 1; tid < threadSet.size(); tid++) {
       detectUntrustfulAccounts(tid);
+    }
   }
 
   NUM_OF_ATTACK_VECTORS = threadSet.size();
@@ -4905,9 +4899,7 @@ bool SolanaAnalysisPass::runOnModule(llvm::Module &module) {
   detectRaceCondition(entryNode->getContext(), 0);
   auto race_end = std::chrono::steady_clock::now();
   std::chrono::duration<double> race_elapsed = race_end - race_start;
-  // llvm::outs() << "Finished Race Detection in " << race_elapsed.count() << "
-  // seconds\n";
-  LOG_DEBUG("Finished Race Detection. time={}s", race_elapsed.count());
+  LOG_DEBUG("Finished Analysis. time={}s", race_elapsed.count());
 
   logger::endPhase();
 
@@ -4916,8 +4908,6 @@ bool SolanaAnalysisPass::runOnModule(llvm::Module &module) {
     UnsafeOperation::printAll();
     CosplayAccounts::printAll();
   }
-
-  // TODO design? by default always report summary
   if (CONFIG_SHOW_SUMMARY) {
     UntrustfulAccount::printSummary();
     UnsafeOperation::printSummary();
@@ -4941,9 +4931,7 @@ TID SolanaAnalysisPass::addNewThread(ForkEvent *forkEvent) {
 }
 
 char SolanaAnalysisPass::ID = 0;
-static RegisterPass<SolanaAnalysisPass> RD(
-    "Race Detection",
-    "Abstract programs into constraint callgraph with corresponding language "
-    "models",
-    true, /*CFG only*/
-    true /*is analysis*/);
+static RegisterPass<SolanaAnalysisPass>
+    RD("Solana Analysis", "Analyze Solana programs with defined rules",
+       true, /*CFG only*/
+       true /*is analysis*/);
