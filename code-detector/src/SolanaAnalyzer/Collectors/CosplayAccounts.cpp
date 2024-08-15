@@ -1,4 +1,4 @@
-#include "Rules/CosplayAccounts.h"
+#include "Collectors/CosplayAccounts.h"
 
 #include <algorithm>
 #include <cassert>

@@ -1,4 +1,4 @@
-#include "Rules/UntrustfulAccount.h"
+#include "Collectors/UntrustfulAccount.h"
 
 #include <algorithm>
 #include <map>

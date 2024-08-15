@@ -1,11 +1,11 @@
-#include "Rules/Races.h"
+#include "Collectors/Races.h"
 
 #include <fstream>
 
+#include "Collectors/CosplayAccounts.h"
+#include "Collectors/UnsafeOperation.h"
+#include "Collectors/UntrustfulAccount.h"
 #include "LogColor.h"
-#include "Rules/CosplayAccounts.h"
-#include "Rules/UnsafeOperation.h"
-#include "Rules/UntrustfulAccount.h"
 
 #define DEFAULT_BUDGET 25
 

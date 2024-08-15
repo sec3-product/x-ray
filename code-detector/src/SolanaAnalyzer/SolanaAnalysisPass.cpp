@@ -9,14 +9,14 @@
 #include <llvm/Analysis/MemoryLocation.h>
 #include <llvm/Analysis/TypeBasedAliasAnalysis.h>
 
+#include "Collectors/CosplayAccounts.h"
+#include "Collectors/Races.h"
+#include "Collectors/UnsafeOperation.h"
+#include "Collectors/UntrustfulAccount.h"
 #include "Graph/Event.h"
 #include "Graph/ReachGraph.h"
 #include "Graph/Trie.h"
 #include "PTAModels/GraphBLASModel.h"
-#include "Rules/CosplayAccounts.h"
-#include "Rules/Races.h"
-#include "Rules/UnsafeOperation.h"
-#include "Rules/UntrustfulAccount.h"
 #include "SVE.h"
 #include "StaticThread.h"
 #include "Util/Log.h"
