@@ -1,3 +1,36 @@
+# Analyzer library.
+set(SOLANA_ANALYZER_SOURCES
+    CustomAPIRewriters/RustAPIRewriter.cpp
+    LocksetManager.cpp
+    LogColor.cpp
+    PTAModels/GraphBLASModel.cpp
+    Rules/CosplayAccounts.cpp
+    Rules/Races.cpp
+    Rules/UnsafeOperation.cpp
+    Rules/UntrustfulAccount.cpp
+    SolanaAnalysisPass.cpp
+    SourceInfo.cpp
+    StaticThread.cpp
+    SVE.cpp
+)
+
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/utils/jsoncons/include
+)
+
+add_library(SolanaAnalyzer ${SOLANA_ANALYZER_SOURCES})
+
+target_link_libraries(SolanaAnalyzer
+    PointerAnalysis
+    Util
+)
+
+# Executable.
+add_executable(SolanaAnalyzerExe
+    main.cpp
+)
+
 llvm_map_components_to_libnames(LLVM_LIBS
     bitwriter
     core
@@ -19,40 +52,10 @@ llvm_map_components_to_libnames(LLVM_LIBS
     mc
 )
 
-set(SOLANA_ANALYZER_SOURCES
-    CustomAPIRewriters/RustAPIRewriter.cpp
-    LocksetManager.cpp
-    LogColor.cpp
-    PTAModels/GraphBLASModel.cpp
-    Rules/CosplayAccounts.cpp
-    Rules/Races.cpp
-    Rules/UnsafeOperation.cpp
-    Rules/UntrustfulAccount.cpp
-    SourceInfo.cpp
-    StaticThread.cpp
-    SVE.cpp
-)
-
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/utils/jsoncons/include
-)
-
-add_library(SolanaAnalyzer ${SOLANA_ANALYZER_SOURCES})
-
-target_link_libraries(SolanaAnalyzer
-    PointerAnalysis
-    Util
-)
-
-add_executable(SolanaAnalyzerExe
-    main.cpp
-    SolanaAnalysisPass.cpp
-)
-
 target_link_libraries(SolanaAnalyzerExe
     SolanaAnalyzer
     conflib
+    Util
     ${LLVM_LIBS}
 )
 
