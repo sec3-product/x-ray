@@ -3,10 +3,7 @@
 //
 #include "PreProcessing/PreProcPassManagerBuilder.h"
 
-#include <PreProcessing/Passes/LoweringMemCpyPass.h>
-
-#include "PreProcessing/Passes/StandardHeapAPIRewritePass.h"
-#include "PreProcessing/Passes/TransformCallInstBitCastPass.h"
+#include "PreProcessing/Passes/LoweringMemCpyPass.h"
 #include "PreProcessing/Passes/WrapperFunIdentifyPass.h"
 #include "Util/Util.h"
 #include "llvm-c/Transforms/PassManagerBuilder.h"
@@ -209,7 +206,6 @@ void PreProcPassManagerBuilder::populateModulePassManager(
     legacy::PassManagerBase &MPM) {
   // Allow forcing function attributes as a debugging and tuning aid.
   MPM.add(createForceFunctionAttrsLegacyPass());
-  MPM.add(new StandardHeapAPIRewritePass()); // TODO: make it a function pass
   addInitialAliasAnalysisPasses(MPM, useCFL);
 
   // Infer attributes about declarations if possible.
@@ -318,6 +314,5 @@ void PreProcPassManagerBuilder::populatePreProcessingModuleManager(
     llvm::legacy::PassManagerBase &MPM) {
   // lowering memcpy before any optimization so that the pattern is fixed
   MPM.add(new LoweringMemCpyPass());
-  MPM.add(new TransformCallInstBitCastPass());
   MPM.add(createAlwaysInlinerLegacyPass());
 }
