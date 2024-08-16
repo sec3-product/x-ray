@@ -67,9 +67,3 @@ endif()
 
 set_target_properties(SolanaAnalyzerExe PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set_target_properties(SolanaAnalyzerExe PROPERTIES OUTPUT_NAME "racedetect")
-
-# Regenerate all the stubs to ensure they are updated.
-add_custom_command(TARGET SolanaAnalyzerExe
-    PRE_BUILD
-    # COMMAND sh ${CMAKE_SOURCE_DIR}/stubs/generate_stubs.sh
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/stubs/bc ${CMAKE_BINARY_DIR}/bin/stub)
