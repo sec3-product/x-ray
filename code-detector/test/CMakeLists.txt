@@ -10,12 +10,10 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 add_executable(unit_tests
-    SolLLVMIRGeneratorTest.cpp
-    test_main.cpp
+    Main.cpp
 )
 
 target_link_libraries(unit_tests
-    SolCodeParser
     GTest::gtest_main
 )
 

@@ -19,10 +19,6 @@ set(LLVM_VERSION "14.0.6" CACHE STRING "The LLVM version")
 set(LLVM_DIR "/usr/local/llvm/lib/cmake/llvm" CACHE STRING "Path to LLVM")
 set(MLIR_DIR "/usr/local/llvm/lib/cmake/mlir" CACHE STRING "Path to MLIR")
 
-if(NOT ENABLE_TEST)
-    set(ENABLE_TEST Off) # default disable testing
-endif()
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DRESOLVE_FUNPTR_IMMEDIATELY")
 
 if (ENABLE_SPACE_OPT)

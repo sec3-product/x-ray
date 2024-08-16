@@ -28,10 +28,6 @@ set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to conform to")
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
 
-if(NOT ENABLE_TEST)
-    set(ENABLE_TEST Off) # default disable testing
-endif()
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DRESOLVE_FUNPTR_IMMEDIATELY")
 
 if (ENABLE_SPACE_OPT)
@@ -46,15 +42,11 @@ endif()
 
 set(COMMON_CXX_FLAG "-fno-rtti -DSPDLOG_NO_EXCEPTIONS")
 
-if (MINGW)
-    set(COMMON_CXX_FLAG "${COMMON_CXX_FLAG} -Wa,-mbig-obj")
-endif()
-
 # To support both in- and out-of-source builds,
 # we check for the presence of the add_llvm_loadable_module command.
 # - if this command is not present, we are building out-of-source
 if(NOT COMMAND add_llvm_loadable_module)
-    if (DEFINED LLVM_DIR)
+    if(DEFINED LLVM_DIR)
         # We need to match the build environment for LLVM:
         # In particular, we need C++11 and the -fno-rtti flag
         if(CMAKE_BUILD_TYPE MATCHES "Debug")
@@ -90,12 +82,4 @@ include_directories(
 
 add_subdirectory(src)
 add_subdirectory(utils/conflib)
-
-# unit tests
-if (${ENABLE_TEST})
-    enable_testing()
-
-    add_subdirectory(utils/googletest)
-    add_subdirectory(unittests)
-endif()
-
+add_subdirectory(test)
