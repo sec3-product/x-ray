@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.22.0)
-project(smalltalk)
+cmake_minimum_required(VERSION 3.24.0)
+project(SolanaParser)
 
 option(ENABLE_HEAP_PROFILE "Turn on heap profiling feature by linking to tcmalloc" OFF)
 

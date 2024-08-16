@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.22.0)
-project(aser_pta)
+cmake_minimum_required(VERSION 3.24.0)
+project(SolanaAnalyzer)
 
 option(ENABLE_SPACE_OPT "Whether to apply aggressive memory optimzation (which will make constraint graph harder to understand)" ON)
 option(ENABLE_HEAP_PROFILE "Turn on heap profiling feature by linking to tcmalloc" OFF)

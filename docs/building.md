@@ -39,7 +39,7 @@ tool in your local environment.
 
 ### Prerequisites
 
-- CMake 3.27 or higher
+- CMake 3.24 or higher
 - Go 1.22 or higher
 - ANTLR 4.13.1 (only needed for parser development)
 - Clang compiler 14.0.6
