@@ -69,12 +69,12 @@ build-cli:
 	@echo "Building X-Ray CLI..."
 	@mkdir -p $(BUILD_DIR)/cli/bin
 	@go build -o $(BUILD_DIR)/cli/bin/xray cmd/cli/main.go
-	@go build -o $(BUILD_DIR)/cli/bin/reporter cmd/reporter/main.go
+	@echo
 
 install:
 	@echo "Installing X-Ray to $(INSTALL_DIR)..."
 	@rm -rf $(INSTALL_DIR)
-	@for dir in bin conf data/reporter/artifacts/images; do \
+	@for dir in bin conf; do \
 	  echo "Creating directory $(INSTALL_DIR)/$${dir}..."; \
 	  mkdir -p "$(INSTALL_DIR)/$${dir}"; \
 	done
@@ -83,10 +83,8 @@ install:
 	@cp $(BUILD_DIR)/cli/bin/* $(INSTALL_DIR)/bin/
 	@cp $(LLVM_PREBUILT_PATH)/lib/libomp.so $(INSTALL_DIR)/bin/
 	@cp package/conf/xray.json $(INSTALL_DIR)/conf/
-	@cp package/data/reporter/*.html $(INSTALL_DIR)/data/reporter/
-	@cp package/data/reporter/artifacts/coderrect* $(INSTALL_DIR)/data/reporter/artifacts/
-	@cp package/data/reporter/artifacts/images/* $(INSTALL_DIR)/data/reporter/artifacts/images/
 	@echo "Done. X-Ray has been installed to $(INSTALL_DIR)."
+	@echo
 
 clean:
 	@rm -rf build/analyzer build/parser build/cli build/dist

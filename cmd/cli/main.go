@@ -6,11 +6,9 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/buger/jsonparser"
@@ -59,7 +57,7 @@ Options:
 		tries to detect all vulnerabilities while balancing speed and accuracy.
 
   -mode=fast|normal|exhaust
-        Specify the detection mode. "fast" prefers analyzing speed; 
+        Specify the detection mode. "fast" prefers analyzing speed;
         "exhaust" prefers the accuracy; and the default mode "normal"
         tries to achieve a balance between speed and accuracy.
 
@@ -139,22 +137,7 @@ func checkResults() (bool, bool) {
 		}
 	}
 
-	if foundRaces {
-		// If there are any race found,
-		// then check if there are any NEW race found.
-		foundNewRaces := false
-		for _, executable := range indexInfo.Executables {
-			if executable.NewBugs {
-				foundNewRaces = true
-				break
-			}
-		}
-		if foundNewRaces {
-			return true, true
-		}
-		return true, false
-	}
-	return false, false
+	return foundRaces, false
 }
 
 func addOrReplaceCommandline(jsonOptStr string, key string, value string) string {
@@ -576,7 +559,6 @@ func main() {
 	}
 
 	var executablePathList []string
-	cmdline := ""
 
 	if conflib.GetBool("solana.on", false) && len(remainingArgs) > 0 {
 		logger.Infof("Execute sol-code-parser to generate IR files. cmdline=%v", remainingArgs)
@@ -624,8 +606,6 @@ func main() {
 	// }
 	//
 	var rawJsonPathList []string
-	var outputDir string
-	var cmd *exec.Cmd
 
 	var executableInfoList []ExecutableInfo
 	totalRaceCnt := 0
@@ -770,23 +750,8 @@ func main() {
 	}
 
 	// Step 4. call reporter to generate the report if there are races
-	reporterBin := filepath.Join(coderrectHome, "bin", "reporter")
-	outputDir = conflib.GetString("report.outputDir", filepath.Join(coderrectWorkingDir, "report"))
-	os.RemoveAll(outputDir)
-	cmd = exec.Command(reporterBin, outputDir, coderrectBuildDir)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err = cmd.Run(); err != nil {
-		cmdline = fmt.Sprintf("%s %s %s", reporterBin, outputDir, coderrectBuildDir)
-		// try to get the exit code
-		var exitCode int
-		if exitError, ok := err.(*exec.ExitError); ok {
-			ws := exitError.Sys().(syscall.WaitStatus)
-			exitCode = ws.ExitStatus()
-		}
-		if exitCode < 9 {
-			panicGracefully(fmt.Sprintf("Failed to parse race detection result. cmdline=%s", cmdline), err, tmpDir)
-		}
+	if err := reporter.GenerateReport(coderrectBuildDir); err != nil {
+		panicGracefully("Failed to generate report", err, tmpDir)
 	}
 
 	for i := 0; i < len(rawJsonPathList); i++ {

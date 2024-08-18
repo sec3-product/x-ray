@@ -38,7 +38,7 @@ var (
    "RaceJSON": "PREFIX/.xray/build/raw_e2e-app_dex.ll.json",
    "DataRaces": 63,
    "RaceConditions": 0,
-   "NewBugs": true
+   "NewBugs": false
   },
   {
    "Name": "e2e-app_dummy-oracle.ll",
@@ -52,28 +52,28 @@ var (
    "RaceJSON": "PREFIX/.xray/build/raw_fees_constant-fees.ll.json",
    "DataRaces": 1,
    "RaceConditions": 0,
-   "NewBugs": true
+   "NewBugs": false
   },
   {
    "Name": "e2e-app_instruments.ll",
    "RaceJSON": "PREFIX/.xray/build/raw_e2e-app_instruments.ll.json",
    "DataRaces": 4,
    "RaceConditions": 0,
-   "NewBugs": true
+   "NewBugs": false
   },
   {
    "Name": "risk_alpha-risk-engine.ll",
    "RaceJSON": "PREFIX/.xray/build/raw_risk_alpha-risk-engine.ll.json",
    "DataRaces": 5,
    "RaceConditions": 0,
-   "NewBugs": true
+   "NewBugs": false
   },
   {
    "Name": "risk_noop-risk-engine.ll",
    "RaceJSON": "PREFIX/.xray/build/raw_risk_noop-risk-engine.ll.json",
    "DataRaces": 5,
    "RaceConditions": 0,
-   "NewBugs": true
+   "NewBugs": false
   }
  ],
  "CoderrectVer": "Unknown"
