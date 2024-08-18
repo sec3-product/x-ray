@@ -433,7 +433,7 @@ func main() {
 	os.Setenv("CODERRECT_HOME", coderrectHome)
 	os.Setenv("PATH", filepath.Join(coderrectHome, "bin")+":"+os.Getenv("PATH"))
 
-	// Because of COD-1456, tmp directory for racedetect have to create
+	// Because of COD-1456, tmp directory for analyzer have to create
 	token := fmt.Sprintf("%d", time.Now().Unix())
 	tmpDir := filepath.Join(coderrectWorkingDir, "tmp", "coderrect-"+token)
 	os.Setenv("CODERRECT_TMPDIR", tmpDir)
@@ -575,14 +575,11 @@ func main() {
 		os.Exit(0)
 	}
 
-	//fmt.Println("remainingArgs: ", remainingArgs)
-	//logger.Infof("remainingArgs =%v", remainingArgs)
 	var executablePathList []string
 	cmdline := ""
 
 	if conflib.GetBool("solana.on", false) && len(remainingArgs) > 0 {
-		//for solana, invoke sol-racedetect to generate IR first
-		logger.Infof("Execute sol-racedetect command to generate IR files. cmdline=%v", remainingArgs)
+		logger.Infof("Execute sol-code-parser to generate IR files. cmdline=%v", remainingArgs)
 		srcFilePath, _ := filepath.Abs(remainingArgs[0])
 		var args []string
 		if len(remainingArgs) > 1 {
@@ -609,8 +606,9 @@ func main() {
 	fmt.Printf("executablePathList: %v\n", executablePathList)
 
 	// Assume the user picks up 3 binaries "prog1", "prog2", and "prog3". The code below
-	// run racedetect against them one by one. For each binary, we generate a json file containing
-	// race data. For example, we genarete prog1.json for "prog1" under .coderrect/build.
+	// runs sol-code-analyzer against them one by one. For each binary, we
+	// generate a json file containing race data. For example, we genarete
+	// prog1.json for "prog1" under .coderrect/build.
 	//
 	// We also generate index.json under .coderrect/build. Below is an example
 	//
@@ -650,13 +648,13 @@ func main() {
 		}
 		logger.Infof("Analyzing BC file to detect races. bcFile=%s.bc", bcFile)
 
-		// Step 3. Call racedetect
+		// Step 3. Call sol-code-analyzer
 		executablePath := executablePathList[i]
 		_, executableName := filepath.Split(executablePath)
 		executableInfo.Name = executableName
 		tmpJsonPath := filepath.Join(tmpDir, fmt.Sprintf("coderrect_%s_report.json", executableName))
 		logger.Infof("Generating the json file. jsonPath=%s", tmpJsonPath)
-		racedetect := filepath.Join(coderrectHome, "bin", "racedetect")
+		analyzer := filepath.Join(coderrectHome, "bin", "sol-code-analyzer")
 		detectModeFlag := ""
 		switch mode := conflib.GetString("mode", "normal"); mode {
 		case "fast":
@@ -706,17 +704,16 @@ func main() {
 		}
 		cmdArgument = append(cmdArgument, "-o", tmpJsonPath, bcFile)
 		omplibPath := filepath.Join(coderrectHome, "bin", "libomp.so")
-		cmdline := fmt.Sprintf("export LD_PRELOAD=%s; %s ", omplibPath, racedetect)
+		cmdline := fmt.Sprintf("export LD_PRELOAD=%s; %s ", omplibPath, analyzer)
 		for _, s := range cmdArgument {
 			cmdline = cmdline + normalizeCmdlineArg(s) + " "
 		}
-		//cmd = exec.Command(racedetect, cmdArgument...)
 		cmdline = "(" + cmdline + ")"
 		cmd := platform.Command(cmdline)
 		cmd.Stderr = os.Stderr
 		cmd.Stdout = os.Stdout
 		if err := cmd.Run(); err != nil {
-			panicGracefully(fmt.Sprintf("Failed to parse the BC file. cmdline=%s %s", racedetect, cmdArgument), err, tmpDir)
+			panicGracefully(fmt.Sprintf("Failed to parse the BC file. cmdline=%s %s", analyzer, cmdArgument), err, tmpDir)
 		}
 
 		//For each executable, generate raw_$executable.json under .coderrect/build

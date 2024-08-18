@@ -74,4 +74,4 @@ if (CMAKE_BUILD_TYPE MATCHES "Release")
 endif()
 
 set_target_properties(SolanaAnalyzerExe PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-set_target_properties(SolanaAnalyzerExe PROPERTIES OUTPUT_NAME "racedetect")
+set_target_properties(SolanaAnalyzerExe PROPERTIES OUTPUT_NAME "sol-code-analyzer")

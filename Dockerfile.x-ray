@@ -45,16 +45,16 @@ RUN wget --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER
 WORKDIR /x-ray-toolchain
 COPY Makefile .
 
-# Build x-ray detector.
-COPY code-detector code-detector
-RUN make -j build-detector
+# Build x-ray analyzer.
+COPY code-analyzer code-analyzer
+RUN make -j build-analyzer
 
 # Build x-ray parser.
 COPY code-parser code-parser
 RUN make -j build-parser
 
 # Build x-ray CLI. Note that it avoids putting `COPY . .` too early to avoid
-# invalidating the cache for building `code-detector` and `code-parser`.
+# invalidating the cache for building `code-analyzer` and `code-parser`.
 COPY . .
 RUN make -j build-cli
 
@@ -64,7 +64,7 @@ RUN make -j install
 
 FROM ubuntu:22.04
 COPY --from=builder /x-ray-toolchain/build/dist /usr/local/sec3
-# `libomp.so` is wanted by `racedetector` (via LD_PRELOAD).
+# `libomp.so` is wanted by `raceanalyzer` (via LD_PRELOAD).
 COPY --from=builder /usr/local/llvm/lib/libomp.so /usr/local/sec3/bin/libomp.so
 
 ENV DEBIAN_FRONTEND=noninteractive

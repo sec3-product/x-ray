@@ -16,14 +16,14 @@ LLVM_PREBUILT_PATH ?= $(realpath $(BUILD_DIR)/llvm)
 X_RAY_IMAGE ?= x-ray:latest
 
 .PHONY: all build-x-ray build-cli install extract-llvm check-llvm \
-  build-detector build-parser \
-  build-container-image run-container-e2e run-native-e2e \
+  build-analyzer build-parser \
+  build-container-image run-unit-tests run-container-e2e run-native-e2e \
   build-llvm-prebuilt-image push-llvm-prebuilt-image \
   clean
 
 all: build-x-ray build-container-image
 
-build-x-ray: build-detector build-parser build-cli
+build-x-ray: build-analyzer build-parser build-cli
 
 check-llvm:
 	@if [ -z "$(LLVM_PREBUILT_PATH)" ]; then \
@@ -38,9 +38,9 @@ check-llvm:
 	  fi; \
 	fi
 
-build-detector: check-llvm
-	@mkdir -p $(BUILD_DIR)/detector
-	@cd $(BUILD_DIR)/detector && \
+build-analyzer: check-llvm
+	@mkdir -p $(BUILD_DIR)/analyzer
+	@cd $(BUILD_DIR)/analyzer && \
 	  cmake \
 	    -DCMAKE_BUILD_TYPE=Release \
 	    -DCMAKE_C_COMPILER=$(LLVM_PREBUILT_PATH)/bin/clang \
@@ -48,7 +48,7 @@ build-detector: check-llvm
 	    -DLLVM_DIR=$(LLVM_PREBUILT_PATH)/lib/cmake/llvm \
 	    -DMLIR_DIR=$(LLVM_PREBUILT_PATH)/lib/cmake/mlir \
 	    -DLLVM_VERSION=$(LLVM_VERSION) \
-	    ../../code-detector && \
+	    ../../code-analyzer && \
 	  make -j
 
 build-parser: check-llvm
@@ -77,7 +77,7 @@ install:
 	  echo "Creating directory $(INSTALL_DIR)/$${dir}..."; \
 	  mkdir -p "$(INSTALL_DIR)/$${dir}"; \
 	done
-	@cp $(BUILD_DIR)/detector/bin/racedetect $(INSTALL_DIR)/bin/
+	@cp $(BUILD_DIR)/analyzer/bin/sol-code-analyzer $(INSTALL_DIR)/bin/
 	@cp $(BUILD_DIR)/parser/bin/sol-code-parser $(INSTALL_DIR)/bin/
 	@cp $(BUILD_DIR)/cli/bin/* $(INSTALL_DIR)/bin/
 	@cp $(LLVM_PREBUILT_PATH)/lib/libomp.so $(INSTALL_DIR)/bin/
@@ -88,7 +88,7 @@ install:
 	@echo "Done. X-Ray has been installed to $(INSTALL_DIR)."
 
 clean:
-	@rm -rf build/detector build/parser build/cli build/dist
+	@rm -rf build/analyzer build/parser build/cli build/dist
 
 build-llvm-prebuilt-image:
 	@docker build -t $(LLVM_PREBUILT_IMAGE) \
@@ -127,6 +127,10 @@ build-container-image:
 	  --build-arg LLVM_PREBUILT_IMAGE=$(LLVM_PREBUILT_IMAGE) \
 	  --build-arg LLVM_VERSION=$(LLVM_VERSION) \
 	  -f Dockerfile.x-ray .
+
+run-unit-tests:
+	@ctest --test-dir build/analyzer/test
+	@ctest --test-dir build/parser/test
 
 run-native-e2e:
 	@PATH=$$(realpath ${INSTALL_DIR}/bin):$${PATH} \
