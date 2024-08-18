@@ -25,16 +25,6 @@ include_directories(
 
 add_library(SolanaAnalyzer ${SOLANA_ANALYZER_SOURCES})
 
-target_link_libraries(SolanaAnalyzer
-    PointerAnalysis
-    Util
-)
-
-# Executable.
-add_executable(SolanaAnalyzerExe
-    main.cpp
-)
-
 llvm_map_components_to_libnames(LLVM_LIBS
     bitwriter
     core
@@ -56,11 +46,21 @@ llvm_map_components_to_libnames(LLVM_LIBS
     mc
 )
 
+target_link_libraries(SolanaAnalyzer
+    PointerAnalysis
+    Util
+    ${LLVM_LIBS}
+)
+
+# Executable.
+add_executable(SolanaAnalyzerExe
+    Main.cpp
+)
+
 target_link_libraries(SolanaAnalyzerExe
     SolanaAnalyzer
     conflib
     Util
-    ${LLVM_LIBS}
 )
 
 if (CMAKE_BUILD_TYPE MATCHES "Release")
