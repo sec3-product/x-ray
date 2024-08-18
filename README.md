@@ -1,4 +1,4 @@
-# X-Ray Toolchain: Solana Programs Static Analysis Tool
+# X-Ray: Solana Programs Static Analysis Tool
 
 ## Introduction
 
@@ -9,7 +9,7 @@ Tree (AST), converts the AST to an LLVM Intermediate Representation (LLVM-IR)
 format, and applies static analysis over the LLVM-IR to capture potential
 issues.
 
-The toolchain is designed to be extensible, allowing developers to define
+The analysis tool is designed to be extensible, allowing developers to define
 custom rules. Developers can easily describe specific rules to analyze Rust
 applications via the toolchain.
 
@@ -71,18 +71,18 @@ uses [jet-v1](https://github.com/jet-lab/jet-v1) as test target).
 
 #### Components and Repo Layout
 
-The X-Ray static code anaylsis toolchain consists of three project repositories:
+The X-Ray static code anaylsis toolchain consists of three major components:
 
 * code-parser
-* code-detector
-* coderrect
+* code-analyzer
+* CLI
 
 #### Workflow
 
 <img src="./docs/images/workflow.jpg" width="1100px">
 
 
-### Flexible Rule Engine
+### Rule Engine
 
 TBA
 
@@ -93,7 +93,6 @@ TBA
 ### Building from Source
 
 Please refer to [Building from Source](docs/building.md) for detailed steps.
-
 
 ## Contributing
 

@@ -67,10 +67,9 @@ jobs:
           make -j build-x-ray
           make install
 
-      - name: Run unittests
+      - name: Run unit tests
         run: |
-          ctest --test-dir build/detector/test
-          ctest --test-dir build/parser/test
+          make -j run-unit-tests
 
       - name: Run E2E tests
         run: |
