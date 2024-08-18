@@ -8,11 +8,10 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
+#include "DebugFlags.h"
 #include "LogColor.h"
 #include "PTAModels/GraphBLASModel.h"
 #include "Util/Util.h"
-
-extern bool DEBUG_RUST_API;
 
 namespace aser {
 

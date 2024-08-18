@@ -15,6 +15,7 @@
 #include <llvm/Pass.h>
 #include <llvm/Transforms/Utils/Local.h>
 
+#include "DebugFlags.h"
 #include "Graph/Event.h"
 #include "PTAModels/GraphBLASModel.h"
 #include "PointerAnalysis/PointerAnalysisPass.h"
@@ -351,12 +352,6 @@ private:
                                const llvm::Function *func,
                                const llvm::Instruction *inst,
                                StaticThread *thread, const llvm::Value *value);
-#if 0
-  void handlePlusEqual(const aser::ctx *ctx, TID tid,
-                       const llvm::Function *func,
-                       const llvm::Instruction *inst, StaticThread *thread,
-                       const CallSite &CS);
-#endif
 
   const llvm::Function *findCallStackNonAnonFunc(const Event *e);
   llvm::StringRef findCallStackAccountAliasName(const llvm::Function *func,
@@ -380,5 +375,7 @@ private:
 
   Ruleset nonRustModelRuleset;
 };
+
+extern void computeCargoTomlConfig(llvm::Module *module);
 
 } // namespace aser

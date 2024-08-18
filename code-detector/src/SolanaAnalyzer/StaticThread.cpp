@@ -1,5 +1,6 @@
 #include "StaticThread.h"
 
+#include "AccountIDL.h"
 #include "Graph/Event.h"
 
 using namespace aser;
@@ -22,7 +23,6 @@ std::map<uint8_t, const llvm::Constant *> *StaticThread::getThreadArg(TID tid) {
   return nullptr;
 };
 
-extern std::map<std::string, std::vector<AccountIDL>> IDL_INSTRUCTION_ACCOUNTS;
 bool StaticThread::isAccountCompatibleOrder(llvm::StringRef &accountName1,
                                             llvm::StringRef &accountName2) {
   if (IDL_INSTRUCTION_ACCOUNTS.find(anchor_idl_instruction_name) !=

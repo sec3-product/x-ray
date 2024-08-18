@@ -1,8 +1,3 @@
-//
-// Created by peiming on 11/7/19.
-//
-
-//#include <llvm/IR/CallSite.h>
 #include <llvm/IR/DataLayout.h>
 #include <llvm/IR/GetElementPtrTypeIterator.h>
 #include <llvm/IR/GlobalAlias.h>
@@ -20,6 +15,10 @@ using namespace aser;
 using namespace llvm;
 
 extern cl::opt<bool> USE_MEMLAYOUT_FILTERING;
+
+bool DEBUG_PTA;
+bool DEBUG_PTA_VERBOSE;
+size_t PTAAnonLimit = 10000;
 
 static const Value *stripNullOrUnDef(const Value *V) {
   // a uni ptr

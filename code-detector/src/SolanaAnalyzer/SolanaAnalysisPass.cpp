@@ -14,6 +14,7 @@
 #include "Collectors/Races.h"
 #include "Collectors/UnsafeOperation.h"
 #include "Collectors/UntrustfulAccount.h"
+#include "DebugFlags.h"
 #include "Graph/Event.h"
 #include "Graph/ReachGraph.h"
 #include "Graph/Trie.h"
@@ -23,36 +24,18 @@
 #include "StaticThread.h"
 #include "Util/Log.h"
 
-using namespace std;
 using namespace llvm;
 using namespace aser;
 
-extern bool CONFIG_SHOW_SUMMARY;
-extern bool CONFIG_SHOW_DETAIL;
-
-// for solana
-extern bool CONFIG_CHECK_UncheckedAccount;
-extern bool hasOverFlowChecks;
-extern bool anchorVersionTooOld;
-extern bool splVersionTooOld;
-extern bool solanaVersionTooOld;
-
-extern bool DEBUG_RUST_API;
-extern bool PRINT_IMMEDIATELY;
-
 extern const llvm::Function *
-getFunctionFromPartialName(llvm::StringRef partialName);
-extern const llvm::Function *
-getFunctionMatchStartEndName(llvm::StringRef startName,
-                             llvm::StringRef endName);
-extern const llvm::Function *getUnexploredFunctionbyPartialName(StringRef sig);
+getUnexploredFunctionbyPartialName(llvm::StringRef sig);
 extern void
 getAllUnexploredFunctionsbyPartialName(std::set<const llvm::Function *> &result,
-                                       StringRef sig);
+                                       llvm::StringRef sig);
 
 EventID Event::ID_counter = 0;
 llvm::StringRef stripSelfAccountName(llvm::StringRef account_name) {
-  if (account_name.find("self.") != string::npos)
+  if (account_name.find("self.") != std::string::npos)
     account_name = account_name.substr(5);
   return account_name;
 }
@@ -71,7 +54,7 @@ llvm::StringRef stripCtxAccountsName(llvm::StringRef account_name) {
 
 llvm::StringRef stripToAccountInfo(llvm::StringRef account_name) {
   auto found = account_name.find(".to_account_info()");
-  if (found != string::npos) {
+  if (found != std::string::npos) {
     // auto account_name1 = account_name.substr(0, found);
     // auto account_name2 = account_name.substr(found+1);
     // account_name = (account_name1+account_name2).getSingleStringRef();
@@ -98,14 +81,14 @@ llvm::StringRef getStructName(llvm::StringRef valueName) {
 
 llvm::StringRef stripDotKey(llvm::StringRef valueName) {
   auto foundDotKey = valueName.find(".key");
-  if (foundDotKey != string::npos)
+  if (foundDotKey != std::string::npos)
     valueName = valueName.substr(0, foundDotKey);
   return valueName;
 }
 
 llvm::StringRef stripAtErrorAccountName(llvm::StringRef valueName) {
   auto foundAt = valueName.find("@");
-  if (foundAt != string::npos)
+  if (foundAt != std::string::npos)
     valueName = valueName.substr(0, foundAt);
   return valueName;
 }
@@ -124,12 +107,12 @@ llvm::StringRef findMacroAccount(llvm::StringRef account) {
   account = stripAccountName(account);
   {
     auto found = account.find_last_of(",");
-    if (found != string::npos)
+    if (found != std::string::npos)
       account = account.substr(found + 1);
   }
   {
     auto found = account.find_last_of(".");
-    if (found != string::npos)
+    if (found != std::string::npos)
       account = account.substr(found + 1);
   }
   return account;
@@ -212,7 +195,7 @@ getProgramIdAccountName(const llvm::Instruction *inst) {
                 // ctx.accounts.candy_machine_program.key
                 auto account = stripCtxAccountsName(valueName2);
                 auto found = account.find_last_of(".");
-                if (found != string::npos)
+                if (found != std::string::npos)
                   account = account.substr(0, found);
                 return std::make_pair(account, prevInst);
               }
@@ -224,6 +207,127 @@ getProgramIdAccountName(const llvm::Instruction *inst) {
     }
   }
   return std::make_pair("", inst);
+}
+
+std::map<llvm::StringRef, const llvm::Function *> FUNC_NAME_MAP;
+const llvm::Function *getFunctionFromPartialName(llvm::StringRef partialName) {
+  for (auto [name, func] : FUNC_NAME_MAP) {
+    if (name.contains(partialName) && !name.contains(".anon."))
+      return func;
+  }
+  return nullptr;
+}
+
+const llvm::Function *getFunctionMatchStartEndName(llvm::StringRef startName,
+                                                   llvm::StringRef endName) {
+  for (auto [name, func] : FUNC_NAME_MAP) {
+    if (name.startswith(startName) && name.endswith(endName) &&
+        !name.contains(".anon."))
+      return func;
+  }
+  return nullptr;
+}
+
+// Method to compare two versions.
+// Returns 1 if v2 is smaller, -1
+// if v1 is smaller, 0 if equal
+static int versionCompare(std::string v1,
+                          std::string v2) {     // v1: the real version: ^0.20.1
+  std::replace(v1.begin(), v1.end(), '*', '0'); // replace all '*' to '0'
+  v1.erase(std::remove_if(
+               v1.begin(), v1.end(),
+               [](char c) { return !(c >= '0' && c <= '9') && c != '.'; }),
+           v1.end());
+  // llvm::outs() << "v1: " << v1 << "\n";
+  // llvm::outs() << "v2: " << v2 << "\n";
+  // v2: the target version 3.1.1
+  // vnum stores each numeric
+  // part of version
+  int vnum1 = 0, vnum2 = 0;
+  // loop until both string are
+  // processed
+  for (int i = 0, j = 0; (i < v1.length() || j < v2.length());) {
+    // storing numeric part of
+    // version 1 in vnum1
+    while (i < v1.length() && v1[i] != '.') {
+      vnum1 = vnum1 * 10 + (v1[i] - '0');
+      i++;
+    }
+    // storing numeric part of
+    // version 2 in vnum2
+    while (j < v2.length() && v2[j] != '.') {
+      vnum2 = vnum2 * 10 + (v2[j] - '0');
+      j++;
+    }
+    if (vnum1 > vnum2)
+      return 1;
+    if (vnum2 > vnum1)
+      return -1;
+    // if equal, reset variables and
+    // go for next numeric part
+    vnum1 = vnum2 = 0;
+    i++;
+    j++;
+  }
+  return 0;
+}
+
+static std::map<StringRef, StringRef> CARGO_TOML_CONFIG_MAP;
+
+void aser::computeCargoTomlConfig(llvm::Module *module) {
+  auto f = module->getFunction("sol.model.cargo.toml");
+  if (f) {
+    for (auto &BB : *f) {
+      for (auto &I : BB) {
+        if (isa<CallBase>(&I)) {
+          aser::CallSite CS(&I);
+          if (CS.getNumArgOperands() < 2)
+            continue;
+          auto v1 = CS.getArgOperand(0);
+          auto v2 = CS.getArgOperand(1);
+
+          auto valueName1 = LangModel::findGlobalString(v1);
+          auto valueName2 = LangModel::findGlobalString(v2);
+          auto overflow_checks = "profile.release.overflow-checks";
+          if (valueName1 == overflow_checks) {
+            if (valueName2.contains("1"))
+              hasOverFlowChecks = true;
+            llvm::outs() << "overflow_checks: " << hasOverFlowChecks << "\n";
+          }
+
+          auto anchor_lang_version = "dependencies.anchor-lang.version";
+          // prior to 0.24.x, insecure init_if_needed
+          if (valueName1 == anchor_lang_version) {
+            if (versionCompare(valueName2.str(), "0.24.2") == -1)
+              anchorVersionTooOld = true;
+            llvm::outs() << "anchor_lang_version: " << valueName2
+                         << " anchorVersionTooOld: " << anchorVersionTooOld
+                         << "\n";
+          }
+          auto anchor_spl_version = "dependencies.anchor-spl.version";
+          auto spl_token_version = "dependencies.spl-token.version";
+          if (valueName1 == spl_token_version) {
+            if (versionCompare(valueName2.str(), "3.1.1") == -1)
+              splVersionTooOld = true;
+            llvm::outs() << "spl_version: " << valueName2
+                         << " splVersionTooOld: " << splVersionTooOld << "\n";
+          }
+          // prior to v3.1.1, insecure spl invoke
+
+          auto solana_program_version = "dependencies.solana_program.version";
+          if (valueName1 == solana_program_version) {
+            if (versionCompare(valueName2.str(), "1.10.29") == -1)
+              solanaVersionTooOld = true;
+            llvm::outs() << "solana_version: " << valueName2
+                         << " solanaVersionTooOld: " << solanaVersionTooOld
+                         << "\n";
+          }
+
+          CARGO_TOML_CONFIG_MAP[valueName1] = valueName2;
+        }
+      }
+    }
+  }
 }
 
 void SolanaAnalysisPass::initialize(SVE::Database sves, int limit) {
@@ -254,7 +358,7 @@ bool SolanaAnalysisPass::hasValueLessMoreThan(const llvm::Value *value,
     llvm::outs() << "valueLessThan: " << valueLessThan << "\n";
     llvm::outs() << "snippet: \n" << snippet << "\n";
   }
-  if (snippet.find(valueLessThan) != string::npos)
+  if (snippet.find(valueLessThan) != std::string::npos)
     return true;
   return false;
 }
@@ -312,17 +416,17 @@ bool SolanaAnalysisPass::isSafeVariable(const llvm::Function *func,
     }
   } else {
     auto valueName = LangModel::findGlobalString(value);
-    if (valueName.find("as i") != string::npos ||
-        valueName.find(".len") != string::npos ||
-        valueName.find("_len") != string::npos ||
-        valueName.find("length_") != string::npos ||
-        valueName.find("size") != string::npos ||
-        valueName.find("steps") != string::npos ||
-        valueName.find("gas") != string::npos ||
-        valueName.find("bits") != string::npos ||
-        valueName.find("shift") != string::npos ||
-        (valueName.find("pos") != string::npos &&
-         valueName.find("iter") == string::npos)) {
+    if (valueName.find("as i") != std::string::npos ||
+        valueName.find(".len") != std::string::npos ||
+        valueName.find("_len") != std::string::npos ||
+        valueName.find("length_") != std::string::npos ||
+        valueName.find("size") != std::string::npos ||
+        valueName.find("steps") != std::string::npos ||
+        valueName.find("gas") != std::string::npos ||
+        valueName.find("bits") != std::string::npos ||
+        valueName.find("shift") != std::string::npos ||
+        (valueName.find("pos") != std::string::npos &&
+         valueName.find("iter") == std::string::npos)) {
       return true;
     }
   }
@@ -439,7 +543,7 @@ llvm::StringRef SolanaAnalysisPass::findCallStackAccountAliasName(
           // llvm::outs() << "valueName_j: " << valueName_j << "\n";
           auto found = valueName_j.find(".key");
 
-          if (found != string::npos)
+          if (found != std::string::npos)
             if (stripKey)
               valueName_j = valueName_j.substr(0, found);
 
@@ -495,7 +599,7 @@ void SolanaAnalysisPass::addCheckKeyEqual(const aser::ctx *ctx, TID tid,
   valueName1 = stripAll(valueName1);
   // self.mm,\22miner.authority\22
   auto foundComma = valueName2.find(",");
-  if (foundComma != string::npos)
+  if (foundComma != std::string::npos)
     valueName2 = valueName2.substr(0, foundComma);
   valueName2 = stripSelfAccountName(valueName2);
   valueName2 = stripAll(valueName2);
@@ -505,7 +609,7 @@ void SolanaAnalysisPass::addCheckKeyEqual(const aser::ctx *ctx, TID tid,
 
   if (valueKey1) {
     auto foundDot1 = valueName1.find_last_of(".");
-    if (foundDot1 != string::npos)
+    if (foundDot1 != std::string::npos)
       valueName1 = valueName1.substr(0, foundDot1);
     auto pair = std::make_pair(valueName1, valueName2);
     thread->assertKeyEqualMap[pair] = e;
@@ -513,7 +617,7 @@ void SolanaAnalysisPass::addCheckKeyEqual(const aser::ctx *ctx, TID tid,
   }
   if (valueKey2) {
     auto foundDot2 = valueName2.find_last_of(".");
-    if (foundDot2 != string::npos)
+    if (foundDot2 != std::string::npos)
       valueName2 = valueName2.substr(0, foundDot2);
     auto pair = std::make_pair(valueName2, valueName1);
     thread->assertKeyEqualMap[pair] = e;
@@ -658,13 +762,13 @@ void SolanaAnalysisPass::handleConditionalCheck0(const aser::ctx *ctx, TID tid,
         account2 = stripAll(account2);
 
         auto foundDot1 = account1.find_last_of(".");
-        if (foundDot1 != string::npos)
+        if (foundDot1 != std::string::npos)
           account1 = account1.substr(0, foundDot1);
         if (!thread->isInAccountsMap(account1)) {
           account1 = findCallStackAccountAliasName(func, e, account1);
         }
         auto foundDot2 = account2.find_last_of(".");
-        if (foundDot2 != string::npos)
+        if (foundDot2 != std::string::npos)
           account2 = account2.substr(0, foundDot2);
         if (!thread->isInAccountsMap(account2)) {
           account2 = findCallStackAccountAliasName(func, e, account2);
@@ -699,7 +803,7 @@ void SolanaAnalysisPass::handleConditionalCheck0(const aser::ctx *ctx, TID tid,
 
         valueName1 = stripAccountName(valueName1);
         auto found1 = valueName1.find_last_of("."); // for Anchor
-        if (found1 != string::npos) {
+        if (found1 != std::string::npos) {
           valueName1 = valueName1.substr(0, found1);
         }
         if (!thread->isInAccountsMap(valueName1)) {
@@ -719,7 +823,7 @@ void SolanaAnalysisPass::handleConditionalCheck0(const aser::ctx *ctx, TID tid,
         // skip user-level .owner
         valueName2 = stripAccountName(valueName2);
         auto found2 = valueName2.find_last_of("."); // for Anchor
-        if (found2 != string::npos) {
+        if (found2 != std::string::npos) {
           valueName2 = valueName2.substr(0, found2);
         }
         if (!thread->isInAccountsMap(valueName2)) {
@@ -837,7 +941,7 @@ void SolanaAnalysisPass::handleConditionalCheck0(const aser::ctx *ctx, TID tid,
     //     << "ctx.accounts.authority.is_signer valueName : " << valueName <<
     //     "\n";
     auto foundDot = valueName.find_last_of(".");
-    if (foundDot != string::npos) {
+    if (foundDot != std::string::npos) {
       auto account = valueName.substr(0, foundDot);
       account = stripAll(account);
       auto e = graph->createReadEvent(ctx, inst, tid);
@@ -881,9 +985,9 @@ void SolanaAnalysisPass::handleConditionalCheck0(const aser::ctx *ctx, TID tid,
         llvm::outs() << "sol.if valueName: " << valueName
                      << " account: " << account << "\n";
       if (!account.empty()) {
-        if (valueName.find(".is_signer") != string::npos) {
+        if (valueName.find(".is_signer") != std::string::npos) {
           thread->asssertSignerMap[account] = e;
-        } else if (valueName.find("crimi") != string::npos) {
+        } else if (valueName.find("crimi") != std::string::npos) {
           thread->asssertDiscriminatorMap[account] = e;
         } else {
           thread->asssertOtherMap[account] = e;
@@ -945,7 +1049,7 @@ void SolanaAnalysisPass::updateKeyEqualMap(StaticThread *thread, const Event *e,
 
 static unsigned int call_stack_level = 0;
 
-static string DEBUG_STRING_SPACE = "";
+static std::string DEBUG_STRING_SPACE = "";
 static std::map<TID, unsigned int> threadNFuncMap;
 extern int FUNC_COUNT_BUDGET; // max by default 10000 for solana
 static unsigned int FUNC_COUNT_PROGRESS_THESHOLD = 10000;
@@ -1077,8 +1181,8 @@ bool SolanaAnalysisPass::mayBeExclusive(const Event *const e1,
 // inline all the calls and make copies on different threads.
 void SolanaAnalysisPass::traverseFunction(
     const aser::ctx *ctx, const Function *func0, StaticThread *thread,
-    vector<const Function *> &callStack,
-    map<uint8_t, const llvm::Constant *> *valMap) {
+    std::vector<const Function *> &callStack,
+    std::map<uint8_t, const llvm::Constant *> *valMap) {
   auto tid = thread->getTID();
   Function *func = const_cast<Function *>(func0);
 
@@ -1286,7 +1390,7 @@ void SolanaAnalysisPass::traverseFunction(
                       valueName1.split(valueName1_vec, ',', -1, false);
                       for (auto value_ : valueName1_vec) {
                         auto found = value_.find(".key");
-                        if (found != string::npos) {
+                        if (found != std::string::npos) {
                           auto account = value_.substr(0, found);
                           account = stripAll(account);
                           auto pair = std::make_pair(account, account);
@@ -1322,7 +1426,7 @@ void SolanaAnalysisPass::traverseFunction(
 
                     // let lp_token_supply = ctx.accounts.lp_token_mint.supply;
                     auto foundDot = valueName1.find(".");
-                    if (foundDot != string::npos)
+                    if (foundDot != std::string::npos)
                       valueName1 = valueName1.substr(0, foundDot);
                     else {
                       // account alias
@@ -1357,7 +1461,7 @@ void SolanaAnalysisPass::traverseFunction(
                                   "sol.sol_memset.3")) {
                             valueName = stripAccountName(valueName);
                             auto foundDot = valueName.find(".");
-                            if (foundDot != string::npos)
+                            if (foundDot != std::string::npos)
                               valueName = valueName.substr(0, foundDot);
                             thread->memsetDataMap[valueName] = e;
                             // llvm::outs() << "sol_memset valueName: " <<
@@ -1446,7 +1550,7 @@ void SolanaAnalysisPass::traverseFunction(
                 auto calleeName = CS.getCalledFunction()->getName();
                 auto e = graph->createReadEvent(ctx, inst, tid);
                 auto foundTransferType =
-                    (calleeName.find("Transfer") != string::npos);
+                    (calleeName.find("Transfer") != std::string::npos);
                 if (foundTransferType) {
                   // find all sol.model.opaqueAssign @authority
                   auto from_name = findNewStructAccountName(tid, inst, "from");
@@ -1474,8 +1578,9 @@ void SolanaAnalysisPass::traverseFunction(
                   }
                 }
                 auto foundMintType =
-                    (calleeName.find("MintTo.") != string::npos);
-                auto foundBurnType = (calleeName.find("Burn.") != string::npos);
+                    (calleeName.find("MintTo.") != std::string::npos);
+                auto foundBurnType =
+                    (calleeName.find("Burn.") != std::string::npos);
                 if (foundMintType || foundBurnType) {
                   // find all sol.model.opaqueAssign @authority
                   auto mint_name = findNewStructAccountName(tid, inst, "mint");
@@ -1528,7 +1633,7 @@ void SolanaAnalysisPass::traverseFunction(
 
                 // CPI Serum
                 auto foundSerumCPIType =
-                    (calleeName.find(".dex:") != string::npos);
+                    (calleeName.find(".dex:") != std::string::npos);
                 if (foundSerumCPIType) {
                   for (int i = 0; i < CS.getNumArgOperands(); i++) {
                     auto value_i = CS.getArgOperand(i);
@@ -1588,7 +1693,7 @@ void SolanaAnalysisPass::traverseFunction(
                 // for non-account type: BrrrCommon
                 auto struct_name = type;
                 auto found = type.find("<");
-                if (found != string::npos)
+                if (found != std::string::npos)
                   struct_name = struct_name.substr(0, found);
                 std::string func_struct_name =
                     "sol.model.struct.anchor." + struct_name.str();
@@ -1622,7 +1727,7 @@ void SolanaAnalysisPass::traverseFunction(
                 auto value = callInst->getOperand(0);
                 // find the next instruction, which has e.g., user.authority
                 auto valueName = LangModel::findGlobalString(value);
-                bool isMutable = (cons_all.find("mut,") != string::npos) ||
+                bool isMutable = (cons_all.find("mut,") != std::string::npos) ||
                                  (cons_all == "mut");
                 if (isMutable) {
                   if (DEBUG_RUST_API)
@@ -1630,9 +1735,9 @@ void SolanaAnalysisPass::traverseFunction(
                   lastThread->accountsMutMap[valueName] = true;
                 }
                 //"init,seeds=[b\22cdp_vault\22.as_ref(),cdp_vault_type.cdp_state.as_ref(),cdp_vault_type.key().as_ref(),cdp_vault_owner.key().as_ref()],bump=bump,payer=payer,space=8+std::mem::size_of::<CdpVault>()"
-                auto foundInit = cons_all.find("init,") != string::npos;
+                auto foundInit = cons_all.find("init,") != std::string::npos;
                 auto foundInitIfNeeded =
-                    cons_all.find("init_if_needed,") != string::npos;
+                    cons_all.find("init_if_needed,") != std::string::npos;
                 if (foundInit || foundInitIfNeeded) {
                   if (foundInitIfNeeded && anchorVersionTooOld) {
                     // anchor security issue
@@ -1647,7 +1752,7 @@ void SolanaAnalysisPass::traverseFunction(
                 }
 
                 auto foundSeeds = cons_all.find("seeds=[");
-                if (foundSeeds != string::npos) {
+                if (foundSeeds != std::string::npos) {
                   // add the next instruction account to PDA account
                   auto account_pda =
                       LangModel::findGlobalString(callInst->getOperand(0));
@@ -1658,7 +1763,7 @@ void SolanaAnalysisPass::traverseFunction(
                   }
                   auto cons_seeds = cons_all.substr(foundSeeds + 7);
                   auto found = cons_seeds.find_last_of("]");
-                  if (found != string::npos) {
+                  if (found != std::string::npos) {
                     cons_seeds = cons_seeds.substr(0, found);
                     llvm::SmallVector<StringRef, 8> cons_vec;
                     cons_seeds.split(cons_vec, ',', -1, false);
@@ -1678,7 +1783,7 @@ void SolanaAnalysisPass::traverseFunction(
                         accountsPDASeedsMap[account_pda].push_back(cons);
 
                       found = cons.find(".key");
-                      if (found != string::npos) {
+                      if (found != std::string::npos) {
                         auto account = cons.substr(0, found);
                         account = stripAll(account);
                         lastThread->accountsSeedsMap[account_pda].insert(
@@ -1714,7 +1819,7 @@ void SolanaAnalysisPass::traverseFunction(
                   if (DEBUG_RUST_API)
                     llvm::outs() << "cons: " << cons << "\n";
                   auto foundAddress = cons.find("address=");
-                  if (foundAddress != string::npos) {
+                  if (foundAddress != std::string::npos) {
                     auto cons_address = cons.substr(foundAddress + 8);
                     // add the next instruction account to validated account
                     {
@@ -1727,7 +1832,7 @@ void SolanaAnalysisPass::traverseFunction(
                   }
                   // TODO: handle multiple constraints
                   auto foundCons = cons.find("constraint=");
-                  if (foundCons != string::npos) {
+                  if (foundCons != std::string::npos) {
                     auto cons_full = cons.substr(foundCons + 11);
                     // pool.token_x_reserve ==
                     // token_src_reserve.key()||pool.token_y_reserve==token_src_reserve.key()
@@ -1735,7 +1840,7 @@ void SolanaAnalysisPass::traverseFunction(
                     cons_full.split(cons_vec_full, "||", -1, false);
                     for (auto cons_ : cons_vec_full) {
                       auto foundErrorAt = cons_.find("@");
-                      if (foundErrorAt != string::npos)
+                      if (foundErrorAt != std::string::npos)
                         cons_ = cons_.substr(0, foundErrorAt);
                       auto equalStr = "==";
                       auto notEqualStr = "!=";
@@ -1752,13 +1857,15 @@ void SolanaAnalysisPass::traverseFunction(
                       auto foundLessThan = cons_.find(lessThanStr);
                       auto foundLargerOrEqual = cons_.find(largerOrEqualStr);
                       auto foundLargerThan = cons_.find(largerThanStr);
-                      bool isEqual = foundEqual != string::npos;
-                      bool isNotEqual = foundNotEqual != string::npos;
-                      bool isLessOrEqual = foundLessOrEqual != string::npos;
-                      bool isLessThan = foundLessThan != string::npos;
-                      bool isLargerOrEqual = foundLargerOrEqual != string::npos;
-                      bool isLargerThan = foundLargerThan != string::npos;
-                      auto found = string::npos;
+                      bool isEqual = foundEqual != std::string::npos;
+                      bool isNotEqual = foundNotEqual != std::string::npos;
+                      bool isLessOrEqual =
+                          foundLessOrEqual != std::string::npos;
+                      bool isLessThan = foundLessThan != std::string::npos;
+                      bool isLargerOrEqual =
+                          foundLargerOrEqual != std::string::npos;
+                      bool isLargerThan = foundLargerThan != std::string::npos;
+                      auto found = std::string::npos;
                       if (isEqual)
                         found = foundEqual;
                       else if (isNotEqual)
@@ -1775,7 +1882,7 @@ void SolanaAnalysisPass::traverseFunction(
                         llvm::outs() << "unknown constraint: " << cons_ << "\n";
                       }
 
-                      if (found != string::npos) {
+                      if (found != std::string::npos) {
                         size_t op_len = 2;
                         if (isLessThan || isLargerThan)
                           op_len = 1;
@@ -1805,7 +1912,7 @@ void SolanaAnalysisPass::traverseFunction(
                   }
 
                   auto foundHasOne = cons.find("has_one=");
-                  if (foundHasOne != string::npos) {
+                  if (foundHasOne != std::string::npos) {
                     // #[account(mut,
                     //           has_one = market,
                     //           has_one = fee_note_vault,
@@ -1843,14 +1950,14 @@ void SolanaAnalysisPass::traverseFunction(
                     //     << " == " << account_key << "\n";
 
                     // add  has_one = vault_owner
-                    if (account.find("owner") != string::npos) {
+                    if (account.find("owner") != std::string::npos) {
                       auto pair_owner = std::make_pair(valueName, account);
                       lastThread->assertOwnerEqualMap[pair_owner] = e;
                     }
                   }
                   auto account = LangModel::findGlobalString(value);
-                  auto foundClose = (cons.find("close=") != string::npos);
-                  auto foundZero = (cons.find("zero") != string::npos);
+                  auto foundClose = (cons.find("close=") != std::string::npos);
+                  auto foundZero = (cons.find("zero") != std::string::npos);
                   // anchor account cannot be reinitialized
                   if (foundClose || foundZero) {
                     // find the next instruction, which has e.g., user
@@ -1873,10 +1980,10 @@ void SolanaAnalysisPass::traverseFunction(
                   auto foundSignerDot = cons.find("signer.");
                   auto foundSignerPayer = cons.find("payer=signer");
                   // the account is signer
-                  if (foundSigner != string::npos &&
-                      foundSigner_ == string::npos &&
-                      foundSignerDot == string::npos &&
-                      foundSignerPayer == string::npos) {
+                  if (foundSigner != std::string::npos &&
+                      foundSigner_ == std::string::npos &&
+                      foundSignerDot == std::string::npos &&
+                      foundSignerPayer == std::string::npos) {
                     // find the next instruction, which has e.g.,
                     //>12|    #[account(signer)]
                     // 13|    pub owner: AccountInfo<'info>
@@ -1889,7 +1996,7 @@ void SolanaAnalysisPass::traverseFunction(
                   auto foundAssociatedToken =
                       cons.find("associated_token::authority");
                   // the account is associated_token
-                  if (foundAssociatedToken != string::npos) {
+                  if (foundAssociatedToken != std::string::npos) {
                     // associated_token::authority = user,
                     // pub user_redeemable: Box<Account<'info, TokenAccount>>,
                     if (DEBUG_RUST_API)
@@ -1898,14 +2005,14 @@ void SolanaAnalysisPass::traverseFunction(
                     lastThread->assertKeyEqualMap[pair] = e;
                   }
                   auto foundTokenAuthority = cons.find("token::authority");
-                  if (foundTokenAuthority != string::npos) {
+                  if (foundTokenAuthority != std::string::npos) {
                     if (DEBUG_RUST_API)
                       llvm::outs() << "token::authority: " << account << "\n";
                     auto pair = std::make_pair(account, account);
                     lastThread->assertKeyEqualMap[pair] = e;
                   }
                   auto foundTokenMint = cons.find("token::mint");
-                  if (foundTokenMint != string::npos) {
+                  if (foundTokenMint != std::string::npos) {
                     if (DEBUG_RUST_API)
                       llvm::outs() << "token::mint: " << account << "\n";
                     auto account_mint = cons.substr(foundTokenMint + 12);
@@ -1915,7 +2022,7 @@ void SolanaAnalysisPass::traverseFunction(
 
                   // bump
                   auto foundBump = cons.find("bump=");
-                  if (foundBump != string::npos) {
+                  if (foundBump != std::string::npos) {
                     if (!foundInit) {
                       auto bumpSeed = cons.substr(foundBump + 5);
                       if (!bumpSeed.contains(".")) {
@@ -1992,13 +2099,13 @@ void SolanaAnalysisPass::traverseFunction(
                   auto func_namespace_name = func->getName().str();
                   {
                     auto found = func_namespace_name.find("::");
-                    if (found != string::npos)
+                    if (found != std::string::npos)
                       func_namespace_name =
                           func_namespace_name.substr(found + 2);
                   }
                   {
                     auto found = func_namespace_name.find(".");
-                    if (found != string::npos)
+                    if (found != std::string::npos)
                       func_namespace_name =
                           func_namespace_name.substr(0, found);
                   }
@@ -2070,7 +2177,7 @@ void SolanaAnalysisPass::traverseFunction(
                     {
                       auto params_tmp = params;
                       auto found = params_tmp.find(".is_signer");
-                      while (found != string::npos) {
+                      while (found != std::string::npos) {
                         auto account = params_tmp.substr(0, found);
                         account = findMacroAccount(account);
                         thread->asssertSignerMap[account] = e;
@@ -2090,7 +2197,7 @@ void SolanaAnalysisPass::traverseFunction(
                     {
                       auto params_tmp = params;
                       auto found = params_tmp.find(".owner");
-                      while (found != string::npos) {
+                      while (found != std::string::npos) {
                         auto account = params_tmp.substr(0, found);
                         account = findMacroAccount(account);
                         auto account2 = account;
@@ -2111,7 +2218,7 @@ void SolanaAnalysisPass::traverseFunction(
                     {
                       auto params_tmp = params;
                       auto found = params_tmp.find(".key");
-                      while (found != string::npos) {
+                      while (found != std::string::npos) {
                         auto account = params_tmp.substr(0, found);
                         account = findMacroAccount(account);
                         auto account2 = account;
@@ -2139,11 +2246,11 @@ void SolanaAnalysisPass::traverseFunction(
                 auto value = CS.getArgOperand(0);
                 auto calleeName = LangModel::findGlobalString(value);
                 auto found = calleeName.find("(");
-                if (found != string::npos)
+                if (found != std::string::npos)
                   calleeName = calleeName.substr(0, found);
                 if (calleeName.startswith("ctx.accounts.")) {
                   auto foundDot = calleeName.find_last_of(".");
-                  if (foundDot != string::npos)
+                  if (foundDot != std::string::npos)
                     calleeName = calleeName.substr(foundDot + 1);
                 }
                 std::string func_struct_name = "::" + calleeName.str() + ".";
@@ -2220,7 +2327,7 @@ void SolanaAnalysisPass::traverseFunction(
                       auto value_i = CS.getArgOperand(i);
                       auto valuename_i = LangModel::findGlobalString(value_i);
                       auto found = valuename_i.find(":");
-                      if (found != string::npos) {
+                      if (found != std::string::npos) {
                         auto name = valuename_i.substr(0, found);
                         auto type = valuename_i.substr(found + 1);
                         if (DEBUG_RUST_API)
@@ -2228,7 +2335,7 @@ void SolanaAnalysisPass::traverseFunction(
                                        << " type: " << type << "\n";
                         auto pair = std::make_pair(name, type);
                         funcArgTypesMap[newThread->startFunc].push_back(pair);
-                        // user-provided Strings
+                        // user-provided std::strings
                         if (type.contains("String")) {
                           newThread->userProvidedInputStrings.insert(name);
                         }
@@ -2261,18 +2368,18 @@ void SolanaAnalysisPass::traverseFunction(
                     CallSite CS2(callValue);
                     auto value1 = CS2.getArgOperand(0);
                     auto valueName = LangModel::findGlobalString(value1);
-                    if (valueName.find(".data") != string::npos) {
+                    if (valueName.find(".data") != std::string::npos) {
                       auto e = graph->createReadEvent(ctx, inst, tid);
                       auto account = valueName;
                       auto found = valueName.find(".");
-                      if (found != string::npos)
+                      if (found != std::string::npos)
                         account = valueName.substr(0, found);
                       if (!thread->isInAccountsMap(account))
                         account =
                             findCallStackAccountAliasName(func, e, account);
                       thread->memsetDataMap[account] = e;
                       auto found1 = account.find(".accounts.");
-                      if (found1 != string::npos) {
+                      if (found1 != std::string::npos) {
                         auto account1 = account.substr(found1 + 10);
                         thread->memsetDataMap[account1] = e;
                       }
@@ -2308,7 +2415,7 @@ void SolanaAnalysisPass::traverseFunction(
                     valueName.split(valueName_vec, ',', -1, false);
                     for (auto value_ : valueName_vec) {
                       auto found = value_.find(".key");
-                      if (found != string::npos) {
+                      if (found != std::string::npos) {
                         auto account = value_.substr(0, found);
                         account = stripAll(account);
                         auto pair = std::make_pair(account, account);
@@ -2345,10 +2452,10 @@ void SolanaAnalysisPass::traverseFunction(
                   for (int i = 0; i <= 1; i++) {
                     auto value = CS.getArgOperand(i);
                     auto valueName = LangModel::findGlobalString(value);
-                    if (valueName.find(".is_signer") != string::npos) {
+                    if (valueName.find(".is_signer") != std::string::npos) {
                       auto account = valueName;
                       auto found = valueName.find(".");
-                      if (found != string::npos)
+                      if (found != std::string::npos)
                         account = valueName.substr(0, found);
 
                       if (!thread->isInAccountsMap(account)) {
@@ -2367,10 +2474,10 @@ void SolanaAnalysisPass::traverseFunction(
                   for (int i = 0; i <= 0; i++) {
                     auto value = CS.getArgOperand(i);
                     auto valueName = LangModel::findGlobalString(value);
-                    if (valueName.find(".is_signer") != string::npos) {
+                    if (valueName.find(".is_signer") != std::string::npos) {
                       auto account = valueName;
                       auto found = valueName.find(".");
-                      if (found != string::npos)
+                      if (found != std::string::npos)
                         account = valueName.substr(0, found);
 
                       if (!thread->isInAccountsMap(account)) {
@@ -2432,7 +2539,7 @@ void SolanaAnalysisPass::traverseFunction(
                           LangModel::findGlobalString(CS2.getArgOperand(0));
                       //(claim_account_key,claim_account_bump)
                       auto found = bumpName.find(",");
-                      if (found != string::npos) {
+                      if (found != std::string::npos) {
                         auto pda_address =
                             bumpName.substr(0, found).drop_front();
                         if (DEBUG_RUST_API)
@@ -2451,7 +2558,7 @@ void SolanaAnalysisPass::traverseFunction(
                           auto cons =
                               LangModel::findGlobalString(CS3.getArgOperand(0));
                           auto found = cons.find(bumpName);
-                          if (found != string::npos) {
+                          if (found != std::string::npos) {
                             auto pair = std::make_pair(bumpName, cons);
                             thread->assertBumpEqualMap[pair] = e;
                           }
@@ -2529,7 +2636,7 @@ void SolanaAnalysisPass::traverseFunction(
 
                     auto accountName = valueName;
                     auto found = valueName.find_last_of(".");
-                    if (found != string::npos)
+                    if (found != std::string::npos)
                       accountName = valueName.substr(0, found);
                     accountName = stripCtxAccountsName(accountName);
                     // for anchor Program<'info, Token>
@@ -2561,7 +2668,7 @@ void SolanaAnalysisPass::traverseFunction(
                       auto accountName_i = LangModel::findGlobalString(value_i);
                       auto foundDot = accountName_i.find_last_of(".");
                       // strip .key
-                      if (foundDot != string::npos)
+                      if (foundDot != std::string::npos)
                         accountName_i = accountName_i.substr(0, foundDot);
                       accountName_i = stripAll(accountName_i);
                       thread->accountsInvokedMap[accountName_i] = e;
@@ -2574,7 +2681,7 @@ void SolanaAnalysisPass::traverseFunction(
 
                       // for anchor
                       auto foundAnchor = accountName_i.find(".accounts.");
-                      if (foundAnchor != string::npos) {
+                      if (foundAnchor != std::string::npos) {
                         // accountName_i = accountName_i.substr(0,
                         // accountName_i.find_last_of(".")); strip ctx.accounts.
                         accountName_i = stripCtxAccountsName(accountName_i);
@@ -2659,7 +2766,7 @@ void SolanaAnalysisPass::traverseFunction(
                         associate_account =
                             stripToAccountInfo(associate_account);
                         auto foundClone = associate_account.find(".clone()");
-                        if (foundClone != string::npos)
+                        if (foundClone != std::string::npos)
                           associate_account =
                               associate_account.substr(0, foundClone);
                         if (DEBUG_RUST_API)
@@ -2793,7 +2900,7 @@ void SolanaAnalysisPass::traverseFunction(
                   auto value = CS.getArgOperand(0);
                   auto valueName = LangModel::findGlobalString(value);
                   auto found = valueName.find_last_of(".");
-                  if (found != string::npos)
+                  if (found != std::string::npos)
                     valueName = valueName.substr(0, found);
                   // if this is parameter
                   if (valueName.empty()) {
@@ -2833,12 +2940,12 @@ void SolanaAnalysisPass::traverseFunction(
                   auto valueName = LangModel::findGlobalString(value);
                   auto found = valueName.find("authority:");
                   // authority:self.authority.to_account_info()
-                  if (found != string::npos)
+                  if (found != std::string::npos)
                     valueName = valueName.substr(found);
                   valueName = stripToAccountInfo(valueName);
                   // self.market_authority.clone(),
                   found = valueName.find(".clone()");
-                  if (found != string::npos)
+                  if (found != std::string::npos)
                     valueName = valueName.substr(0, found);
                   valueName = stripSelfAccountName(valueName);
                   auto account = valueName;
@@ -2867,12 +2974,12 @@ void SolanaAnalysisPass::traverseFunction(
                   // ctx.accounts.candy_machine
                   auto account = stripCtxAccountsName(valueName);
                   auto found = account.find_last_of(".");
-                  if (found != string::npos)
+                  if (found != std::string::npos)
                     account = account.substr(0, found);
                   if (!thread->isInAccountsMap(account))
                     account = findCallStackAccountAliasName(func, e, account);
 
-                  if (valueName.find(".data") != string::npos) {
+                  if (valueName.find(".data") != std::string::npos) {
                     thread->borrowDataMutMap[account] = e;
                     // llvm::outs()
                     //     << "borrow_mut account: " << account << " valueName:
@@ -2880,11 +2987,11 @@ void SolanaAnalysisPass::traverseFunction(
                     //     << valueName << "\n";
 
                     auto found1 = account.find(".accounts.");
-                    if (found1 != string::npos) {
+                    if (found1 != std::string::npos) {
                       auto account1 = stripCtxAccountsName(account);
                       thread->borrowDataMutMap[account1] = e;
                     }
-                  } else if (valueName.find(".lamports") != string::npos) {
+                  } else if (valueName.find(".lamports") != std::string::npos) {
                     thread->borrowLamportsMutMap[account] = e;
 
                   } else {
@@ -2958,16 +3065,16 @@ void SolanaAnalysisPass::traverseFunction(
                   // ctx.accounts.candy_machine
                   auto account = stripCtxAccountsName(valueName);
                   auto found = account.find_last_of(".");
-                  if (found != string::npos)
+                  if (found != std::string::npos)
                     account = account.substr(0, found);
 
                   if (DEBUG_RUST_API)
                     llvm::outs() << "valueName: " << valueName
                                  << " account: " << account << "\n";
 
-                  if (valueName.find(".data") != string::npos) {
+                  if (valueName.find(".data") != std::string::npos) {
                     bool isBorrow = true;
-                    if (valueName.find("borrow_mut") != string::npos)
+                    if (valueName.find("borrow_mut") != std::string::npos)
                       isBorrow = false;
                     if (isBorrow)
                       thread->borrowDataMap[account] = e;
@@ -2975,7 +3082,7 @@ void SolanaAnalysisPass::traverseFunction(
                       thread->borrowDataMutMap[account] = e;
                     // for Anchor: extract accounts from Anchor names
                     auto found1 = account.find(".accounts.");
-                    if (found1 != string::npos) {
+                    if (found1 != std::string::npos) {
                       auto account1 = stripCtxAccountsName(account);
                       if (isBorrow)
                         thread->borrowDataMap[account1] = e;
@@ -2985,7 +3092,7 @@ void SolanaAnalysisPass::traverseFunction(
                         llvm::outs() << "account1: " << account1 << "\n";
                     }
 
-                  } else if (valueName.find(".lamports") != string::npos) {
+                  } else if (valueName.find(".lamports") != std::string::npos) {
                     thread->borrowLamportsMap[account] = e;
 
                   } else {
@@ -3126,16 +3233,17 @@ void SolanaAnalysisPass::traverseFunction(
                   // self.user_underlying_token_account.is_native()
                   auto account = stripSelfAccountName(valueName);
                   auto found = account.find(".");
-                  if (found != string::npos)
+                  if (found != std::string::npos)
                     account = account.substr(0, found);
 
                   auto e = graph->createReadEvent(ctx, inst, tid);
                   if (!thread->isInAccountsMap(account)) {
                     account = findCallStackAccountAliasName(func, e, account);
                   }
-                  if (valueName.find(".is_signer") != string::npos) {
+                  if (valueName.find(".is_signer") != std::string::npos) {
                     thread->asssertSignerMap[account] = e;
-                  } else if (valueName.find(".data_is_empty") != string::npos) {
+                  } else if (valueName.find(".data_is_empty") !=
+                             std::string::npos) {
                     thread->hasInitializedCheck = true;
                   } else {
                     thread->asssertOtherMap[account] = e;
@@ -3275,7 +3383,7 @@ void SolanaAnalysisPass::traverseFunction(
                                   "sol.model.opaqueAssign")) {
                             auto account = stripCtxAccountsName(valueName1);
                             auto found = account.find_last_of(".");
-                            if (found != string::npos)
+                            if (found != std::string::npos)
                               account = account.substr(0, found);
                             accountsPDAMap[account] = e;
                             if (DEBUG_RUST_API)
@@ -3537,7 +3645,7 @@ void SolanaAnalysisPass::traverseFunction(
                       } else if (!is_constant(valueName2.str())) {
                         SourceInfo srcInfo = getSourceLoc(inst);
                         if (srcInfo.getSourceLine().find(" as u") ==
-                            string::npos) {
+                            std::string::npos) {
                           auto e = graph->createReadEvent(ctx, inst, tid);
                           UnsafeOperation::collect(
                               e, callEventTraces, SVE::Type::DIV_PRECISION_LOSS,
@@ -3773,7 +3881,7 @@ void SolanaAnalysisPass::traverseFunction(
                       auto e = graph->createReadEvent(ctx, inst, tid);
                       valueName1 = stripAll(valueName1);
                       auto foundComma = valueName2.find(",");
-                      if (foundComma != string::npos)
+                      if (foundComma != std::string::npos)
                         valueName2 = valueName2.substr(0, foundComma);
                       auto pair = std::make_pair(valueName1, valueName2);
                       thread->assertOwnerEqualMap[pair] = e;
@@ -3841,7 +3949,7 @@ void SolanaAnalysisPass::traverseFunction(
                         valueNameX.split(value_vec, ',', -1, false);
                         for (auto value_ : value_vec) {
                           auto foundClone = value_.find(".clone");
-                          if (foundClone != string::npos)
+                          if (foundClone != std::string::npos)
                             value_ = value_.substr(0, foundClone);
                           if (DEBUG_RUST_API)
                             llvm::outs()
@@ -3977,8 +4085,8 @@ void SolanaAnalysisPass::traverseFunction(
 
 void SolanaAnalysisPass::traverseFunctionWrapper(
     const aser::ctx *ctx, StaticThread *thread,
-    vector<const Function *> &callStack, const Instruction *inst,
-    const Function *f, map<uint8_t, const Constant *> *valMap) {
+    std::vector<const Function *> &callStack, const Instruction *inst,
+    const Function *f, std::map<uint8_t, const Constant *> *valMap) {
   // llvm::outs() << "  traverseFunctionWrapper: " << f->getName() << "\n";
 
   // find the real target if sol.call
@@ -4029,7 +4137,7 @@ void SolanaAnalysisPass::traverseFunctionWrapper(
           auto targetF = CS.getTargetFunction();
           auto fname = targetF->getName();
           auto found = fname.find("::");
-          if (found != string::npos) {
+          if (found != std::string::npos) {
             auto packageName = fname.substr(0, found);
             if (DEBUG_RUST_API)
               llvm::outs() << "  packageName: " << packageName << "\n";

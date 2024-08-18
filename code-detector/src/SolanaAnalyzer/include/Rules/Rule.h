@@ -82,5 +82,3 @@ private:
 };
 
 } // namespace aser
-
-extern bool DEBUG_RUST_API;

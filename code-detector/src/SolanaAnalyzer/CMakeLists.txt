@@ -1,10 +1,12 @@
 # Analyzer library.
 set(SOLANA_ANALYZER_SOURCES
+    AccountIDL.cpp
     Collectors/CosplayAccounts.cpp
     Collectors/Races.cpp
     Collectors/UnsafeOperation.cpp
     Collectors/UntrustfulAccount.cpp
     CustomAPIRewriters/RustAPIRewriter.cpp
+    DebugFlags.cpp
     LocksetManager.cpp
     LogColor.cpp
     PTAModels/GraphBLASModel.cpp

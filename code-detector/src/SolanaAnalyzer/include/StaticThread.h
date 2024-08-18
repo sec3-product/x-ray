@@ -1,31 +1,16 @@
-//
-// Created by peiming on 11/18/19.
-//
-#ifndef RACEDETECTOR_STATICTHREAD_H
-#define RACEDETECTOR_STATICTHREAD_H
+#pragma once
 
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Instructions.h>
 
+#include "DebugFlags.h"
 #include "PTAModels/GraphBLASModel.h"
-extern bool DEBUG_RUST_API;
 
 namespace aser {
 
 using TID = uint32_t;
 class Event;
 class ForkEvent;
-
-class AccountIDL {
-public:
-  const std::string name;
-  bool isMut;
-  bool isSigner;
-  bool isNested;
-  AccountIDL(const std::string name, bool isMut, bool isSigner,
-             bool isNested = false)
-      : name(name), isMut(isMut), isSigner(isSigner), isNested(isNested) {}
-};
 
 class StaticThread {
 public:
@@ -130,6 +115,7 @@ public:
     }
     return false;
   }
+
   int isAccountCompatibleAddOrMut(llvm::StringRef accountName);
   bool isAccountCompatibleOrder(llvm::StringRef &accountName1,
                                 llvm::StringRef &accountName2);
@@ -1168,5 +1154,3 @@ private:
 };
 
 } // namespace aser
-
-#endif

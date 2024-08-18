@@ -2,9 +2,11 @@
 
 #include <fstream>
 
+#include "AccountIDL.h"
 #include "Collectors/CosplayAccounts.h"
 #include "Collectors/UnsafeOperation.h"
 #include "Collectors/UntrustfulAccount.h"
+#include "DebugFlags.h"
 #include "LogColor.h"
 
 #define DEFAULT_BUDGET 25
@@ -19,13 +21,10 @@ extern unsigned int NUM_OF_ATTACK_VECTORS;
 extern unsigned int NUM_OF_FUNCTIONS;
 extern unsigned int TOTAL_SOL_COST;
 extern unsigned int TOTAL_SOL_TIME;
-extern set<StringRef> SMART_CONTRACT_ADDRESSES;
+
+extern std::set<llvm::StringRef> SMART_CONTRACT_ADDRESSES;
 extern llvm::cl::opt<std::string> ConfigOutputPath;
 extern cl::opt<std::string> TargetModulePath;
-extern bool CONFIG_NO_FILTER;
-
-extern bool PRINT_IMMEDIATELY;
-extern bool TERMINATE_IMMEDIATELY;
 
 // Not to limit the number of bugs we collected
 // by default we only collect at most 25 cases for each type of bug

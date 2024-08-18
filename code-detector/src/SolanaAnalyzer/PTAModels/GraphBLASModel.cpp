@@ -5,13 +5,12 @@
 
 #include <llvm/ADT/StringSet.h>
 
+#include "DebugFlags.h"
 #include "PTAModels/GraphBLASHeapModel.h"
 #include "PointerAnalysis/Context/KOrigin.h"
 
 using namespace aser;
 using namespace llvm;
-
-extern bool DEBUG_RUST_API;
 
 std::set<StringRef> GraphBLASHeapModel::USER_HEAP_API;
 
@@ -25,6 +24,7 @@ const std::set<llvm::StringRef> USER_NAMES{"user", "payer"};
 const std::set<llvm::StringRef> PREVILEDGE_NAMES{
     "authority", "owner", "manager",  "admin", "super",
     "governor",  "exec",  "director", "chief"}; //"signer",
+
 bool GraphBLASModel::isAuthorityAccount(llvm::StringRef accountName) {
   for (auto authority_name : AUTHORITY_NAMES) {
     if (accountName.contains(authority_name)) {

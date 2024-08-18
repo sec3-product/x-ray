@@ -1,9 +1,3 @@
-//
-// Created by peiming on 12/18/19.
-//
-#ifndef ASER_PTA_FSMEMMODEL_H
-#define ASER_PTA_FSMEMMODEL_H
-
 #include <llvm/Support/Allocator.h>
 
 #include "PointerAnalysis/Models/LanguageModel/PtrNodeManager.h"
@@ -22,7 +16,7 @@
 
 extern bool DEBUG_PTA;
 extern bool DEBUG_PTA_VERBOSE;
-extern cl::opt<size_t> PTAAnonLimit;
+extern size_t PTAAnonLimit;
 
 namespace aser {
 
@@ -660,4 +654,3 @@ struct MemModelTrait<FSMemModel<ctx>> : MemModelHelper<FSMemModel<ctx>> {
 };
 
 } // namespace aser
-#endif // ASER_PTA_FSMEMMODEL_H
