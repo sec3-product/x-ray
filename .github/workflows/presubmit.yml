@@ -69,6 +69,7 @@ jobs:
 
       - name: Run unittests
         run: |
+          ctest --test-dir build/detector/test
           ctest --test-dir build/parser/test
 
       - name: Run E2E tests
