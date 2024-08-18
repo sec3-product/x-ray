@@ -43,12 +43,13 @@ public:
   StaticThread *getThread() const { return Thread; }
   Event *createReadEvent() const { return CreateReadEvent(Inst); }
 
-  bool isSafeType(const llvm::Value *value) const;
-  bool isSafeVariable(const llvm::Value *value) const;
-  bool hasValueLessMoreThan(const llvm::Value *value, bool isLess) const;
-  bool isInLoop() const { return IsInLoop(); }
+  virtual bool isSafeType(const llvm::Value *value) const;
+  virtual bool isSafeVariable(const llvm::Value *value) const;
+  virtual bool hasValueLessMoreThan(const llvm::Value *value,
+                                    bool isLess) const;
+  virtual bool isInLoop() const { return IsInLoop(); }
 
-  void collectUnsafeOperation(SVE::Type type, int size) const {
+  virtual void collectUnsafeOperation(SVE::Type type, int size) const {
     auto e = createReadEvent();
     CollectUnsafeOperation(e, type, size);
   }
