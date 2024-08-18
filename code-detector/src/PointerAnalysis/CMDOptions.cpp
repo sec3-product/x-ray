@@ -1,7 +1,3 @@
-//
-// Created by peiming on 1/10/20.
-//
-
 #include <llvm/Support/CommandLine.h>
 
 using namespace llvm;
@@ -21,3 +17,5 @@ cl::opt<bool> USE_MEMLAYOUT_FILTERING(
 cl::opt<bool> CONFIG_VTABLE_MODE("Xenable-vtable",
                                  cl::desc("model vtable specially"),
                                  cl::init(false));
+
+size_t MaxIndirectCallTarget = 2;

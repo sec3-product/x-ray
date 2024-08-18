@@ -378,4 +378,7 @@ private:
 
 extern void computeCargoTomlConfig(llvm::Module *module);
 
+extern std::string CONFIG_OUTPUT_PATH;
+extern std::string TARGET_MODULE_PATH;
+
 } // namespace aser

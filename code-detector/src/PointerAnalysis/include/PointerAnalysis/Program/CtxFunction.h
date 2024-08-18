@@ -1,14 +1,10 @@
-//
-// Created by peiming on 10/30/19.
-//
-#ifndef ASER_PTA_CTXFUNCTION_H
-#define ASER_PTA_CTXFUNCTION_H
+#pragma once
 
 #include <llvm/Support/CommandLine.h>
 
 #include "PointerAnalysis/Program/CallSite.h"
 
-extern llvm::cl::opt<size_t> MaxIndirectTarget;
+extern size_t MaxIndirectTarget;
 
 namespace aser {
 
@@ -165,5 +161,3 @@ public:
 };
 
 } // namespace aser
-
-#endif

@@ -153,6 +153,7 @@ const StringRef GraphBLASModel::findGlobalString(const llvm::Value *value) {
       }
     }
   }
+  // llvm::outs() << "Not found global string\n";
   return "";
 }
 

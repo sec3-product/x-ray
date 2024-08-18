@@ -1,6 +1,3 @@
-//
-// Created by peiming on 11/5/19.
-
 #include <set>
 
 #include "PointerAnalysis/Program/CallSite.h"
@@ -9,10 +6,7 @@
 using namespace aser;
 using namespace llvm;
 
-// extern cl::opt<size_t> MaxIndirectTarget("max-indirect-target", cl::init(2),
-//                                   cl::desc("max number of indirect call
-//                                   target that can be resolved by indirect
-//                                   call"));
+size_t MaxIndirectTarget = 2;
 
 const Function *
 aser::CallSite::resolveTargetFunction(const Value *calledValue) {

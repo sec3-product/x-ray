@@ -46,10 +46,6 @@ cl::opt<bool>
     ConfigNoReportLimit("no-limit",
                         cl::desc("No limit for the number of races reported"));
 
-cl::opt<size_t> MaxIndirectTarget(
-    "max-indirect-target", cl::init(2),
-    cl::desc("max number of indirect call target that can be resolved by "
-             "indirect call"));
 cl::opt<bool>
     ConfigPrintImmediately("Xprint-fast",
                            cl::desc("Print races immediately on terminal"));
@@ -89,9 +85,7 @@ cl::opt<bool>
 
 bool CONFIG_NO_REPORT_LIMIT;
 
-int SAME_FUNC_BUDGET_SIZE; // keep at most x times per func per thread 10 by
-                           // default
-int FUNC_COUNT_BUDGET;     // 100,000 by default
+extern int FUNC_COUNT_BUDGET; // 100,000 by default
 
 logger::LoggingConfig initLoggingConf() {
   logger::LoggingConfig config;
@@ -134,11 +128,7 @@ logger::LoggingConfig initLoggingConf() {
   return config;
 }
 
-unsigned int NUM_OF_FUNCTIONS = 0;
-unsigned int NUM_OF_ATTACK_VECTORS = 0;
-unsigned int NUM_OF_IR_LINES = 0;
-unsigned int TOTAL_SOL_COST = 0;
-unsigned int TOTAL_SOL_TIME = 0;
+extern unsigned int NUM_OF_IR_LINES;
 
 static std::unique_ptr<Module>
 loadFile(const std::string &FN, LLVMContext &Context, bool abortOnFail) {
@@ -245,7 +235,6 @@ int main(int argc, char **argv) {
       conflib::Get<std::vector<std::string>>("heapAllocFunctions", {});
   GraphBLASHeapModel::init(heapAPIs);
 
-  SAME_FUNC_BUDGET_SIZE = conflib::Get<int>("sameFunctionBudget", 10);
   FUNC_COUNT_BUDGET = conflib::Get<int>("functionCountBudget", 20000);
 
   auto enableImmediatePrint =
@@ -265,6 +254,9 @@ int main(int argc, char **argv) {
   if (reportLimit != -1) {
     ConfigReportLimit = reportLimit;
   }
+
+  CONFIG_OUTPUT_PATH = ConfigOutputPath;
+  TARGET_MODULE_PATH = TargetModulePath;
 
   DEBUG_RUST_API = ConfigDebugRustAPI;
   DEBUG_PTA_VERBOSE = ConfigDebugPTAVerbose;

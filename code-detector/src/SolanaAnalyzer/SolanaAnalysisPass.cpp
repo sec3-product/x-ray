@@ -27,11 +27,8 @@
 using namespace llvm;
 using namespace aser;
 
-extern const llvm::Function *
-getUnexploredFunctionbyPartialName(llvm::StringRef sig);
-extern void
-getAllUnexploredFunctionsbyPartialName(std::set<const llvm::Function *> &result,
-                                       llvm::StringRef sig);
+std::string aser::CONFIG_OUTPUT_PATH;
+std::string aser::TARGET_MODULE_PATH;
 
 EventID Event::ID_counter = 0;
 llvm::StringRef stripSelfAccountName(llvm::StringRef account_name) {
@@ -210,7 +207,8 @@ getProgramIdAccountName(const llvm::Instruction *inst) {
 }
 
 std::map<llvm::StringRef, const llvm::Function *> FUNC_NAME_MAP;
-const llvm::Function *getFunctionFromPartialName(llvm::StringRef partialName) {
+static const llvm::Function *
+getFunctionFromPartialName(llvm::StringRef partialName) {
   for (auto [name, func] : FUNC_NAME_MAP) {
     if (name.contains(partialName) && !name.contains(".anon."))
       return func;
@@ -218,8 +216,9 @@ const llvm::Function *getFunctionFromPartialName(llvm::StringRef partialName) {
   return nullptr;
 }
 
-const llvm::Function *getFunctionMatchStartEndName(llvm::StringRef startName,
-                                                   llvm::StringRef endName) {
+static const llvm::Function *
+getFunctionMatchStartEndName(llvm::StringRef startName,
+                             llvm::StringRef endName) {
   for (auto [name, func] : FUNC_NAME_MAP) {
     if (name.startswith(startName) && name.endswith(endName) &&
         !name.contains(".anon."))
@@ -1051,8 +1050,12 @@ static unsigned int call_stack_level = 0;
 
 static std::string DEBUG_STRING_SPACE = "";
 static std::map<TID, unsigned int> threadNFuncMap;
-extern int FUNC_COUNT_BUDGET; // max by default 10000 for solana
+
+int FUNC_COUNT_BUDGET;
 static unsigned int FUNC_COUNT_PROGRESS_THESHOLD = 10000;
+int SAME_FUNC_BUDGET_SIZE = 10; // keep at most x times per func per thread 10
+
+unsigned int NUM_OF_IR_LINES;
 
 static aser::trie::TrieNode *cur_trie;
 
@@ -4918,7 +4921,7 @@ StaticThread *SolanaAnalysisPass::forkNewThread(ForkEvent *forkEvent) {
   return thread;
 }
 
-extern unsigned int NUM_OF_ATTACK_VECTORS;
+unsigned int NUM_OF_ATTACK_VECTORS;
 
 bool SolanaAnalysisPass::runOnModule(llvm::Module &module) {
   thisModule = &module;
@@ -5058,7 +5061,7 @@ bool SolanaAnalysisPass::runOnModule(llvm::Module &module) {
     UnsafeOperation::printSummary();
     CosplayAccounts::printSummary();
   }
-  outputJSON();
+  outputJSON(CONFIG_OUTPUT_PATH);
   return false;
 }
 

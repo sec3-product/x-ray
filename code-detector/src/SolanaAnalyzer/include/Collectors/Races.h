@@ -104,7 +104,7 @@ public:
 -------------------------------------- */
 
 // public API to output all types of bugs into a single JSON file
-void outputJSON();
+void outputJSON(std::string);
 void ignoreRaceLocations(Event *e1, Event *e2);
 
 } // namespace aser

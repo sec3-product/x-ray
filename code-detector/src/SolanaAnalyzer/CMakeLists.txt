@@ -52,6 +52,11 @@ target_link_libraries(SolanaAnalyzer
     ${LLVM_LIBS}
 )
 
+target_include_directories(SolanaAnalyzer
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
 # Executable.
 add_executable(SolanaAnalyzerExe
     Main.cpp
@@ -59,6 +64,7 @@ add_executable(SolanaAnalyzerExe
 
 target_link_libraries(SolanaAnalyzerExe
     SolanaAnalyzer
+    PointerAnalysis
     conflib
     Util
 )

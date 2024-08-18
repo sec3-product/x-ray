@@ -47,3 +47,5 @@ template <typename Solver> void registerPointerAnalysisPass() {
       "Pointer Analysis Wrapper Pass", "Pointer Analysis Wrapper Pass", true,
       true);
 }
+
+extern size_t MaxIndirectTarget;

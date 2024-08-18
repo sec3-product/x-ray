@@ -8,6 +8,7 @@
 #include "Collectors/UntrustfulAccount.h"
 #include "DebugFlags.h"
 #include "LogColor.h"
+#include "SolanaAnalysisPass.h"
 
 #define DEFAULT_BUDGET 25
 
@@ -18,9 +19,6 @@ using namespace llvm;
 // for cost quote
 extern unsigned int NUM_OF_IR_LINES;
 extern unsigned int NUM_OF_ATTACK_VECTORS;
-extern unsigned int NUM_OF_FUNCTIONS;
-extern unsigned int TOTAL_SOL_COST;
-extern unsigned int TOTAL_SOL_TIME;
 
 extern std::set<llvm::StringRef> SMART_CONTRACT_ADDRESSES;
 extern llvm::cl::opt<std::string> ConfigOutputPath;
@@ -247,12 +245,10 @@ json &aser::DeadLock::to_json() {
                 Utils
 
 ----------------------------------- */
-extern llvm::cl::opt<std::string> ConfigOutputPath;
-
-void aser::outputJSON() {
+void aser::outputJSON(std::string OutputPath) {
   std::string path;
-  if (!ConfigOutputPath.empty()) {
-    path = ConfigOutputPath;
+  if (!OutputPath.empty()) {
+    path = OutputPath;
   } else {
     info("writing detection results to ./races.json");
     path = "races.json";
@@ -296,10 +292,9 @@ void aser::outputJSON() {
   rs["cosplayAccounts"] = cosplayAccountsJsons;
   rs["version"] = 1;
   rs["generatedAt"] = getCurrentTimeStr();
-  rs["bcfile"] = TargetModulePath.getValue();
+  rs["bcfile"] = TARGET_MODULE_PATH;
   rs["numOfIRLines"] = NUM_OF_IR_LINES;
   rs["numOfAttackVectors"] = NUM_OF_ATTACK_VECTORS;
-  rs["numOfFunctions"] = NUM_OF_FUNCTIONS;
   rs["addresses"] = SMART_CONTRACT_ADDRESSES;
   std::ofstream output(path, std::ofstream::out);
   output << rs;
