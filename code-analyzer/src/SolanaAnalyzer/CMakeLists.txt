@@ -11,6 +11,7 @@ set(SOLANA_ANALYZER_SOURCES
     LogColor.cpp
     PTAModels/GraphBLASModel.cpp
     Rules/OverflowAdd.cpp
+    Rules/OverflowDiv.cpp
     Rules/OverflowMul.cpp
     Rules/OverflowSub.cpp
     Rules/Rule.cpp

@@ -1,6 +1,7 @@
 #include "Rules/Ruleset.h"
 
 #include "Rules/OverflowAdd.h"
+#include "Rules/OverflowDiv.h"
 #include "Rules/OverflowMul.h"
 #include "Rules/OverflowSub.h"
 
@@ -19,7 +20,9 @@ Ruleset Ruleset::createRustModelRuleset() {
 
   // Overflow mul rules.
   RS.addRule(Rule(matchMul, handleMul));
-  RS.addRule(Rule(matchMul, handleMul));
+
+  // Overflow div rules.
+  RS.addRule(Rule(matchDiv, handleDiv));
 
   return RS;
 }

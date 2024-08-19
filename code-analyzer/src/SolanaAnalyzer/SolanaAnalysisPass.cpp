@@ -3235,45 +3235,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
     } else if (CS.getTargetFunction()->getName().equals("sol.*")) {
       // No-op; this is handled by the rulset.
     } else if (CS.getTargetFunction()->getName().equals("sol./")) {
-      if (DEBUG_RUST_API)
-        llvm::outs() << "sol./: " << *inst << "\n";
-      auto value1 = CS.getArgOperand(0);
-      auto value2 = CS.getArgOperand(1);
-      if (isa<Argument>(value2)) {
-        if (!isSafeType(func, value2)) {
-          auto e = graph->createReadEvent(ctx, inst, tid);
-          UnsafeOperation::collect(e, callEventTraces, SVE::Type::OVERFLOW_DIV,
-                                   5);
-        }
-      }
-      if (auto value = dyn_cast<CallBase>(CS.getArgOperand(0))) {
-        CallSite CS2(value);
-        if (CS2.getTargetFunction()->getName().equals("sol.*")) {
-          auto valueName2 = LangModel::findGlobalString(CS.getArgOperand(1));
-          // llvm::outs() << "move./ valueName2: " << valueName2 <<
-          // "\n";
-          if (valueName2.contains("total") && valueName2.contains("upply")) {
-            // amount0 = (liquidity * balance0) / _totalSupply
-            auto liquidity_ = LangModel::findGlobalString(CS2.getArgOperand(0));
-            auto balance_ = LangModel::findGlobalString(CS2.getArgOperand(1));
-            if (liquidity_.contains("liquidity") &&
-                balance_.contains("balance")) {
-              auto e = graph->createReadEvent(ctx, inst, tid);
-              UnsafeOperation::collect(e, callEventTraces,
-                                       SVE::Type::INCORRECT_TOKEN_CALCULATION,
-                                       9);
-            }
-          } else if (!is_constant(valueName2.str())) {
-            SourceInfo srcInfo = getSourceLoc(inst);
-            if (srcInfo.getSourceLine().find(" as u") == std::string::npos) {
-              auto e = graph->createReadEvent(ctx, inst, tid);
-              UnsafeOperation::collect(e, callEventTraces,
-                                       SVE::Type::DIV_PRECISION_LOSS, 8);
-            }
-          }
-        }
-      }
-
+      // No-op; this is handled by the rulset.
     } else if (CS.getTargetFunction()->getName().startswith(
                    "sol.checked_div.")) {
       if (DEBUG_RUST_API)
@@ -4353,9 +4315,10 @@ void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
         !curThread->isSignerAccountUsedSeedsOfAccount0(account)) {
       // llvm::errs() << "==============VULNERABLE: bump seed
       // canonicalization!============\n";
-      if (!isOwnerOnly)
+      if (!isOwnerOnly) {
         UntrustfulAccount::collect(bumpName, e, callEventTraces,
                                    SVE::Type::BUMP_SEED, 9);
+      }
     }
   }
   if (DEBUG_RUST_API)

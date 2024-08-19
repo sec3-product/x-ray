@@ -82,4 +82,11 @@ private:
   Handler HandlerFunc;
 };
 
+// Utility functions.
+bool isUpper(const std::string &s);
+bool isAllCapitalOrNumber(const std::string &s);
+bool isAllCapital(const std::string &s);
+bool isNumber(const std::string &s);
+bool isConstant(const std::string &s);
+
 } // namespace aser

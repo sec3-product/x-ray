@@ -9,7 +9,8 @@
 
 namespace aser {
 
-bool matchMul(const CallSite &);
-void handleMul(const RuleContext &, const CallSite &);
+bool matchDiv(const CallSite &);
+void handleDiv(const RuleContext &, const CallSite &);
 
 }; // namespace aser
+
