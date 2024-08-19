@@ -1185,7 +1185,8 @@ void SolanaAnalysisPass::handleRustModelAPI(
     const aser::ctx *ctx, TID tid, llvm::Function *func,
     const llvm::Instruction *inst, StaticThread *thread, CallSite CS,
     bool isMacroArrayRefUsedInFunction) {
-  if (CS.getCalledFunction()->getName().startswith("sol.model.opaqueAssign")) {
+  auto calledFuncName = CS.getCalledFunction()->getName();
+  if (calledFuncName.startswith("sol.model.opaqueAssign")) {
     auto value = CS.getArgOperand(0);
     auto valueName = LangModel::findGlobalString(value);
     // llvm::outs() << "data: " << valueName << "\n";
@@ -1416,13 +1417,11 @@ void SolanaAnalysisPass::handleRustModelAPI(
       }
     }
 
-  } else if (CS.getCalledFunction()->getName().startswith(
-                 "sol.model.macro.array_ref!.")) {
+  } else if (calledFuncName.startswith("sol.model.macro.array_ref!.")) {
     isMacroArrayRefUsedInFunction = true;
-  } else if (CS.getCalledFunction()->getName().startswith(
-                 "sol.model.struct.new.")) {
+  } else if (calledFuncName.startswith("sol.model.struct.new.")) {
     // sol.model.struct.new.Transfer.
-    auto calleeName = CS.getCalledFunction()->getName();
+    auto calleeName = calledFuncName;
     auto e = graph->createReadEvent(ctx, inst, tid);
     auto foundTransferType = (calleeName.find("Transfer") != std::string::npos);
     if (foundTransferType) {
@@ -1511,8 +1510,7 @@ void SolanaAnalysisPass::handleRustModelAPI(
       }
     }
 
-  } else if (CS.getCalledFunction()->getName().startswith(
-                 "sol.model.funcArg")) {
+  } else if (calledFuncName.startswith("sol.model.funcArg")) {
     // let's check each arg and their type
     // if (thread->getTID() > 0)
     {
@@ -1527,8 +1525,7 @@ void SolanaAnalysisPass::handleRustModelAPI(
       auto pair = std::make_pair(name, type);
       funcArgTypesMap[func].push_back(pair);
     }
-  } else if (CS.getCalledFunction()->getName().startswith(
-                 "sol.model.struct.field")) {
+  } else if (calledFuncName.startswith("sol.model.struct.field")) {
     // let's check each field accounts and their constraints
     auto value1 = CS.getArgOperand(0);
     auto field = LangModel::findGlobalString(value1);
@@ -1572,8 +1569,7 @@ void SolanaAnalysisPass::handleRustModelAPI(
       lastThread->accountsMap[field] = e;
     }
     // TODO: check is_signer in function body
-  } else if (CS.getCalledFunction()->getName().startswith(
-                 "sol.model.struct.constraint")) {
+  } else if (calledFuncName.startswith("sol.model.struct.constraint")) {
     // let's check each constraint
     //@"authority.key==&token.owner"
     auto cons_all = LangModel::findGlobalString(CS.getArgOperand(0));
@@ -1882,7 +1878,7 @@ void SolanaAnalysisPass::handleRustModelAPI(
       }
     }
 
-  } else if (CS.getCalledFunction()->getName().startswith("sol.model.loop")) {
+  } else if (calledFuncName.startswith("sol.model.loop")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "sol.model.loop: " << *inst << "\n";
     if (CS.getNumArgOperands() > 0) {
@@ -1901,7 +1897,7 @@ void SolanaAnalysisPass::handleRustModelAPI(
         for_loop_counter--;
       }
     }
-  } else if (CS.getCalledFunction()->getName().startswith("sol.model.break")) {
+  } else if (calledFuncName.startswith("sol.model.break")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "sol.model.break: " << *inst << "\n";
     if (isInLoop()) {
@@ -1931,12 +1927,11 @@ void SolanaAnalysisPass::handleRustModelAPI(
         }
       }
     }
-  } else if (CS.getCalledFunction()->getName().startswith("sol.model.macro.")) {
+  } else if (calledFuncName.startswith("sol.model.macro.")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "sol.model.macro: " << *inst << "\n";
     // sol.model.macro.placeholder.
-    if (CS.getCalledFunction()->getName().startswith(
-            "sol.model.macro.placeholder.")) {
+    if (calledFuncName.startswith("sol.model.macro.placeholder.")) {
       auto func_namespace_name = func->getName().str();
       {
         auto found = func_namespace_name.find("::");
@@ -1974,10 +1969,9 @@ void SolanaAnalysisPass::handleRustModelAPI(
       auto params = LangModel::findGlobalString(value);
       auto e = graph->createForkEvent(ctx, inst, tid);
       if (DEBUG_RUST_API)
-        llvm::outs() << "macro: " << CS.getCalledFunction()->getName()
-                     << " params: " << params << "\n";
-      if (CS.getCalledFunction()->getName().startswith(
-              "sol.model.macro.authority_constraint.")) {
+        llvm::outs() << "macro: " << calledFuncName << " params: " << params
+                     << "\n";
+      if (calledFuncName.startswith("sol.model.macro.authority_constraint.")) {
         llvm::SmallVector<StringRef, 8> accounts_vec;
         params.split(accounts_vec, ',', -1, false);
         if (accounts_vec.size() > 1) {
@@ -1989,7 +1983,7 @@ void SolanaAnalysisPass::handleRustModelAPI(
           thread->assertKeyEqualMap[pair] = e;
         }
 
-      } else if (CS.getCalledFunction()->getName().startswith(
+      } else if (calledFuncName.startswith(
                      "sol.model.macro.parent_child_constraint.")) {
         llvm::SmallVector<StringRef, 8> accounts_vec;
         params.split(accounts_vec, ',', -1, false);
@@ -2002,8 +1996,7 @@ void SolanaAnalysisPass::handleRustModelAPI(
           thread->assertKeyEqualMap[pair] = e;
         }
 
-      } else if (CS.getCalledFunction()->getName().startswith(
-                     "//sol.model.macro.quote.")) {
+      } else if (calledFuncName.startswith("//sol.model.macro.quote.")) {
       } else {
         {
           auto params_tmp = params;
@@ -2067,8 +2060,7 @@ void SolanaAnalysisPass::handleRustModelAPI(
       }
     }
 
-  } else if (CS.getCalledFunction()->getName().equals(
-                 "sol.model.access_control")) {
+  } else if (calledFuncName.equals("sol.model.access_control")) {
     // find
     auto value = CS.getArgOperand(0);
     auto calleeName = LangModel::findGlobalString(value);
@@ -2212,8 +2204,6 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
 
       auto value = CS.getArgOperand(1);
       if (auto callValue = dyn_cast<CallBase>(value)) {
-        // handleConditionalCheck(ctx, tid, inst, thread,
-        // callValue);
         handleConditionalCheck0(ctx, tid, func, inst, thread, value);
       }
     } else if (CS.getTargetFunction()->getName().startswith("sol.Ok.1")) {
@@ -3919,6 +3909,7 @@ void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
                    << " != " << pair.second << "\n";
     }
   }
+
   // check unstake access control
   if (funcName.contains("unstake") && isAccessControlInstruction("stake") &&
       !isAccessControlInstruction(funcName)) {
@@ -3965,7 +3956,6 @@ void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
                      curThread->isAccountSignerVerifiedByPDAContains() ||
                      curThread->isPotentiallyOwnerOnlyInstruction(
                          potentialOwnerAccounts, isInit);
-  // isOwnerOnly = false;
   llvm::outs() << "isOwnerOnly: " << isOwnerOnly << "\n";
 
   for (auto [accountName, e] : curThread->accountsMap) {
@@ -4171,18 +4161,6 @@ void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
                   skipUserAccount = true;
                 }
 
-                // if (type.contains("TokenAccount") &&
-                // curThread->isAccountMintValidated(accountName))
-                // {
-                //     skipMintAccount = true;
-                //     if (!curThread->isAccountInvoked(accountName)) {
-                //         llvm::errs() << "tid: " << curThread->getTID()
-                //                      << " ==============isAccountInvoked NOT:
-                //                      " << accountName
-                //                      << "============\n";
-                //     }
-                // }
-
                 // for non-Anchor account
                 // habitat_mint
                 if (accountName.endswith("_account_info")) {
@@ -4238,7 +4216,7 @@ void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
                 isUnvalidate = true;
               }
             } else if (curThread->isAccountInvoked(accountName)) {
-              // check if account is isolated..
+              // TODO: check if account is isolated.
               // llvm::errs()
               //     << "==============VULNERABLE: Invoke Account Potentially
               //     Unvalidated!============\n";
@@ -4248,6 +4226,7 @@ void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
           }
         }
       }
+
       if (curThread->startFunc->getName().contains("close")) {
         // check close account
         if (curThread->isAccountClosed(accountName) &&
@@ -4259,6 +4238,7 @@ void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
                                      SVE::Type::ACCOUNT_CLOSE, 5);
         }
       }
+
       // for checking order race conditions
       if (!isOwnerOnly && accountName.contains("order")) {
         if (curThread->startFunc->getName().contains("init") ||
@@ -4277,35 +4257,9 @@ void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
     }
   }
 
-  if (DEBUG_RUST_API)
-    llvm::outs() << "checking IDL backwards compatibility\n";
-  // check backwards compatibility if IDL is available
-  {
-    for (auto pair : curThread->anchorStructFunctionFields) {
-      auto accountName = pair.first;
-      auto result = curThread->isAccountCompatibleAddOrMut(accountName);
-      if (result != 0) {
-        auto e = curThread->accountsMap[accountName];
-        if (result < 0)
-          UnsafeOperation::collect(e, callEventTraces,
-                                   SVE::Type::ACCOUNT_IDL_INCOMPATIBLE_ADD, 7);
-        else if (result > 0)
-          UnsafeOperation::collect(e, callEventTraces,
-                                   SVE::Type::ACCOUNT_IDL_INCOMPATIBLE_MUT, 7);
-      }
-    }
-    llvm::StringRef accountName1, accountName2;
-    if (!curThread->isAccountCompatibleOrder(accountName1, accountName2)) {
-      auto e1 = curThread->accountsMap[accountName1];
-      auto e2 = curThread->accountsMap[accountName2];
-      CosplayAccounts::collect(e1, e2, callEventTraces,
-                               SVE::Type::ACCOUNT_IDL_INCOMPATIBLE_ORDER, 7);
-    }
-  }
-
-  if (DEBUG_RUST_API)
+  if (DEBUG_RUST_API) {
     llvm::outs() << "checking bump_seed_canonicalization_insecure\n";
-
+  }
   // check bump_seed_canonicalization_insecure
   for (auto [pair, e] : curThread->accountsBumpMap) {
     auto bumpName = pair.first;
@@ -4321,9 +4275,10 @@ void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
       }
     }
   }
-  if (DEBUG_RUST_API)
-    llvm::outs() << "checking duplicate mutable accounts\n";
 
+  if (DEBUG_RUST_API) {
+    llvm::outs() << "checking duplicate mutable accounts\n";
+  }
   // now checking duplicate mutable accounts
   for (auto [func, accountTypeMap] : curThread->structAccountTypeMaps) {
     std::vector<std::pair<llvm::StringRef, llvm::StringRef>> accountTypeVec;

@@ -1,5 +1,10 @@
 #pragma once
 
+#include <map>
+#include <set>
+#include <utility>
+#include <vector>
+
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Instructions.h>
 
@@ -116,10 +121,6 @@ public:
     return false;
   }
 
-  int isAccountCompatibleAddOrMut(llvm::StringRef accountName);
-  bool isAccountCompatibleOrder(llvm::StringRef &accountName1,
-                                llvm::StringRef &accountName2);
-
   void updateMostRecentFuncReturn(const llvm::Function *func,
                                   llvm::StringRef valueName) {
     if (DEBUG_RUST_API)
@@ -127,6 +128,7 @@ public:
                    << " value: " << valueName << "\n";
     mostRecentFuncReturnMap[func] = valueName;
   }
+
   llvm::StringRef findReturnAliasAccount(const llvm::Function *func) {
     if (mostRecentFuncReturnMap.find(func) != mostRecentFuncReturnMap.end()) {
       return mostRecentFuncReturnMap.at(func);
@@ -363,6 +365,7 @@ public:
       llvm::outs() << "isAccountInvoked false: " << accountName << "\n";
     return false;
   }
+
   bool isAccountPDAInInstruction(llvm::StringRef accountName) {
     for (auto [accountPda, inst] : accountsPDAInInstructionMap) {
       if (accountPda.contains(accountName)) {
@@ -379,6 +382,7 @@ public:
 
     return false;
   }
+
   bool isAuthorizedAccountPDAAndHasSignedSeeds(llvm::StringRef accountName) {
     for (auto [pair, e] : accountsBurnAuthorityMap) {
       if (pair.first.equals(accountName)) {

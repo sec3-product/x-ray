@@ -22,7 +22,6 @@ public:
 };
 
 extern std::set<llvm::StringRef> SMART_CONTRACT_ADDRESSES;
-extern std::map<std::string, std::vector<AccountIDL>> IDL_INSTRUCTION_ACCOUNTS;
 
 extern void loadIDLInstructionAccounts(std::string api_name, jsoncons::json j);
 extern void computeDeclareIdAddresses(llvm::Module *module);

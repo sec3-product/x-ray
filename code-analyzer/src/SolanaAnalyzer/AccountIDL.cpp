@@ -17,7 +17,7 @@
 
 namespace aser {
 
-std::map<std::string, std::vector<AccountIDL>> IDL_INSTRUCTION_ACCOUNTS;
+static std::map<std::string, std::vector<AccountIDL>> IDL_INSTRUCTION_ACCOUNTS;
 
 void loadIDLInstructionAccounts(std::string api_name, jsoncons::json j) {
   // llvm::outs() << "accounts: " << j.as_string() << "\n";
