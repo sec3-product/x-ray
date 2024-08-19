@@ -75,11 +75,9 @@ else()
 endif()
 
 include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_BINARY_DIR}/include
-    utils/jsoncons/include
-    utils)
+    external
+    external/jsoncons/include
+)
 
 add_subdirectory(src)
-add_subdirectory(utils/conflib)
 add_subdirectory(test)

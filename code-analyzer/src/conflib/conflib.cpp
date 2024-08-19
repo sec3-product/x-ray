@@ -1,13 +1,10 @@
-//
-// Created by peiming on 5/18/20.
-//
+#include "conflib/conflib.h"
+
+#include "stdlib.h"
 
 #include <set>
 #include <unistd.h>
 #include <vector>
-// Todo SHOULD BE conflib/conflib.h
-#include "conflib.h"
-#include "stdlib.h"
 
 namespace conflib {
 
