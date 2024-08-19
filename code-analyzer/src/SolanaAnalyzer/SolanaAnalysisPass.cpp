@@ -336,8 +336,6 @@ void SolanaAnalysisPass::initialize(SVE::Database sves, int limit) {
   nonRustModelRuleset = Ruleset::createRustModelRuleset();
 
   auto unlimited = (limit == -1);
-  OrderViolation::init(limit, unlimited);
-  DeadLock::init(limit, unlimited);
   UntrustfulAccount::init(limit, unlimited);
   UnsafeOperation::init(limit, unlimited);
   CosplayAccounts::init(limit, unlimited);
