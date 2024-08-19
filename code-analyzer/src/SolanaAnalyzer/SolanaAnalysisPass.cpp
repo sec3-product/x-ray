@@ -2127,7 +2127,8 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
     // No matching rules. Traverse into the callee.
     // traverseFunctionWrapper(ctx, thread, callStack, inst,
     //                         CS.getCalledFunction());
-    //
+
+    auto targetFuncName = CS.getCalledFunction()->getName();
     // TODO: Drop the following if-s and just use the above lines
     // instead.
     if (func->getName().startswith("sol.model.anchor.program.")) {
@@ -2174,8 +2175,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         lastThread->anchor_struct_function = func_struct;
         traverseFunctionWrapper(ctx, thread, callStack, inst, func_struct);
       }
-    } else if (CS.getTargetFunction()->getName().startswith(
-                   "sol.sol_memset.3")) {
+    } else if (targetFuncName.startswith("sol.sol_memset.3")) {
       auto value = CS.getArgOperand(0);
       // TODO source_account_data
       if (auto callValue = dyn_cast<CallBase>(value)) {
@@ -2198,7 +2198,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
           }
         }
       }
-    } else if (CS.getTargetFunction()->getName().equals("sol.position.2")) {
+    } else if (targetFuncName.equals("sol.position.2")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "sol.position: " << *inst << "\n";
 
@@ -2206,14 +2206,14 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
       if (auto callValue = dyn_cast<CallBase>(value)) {
         handleConditionalCheck0(ctx, tid, func, inst, thread, value);
       }
-    } else if (CS.getTargetFunction()->getName().startswith("sol.Ok.1")) {
+    } else if (targetFuncName.startswith("sol.Ok.1")) {
       auto value = CS.getArgOperand(0);
       auto valueName = LangModel::findGlobalString(value);
       auto e = graph->createReadEvent(ctx, inst, tid);
       auto funcx = findCallStackNonAnonFunc(e);
       if (!valueName.empty())
         thread->updateMostRecentFuncReturn(funcx, valueName);
-    } else if (CS.getTargetFunction()->getName().contains("::keccak::hashv.")) {
+    } else if (targetFuncName.contains("::keccak::hashv.")) {
       auto value = CS.getArgOperand(0);
       auto valueName = LangModel::findGlobalString(value);
       if (valueName.contains(",")) {
@@ -2230,7 +2230,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
           }
         }
       }
-    } else if (CS.getTargetFunction()->getName().equals("sol.if")) {
+    } else if (targetFuncName.equals("sol.if")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "sol.if: " << *inst << "\n";
 
@@ -2250,7 +2250,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
       }
       if (!handled)
         handleConditionalCheck0(ctx, tid, func, inst, thread, value);
-    } else if (CS.getTargetFunction()->getName().startswith("sol.&&")) {
+    } else if (targetFuncName.startswith("sol.&&")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "sol.&&: " << *inst << "\n";
       auto e = graph->createReadEvent(ctx, inst, tid);
@@ -2270,7 +2270,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         }
       }
 
-    } else if (CS.getTargetFunction()->getName().startswith("sol.!")) {
+    } else if (targetFuncName.startswith("sol.!")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "sol.!: " << *inst << "\n";
       auto e = graph->createReadEvent(ctx, inst, tid);
@@ -2289,8 +2289,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
           thread->asssertSignerMap[account] = e;
         }
       }
-    } else if (CS.getTargetFunction()->getName().startswith(
-                   "sol.get_account_data.2")) {
+    } else if (targetFuncName.startswith("sol.get_account_data.2")) {
       auto e = graph->createReadEvent(ctx, inst, tid);
 
       auto value1 = CS.getArgOperand(0);
@@ -2316,15 +2315,13 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
       auto pair = std::make_pair(account1, account1);
       thread->assertOwnerEqualMap[pair] = e;
 
-    } else if (CS.getTargetFunction()->getName().startswith(
-                   "sol.next_account_info.")) {
+    } else if (targetFuncName.startswith("sol.next_account_info.")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "next_account_info: " << *inst << "\n";
       auto value = CS.getArgOperand(0);
       auto valueName = LangModel::findGlobalString(value);
 
-    } else if (CS.getTargetFunction()->getName().startswith(
-                   "sol.Pubkey::find_program_address.")) {
+    } else if (targetFuncName.startswith("sol.Pubkey::find_program_address.")) {
       auto value = CS.getArgOperand(0);
       auto valueName = LangModel::findGlobalString(value);
       auto e = graph->createReadEvent(ctx, inst, tid);
@@ -2364,7 +2361,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         }
       }
 
-    } else if (CS.getTargetFunction()->getName().startswith(
+    } else if (targetFuncName.startswith(
                    "sol.Pubkey::create_program_address.")) {
       auto value = CS.getArgOperand(0);
       auto valueName = LangModel::findGlobalString(value);
@@ -2398,7 +2395,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
           }
         }
       }
-    } else if (CS.getTargetFunction()->getName().startswith("sol.realloc.3")) {
+    } else if (targetFuncName.startswith("sol.realloc.3")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "sol.realloc: " << *inst << "\n";
       auto value = CS.getArgOperand(0);
@@ -2410,11 +2407,10 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
                                    SVE::Type::INSECURE_ACCOUNT_REALLOC, 7);
       }
 
-    } else if (CS.getTargetFunction()->getName().startswith(
+    } else if (targetFuncName.startswith(
                    "sol.spl_token::instruction::transfer") ||
-               CS.getTargetFunction()->getName().startswith(
-                   "sol.spl_token::instruction::burn") ||
-               CS.getTargetFunction()->getName().startswith(
+               targetFuncName.startswith("sol.spl_token::instruction::burn") ||
+               targetFuncName.startswith(
                    "sol.spl_token::instruction::mint_to")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "spl_token::instruction:: " << *inst << "\n";
@@ -2483,8 +2479,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         }
         // now check if source_token_account.key ==
         // destination_token_account.key
-        if (CS.getTargetFunction()->getName().startswith(
-                "sol.spl_token::instruction::transfer")) {
+        if (targetFuncName.startswith("sol.spl_token::instruction::transfer")) {
           auto from = accountNames[0];
           auto to = accountNames[1];
           // TODO check from and to have equality constraints
@@ -2498,26 +2493,23 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         }
       }
 
-    } else if (CS.getTargetFunction()->getName().startswith(
+    } else if (targetFuncName.startswith(
                    "sol.spl_token::instruction::mint_to")) {
       // Not handled.
-    } else if (CS.getTargetFunction()->getName().startswith(
+    } else if (targetFuncName.startswith(
                    "sol.spl_token::instruction::approve")) {
       // Not handled.
-    } else if (CS.getTargetFunction()->getName().startswith(
-                   "sol.spl_token::instruction::transfer_"
-                   "checked")) {
+    } else if (targetFuncName.startswith("sol.spl_token::instruction::transfer_"
+                                         "checked")) {
       // Not handled.
-    } else if (CS.getTargetFunction()->getName().startswith(
+    } else if (targetFuncName.startswith(
                    "sol.spl_token::instruction::mint_to_checked")) {
       // Not handled.
-    } else if (CS.getTargetFunction()->getName().startswith(
+    } else if (targetFuncName.startswith(
                    "sol.spl_token::instruction::approve_checked")) {
       // Not handled.
-    } else if (CS.getTargetFunction()->getName().startswith(
-                   "sol.Rent::from_account_info.") ||
-               CS.getTargetFunction()->getName().startswith(
-                   "sol.Clock::from_account_info.")) {
+    } else if (targetFuncName.startswith("sol.Rent::from_account_info.") ||
+               targetFuncName.startswith("sol.Clock::from_account_info.")) {
       auto value = CS.getArgOperand(0);
       auto valueName = LangModel::findGlobalString(value);
       if (auto arg = dyn_cast<Argument>(value))
@@ -2531,9 +2523,8 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         auto pair = std::make_pair(valueName, valueName);
         thread->assertKeyEqualMap[pair] = e;
       }
-    } else if (CS.getTargetFunction()->getName().contains(
-                   "sysvar::instructions::")) {
-      auto targetName = CS.getTargetFunction()->getName();
+    } else if (targetFuncName.contains("sysvar::instructions::")) {
+      auto targetName = targetFuncName;
       if (!targetName.contains("_checked.")) {
         auto e = graph->createReadEvent(ctx, inst, tid);
         UntrustfulAccount::collect(targetName, e, callEventTraces,
@@ -2541,7 +2532,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
       }
       // sol.solana_program::sysvar::instructions::load_current_index_checked
       // https://twitter.com/samczsun/status/1489044984296792064
-    } else if (CS.getTargetFunction()->getName().contains("program::invoke")) {
+    } else if (targetFuncName.contains("program::invoke")) {
       auto value = CS.getArgOperand(0);
       if (auto callValue = dyn_cast<CallBase>(value)) {
         CallSite CS2(callValue);
@@ -2568,8 +2559,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         }
       }
 
-    } else if (CS.getTargetFunction()->getName().equals(
-                   "sol.stake::instruction::split.4")) {
+    } else if (targetFuncName.equals("sol.stake::instruction::split.4")) {
       auto e = graph->createReadEvent(ctx, inst, tid);
       for (int i = 1; i <= 1; i++) {
         auto value = CS.getArgOperand(i);
@@ -2593,7 +2583,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         }
       }
 
-    } else if (CS.getTargetFunction()->getName().equals(
+    } else if (targetFuncName.equals(
                    "sol.stake::instruction::delegate_stake.3")) {
       auto e = graph->createReadEvent(ctx, inst, tid);
       for (int i = 0; i <= 2; i++) {
@@ -2617,8 +2607,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         }
       }
 
-    } else if (CS.getTargetFunction()->getName().equals(
-                   "sol.stake::instruction::authorize.5")) {
+    } else if (targetFuncName.equals("sol.stake::instruction::authorize.5")) {
       auto e = graph->createReadEvent(ctx, inst, tid);
       for (int i = 0; i <= 2; i++) {
         auto value = CS.getArgOperand(i);
@@ -2643,8 +2632,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         }
       }
 
-    } else if (CS.getTargetFunction()->getName().equals(
-                   "sol.stake::instruction::withdraw.5")) {
+    } else if (targetFuncName.equals("sol.stake::instruction::withdraw.5")) {
       auto e = graph->createReadEvent(ctx, inst, tid);
       // withdrawer_pubkey: &Pubkey,
       // destination_lamports_info
@@ -2670,8 +2658,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         }
       }
 
-    } else if (CS.getTargetFunction()->getName().contains(
-                   "system_instruction::transfer")) {
+    } else if (targetFuncName.contains("system_instruction::transfer")) {
       // TODO track parameter passing
       auto value = CS.getArgOperand(0);
       auto valueName = LangModel::findGlobalString(value);
@@ -2697,8 +2684,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         thread->accountsInvokedMap[valueName_j] = e;
       }
 
-    } else if (CS.getTargetFunction()->getName().startswith(
-                   "//sol.transfer_ctx")) {
+    } else if (targetFuncName.startswith("//sol.transfer_ctx")) {
       auto value = CS.getArgOperand(0);
       auto valueName = LangModel::findGlobalString(value);
       if (DEBUG_RUST_API)
@@ -2707,8 +2693,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
       auto e = graph->createReadEvent(ctx, inst, tid);
       thread->accountsInvokedMap["authority"] = e;
 
-    } else if (CS.getTargetFunction()->getName().startswith(
-                   "sol.CpiContext::new.")) {
+    } else if (targetFuncName.startswith("sol.CpiContext::new.")) {
       auto value = CS.getArgOperand(1);
       auto valueName = LangModel::findGlobalString(value);
       auto found = valueName.find("authority:");
@@ -2734,8 +2719,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         thread->accountsInvokedMap[valueName_j] = e;
       }
 
-    } else if (CS.getTargetFunction()->getName().startswith(
-                   "sol.borrow_mut.")) {
+    } else if (targetFuncName.startswith("sol.borrow_mut.")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "borrow_mut: " << *inst << "\n";
       auto value = CS.getArgOperand(0);
@@ -2791,7 +2775,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         if (!thread->isInAccountOrStructAccountMap(account))
           thread->accountsMap[account] = e;
 
-    } else if (CS.getTargetFunction()->getName().startswith("sol.serialize.")) {
+    } else if (targetFuncName.startswith("sol.serialize.")) {
       // create an object of a class
       if (DEBUG_RUST_API)
         llvm::outs() << "sol.serialize: " << *inst << "\n";
@@ -2800,8 +2784,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
       auto e = graph->createReadEvent(ctx, inst, tid);
       auto account = valueName;
       thread->borrowDataMutMap[account] = e;
-    } else if (CS.getTargetFunction()->getName().startswith(
-                   "sol.try_borrow_mut_data.")) {
+    } else if (targetFuncName.startswith("sol.try_borrow_mut_data.")) {
       // create an object of a class
       if (DEBUG_RUST_API)
         llvm::outs() << "sol.try_borrow_mut_data: " << *inst << "\n";
@@ -2820,9 +2803,8 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         if (!thread->isInAccountOrStructAccountMap(account))
           thread->accountsMap[account] = e;
 
-    } else if (CS.getTargetFunction()->getName().startswith("sol.borrow.") ||
-               CS.getTargetFunction()->getName().startswith(
-                   "sol.try_borrow_data.")) {
+    } else if (targetFuncName.startswith("sol.borrow.") ||
+               targetFuncName.startswith("sol.try_borrow_data.")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "sol.borrow: " << *inst << "\n";
       auto value = CS.getArgOperand(0);
@@ -2948,7 +2930,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         }
       }
 
-    } else if (CS.getTargetFunction()->getName().startswith("sol.require.!2")) {
+    } else if (targetFuncName.startswith("sol.require.!2")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "sol.require.!: " << *inst << "\n";
       // merkle_proof::verify(proof,distributor.root,node.0)
@@ -2972,7 +2954,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
       }
       // TODO parse more
 
-    } else if (CS.getTargetFunction()->getName().startswith("sol.assert.")) {
+    } else if (targetFuncName.startswith("sol.assert.")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "assert: " << *inst << "\n";
       auto value = CS.getArgOperand(0);
@@ -2995,28 +2977,27 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
       } else {
         thread->asssertOtherMap[account] = e;
       }
-    } else if (CS.getTargetFunction()->getName().startswith("sol.assert_eq.") ||
-               CS.getTargetFunction()->getName().startswith("sol.ne.2") ||
-               CS.getTargetFunction()->getName().startswith("sol.eq.2") ||
-               CS.getTargetFunction()->getName().contains("_keys_eq.") ||
-               CS.getTargetFunction()->getName().contains("_keys_neq.") ||
-               CS.getTargetFunction()->getName().contains("_keys_equal.") ||
-               CS.getTargetFunction()->getName().contains("_keys_not_equal.")) {
-      // CS.getTargetFunction()->getName().startswith("sol.assert_eq.")
+    } else if (targetFuncName.startswith("sol.assert_eq.") ||
+               targetFuncName.startswith("sol.ne.2") ||
+               targetFuncName.startswith("sol.eq.2") ||
+               targetFuncName.contains("_keys_eq.") ||
+               targetFuncName.contains("_keys_neq.") ||
+               targetFuncName.contains("_keys_equal.") ||
+               targetFuncName.contains("_keys_not_equal.")) {
+      // targetFuncName.startswith("sol.assert_eq.")
       // ||
-      //        CS.getTargetFunction()->getName().startswith("sol.assert_keys_eq.2")
+      //        targetFuncName.startswith("sol.assert_keys_eq.2")
       //        ||
-      //        CS.getTargetFunction()->getName().startswith("sol.require_keys_eq.2")
+      //        targetFuncName.startswith("sol.require_keys_eq.2")
       //        ||
-      //        CS.getTargetFunction()->getName().startswith("sol.require_keys_neq.2")
+      //        targetFuncName.startswith("sol.require_keys_neq.2")
       //        ||
-      //        CS.getTargetFunction()->getName().startswith("sol.check_keys_equal.2")
+      //        targetFuncName.startswith("sol.check_keys_equal.2")
       //        ||
-      //        CS.getTargetFunction()->getName().startswith("sol.check_keys_not_equal.2")
+      //        targetFuncName.startswith("sol.check_keys_not_equal.2")
       addCheckKeyEqual(ctx, tid, inst, thread, CS);
 
-    } else if (CS.getTargetFunction()->getName().startswith(
-                   "sol.assert_owner.")) {
+    } else if (targetFuncName.startswith("sol.assert_owner.")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "assert_owner: " << *inst << "\n";
       if (CS.getNumArgOperands() >= 2) {
@@ -3029,8 +3010,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         auto e = graph->createReadEvent(ctx, inst, tid);
         thread->assertOwnerEqualMap[pair] = e;
       }
-    } else if (CS.getTargetFunction()->getName().startswith(
-                   "sol.assert_signer.")) {
+    } else if (targetFuncName.startswith("sol.assert_signer.")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "assert_signer: " << *inst << "\n";
       if (CS.getNumArgOperands() >= 1) {
@@ -3040,7 +3020,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         auto e = graph->createReadEvent(ctx, inst, tid);
         thread->asssertSignerMap[account] = e;
       }
-    } else if (CS.getTargetFunction()->getName().startswith("sol.get.2")) {
+    } else if (targetFuncName.startswith("sol.get.2")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "sol.get.2: " << *inst << "\n";
       auto value1 = CS.getArgOperand(0);
@@ -3076,8 +3056,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
           }
         }
       }
-    } else if (CS.getTargetFunction()->getName().startswith(
-                   "sol.validate.!2")) {
+    } else if (targetFuncName.startswith("sol.validate.!2")) {
       //            let want_destination_information_addr =
       //            self.get_destination_information_address(ctx);
       // validate!(
@@ -3122,7 +3101,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
           }
         }
       }
-    } else if (CS.getTargetFunction()->getName().startswith("sol.reload.1")) {
+    } else if (targetFuncName.startswith("sol.reload.1")) {
       auto value1 = CS.getArgOperand(0);
       auto valueName1 = LangModel::findGlobalString(value1);
       if (valueName1.contains("ctx.")) {
@@ -3130,8 +3109,8 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         auto e = graph->createReadEvent(ctx, inst, tid);
         thread->accountsReloadedInInstructionMap[account] = e;
       }
-    } else if (CS.getTargetFunction()->getName().equals("sol.>") ||
-               CS.getTargetFunction()->getName().equals("sol.<")) {
+    } else if (targetFuncName.equals("sol.>") ||
+               targetFuncName.equals("sol.<")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "sol.>: " << *inst << "\n";
       if (CS.getNumArgOperands() > 1) {
@@ -3150,8 +3129,8 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
           }
         }
       }
-    } else if (CS.getTargetFunction()->getName().startswith("sol.>=") ||
-               CS.getTargetFunction()->getName().startswith("sol.<=")) {
+    } else if (targetFuncName.startswith("sol.>=") ||
+               targetFuncName.startswith("sol.<=")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "sol.>=: " << *inst << "\n";
       auto value1 = CS.getArgOperand(0);
@@ -3166,7 +3145,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
                                    SVE::Type::MALICIOUS_SIMULATION, 11);
       }
 
-    } else if (CS.getTargetFunction()->getName().equals("sol.==")) {
+    } else if (targetFuncName.equals("sol.==")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "sol.==: " << *inst << "\n";
       auto value1 = CS.getArgOperand(0);
@@ -3187,7 +3166,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
           }
         }
       }
-    } else if (CS.getTargetFunction()->getName().equals("sol.contains.2")) {
+    } else if (targetFuncName.equals("sol.contains.2")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "sol.contains.2: " << *inst << "\n";
       if (func->getName().contains("::verify")) {
@@ -3214,20 +3193,19 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         auto pairx = std::make_pair(valueName2, valueName1);
         thread->accountContainsVerifiedMap[pairx] = e;
       }
-    } else if (CS.getTargetFunction()->getName().equals("sol.+=")) {
+    } else if (targetFuncName.equals("sol.+=")) {
       // No-op; this is handled by the rulset.
-    } else if (CS.getTargetFunction()->getName().equals("sol.-=")) {
+    } else if (targetFuncName.equals("sol.-=")) {
       // No-op; this is handled by the rulset.
-    } else if (CS.getTargetFunction()->getName().equals("sol.+")) {
+    } else if (targetFuncName.equals("sol.+")) {
       // No-op; this is handled by the rulset.
-    } else if (CS.getTargetFunction()->getName().equals("sol.-")) {
+    } else if (targetFuncName.equals("sol.-")) {
       // No-op; this is handled by the rulset.
-    } else if (CS.getTargetFunction()->getName().equals("sol.*")) {
+    } else if (targetFuncName.equals("sol.*")) {
       // No-op; this is handled by the rulset.
-    } else if (CS.getTargetFunction()->getName().equals("sol./")) {
+    } else if (targetFuncName.equals("sol./")) {
       // No-op; this is handled by the rulset.
-    } else if (CS.getTargetFunction()->getName().startswith(
-                   "sol.checked_div.")) {
+    } else if (targetFuncName.startswith("sol.checked_div.")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "sol.checked_div: " << *inst << "\n";
 
@@ -3242,32 +3220,15 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
           }
         }
       }
-    } else if (CS.getTargetFunction()->getName().startswith(
-                   "//sol.checked_mul.")) {
-      if (DEBUG_RUST_API)
-        llvm::outs() << "sol.checked_mul: " << *inst << "\n";
-      auto signature = "price_for_supply";
-      if (func->getName().contains(signature)) {
-        for (auto idx = callEventTraces[tid].size() - 1; idx >= 0; idx--) {
-          auto e = callEventTraces[tid][idx];
-          if (auto call_inst = dyn_cast<CallBase>(e->getInst())) {
-            CallSite CS2(call_inst);
-            if (CS2.getTargetFunction()->getName().contains(signature) &&
-                !CS2.getTargetFunction()->getName().contains(".anon")) {
-              UnsafeOperation::collect(e, callEventTraces,
-                                       SVE::Type::FLASHLOAN_RISK, 9);
-              break;
-            }
-          }
-        }
-      }
-    } else if (CS.getTargetFunction()->getName().startswith("sol.into.")) {
+    } else if (targetFuncName.startswith("//sol.checked_mul.")) {
+      // Skipped.
+    } else if (targetFuncName.startswith("sol.into.")) {
       // sol.into.1
-    } else if (CS.getTargetFunction()->getName().contains("::from.1") ||
-               CS.getTargetFunction()->getName().contains("::try_from.1")) {
+    } else if (targetFuncName.contains("::from.1") ||
+               targetFuncName.contains("::try_from.1")) {
       //
-    } else if (CS.getTargetFunction()->getName().startswith("sol.to_u32.") ||
-               CS.getTargetFunction()->getName().startswith("sol.to_u64.")) {
+    } else if (targetFuncName.startswith("sol.to_u32.") ||
+               targetFuncName.startswith("sol.to_u64.")) {
       if (auto value = dyn_cast<CallBase>(CS.getArgOperand(0))) {
         CallSite CS2(value);
         auto targetName = CS2.getTargetFunction()->getName();
@@ -3283,7 +3244,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
                                    8);
         }
       }
-    } else if (CS.getTargetFunction()->getName().equals("sol.typecast")) {
+    } else if (targetFuncName.equals("sol.typecast")) {
       auto value1 = CS.getArgOperand(0); // royalty
       auto valueName1 = LangModel::findGlobalString(value1);
       if (!valueName1.empty() && !valueName1.equals("self")) {
@@ -3325,8 +3286,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         }
       }
 
-    } else if (CS.getTargetFunction()->getName().startswith(
-                   "sol.to_imprecise.")) {
+    } else if (targetFuncName.startswith("sol.to_imprecise.")) {
       bool isPossibleRoundingError = true;
       if (auto value = dyn_cast<CallBase>(CS.getArgOperand(0))) {
         CallSite CS2(value);
@@ -3341,7 +3301,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         UnsafeOperation::collect(e, callEventTraces,
                                  SVE::Type::BIDIRECTIONAL_ROUNDING, 8);
       }
-    } else if (CS.getTargetFunction()->getName().startswith("sol.try_round_")) {
+    } else if (targetFuncName.startswith("sol.try_round_")) {
       // sol.try_round_u64.1
       bool isPossibleRoundingError = true;
       if (auto nextInst = inst->getNextNonDebugInstruction()) {
@@ -3360,8 +3320,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         UnsafeOperation::collect(e, callEventTraces,
                                  SVE::Type::BIDIRECTIONAL_ROUNDING, 8);
       }
-    } else if (CS.getTargetFunction()->getName().contains(
-                   "::check_account_owner.2")) {
+    } else if (targetFuncName.contains("::check_account_owner.2")) {
       auto value1 = CS.getArgOperand(0); // program_id
       auto valueName1 = LangModel::findGlobalString(value1);
 
@@ -3384,8 +3343,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
       auto e = graph->createReadEvent(ctx, inst, tid);
       thread->assertOwnerEqualMap[pair] = e;
 
-    } else if (CS.getTargetFunction()->getName().contains(
-                   "::validate_owner.")) {
+    } else if (targetFuncName.contains("::validate_owner.")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "validate_owner: " << *inst << "\n";
       if (CS.getNumArgOperands() > 2) {
@@ -3413,8 +3371,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
                          << " valueName3: " << valueName3 << "\n";
         }
       }
-    } else if (CS.getTargetFunction()->getName().startswith(
-                   "sol.require_eq.!")) {
+    } else if (targetFuncName.startswith("sol.require_eq.!")) {
       auto value1 = CS.getArgOperand(0); // mint_info.key
       auto value2 = CS.getArgOperand(1); // dest_account.base.mint
       auto valueName1 = LangModel::findGlobalString(value1);
@@ -3435,7 +3392,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
           thread->assertOwnerEqualMap[pair] = e;
         }
       }
-    } else if (CS.getTargetFunction()->getName().contains("cmp_pubkeys.2")) {
+    } else if (targetFuncName.contains("cmp_pubkeys.2")) {
       auto value1 = CS.getArgOperand(0); // mint_info.key
       auto value2 = CS.getArgOperand(1); // dest_account.base.mint
       auto valueName1 = LangModel::findGlobalString(value1);
@@ -3460,9 +3417,8 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
         if (valueName1.contains(".owner") || valueName2.contains(".owner"))
           thread->assertOwnerEqualMap[pair] = e;
       }
-    } else if (CS.getTargetFunction()->getName().startswith(
-                   "sol.invoke_signed.") ||
-               CS.getTargetFunction()->getName().startswith("sol.invoke.")) {
+    } else if (targetFuncName.startswith("sol.invoke_signed.") ||
+               targetFuncName.startswith("sol.invoke.")) {
       auto value = CS.getArgOperand(0);
       // find all accounts invoked
       if (!isa<CallBase>(value))
@@ -3508,7 +3464,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
       }
 
       // find program_id for sol.invoke_signed.
-      if (CS.getTargetFunction()->getName().startswith("sol.invoke_signed.")) {
+      if (targetFuncName.startswith("sol.invoke_signed.")) {
         auto pair = getProgramIdAccountName(inst);
         if (!pair.first.empty() && !thread->isAccountKeyValidated(pair.first)) {
           auto e2 = graph->createReadEvent(ctx, pair.second, tid);
@@ -3516,33 +3472,25 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
                                      SVE::Type::ARBITRARY_CPI, 9);
         }
       }
-    } else if (CS.getTargetFunction()->getName().contains("//initialized")) {
+    } else if (targetFuncName.contains("//initialized")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "sol.initialized: " << *inst << "\n";
       thread->hasInitializedCheck = true;
 
     } else {
-      // check price_for_supply
-      auto signature = "price_for_supply.";
-      if (CS.getTargetFunction()->getName().contains(signature)) {
-        auto value = CS.getArgOperand(0);
-        auto valueName = LangModel::findGlobalString(value);
-        if (valueName.contains(".accounts.") && valueName.contains("price")) {
-          auto e = graph->createReadEvent(ctx, inst, tid);
-          UnsafeOperation::collect(e, callEventTraces,
-                                   SVE::Type::FLASHLOAN_RISK, 9);
-        }
-      }
-
-      if (CS.getTargetFunction()->getName().contains("initialized")) {
-        if (DEBUG_RUST_API)
+      if (targetFuncName.contains("initialized")) {
+        if (DEBUG_RUST_API) {
           llvm::outs() << "sol.initialized: " << *inst << "\n";
+        }
         thread->hasInitializedCheck = true;
       }
-      if (CS.getTargetFunction()->getName().startswith("sol.check_") ||
-          CS.getTargetFunction()->getName().startswith("sol.validate_")) {
-        if (DEBUG_RUST_API)
+
+      if (targetFuncName.startswith("sol.check_") ||
+          targetFuncName.startswith("sol.validate_")) {
+        if (DEBUG_RUST_API) {
           llvm::outs() << "sol.check_: " << *inst << "\n";
+        }
+
         // heuristics for interprocedural call
         // for any parameter that is an account name, set it
         // validated
@@ -3556,8 +3504,8 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
               thread->assertKeyEqualMap[pair] = e;
             }
             if (DEBUG_RUST_API)
-              llvm::outs() << CS.getTargetFunction()->getName()
-                           << " check_account: " << valueName << "\n";
+              llvm::outs() << targetFuncName << " check_account: " << valueName
+                           << "\n";
           }
         }
         // let's still check its content - for signer
