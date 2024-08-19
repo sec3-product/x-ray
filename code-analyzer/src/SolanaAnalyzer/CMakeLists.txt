@@ -13,6 +13,7 @@ set(SOLANA_ANALYZER_SOURCES
     Rules/OverflowAdd.cpp
     Rules/OverflowSub.cpp
     Rules/Rule.cpp
+    Rules/Ruleset.cpp
     SolanaAnalysisPass.cpp
     SourceInfo.cpp
     StaticThread.cpp

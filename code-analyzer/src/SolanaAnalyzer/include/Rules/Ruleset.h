@@ -23,6 +23,9 @@ public:
     return false;
   }
 
+  static Ruleset createRustModelRuleset();
+  static Ruleset createNonRustModelRuleset();
+
 private:
   std::vector<Rule> Rules;
 };

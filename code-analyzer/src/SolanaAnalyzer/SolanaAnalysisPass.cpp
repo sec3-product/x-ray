@@ -19,7 +19,7 @@
 #include "Graph/ReachGraph.h"
 #include "Graph/Trie.h"
 #include "PTAModels/GraphBLASModel.h"
-#include "Rules/RulesetFactory.h"
+#include "Rules/Ruleset.h"
 #include "SVE.h"
 #include "StaticThread.h"
 #include "Util/Log.h"
@@ -333,7 +333,7 @@ void SolanaAnalysisPass::initialize(SVE::Database sves, int limit) {
   SVE::init(sves);
 
   // Initialize the rulesets.
-  nonRustModelRuleset = RulesetFactory::createRustModelRuleset();
+  nonRustModelRuleset = Ruleset::createRustModelRuleset();
 
   auto unlimited = (limit == -1);
   OrderViolation::init(limit, unlimited);
