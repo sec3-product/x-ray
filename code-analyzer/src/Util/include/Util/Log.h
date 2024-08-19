@@ -1,10 +1,19 @@
-#ifndef ASER_LOGGING_H
-#define ASER_LOGGING_H
+#pragma once
 
+#include <memory>
+#include <ostream>
+
+#include <llvm/IR/DebugInfoMetadata.h>
+#include <llvm/IR/GlobalAlias.h>
+#include <llvm/IR/GlobalVariable.h>
+#include <llvm/IR/Instruction.h>
+#include <llvm/IR/Instructions.h>
+#include <llvm/IR/IntrinsicInst.h>
+#include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 #include <llvm/Support/raw_ostream.h>
-
-#include "spdlog/spdlog.h"
+#include <spdlog/fmt/ostr.h>
+#include <spdlog/spdlog.h>
 
 namespace aser {
 namespace logger {
@@ -110,4 +119,44 @@ void endPhase();
 } // namespace logger
 } // namespace aser
 
-#endif
+#ifndef USE_DEFAULT_SPDLOG
+
+// Define the formatter for llvm types.
+namespace fmt {
+inline namespace v6 {
+
+template <typename T> struct llvm_formatter {
+  constexpr auto parse(format_parse_context &ctx) -> decltype(ctx.begin()) {
+    return ctx.end();
+  }
+
+  template <typename FormatContext>
+  auto format(const T &value, FormatContext &ctx) -> decltype(ctx.out()) {
+    std::string str;
+    llvm::raw_string_ostream rso(str);
+    value.print(rso);
+    return format_to(ctx.out(), "{}", rso.str());
+  }
+};
+
+#define DEFINE_LLVM_FORMATTER(Type)                                            \
+  template <> struct formatter<Type> : llvm_formatter<Type> {};
+
+DEFINE_LLVM_FORMATTER(llvm::Instruction)
+DEFINE_LLVM_FORMATTER(llvm::Type)
+DEFINE_LLVM_FORMATTER(llvm::User)
+DEFINE_LLVM_FORMATTER(llvm::Value)
+DEFINE_LLVM_FORMATTER(llvm::GetElementPtrInst)
+DEFINE_LLVM_FORMATTER(llvm::GlobalAlias)
+DEFINE_LLVM_FORMATTER(llvm::ExtractValueInst)
+DEFINE_LLVM_FORMATTER(llvm::MemCpyInst)
+DEFINE_LLVM_FORMATTER(llvm::AllocaInst)
+DEFINE_LLVM_FORMATTER(llvm::DICompositeType)
+DEFINE_LLVM_FORMATTER(llvm::GlobalVariable)
+DEFINE_LLVM_FORMATTER(llvm::StoreInst)
+DEFINE_LLVM_FORMATTER(llvm::BitCastInst)
+
+} // namespace v6
+} // namespace fmt
+
+#endif // ifndef USE_DEFAULT_SPDLOG

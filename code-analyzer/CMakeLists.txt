@@ -71,7 +71,7 @@ Please set this to environment variable to point to the LLVM build directory\
 (e.g. on linux: export LLVM_DIR=/path/to/llvm/build/dir)")
     endif()
 else()
-        set(IN_SOURCE_BUILD 1)
+    set(IN_SOURCE_BUILD 1)
 endif()
 
 include_directories(

@@ -50,7 +50,7 @@ void LoweringMemCpyPass::lowerMemCpyForType(Type *type, Value *src, Value *dst,
   case llvm::Type::ScalableVectorTyID: {
     // case llvm::Type::VectorTyID: {
     //  simply skip vector type
-    LOG_TRACE("Unhandled Vector Type. type={}", type);
+    LOG_TRACE("Unhandled Vector Type. type={}", static_cast<void *>(type));
     break;
   }
   default:
