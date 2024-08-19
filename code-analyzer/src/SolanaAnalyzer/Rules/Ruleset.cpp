@@ -7,8 +7,15 @@ namespace aser {
 
 Ruleset Ruleset::createRustModelRuleset() {
   Ruleset RS;
+
+  // Overflow add rules.
+  RS.addRule(Rule(matchPlus, handlePlus));
   RS.addRule(Rule(matchPlusEqual, handlePlusEqual));
+
+  // Overflow sub rules.
+  RS.addRule(Rule(matchMinus, handleMinus));
   RS.addRule(Rule(matchMinusEqual, handleMinusEqual));
+
   return RS;
 }
 

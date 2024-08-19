@@ -9,7 +9,10 @@
 
 namespace aser {
 
-bool matchPlusEqual(const CallSite &CS);
-void handlePlusEqual(const RuleContext &RC, const CallSite &CS);
+bool matchPlusEqual(const CallSite &);
+void handlePlusEqual(const RuleContext &, const CallSite &);
+
+bool matchPlus(const CallSite &);
+void handlePlus(const RuleContext &, const CallSite &);
 
 }; // namespace aser

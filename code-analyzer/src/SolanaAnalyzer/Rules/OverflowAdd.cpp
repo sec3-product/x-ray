@@ -67,4 +67,23 @@ void handlePlusEqual(const RuleContext &RC, const CallSite &CS) {
   }
 }
 
+bool matchPlus(const CallSite &callSite) {
+  return callSite.getTargetFunction()->getName().equals("sol.+");
+}
+
+void handlePlus(const RuleContext &ruleContext, const CallSite &callSite) {
+  if (DEBUG_RUST_API) {
+    llvm::outs() << "sol.+: " << *ruleContext.getInst() << "\n";
+  }
+  auto value1 = callSite.getArgOperand(0);
+  auto value2 = callSite.getArgOperand(1);
+  if (llvm::isa<llvm::Argument>(value1) || llvm::isa<llvm::Argument>(value2)) {
+    if (!ruleContext.isSafeType(value1) && !ruleContext.isSafeType(value2)) {
+      if (!ruleContext.isSafeVariable(value1)) {
+        ruleContext.collectUnsafeOperation(SVE::Type::OVERFLOW_ADD, 8);
+      }
+    }
+  }
+}
+
 } // namespace aser

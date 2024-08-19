@@ -63,4 +63,33 @@ void handleMinusEqual(const RuleContext &ruleContext,
   }
 }
 
+bool matchMinus(const CallSite &callSite) {
+  return callSite.getTargetFunction()->getName().equals("sol.-");
+}
+
+void handleMinus(const RuleContext &ruleContext, const CallSite &callSite) {
+  if (DEBUG_RUST_API) {
+    llvm::outs() << "sol.-: " << *ruleContext.getInst() << "\n";
+  }
+  auto value1 = callSite.getArgOperand(0);
+  auto value2 = callSite.getArgOperand(1);
+  if (llvm::isa<llvm::Argument>(value1) || llvm::isa<llvm::Argument>(value2)) {
+    if (!ruleContext.isSafeType(value1) && !ruleContext.isSafeType(value2)) {
+      if (!ruleContext.isSafeVariable(value1)) {
+        ruleContext.collectUnsafeOperation(SVE::Type::OVERFLOW_SUB, 8);
+      }
+    }
+  } else {
+    auto valueName = LangModel::findGlobalString(value2);
+    if (valueName.contains("rent")) {
+      if (auto lamport_inst = llvm::dyn_cast<llvm::CallBase>(value1)) {
+        CallSite CS2(lamport_inst);
+        if (CS2.getTargetFunction()->getName().startswith("sol.lamports.")) {
+          ruleContext.collectUnsafeOperation(SVE::Type::OVERFLOW_SUB, 8);
+        }
+      }
+    }
+  }
+}
+
 } // namespace aser

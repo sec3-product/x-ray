@@ -2510,15 +2510,20 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
 
     } else if (CS.getTargetFunction()->getName().startswith(
                    "sol.spl_token::instruction::mint_to")) {
+      // Not handled.
     } else if (CS.getTargetFunction()->getName().startswith(
                    "sol.spl_token::instruction::approve")) {
+      // Not handled.
     } else if (CS.getTargetFunction()->getName().startswith(
                    "sol.spl_token::instruction::transfer_"
                    "checked")) {
+      // Not handled.
     } else if (CS.getTargetFunction()->getName().startswith(
                    "sol.spl_token::instruction::mint_to_checked")) {
+      // Not handled.
     } else if (CS.getTargetFunction()->getName().startswith(
                    "sol.spl_token::instruction::approve_checked")) {
+      // Not handled.
     } else if (CS.getTargetFunction()->getName().startswith(
                    "sol.Rent::from_account_info.") ||
                CS.getTargetFunction()->getName().startswith(
@@ -3224,46 +3229,9 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
     } else if (CS.getTargetFunction()->getName().equals("sol.-=")) {
       // No-op; this is handled by the rulset.
     } else if (CS.getTargetFunction()->getName().equals("sol.+")) {
-      if (DEBUG_RUST_API)
-        llvm::outs() << "sol.+: " << *inst << "\n";
-      auto value1 = CS.getArgOperand(0);
-      auto value2 = CS.getArgOperand(1);
-      if (isa<Argument>(value1) || isa<Argument>(value2)) {
-        if (!isSafeType(func, value1) && !isSafeType(func, value2)) {
-          if (!isSafeVariable(func, value1)) {
-            auto e = graph->createReadEvent(ctx, inst, tid);
-            UnsafeOperation::collect(e, callEventTraces,
-                                     SVE::Type::OVERFLOW_ADD, 8);
-          }
-        }
-      }
+      // No-op; this is handled by the rulset.
     } else if (CS.getTargetFunction()->getName().equals("sol.-")) {
-      if (DEBUG_RUST_API)
-        llvm::outs() << "sol.-: " << *inst << "\n";
-      auto value1 = CS.getArgOperand(0);
-      auto value2 = CS.getArgOperand(1);
-      if (isa<Argument>(value1) || isa<Argument>(value2)) {
-        if (!isSafeType(func, value1) && !isSafeType(func, value2)) {
-          if (!isSafeVariable(func, value1)) {
-            auto e = graph->createReadEvent(ctx, inst, tid);
-            UnsafeOperation::collect(e, callEventTraces,
-                                     SVE::Type::OVERFLOW_SUB, 8);
-          }
-        }
-      } else {
-        auto valueName = LangModel::findGlobalString(value2);
-        if (valueName.contains("rent")) {
-          if (auto lamport_inst = dyn_cast<CallBase>(value1)) {
-            CallSite CS2(lamport_inst);
-            if (CS2.getTargetFunction()->getName().startswith(
-                    "sol.lamports.")) {
-              auto e = graph->createReadEvent(ctx, inst, tid);
-              UnsafeOperation::collect(e, callEventTraces,
-                                       SVE::Type::OVERFLOW_SUB, 8);
-            }
-          }
-        }
-      }
+      // No-op; this is handled by the rulset.
     } else if (CS.getTargetFunction()->getName().equals("sol.*")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "sol.*: " << *inst << "\n";
