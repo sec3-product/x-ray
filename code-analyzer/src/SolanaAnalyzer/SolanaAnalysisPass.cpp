@@ -3233,17 +3233,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
     } else if (CS.getTargetFunction()->getName().equals("sol.-")) {
       // No-op; this is handled by the rulset.
     } else if (CS.getTargetFunction()->getName().equals("sol.*")) {
-      if (DEBUG_RUST_API)
-        llvm::outs() << "sol.*: " << *inst << "\n";
-      auto value1 = CS.getArgOperand(0);
-      auto value2 = CS.getArgOperand(1);
-      if (isa<Argument>(value1) || isa<Argument>(value2)) {
-        if (!isSafeType(func, value1) && !isSafeType(func, value2)) {
-          auto e = graph->createReadEvent(ctx, inst, tid);
-          UnsafeOperation::collect(e, callEventTraces, SVE::Type::OVERFLOW_MUL,
-                                   6);
-        }
-      }
+      // No-op; this is handled by the rulset.
     } else if (CS.getTargetFunction()->getName().equals("sol./")) {
       if (DEBUG_RUST_API)
         llvm::outs() << "sol./: " << *inst << "\n";

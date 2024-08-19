@@ -16,4 +16,3 @@ bool matchMinus(const CallSite &);
 void handleMinus(const RuleContext &, const CallSite &);
 
 }; // namespace aser
-

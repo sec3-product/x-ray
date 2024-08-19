@@ -1,6 +1,7 @@
 #include "Rules/Ruleset.h"
 
 #include "Rules/OverflowAdd.h"
+#include "Rules/OverflowMul.h"
 #include "Rules/OverflowSub.h"
 
 namespace aser {
@@ -15,6 +16,10 @@ Ruleset Ruleset::createRustModelRuleset() {
   // Overflow sub rules.
   RS.addRule(Rule(matchMinus, handleMinus));
   RS.addRule(Rule(matchMinusEqual, handleMinusEqual));
+
+  // Overflow mul rules.
+  RS.addRule(Rule(matchMul, handleMul));
+  RS.addRule(Rule(matchMul, handleMul));
 
   return RS;
 }
