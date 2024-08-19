@@ -373,6 +373,13 @@ private:
       exclusiveFunctionsMap;
   bool mayBeExclusive(const Event *const e1, const Event *const e2);
 
+  void handleRustModelAPI(const aser::ctx *ctx, TID tid, llvm::Function *func,
+                          const llvm::Instruction *inst, StaticThread *thread,
+                          CallSite CS, bool isMacroArrayRefUsedInFunction);
+  void handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
+                             llvm::Function *func, const Instruction *inst,
+                             StaticThread *thread, CallSite CS);
+
   Ruleset nonRustModelRuleset;
 };
 
