@@ -26,7 +26,7 @@ include(FetchContent)
 FetchContent_Declare(
     toml11
     GIT_REPOSITORY https://github.com/ToruNiina/toml11.git
-    GIT_TAG v3.7.1
+    GIT_TAG v4.2.0
 )
 
 FetchContent_MakeAvailable(toml11)
@@ -68,7 +68,7 @@ target_compile_options(SolCodeParser PRIVATE -fexceptions)
 target_include_directories(SolCodeParser
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        SYSTEM $<BUILD_INTERFACE:${toml11_SOURCE_DIR}>
+        SYSTEM $<BUILD_INTERFACE:${toml11_SOURCE_DIR}/include>
 )
 
 get_property(DIALECT_LIBS GLOBAL PROPERTY MLIR_DIALECT_LIBS)
