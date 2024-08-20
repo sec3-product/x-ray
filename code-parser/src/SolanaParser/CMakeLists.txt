@@ -86,7 +86,7 @@ target_link_libraries(SolCodeParser
 
 # Executable.
 add_executable(SolCodeParserExe
-    main.cpp
+    Main.cpp
     ${antlr4cpp_src_files_antlrcpp}
 )
 

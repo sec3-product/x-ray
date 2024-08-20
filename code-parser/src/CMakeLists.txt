@@ -1,4 +1,4 @@
 add_subdirectory(antlr-rust)
 add_subdirectory(conflib)
 add_subdirectory(o2)
-add_subdirectory(sol-code-parser)
+add_subdirectory(SolanaParser)
