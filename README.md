@@ -50,20 +50,57 @@ instructions.
 
 ### Start a scan
 
-In order to scan a target repository, simply clone it and run `coderrect` it in
-the project's root directory (no need to look for the source code location)
+To scan a target repository, simply clone it and run `coderrect` from the
+project's root directory -- there's no need to locate the specific source code
+files.
 
-As a demo, we choose [cashio](https://github.com/cashioapp/cashio), a
-stablecoin based Solana, as our target repo:
+We use
+[Solana Labs' Helloworld](https://github.com/solana-labs/example-helloworld.git)
+repository as an example:
+
+* Clone the repository
 
 ```sh
-git clone https://github.com/cashioapp/cashio
-cd cashio
-coderrect -t .
+mkdir -p workspace
+git clone https://github.com/solana-labs/example-helloworld.git workspace/example-helloworld
 ```
 
-To see a demo result, please visit [demo result](./demo/README.md) (this demo
-uses [jet-v1](https://github.com/jet-lab/jet-v1) as test target).
+* Run the analysis with `coderrect`:
+
+```sh
+coderrect workspace/example-helloworld
+```
+
+* Example Output
+
+```
+Analyzing /home/sec3/x-ray-toolchain/workspace/program-rust/workspace_program-rust.ll ...
+Detecting Vulnerabilities
+==============VULNERABLE: IntegerAddOverflow!============
+Found a potential vulnerability at line 43, column 29 in workspace/program-rust/src/lib.rs
+The add operation may result in overflows:
+ 37|        msg!("Greeted account does not have the correct program id");
+ 38|        return Err(ProgramError::IncorrectProgramId);
+ 39|    }
+ 40|
+ 41|    // Increment and store the number of times the account has been greeted
+ 42|    let mut greeting_account = GreetingAccount::try_from_slice(&account.data.borrow())?;
+>43|    greeting_account.counter += 1;
+ 44|    greeting_account.serialize(&mut &mut account.data.borrow_mut()[..])?;
+ 45|
+ 46|    msg!("Greeted {} time(s)!", greeting_account.counter);
+ 47|
+ 48|    Ok(())
+ 49|}
+>>>Stack Trace:
+>>>sol.process_instruction [workspace/program-rust/src/lib.rs:19]
+
+For more info, see https://medium.com/coinmonks/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts-9f3c9802dc45
+
+--------The summary of potential vulnerabilities in workspace_program-rust.ll--------
+
+         1 unsafe operation issues
+```
 
 ## Developer Guide
 
