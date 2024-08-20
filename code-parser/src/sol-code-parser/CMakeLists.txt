@@ -1,4 +1,4 @@
-if (ENABLE_BUILD_ANTLR)
+if(ENABLE_BUILD_ANTLR)
     set(ANTLR4CPP_JAR_LOCATION ${CMAKE_SOURCE_DIR}/external/antlr/antlr-4.13.1-complete.jar)
     LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
     # add external build for antlrcpp
@@ -20,6 +20,16 @@ else()
     set(ANTLR4CPP_PARSER_DIR ${CMAKE_SOURCE_DIR}/src/antlr-rust)
     include_directories(${ANTLR4CPP_PARSER_DIR})
 endif()
+
+include(FetchContent)
+
+FetchContent_Declare(
+    toml11
+    GIT_REPOSITORY https://github.com/ToruNiina/toml11.git
+    GIT_TAG v3.7.1
+)
+
+FetchContent_MakeAvailable(toml11)
 
 llvm_map_components_to_libnames(LLVM_LIBS
     bitwriter
@@ -55,8 +65,10 @@ add_library(SolCodeParser STATIC ${SOURCE_FILES})
 # external/antlr/antlr4cpp.
 target_compile_options(SolCodeParser PRIVATE -fexceptions)
 
-target_include_directories(SolCodeParser PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+target_include_directories(SolCodeParser
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        SYSTEM $<BUILD_INTERFACE:${toml11_SOURCE_DIR}>
 )
 
 get_property(DIALECT_LIBS GLOBAL PROPERTY MLIR_DIALECT_LIBS)

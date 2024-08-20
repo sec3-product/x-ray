@@ -98,7 +98,6 @@ include_directories(
 # Marking SYSTEM to suppress their warnings (e.g. `-Wsuggest-override`).
 include_directories(SYSTEM
     external/jsoncons/include
-    external/toml
 )
 
 add_subdirectory(src)
