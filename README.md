@@ -74,6 +74,9 @@ xray workspace/example-helloworld
 
 * Example Output
 
+X-Ray will report each detected potential vulnerability along with its code
+snippet. At the end of the output, X-Ray will provide a summary.
+
 ```
 Analyzing /home/sec3/x-ray-toolchain/workspace/program-rust/workspace_program-rust.ll ...
 Detecting Vulnerabilities

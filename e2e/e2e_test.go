@@ -20,82 +20,60 @@ const (
 	// The container uses `/workspace` as the working directory, where it
 	// writes the result files.
 	workspaceInContainer = "/workspace"
+	e2eAppDirName        = "e2e-app"
 )
 
 var (
-	// testAppDir indicates the path in relative to the test app (i.e.
+	// testAppDirDefault indicates the relative path to the test app (i.e.
 	// starting from the `e2e/` dir).
-	testAppDir = filepath.Join("..", "demo", "jet-v1")
+	testAppDirDefault = filepath.Join("..", "workspace", "dexterity")
 
 	// testAppResultJSON contains the expected result JSON for the test app
-	// (i.e. jet-v1). It contains a PREFIX placeholder that will be
+	// (i.e. dexterity). It contains a PREFIX placeholder that will be
 	// replaced with the actual path.
 	testAppResultJSON = `{
  "Executables": [
   {
-   "Name": "libraries_cpi.ll",
-   "RaceJSON": "PREFIX/.xray/build/raw_libraries_cpi.ll.json",
+   "Name": "e2e-app_dex.ll",
+   "RaceJSON": "PREFIX/.xray/build/raw_e2e-app_dex.ll.json",
+   "DataRaces": 63,
+   "RaceConditions": 0,
+   "NewBugs": true
+  },
+  {
+   "Name": "e2e-app_dummy-oracle.ll",
+   "RaceJSON": "PREFIX/.xray/build/raw_e2e-app_dummy-oracle.ll.json",
    "DataRaces": 0,
    "RaceConditions": 0,
    "NewBugs": false
   },
   {
-   "Name": "programs_jet.ll",
-   "RaceJSON": "PREFIX/.xray/build/raw_programs_jet.ll.json",
-   "DataRaces": 17,
-   "RaceConditions": 0,
-   "NewBugs": true
-  },
-  {
-   "Name": "programs_test-writer.ll",
-   "RaceJSON": "PREFIX/.xray/build/raw_programs_test-writer.ll.json",
+   "Name": "fees_constant-fees.ll",
+   "RaceJSON": "PREFIX/.xray/build/raw_fees_constant-fees.ll.json",
    "DataRaces": 1,
    "RaceConditions": 0,
    "NewBugs": true
   },
   {
-   "Name": "tools_cli.ll",
-   "RaceJSON": "PREFIX/.xray/build/raw_tools_cli.ll.json",
-   "DataRaces": 0,
-   "RaceConditions": 0,
-   "NewBugs": false
-  }
- ],
- "CoderrectVer": "Unknown"
-}`
-
-	// testAppAltResultJSON is an alternative result JSON that works around
-	// an issue where x-ray may give a slightly different result (in
-	// `programs_jet.ll` entry).
-	testAppAltResultJSON = `{
- "Executables": [
-  {
-   "Name": "libraries_cpi.ll",
-   "RaceJSON": "PREFIX/.xray/build/raw_libraries_cpi.ll.json",
-   "DataRaces": 0,
-   "RaceConditions": 0,
-   "NewBugs": false
-  },
-  {
-   "Name": "programs_jet.ll",
-   "RaceJSON": "PREFIX/.xray/build/raw_programs_jet.ll.json",
-   "DataRaces": 20,
+   "Name": "e2e-app_instruments.ll",
+   "RaceJSON": "PREFIX/.xray/build/raw_e2e-app_instruments.ll.json",
+   "DataRaces": 4,
    "RaceConditions": 0,
    "NewBugs": true
   },
   {
-   "Name": "programs_test-writer.ll",
-   "RaceJSON": "PREFIX/.xray/build/raw_programs_test-writer.ll.json",
-   "DataRaces": 1,
+   "Name": "risk_alpha-risk-engine.ll",
+   "RaceJSON": "PREFIX/.xray/build/raw_risk_alpha-risk-engine.ll.json",
+   "DataRaces": 5,
    "RaceConditions": 0,
    "NewBugs": true
   },
   {
-   "Name": "tools_cli.ll",
-   "RaceJSON": "PREFIX/.xray/build/raw_tools_cli.ll.json",
-   "DataRaces": 0,
+   "Name": "risk_noop-risk-engine.ll",
+   "RaceJSON": "PREFIX/.xray/build/raw_risk_noop-risk-engine.ll.json",
+   "DataRaces": 5,
    "RaceConditions": 0,
-   "NewBugs": false
+   "NewBugs": true
   }
  ],
  "CoderrectVer": "Unknown"
@@ -120,21 +98,22 @@ func TestContainerE2E(t *testing.T) {
 		workingDir = wd
 	}
 
-	e2eDir := prepareTestApp(t, workingDir, "e2e-app-container")
+	// Ignore the returned E2E app dir as we don't need it.
+	_ = prepareTestApp(t, workingDir)
 	cmd := exec.Command(
 		"docker", "run",
 		"--rm",
 		"--user", fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid()),
-		"--volume", fmt.Sprintf("%s:%s", e2eDir, workspaceInContainer),
+		"--volume", fmt.Sprintf("%s:%s", workingDir, workspaceInContainer),
 		imageName,
-		workspaceInContainer)
+		filepath.Join(workspaceInContainer, e2eAppDirName))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("Failed to analyze the test program: %v", err)
 	}
 
-	verifyResultJSON(t, e2eDir, workspaceInContainer)
+	verifyResultJSON(t, workingDir, workspaceInContainer)
 }
 
 func TestNativeE2E(t *testing.T) {
@@ -148,9 +127,13 @@ func TestNativeE2E(t *testing.T) {
 	if workingDir == "" {
 		t.Log("WORKING_DIR not set; will use temp dir")
 		workingDir = t.TempDir()
+	} else {
+		if !filepath.IsAbs(workingDir) {
+			t.Fatalf("WORKING_DIR must be an absolute path: %v", workingDir)
+		}
 	}
 
-	e2eDir := prepareTestApp(t, workingDir, "e2e-app-native")
+	e2eDir := prepareTestApp(t, workingDir)
 	cmd := exec.Command(execPath, e2eDir)
 	cmd.Dir = e2eDir
 	cmd.Stdout = os.Stdout
@@ -162,8 +145,8 @@ func TestNativeE2E(t *testing.T) {
 	verifyResultJSON(t, e2eDir, e2eDir)
 }
 
-func prepareTestApp(t *testing.T, workingDir, e2eDirSuffix string) string {
-	e2eDir := filepath.Join(workingDir, e2eDirSuffix)
+func prepareTestApp(t *testing.T, workingDir string) string {
+	e2eDir := filepath.Join(workingDir, e2eAppDirName)
 	t.Logf("E2E working directory: %v", e2eDir)
 
 	if _, err := os.Stat(e2eDir); err == nil {
@@ -173,8 +156,20 @@ func prepareTestApp(t *testing.T, workingDir, e2eDirSuffix string) string {
 			t.Fatalf("Failed to remove E2E working directory: %v", err)
 		}
 	}
-	if os.Getenv("KEEP_E2E") != "" {
-		t.Logf("KEEP_E2E set; will keep E2E working directory: %v", e2eDir)
+
+	testAppDir := os.Getenv("E2E_TEST_APP")
+	if testAppDir == "" {
+		testAppDir = testAppDirDefault
+	}
+	if _, err := os.Stat(testAppDir); err != nil {
+		t.Fatalf("Unable to access test app directory %q: %v", testAppDir, err)
+	}
+
+	if os.Getenv("E2E_KEEP") != "" {
+		if os.Getenv("WORKING_DIR") == "" {
+			t.Fatalf("Must define WORKING_DIR when E2E_KEEP is set")
+		}
+		t.Logf("E2E_KEEP set; will keep E2E working directory: %v", e2eDir)
 	} else {
 		t.Cleanup(func() {
 			_ = os.RemoveAll(e2eDir)
@@ -204,16 +199,7 @@ func verifyResultJSON(t *testing.T, pathOnHost, pathInTest string) {
 		t.Fatalf("Failed to compare result JSON files: %v", err)
 	}
 	if diff != "" {
-		// TODO: Work around an issue where x-ray may give a slightly
-		// different result.
-		want := strings.ReplaceAll(testAppAltResultJSON, "PREFIX", pathInTest)
-		altDiff, err := compareJSONs(resultJSON, []byte(want))
-		if err != nil {
-			t.Fatalf("Failed to compare alternative result JSON files: %v", err)
-		}
-		if altDiff != "" {
-			t.Errorf("Found unexpected results (-want,+got):\n%v", altDiff)
-		}
+		t.Errorf("Found unexpected results (-want,+got):\n%v", diff)
 	}
 }
 
