@@ -16,9 +16,10 @@ LLVM_PREBUILT_PATH ?= $(realpath $(BUILD_DIR)/llvm)
 X_RAY_IMAGE ?= x-ray:latest
 
 .PHONY: all build-x-ray build-cli install extract-llvm check-llvm \
-  build-analyzer build-parser \
-  build-container-image run-unit-tests run-container-e2e run-native-e2e \
+  build-analyzer build-parser build-container-image \
   build-llvm-prebuilt-image push-llvm-prebuilt-image \
+  run-unit-tests \
+  prepare-e2e-test run-container-e2e run-native-e2e \
   clean
 
 all: build-x-ray build-container-image
@@ -132,12 +133,20 @@ run-unit-tests:
 	@ctest --test-dir build/analyzer/test
 	@ctest --test-dir build/parser/test
 
-run-native-e2e:
+prepare-e2e-test:
+	@if [ ! -d "workspace/dexterity" ]; then \
+	  echo "Directory 'workspace/dexterity' not found. Cloning repository..."; \
+	  git clone --depth=1 https://github.com/solana-labs/dexterity.git workspace/dexterity; \
+	fi
+
+run-native-e2e: prepare-e2e-test
 	@PATH=$$(realpath ${INSTALL_DIR}/bin):$${PATH} \
+	  E2E_TEST_APP=$$(realpath workspace/dexterity/programs) \
 	  go test -v -run=TestNativeE2E -count=1 ./e2e/...
 
-run-container-e2e:
-	@WORKING_DIR=$(CURDIR)/e2e \
+run-container-e2e: prepare-e2e-test
+	@WORKING_DIR=$$(realpath workspace) \
 	  X_RAY_IMAGE=$(X_RAY_IMAGE) \
+	  E2E_TEST_APP=$$(realpath workspace/dexterity/programs) \
 	  go test -v -run=TestContainerE2E -count=1 ./e2e/...
 
