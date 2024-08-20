@@ -211,7 +211,7 @@ func internalInit(shortArgsMap map[string]string, useEnvCmdlineOpts bool) ([]str
 		return nil, err
 	}
 	if homeDir != "" {
-		confPath = filepath.Join(homeDir, "conf", "coderrect.json")
+		confPath = filepath.Join(homeDir, "conf", "xray.json")
 		if defaultConf, err = ioutil.ReadFile(confPath); err != nil {
 			return nil, err
 		}
@@ -220,14 +220,14 @@ func internalInit(shortArgsMap map[string]string, useEnvCmdlineOpts bool) ([]str
 	}
 
 	// load the config file under user's home directory
-	confPath = filepath.Join(os.Getenv("HOME"), ".coderrect.json")
+	confPath = filepath.Join(os.Getenv("HOME"), ".xray.json")
 	if homeConf, err = ioutil.ReadFile(confPath); err != nil {
 		// no home config
 		homeConf = []byte("{}")
 	}
 
 	// load the config file under current directory (project conf)
-	if projectConf, err = ioutil.ReadFile("coderrect.json"); err != nil {
+	if projectConf, err = ioutil.ReadFile("xray.json"); err != nil {
 		projectConf = []byte("{}")
 	}
 

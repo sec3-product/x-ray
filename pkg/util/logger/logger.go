@@ -189,11 +189,11 @@ func internalInit(component string, logRotation bool) (*log.Entry, error) {
 	if runtime.GOOS == "windows" {
 		if logFolder[1] != ':' {
 			// for local disk driver letter, c:\
-			logFolder = filepath.Join(cwd, ".coderrect", logFolder)
+			logFolder = filepath.Join(cwd, ".xray", logFolder)
 		}
 	} else {
 		if !strings.HasPrefix(logFolder, "/") {
-			logFolder = filepath.Join(cwd, ".coderrect", logFolder)
+			logFolder = filepath.Join(cwd, ".xray", logFolder)
 		}
 	}
 	_logFolder = logFolder

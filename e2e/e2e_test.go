@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	xrayExecutable   = "coderrect"
+	xrayExecutable   = "xray"
 	defaultImageName = "x-ray:latest"
 
 	// The container uses `/workspace` as the working directory, where it
@@ -34,28 +34,28 @@ var (
  "Executables": [
   {
    "Name": "libraries_cpi.ll",
-   "RaceJSON": "PREFIX/.coderrect/build/raw_libraries_cpi.ll.json",
+   "RaceJSON": "PREFIX/.xray/build/raw_libraries_cpi.ll.json",
    "DataRaces": 0,
    "RaceConditions": 0,
    "NewBugs": false
   },
   {
    "Name": "programs_jet.ll",
-   "RaceJSON": "PREFIX/.coderrect/build/raw_programs_jet.ll.json",
+   "RaceJSON": "PREFIX/.xray/build/raw_programs_jet.ll.json",
    "DataRaces": 17,
    "RaceConditions": 0,
    "NewBugs": true
   },
   {
    "Name": "programs_test-writer.ll",
-   "RaceJSON": "PREFIX/.coderrect/build/raw_programs_test-writer.ll.json",
+   "RaceJSON": "PREFIX/.xray/build/raw_programs_test-writer.ll.json",
    "DataRaces": 1,
    "RaceConditions": 0,
    "NewBugs": true
   },
   {
    "Name": "tools_cli.ll",
-   "RaceJSON": "PREFIX/.coderrect/build/raw_tools_cli.ll.json",
+   "RaceJSON": "PREFIX/.xray/build/raw_tools_cli.ll.json",
    "DataRaces": 0,
    "RaceConditions": 0,
    "NewBugs": false
@@ -71,28 +71,28 @@ var (
  "Executables": [
   {
    "Name": "libraries_cpi.ll",
-   "RaceJSON": "PREFIX/.coderrect/build/raw_libraries_cpi.ll.json",
+   "RaceJSON": "PREFIX/.xray/build/raw_libraries_cpi.ll.json",
    "DataRaces": 0,
    "RaceConditions": 0,
    "NewBugs": false
   },
   {
    "Name": "programs_jet.ll",
-   "RaceJSON": "PREFIX/.coderrect/build/raw_programs_jet.ll.json",
+   "RaceJSON": "PREFIX/.xray/build/raw_programs_jet.ll.json",
    "DataRaces": 20,
    "RaceConditions": 0,
    "NewBugs": true
   },
   {
    "Name": "programs_test-writer.ll",
-   "RaceJSON": "PREFIX/.coderrect/build/raw_programs_test-writer.ll.json",
+   "RaceJSON": "PREFIX/.xray/build/raw_programs_test-writer.ll.json",
    "DataRaces": 1,
    "RaceConditions": 0,
    "NewBugs": true
   },
   {
    "Name": "tools_cli.ll",
-   "RaceJSON": "PREFIX/.coderrect/build/raw_tools_cli.ll.json",
+   "RaceJSON": "PREFIX/.xray/build/raw_tools_cli.ll.json",
    "DataRaces": 0,
    "RaceConditions": 0,
    "NewBugs": false
@@ -189,7 +189,7 @@ func prepareTestApp(t *testing.T, workingDir, e2eDirSuffix string) string {
 }
 
 func verifyResultJSON(t *testing.T, pathOnHost, pathInTest string) {
-	path := filepath.Join(pathOnHost, ".coderrect", "build", "index.json")
+	path := filepath.Join(pathOnHost, ".xray", "build", "index.json")
 	if _, err := os.Stat(path); err != nil {
 		t.Fatalf("Failed to stat result JSON at %v", path)
 	}

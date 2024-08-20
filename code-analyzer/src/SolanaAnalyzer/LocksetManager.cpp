@@ -141,7 +141,7 @@ std::string LocksetManager::findLockStr(const llvm::Instruction *I,
     if (func) {
       // llvm::outs() << "lock/unlock func name: " << func->getName() << "\n";
       // after lock/unlock API rewriting, we should not rely on the inst anymore
-      if (func->getName().startswith(".coderrect.")) {
+      if (func->getName().startswith(".xray.")) {
         if (DEBUG_LOCK_STR) {
           if (lockPtr == nullptr)
             llvm::outs() << "lockPtr is null.. inst: " << *I << "\n";

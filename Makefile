@@ -67,7 +67,7 @@ build-parser: check-llvm
 build-cli:
 	@echo "Building X-Ray CLI..."
 	@mkdir -p $(BUILD_DIR)/cli/bin
-	@go build -o $(BUILD_DIR)/cli/bin/coderrect cmd/coderrect/main.go
+	@go build -o $(BUILD_DIR)/cli/bin/xray cmd/cli/main.go
 	@go build -o $(BUILD_DIR)/cli/bin/reporter cmd/reporter/main.go
 
 install:
@@ -81,7 +81,7 @@ install:
 	@cp $(BUILD_DIR)/parser/bin/sol-code-parser $(INSTALL_DIR)/bin/
 	@cp $(BUILD_DIR)/cli/bin/* $(INSTALL_DIR)/bin/
 	@cp $(LLVM_PREBUILT_PATH)/lib/libomp.so $(INSTALL_DIR)/bin/
-	@cp package/conf/coderrect.json $(INSTALL_DIR)/conf/
+	@cp package/conf/xray.json $(INSTALL_DIR)/conf/
 	@cp package/data/reporter/*.html $(INSTALL_DIR)/data/reporter/
 	@cp package/data/reporter/artifacts/coderrect* $(INSTALL_DIR)/data/reporter/artifacts/
 	@cp package/data/reporter/artifacts/images/* $(INSTALL_DIR)/data/reporter/artifacts/images/

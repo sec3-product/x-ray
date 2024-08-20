@@ -113,8 +113,8 @@ func exitGracefully(exitCode int, tmpDir string) {
 
 /**
  *
- * It checks index.json under $cwd/.coderrect/build/index.json. It returns 0
- * if .coderrect/build/index.json doesn't exist or none of executables tracked by
+ * It checks index.json under $cwd/.xray/build/index.json. It returns 0
+ * if .xray/build/index.json doesn't exist or none of executables tracked by
  * index.json has races. Otherwise, it returns 1.
  *
  * Panic if there are other errors.
@@ -404,7 +404,7 @@ func main() {
 	version := getPackageVersion()
 
 	logger.Infof("Start a new session. version=%s, args=%v", version, os.Args)
-	os.Stdout.WriteString(fmt.Sprintf("Coderrect %s\n", version))
+	os.Stdout.WriteString(fmt.Sprintf("X-Ray %s\n", version))
 
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -413,7 +413,7 @@ func main() {
 
 	// create the coderrect working directory
 	fi, _ := os.Stat(cwd)
-	coderrectWorkingDir := filepath.Join(cwd, ".coderrect")
+	coderrectWorkingDir := filepath.Join(cwd, ".xray")
 
 	// create the build directory
 	cleanBuild := conflib.GetBool("cleanBuild", false)
@@ -544,7 +544,7 @@ func main() {
 				reportDir := conflib.GetString("publish.src", "")
 				if reportDir == "" {
 					// use default report path if `publish.src` is not specified
-					reportDir = filepath.Join(cwd, ".coderrect", "report")
+					reportDir = filepath.Join(cwd, ".xray", "report")
 				}
 
 				url := reporter.PublishReport(reportDir, host)
@@ -608,9 +608,9 @@ func main() {
 	// Assume the user picks up 3 binaries "prog1", "prog2", and "prog3". The code below
 	// runs sol-code-analyzer against them one by one. For each binary, we
 	// generate a json file containing race data. For example, we genarete
-	// prog1.json for "prog1" under .coderrect/build.
+	// prog1.json for "prog1" under .xray/build.
 	//
-	// We also generate index.json under .coderrect/build. Below is an example
+	// We also generate index.json under .xray/build. Below is an example
 	//
 	// {
 	//   "Executables": [
@@ -716,7 +716,8 @@ func main() {
 			panicGracefully(fmt.Sprintf("Failed to parse the BC file. cmdline=%s %s", analyzer, cmdArgument), err, tmpDir)
 		}
 
-		//For each executable, generate raw_$executable.json under .coderrect/build
+		// For each executable, generate raw_$executable.json under
+		// .xray/build.
 		raceJsonBytes, err := ioutil.ReadFile(tmpJsonPath)
 		if err != nil {
 			panicGracefully("Unable to read json file", err, tmpDir)

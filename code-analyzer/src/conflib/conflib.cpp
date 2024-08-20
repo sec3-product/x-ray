@@ -16,8 +16,8 @@ static const std::string OS_PATHSEP_("\\");
 static const std::string OS_PATHSEP_("/");
 #endif
 
-static const std::string DEFAULT_CONFIGURATION_NAME_ = "coderrect.json";
-static const std::string HOME_CONFIGURATION_PATH_ = "~/.coderrect.json";
+static const std::string DEFAULT_CONFIGURATION_NAME_ = "xray.json";
+static const std::string HOME_CONFIGURATION_PATH_ = "~/.xray.json";
 static const std::string ENV_INSTALLATION_DIRECTORY_ = "CODERRECT_HOME";
 
 //
@@ -357,7 +357,7 @@ Initialize(const std::map<std::string, std::string> &short_args_map,
   LoadConfFile_(HOME_CONFIGURATION_PATH_, true);
 
   // load the project configuration file
-  LoadConfFile_("./coderrect.json", true);
+  LoadConfFile_("./xray.json", true);
 
   // load the custom configuration file
   conf_path = "";

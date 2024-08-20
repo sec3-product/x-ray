@@ -26,7 +26,7 @@ func WriteIndexJSON(indexInfo IndexInfo, buildDir string) {
 func ReadIndexJSON(indexInfo *IndexInfo, rawJSONDir string) int {
 	var indexJSONPath string
 	if rawJSONDir == "" {
-		indexJSONPath = filepath.Join(".coderrect", "build", "index.json")
+		indexJSONPath = filepath.Join(".xray", "build", "index.json")
 	} else {
 		indexJSONPath = filepath.Join(rawJSONDir, "index.json")
 	}

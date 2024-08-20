@@ -19,7 +19,8 @@ TBA
 
 ### Supported Solana Bug Pattern List
 
-The supported bug pattern list for Solana contract is saved in [coderrect.json](./coderrect/package/conf/coderrect.json). The format is as below:
+The supported bug pattern list for Solana contract is saved in
+[xray.json](./xray/package/conf/xray.json). The format is as below:
 
 ```
 "10001": {
@@ -50,7 +51,7 @@ instructions.
 
 ### Start a scan
 
-To scan a target repository, simply clone it and run `coderrect` from the
+To scan a target repository, simply clone it and run `xray` from the
 project's root directory -- there's no need to locate the specific source code
 files.
 
@@ -65,10 +66,10 @@ mkdir -p workspace
 git clone https://github.com/solana-labs/example-helloworld.git workspace/example-helloworld
 ```
 
-* Run the analysis with `coderrect`:
+* Run the analysis with `xray`:
 
 ```sh
-coderrect workspace/example-helloworld
+xray workspace/example-helloworld
 ```
 
 * Example Output

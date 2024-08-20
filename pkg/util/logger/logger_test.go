@@ -21,7 +21,7 @@ func TestGetLogList(t *testing.T) {
 	if err != nil {
 		t.Errorf("Getwd() failed. err=%v", err)
 	}
-	logFolder := fmt.Sprintf("%s/.coderrect/logs", cwd)
+	logFolder := fmt.Sprintf("%s/.xray/logs", cwd)
 
 	if dirExists(logFolder) {
 		if err := os.RemoveAll(logFolder); err != nil {
@@ -86,7 +86,7 @@ func TestRotateLogWhenRotateOne(t *testing.T) {
 	if err != nil {
 		t.Errorf("Getwd() failed. err=%v", err)
 	}
-	logFolder := fmt.Sprintf("%s/.coderrect/logs", cwd)
+	logFolder := fmt.Sprintf("%s/.xray/logs", cwd)
 
 	createBigFile(logFolder+"/log.current", 2*1024*1024)
 	if err := rotateLogs(logFolder, 2, 1*1024*1024); err != nil {
@@ -105,7 +105,7 @@ func TestRotateLogWhenThereTwoFile(t *testing.T) {
 	if err != nil {
 		t.Errorf("Getwd() failed. err=%v", err)
 	}
-	logFolder := fmt.Sprintf("%s/.coderrect/logs", cwd)
+	logFolder := fmt.Sprintf("%s/.xray/logs", cwd)
 
 	if dirExists(logFolder) {
 		if err := os.RemoveAll(logFolder); err != nil {
@@ -137,7 +137,7 @@ func TestRotateLogs(t *testing.T) {
 	if err != nil {
 		t.Errorf("Getwd() failed. err=%v", err)
 	}
-	logFolder := fmt.Sprintf("%s/.coderrect/logs", cwd)
+	logFolder := fmt.Sprintf("%s/.xray/logs", cwd)
 
 	if dirExists(logFolder) {
 		if err := os.RemoveAll(logFolder); err != nil {
