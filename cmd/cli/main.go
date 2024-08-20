@@ -776,10 +776,10 @@ func main() {
 	cmd = exec.Command(reporterBin, outputDir, coderrectBuildDir)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	var exitCode int
 	if err = cmd.Run(); err != nil {
 		cmdline = fmt.Sprintf("%s %s %s", reporterBin, outputDir, coderrectBuildDir)
 		// try to get the exit code
+		var exitCode int
 		if exitError, ok := err.(*exec.ExitError); ok {
 			ws := exitError.Sys().(syscall.WaitStatus)
 			exitCode = ws.ExitStatus()
@@ -787,8 +787,6 @@ func main() {
 		if exitCode < 9 {
 			panicGracefully(fmt.Sprintf("Failed to parse race detection result. cmdline=%s", cmdline), err, tmpDir)
 		}
-	} else {
-		exitCode = 0
 	}
 
 	for i := 0; i < len(rawJsonPathList); i++ {
@@ -797,6 +795,4 @@ func main() {
 	os.RemoveAll(tmpDir)
 
 	logger.Infof("End the session")
-	//fmt.Println("Exit code: ", exitCode)
-	os.Exit(exitCode)
 }
