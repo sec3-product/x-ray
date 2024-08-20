@@ -76,4 +76,4 @@ RUN apt-get update \
 
 WORKDIR /workspace
 ENV PATH=/usr/local/sec3/bin:$PATH
-ENTRYPOINT ["coderrect"]
+ENTRYPOINT ["xray"]
