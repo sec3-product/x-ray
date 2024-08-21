@@ -252,26 +252,6 @@ func GenerateReport(rawJSONDir string) error {
 		indexInfo.CoderrectVer, _ = getPackageVersion()
 	}
 
-	// --- Filter races
-	// the executableList will maintain a summary of filtered race report for later display
-	var executableList []ReportInfo
-	var executablesWithNoRace []string
-	for i := 0; i < len(indexInfo.Executables); i++ {
-		executable := indexInfo.Executables[i]
-		if executable.DataRaces == 0 && executable.RaceConditions == 0 {
-			executablesWithNoRace = append(executablesWithNoRace, executable.Name)
-			continue
-		}
-		switch num := Rewrite(executable.RaceJSON); num {
-		case 0:
-			executablesWithNoRace = append(executablesWithNoRace, executable.Name)
-		case -1:
-			num = executable.DataRaces + executable.RaceConditions
-		default:
-			executableList = append(executableList, ReportInfo{executable.Name, num})
-		}
-	}
-
 	// --- Generate report for each executable
 	// For each executable with races, we create a report
 	for i := 0; i < len(indexInfo.Executables); i++ {
@@ -285,7 +265,7 @@ func GenerateReport(rawJSONDir string) error {
 	// update index.json with the information "if any new race was found"
 	WriteIndexJSON(indexInfo, rawJSONDir)
 
-	logger.Infof("Reporter exit gracefully")
+	logger.Infof("Reporter exits gracefully")
 
 	return nil
 }
