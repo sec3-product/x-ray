@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -12,8 +11,6 @@ import (
 
 	"github.com/buger/jsonparser"
 )
-
-const _ENV_INSTALLATION_DIRECTORY = "CODERRECT_HOME"
 
 var defaultConf []byte
 var homeConf []byte
@@ -126,7 +123,7 @@ func parseCmdlineArgs(shortArgsMap map[string]string, useEnvCmdlineOpts bool) ([
 			if useEnvCmdlineOpts {
 				confPath := strings.Split(arg, "=")[1]
 				if len(confPath) > 0 {
-					if customConf, err = ioutil.ReadFile(confPath); err != nil {
+					if customConf, err = os.ReadFile(confPath); err != nil {
 						panic(err)
 					}
 				}
@@ -212,7 +209,7 @@ func internalInit(shortArgsMap map[string]string, useEnvCmdlineOpts bool) ([]str
 	}
 	if homeDir != "" {
 		confPath = filepath.Join(homeDir, "conf", "xray.json")
-		if defaultConf, err = ioutil.ReadFile(confPath); err != nil {
+		if defaultConf, err = os.ReadFile(confPath); err != nil {
 			return nil, err
 		}
 	} else {
@@ -221,13 +218,13 @@ func internalInit(shortArgsMap map[string]string, useEnvCmdlineOpts bool) ([]str
 
 	// load the config file under user's home directory
 	confPath = filepath.Join(os.Getenv("HOME"), ".xray.json")
-	if homeConf, err = ioutil.ReadFile(confPath); err != nil {
+	if homeConf, err = os.ReadFile(confPath); err != nil {
 		// no home config
 		homeConf = []byte("{}")
 	}
 
 	// load the config file under current directory (project conf)
-	if projectConf, err = ioutil.ReadFile("xray.json"); err != nil {
+	if projectConf, err = os.ReadFile("xray.json"); err != nil {
 		projectConf = []byte("{}")
 	}
 
@@ -236,7 +233,7 @@ func internalInit(shortArgsMap map[string]string, useEnvCmdlineOpts bool) ([]str
 		return nil, err
 	}
 	if len(confPath) > 0 {
-		if customConf, err = ioutil.ReadFile(confPath); err != nil {
+		if customConf, err = os.ReadFile(confPath); err != nil {
 			return nil, err
 		}
 	} else {

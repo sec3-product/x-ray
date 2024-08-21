@@ -4,9 +4,7 @@ go 1.22
 
 require (
 	github.com/buger/jsonparser v1.1.1
-	github.com/gobwas/glob v0.2.3
 	github.com/google/go-cmp v0.5.5
-	github.com/google/uuid v1.6.0
 	github.com/gookit/color v1.5.4
 	github.com/otiai10/copy v1.14.0
 	github.com/pelletier/go-toml v1.9.5

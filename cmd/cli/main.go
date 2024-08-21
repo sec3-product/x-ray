@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -16,10 +16,8 @@ import (
 	toml "github.com/pelletier/go-toml"
 
 	"github.com/coderrect-inc/coderrect/pkg/reporter"
-	"github.com/coderrect-inc/coderrect/pkg/util"
 	"github.com/coderrect-inc/coderrect/pkg/util/conflib"
 	"github.com/coderrect-inc/coderrect/pkg/util/logger"
-	"github.com/coderrect-inc/coderrect/pkg/util/platform"
 )
 
 const (
@@ -27,7 +25,7 @@ const (
 )
 
 var usage = `
-usage: soteria [option]... <your build command line>
+usage: xray [option]... <your build command line>
 
 Options:
   -h, -help
@@ -44,26 +42,6 @@ Options:
 
   -e <executable1,executable2,...>, -analyzeBinaries=<executable1,executable2,...>
 		Specify a list of executable names you want to analyze.
-
-  -t, -report.enableTerminal
-		Generate the terminal-based report.
-
-  -c, -cleanBuild
-		Delete all intermediate files.
-
-  -plan=free|build|scale
-		Specify the plan. "free" analyzes a subset of vulnerabilities;
-		"scale" aims to all vulnerabilities; and the default plan "build"
-		tries to detect all vulnerabilities while balancing speed and accuracy.
-
-  -mode=fast|normal|exhaust
-        Specify the detection mode. "fast" prefers analyzing speed;
-        "exhaust" prefers the accuracy; and the default mode "normal"
-        tries to achieve a balance between speed and accuracy.
-
-  -continueIfBuildErrorPresents
-        By default, soteria terminates immediately when build encounters
-        errors. This flag lets soteria continue the vulnerability detection.
 
 Examples:
 
@@ -96,13 +74,14 @@ func normalizeCmdlineArg(arg string) string {
 
 func panicGracefully(msg string, err error, tmpDir string) {
 	logger.Errorf("%s err=%v", msg, err)
-	//os.Stderr.WriteString(fmt.Sprintf("%v\n", err))
 	exitGracefully(1, tmpDir)
 }
 
 func exitGracefully(exitCode int, tmpDir string) {
-	if len(tmpDir) > 0 && util.FileExists(tmpDir) {
-		os.RemoveAll(tmpDir)
+	if len(tmpDir) > 0 {
+		if _, err := os.Stat(tmpDir); err == nil {
+			os.RemoveAll(tmpDir)
+		}
 	}
 
 	logger.Infof("End of the session. exitCode=%d", exitCode)
@@ -147,7 +126,7 @@ func addOrReplaceCommandline(jsonOptStr string, key string, value string) string
 func getPackageVersion() string {
 	coderrectHome, _ := conflib.GetCoderrectHome()
 	versionFilepath := path.Join(coderrectHome, "VERSION")
-	if buf, err := ioutil.ReadFile(versionFilepath); err != nil {
+	if buf, err := os.ReadFile(versionFilepath); err != nil {
 		return "Unknown"
 	} else {
 		versionStr := string(buf)
@@ -171,7 +150,7 @@ func findAllXargoTomlDirectory(rootPath string) []string {
 
 		if strings.HasSuffix(path, "soteria.ignore") || strings.HasSuffix(path, "sec3.ignore") {
 			// ignorePaths
-			bytesRead, _ := ioutil.ReadFile(path)
+			bytesRead, _ := os.ReadFile(path)
 			file_content := string(bytesRead)
 			lines := strings.Split(file_content, "\n")
 			for _, line := range lines {
@@ -287,7 +266,7 @@ func generateSolanaIR(args []string, srcFilePath string, tmpDir string) string {
 	}
 
 	cmdline = "(" + cmdline + ")"
-	cmd := platform.Command(cmdline)
+	cmd := exec.Command("bash", "-c", cmdline)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	if err := cmd.Run(); err != nil {
@@ -304,13 +283,9 @@ func main() {
 	}
 
 	argAlias := map[string]string{
-		"v":  "version",
-		"h":  "help",
-		"o":  "report.outputDir",
-		"e":  "analyzeBinaries",
-		"p":  "bcPaths",
-		"t:": "report.enableTerminal",
-		"c:": "cleanBuild",
+		"v": "version",
+		"h": "help",
+		"o": "report.outputDir",
 	}
 
 	remainingArgs, err := conflib.Initialize(argAlias)
@@ -326,7 +301,7 @@ func main() {
 
 	// show versions of all components
 	if conflib.GetBool("version", false) || conflib.GetBool("-version", false) {
-		version, err := ioutil.ReadFile(filepath.Join(coderrectHome, "VERSION"))
+		version, err := os.ReadFile(filepath.Join(coderrectHome, "VERSION"))
 		if err != nil {
 			fmt.Printf("Unable to read %s/VERSION - %v\n", coderrectHome, err)
 			os.Exit(3)
@@ -338,7 +313,7 @@ func main() {
 
 	// show usage info
 	if conflib.GetBool("help", false) || conflib.GetBool("-help", false) {
-		fmt.Printf("%s\n", usage)
+		fmt.Println(usage)
 		os.Exit(0)
 	}
 
@@ -356,21 +331,27 @@ func main() {
 	version := getPackageVersion()
 
 	logger.Infof("Start a new session. version=%s, args=%v", version, os.Args)
-	os.Stdout.WriteString(fmt.Sprintf("X-Ray %s\n", version))
+	fmt.Printf("X-Ray %s\n", version)
 
 	cwd, err := os.Getwd()
 	if err != nil {
 		panicGracefully("Failed to obtain the current working directory", err, "")
 	}
-
-	// create the coderrect working directory
-	fi, _ := os.Stat(cwd)
+	// Create the xray working directory.
+	fi, err := os.Stat(cwd)
+	if err != nil {
+		panicGracefully("Failed to stat the current working directory", err, "")
+	}
 	coderrectWorkingDir := filepath.Join(cwd, ".xray")
 
 	// create the build directory
-	cleanBuild := conflib.GetBool("cleanBuild", false)
-	logger.Infof("Check cleanBuild flag. cleanBuild=%v", cleanBuild)
 	coderrectBuildDir := filepath.Join(coderrectWorkingDir, "build")
+	if _, err := os.Stat(coderrectBuildDir); os.IsNotExist(err) {
+		logger.Infof("Create the build directory. dir=%s", coderrectBuildDir)
+		if err := os.Mkdir(coderrectBuildDir, fi.Mode()); err != nil {
+			panicGracefully("Failed to create build directory.", err, "")
+		}
+	}
 
 	// set the following environment variables
 	//   - PATH - make sure coderrect_home/bin in the front of other folders
@@ -382,93 +363,27 @@ func main() {
 	//                       as the key (or part of the key) to retrieve diskv db
 	//   - CODERRECT_CMDLINE_OPTS - command-line opts passed to child components
 
-	os.Setenv("CODERRECT_HOME", coderrectHome)
-	os.Setenv("PATH", filepath.Join(coderrectHome, "bin")+":"+os.Getenv("PATH"))
-
 	// Because of COD-1456, tmp directory for analyzer have to create
 	token := fmt.Sprintf("%d", time.Now().Unix())
 	tmpDir := filepath.Join(coderrectWorkingDir, "tmp", "coderrect-"+token)
 	os.Setenv("CODERRECT_TMPDIR", tmpDir)
-	if _, serr := os.Stat(tmpDir); serr != nil {
-		merr := os.MkdirAll(tmpDir, os.ModePerm)
-		if merr != nil {
-			panicGracefully("Failed to create tmp directory", merr, "")
-		}
+	if merr := os.MkdirAll(tmpDir, os.ModePerm); merr != nil {
+		panicGracefully("Failed to create tmp directory", merr, "")
 	}
 
+	os.Setenv("CODERRECT_HOME", coderrectHome)
 	os.Setenv("CODERRECT_TOKEN", token)
 	os.Setenv("CODERRECT_BUILD_DIR", coderrectBuildDir)
 	os.Setenv("CODERRECT_CWD", coderrectWorkingDir)
 
-	bcPaths := conflib.GetString("bcPaths", "")
-	if len(bcPaths) > 0 {
-		os.Setenv("CODERRECT_BC_PATHS", bcPaths)
-	}
-
-	// Per COD-665, we add (or replace) "-logger.logFolder" in the cmdline opts
-	//
-	cmdlineOpts := addOrReplaceCommandline(conflib.GetCmdlineOpts(), "logger.logFolder", logger.GetLogFolder())
-	if customConfigPath := conflib.GetString("conf", ""); len(customConfigPath) > 0 {
-		// cod1974, replace relative path to abs, and pass to next
-		customConfigPath, _ = filepath.Abs(customConfigPath)
-		cmdlineOpts = addOrReplaceCommandline(cmdlineOpts, "conf", customConfigPath)
-	}
-
+	// Per COD-665, we add (or replace) "-logger.logFolder" in the cmdline
+	// opts.
+	cmdlineOpts := addOrReplaceCommandline(
+		conflib.GetCmdlineOpts(), "logger.logFolder", logger.GetLogFolder())
 	cmdlineOpts = addOrReplaceCommandline(cmdlineOpts, "cwd", cwd)
 
 	os.Setenv("CODERRECT_CMDLINE_OPTS", cmdlineOpts)
 	logger.Infof("Passed cmdline args via env. cmdlineOpts=%v", os.Getenv("CODERRECT_CMDLINE_OPTS"))
-
-	homeBinDirPath := filepath.Join(coderrectHome, "bin")
-	os.Setenv("CODERRECT_CLANG", filepath.Join(homeBinDirPath, "coderrect-clang"))
-	os.Setenv("CODERRECT_CLANGXX", filepath.Join(homeBinDirPath, "coderrect-clang++"))
-	os.Setenv("CODERRECT_AR", filepath.Join(homeBinDirPath, "coderrect-ar"))
-	os.Setenv("CODERRECT_LD", filepath.Join(homeBinDirPath, "coderrect-ld"))
-	os.Setenv("CODERRECT_FORTRAN", filepath.Join(homeBinDirPath, "coderrect-fortran"))
-	os.Setenv("CODERRECT_CP", filepath.Join(homeBinDirPath, "coderrect-cp"))
-
-	/**
-	 * there are list of environment variables used by gllvm.compiler.go
-	 *
-	 * envpath    = "LLVM_COMPILER_PATH"
-	 * envcc      = "LLVM_CC_NAME"
-	 * envcxx     = "LLVM_CXX_NAME"
-	 * envar      = "LLVM_AR_NAME"
-	 * envlnk     = "LLVM_LINK_NAME"
-	 */
-	clangBinDirPath := filepath.Join(coderrectHome, "clang", "bin")
-	os.Setenv("LLVM_COMPILER_PATH", clangBinDirPath)
-	os.Setenv("LLVM_CC_NAME", filepath.Join(clangBinDirPath, "clang"))
-	os.Setenv("LLVM_CXX_NAME", filepath.Join(clangBinDirPath, "clang++"))
-	os.Setenv("LLVM_LINK_NAME", filepath.Join(clangBinDirPath, "llvm-link"))
-	os.Setenv("LLVM_CL_NAME", filepath.Join(clangBinDirPath, "clang-cl"))
-	os.Setenv("LLD_LINK_NAME", filepath.Join(clangBinDirPath, "lld-link"))
-
-	os.Setenv("LLVM_FORTRAN_COMPILER_PATH", filepath.Join(coderrectHome, "fortran", "bin"))
-	os.Setenv("LLVM_FORTRAN_NAME", filepath.Join(clangBinDirPath, "flang"))
-	os.Setenv("FORTRAN_LLVM_LINK_NAME", filepath.Join(clangBinDirPath, "llvm-link"))
-
-	if !util.FileExists(coderrectWorkingDir) {
-		if err = os.Mkdir(coderrectWorkingDir, fi.Mode()); err != nil {
-			panicGracefully("Failed to create the working directory.", err, "")
-		}
-	}
-
-	if util.FileExists(coderrectBuildDir) {
-		if cleanBuild {
-			logger.Infof("Delete the build directory. dir=%s", coderrectBuildDir)
-			if err := os.RemoveAll(coderrectBuildDir); err != nil {
-				panicGracefully("Failed to delete old build directory.", err, "")
-			}
-		}
-	}
-
-	if !util.FileExists(coderrectBuildDir) {
-		logger.Infof("Create the build directory. dir=%s", coderrectBuildDir)
-		if err = os.Mkdir(coderrectBuildDir, fi.Mode()); err != nil {
-			panicGracefully("Failed to create build directory.", err, "")
-		}
-	}
 
 	var executablePathList []string
 
@@ -520,7 +435,6 @@ func main() {
 	var rawJsonPathList []string
 
 	var executableInfoList []ExecutableInfo
-	totalRaceCnt := 0
 	time_start := time.Now()
 	timeout, _ := time.ParseDuration(conflib.GetString("timeout", "8h"))
 
@@ -535,8 +449,12 @@ func main() {
 		}
 
 		bcFile, _ := filepath.Abs(directBCFile)
-		if bcFile == "" || !util.FileExists(bcFile) {
-			continue // skip if BC file does not exist
+		// skip if BC file does not exist
+		if bcFile == "" {
+			continue
+		}
+		if _, err := os.Stat(bcFile); os.IsNotExist(err) {
+			continue
 		}
 		logger.Infof("Analyzing BC file to detect races. bcFile=%s.bc", bcFile)
 
@@ -547,36 +465,6 @@ func main() {
 		tmpJsonPath := filepath.Join(tmpDir, fmt.Sprintf("coderrect_%s_report.json", executableName))
 		logger.Infof("Generating the json file. jsonPath=%s", tmpJsonPath)
 		analyzer := filepath.Join(coderrectHome, "bin", "sol-code-analyzer")
-		detectModeFlag := ""
-		switch mode := conflib.GetString("mode", "normal"); mode {
-		case "fast":
-			detectModeFlag = "--fast"
-		case "exhaust":
-			detectModeFlag = "--full"
-		case "normal":
-			detectModeFlag = ""
-		default:
-			if len(mode) != 0 {
-				fmt.Println("Unrecognized mode - " + mode)
-				os.Exit(1)
-			}
-		}
-
-		detectPlanFlag := ""
-		switch plan := strings.ToLower(conflib.GetString("plan", "build")); plan {
-		case "free":
-			detectPlanFlag = "-plan=free"
-		case "build":
-			detectPlanFlag = ""
-		case "scale":
-			detectPlanFlag = "-plan=scale"
-		default:
-			if len(plan) != 0 {
-				fmt.Println("Unrecognized plan - " + plan)
-				os.Exit(1)
-			}
-		}
-		//fmt.Println("detectPlanFlag:", detectPlanFlag)
 
 		noprogress := conflib.GetBool("noprogress", false)
 		displayFlag := ""
@@ -585,12 +473,6 @@ func main() {
 		}
 
 		var cmdArgument []string
-		if len(detectModeFlag) > 0 {
-			cmdArgument = append(cmdArgument, detectModeFlag)
-		}
-		if len(detectPlanFlag) > 0 {
-			cmdArgument = append(cmdArgument, detectPlanFlag)
-		}
 		if len(displayFlag) > 0 {
 			cmdArgument = append(cmdArgument, displayFlag)
 		}
@@ -601,7 +483,7 @@ func main() {
 			cmdline = cmdline + normalizeCmdlineArg(s) + " "
 		}
 		cmdline = "(" + cmdline + ")"
-		cmd := platform.Command(cmdline)
+		cmd := exec.Command("bash", "-c", cmdline)
 		cmd.Stderr = os.Stderr
 		cmd.Stdout = os.Stdout
 		if err := cmd.Run(); err != nil {
@@ -610,33 +492,29 @@ func main() {
 
 		// For each executable, generate raw_$executable.json under
 		// .xray/build.
-		raceJsonBytes, err := ioutil.ReadFile(tmpJsonPath)
+		raceJsonBytes, err := os.ReadFile(tmpJsonPath)
 		if err != nil {
 			panicGracefully("Unable to read json file", err, tmpDir)
 		}
 		// copy the raw json file to build
 		rawJsonPath := filepath.Join(coderrectBuildDir, fmt.Sprintf("raw_%s.json", executableName))
-		ioutil.WriteFile(rawJsonPath, raceJsonBytes, fi.Mode())
+		os.WriteFile(rawJsonPath, raceJsonBytes, fi.Mode())
 		executableInfo.RaceJSON = rawJsonPath
 
 		//check number of race detected
 		currentRaces := 0
-		// FIXME: below is the fully list of bugs we can detect
-		// not reporting deadlocks and OV because they are not production ready
-		// raceTypes := []string{"dataRaces", "deadLocks", "mismatchedAPIs", "orderViolations", "toctou"}
-		raceTypes := []string{"dataRaces", "raceConditions", "mismatchedAPIs", "toctou", "untrustfulAccounts", "unsafeOperations", "cosplayAccounts"}
+		raceTypes := []string{"untrustfulAccounts", "unsafeOperations", "cosplayAccounts"}
 		for _, raceType := range raceTypes {
 			jsonparser.ArrayEach(raceJsonBytes, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-				totalRaceCnt++
 				currentRaces++
 			}, raceType)
 		}
 		executableInfo.DataRaces = currentRaces
 		executableInfo.NewBugs = false
 		executableInfoList = append(executableInfoList, executableInfo)
+
 		time_duration := time.Since(time_start)
 		if time_duration > timeout {
-			//fmt.Printf("Taking so far %s\n", time_duration)
 			fmt.Printf("Timeout (exceeded %v), skipping the rest %v executables\n", timeout, (len(executablePathList) - i))
 			break
 		}
@@ -646,22 +524,22 @@ func main() {
 	// reset the color of terminal
 	color.Reset()
 
-	// Generate index.json
+	// Generate results in index.json.
 	indexInfo := IndexInfo{
 		Executables:  executableInfoList,
 		CoderrectVer: version,
 	}
 	reporter.WriteIndexJSON(indexInfo, coderrectBuildDir)
 
-	// create a configuration.json file which contains all configurations
+	// Dump used configurations.
 	configRawString := []byte(conflib.Dump())
 	configJSONPath := filepath.Join(coderrectBuildDir, "configuration.json")
-	if err = ioutil.WriteFile(configJSONPath, configRawString, fi.Mode()); err != nil {
+	if err := os.WriteFile(configJSONPath, configRawString, fi.Mode()); err != nil {
 		logger.Errorf("Fail to create configuration.json. err=%v", err)
 		panicGracefully("Failed to create configuration.json", err, tmpDir)
 	}
 
-	// Step 4. call reporter to generate the report if there are races
+	// Step 4. Generate the report.
 	if err := reporter.GenerateReport(coderrectBuildDir); err != nil {
 		panicGracefully("Failed to generate report", err, tmpDir)
 	}

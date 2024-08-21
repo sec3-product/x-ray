@@ -262,18 +262,14 @@ func GenerateReport(rawJSONDir string) error {
 			executablesWithNoRace = append(executablesWithNoRace, executable.Name)
 			continue
 		}
-		// Use filters defined in config file to rewrite the raw race JSON
-		rawRaceJSONPath := executable.RaceJSON
-		filterDef := conflib.GetStrings("report.filters")
-		num := Rewrite(rawRaceJSONPath, filterDef)
-		if num == 0 {
+		switch num := Rewrite(executable.RaceJSON); num {
+		case 0:
 			executablesWithNoRace = append(executablesWithNoRace, executable.Name)
-			continue
-		}
-		if num == -1 {
+		case -1:
 			num = executable.DataRaces + executable.RaceConditions
+		default:
+			executableList = append(executableList, ReportInfo{executable.Name, num})
 		}
-		executableList = append(executableList, ReportInfo{executable.Name, num})
 	}
 
 	// --- Generate report for each executable
