@@ -39,10 +39,6 @@ cl::opt<std::string> ConfigOutputPath("o", cl::desc("JSON output path"),
                                       cl::value_desc("path"));
 cl::opt<bool> ConfigDebugLog("v", cl::desc("Turn off log to file"));
 
-cl::opt<int> ConfigReportLimit("limit",
-                               cl::desc("Max number of races can be reported"),
-                               cl::value_desc("number"), cl::init(-1));
-
 cl::opt<bool>
     ConfigPrintImmediately("Xprint-fast",
                            cl::desc("Print races immediately on terminal"));
@@ -62,6 +58,8 @@ cl::opt<bool> ConfigDebugRustAPI("debug-sol",
 cl::opt<bool>
     ConfigDisableProgress("no-progress",
                           cl::desc("Does not print spinner progress"));
+
+constexpr int reportLimit = 99;
 
 static logger::LoggingConfig initLoggingConf() {
   logger::LoggingConfig config;
@@ -220,11 +218,6 @@ int main(int argc, char **argv) {
   CONFIG_CHECK_UncheckedAccount =
       conflib::Get<bool>("solana.account.UncheckedAccount", true);
 
-  auto reportLimit = conflib::Get<int>("raceLimit", -1);
-  if (reportLimit != -1) {
-    ConfigReportLimit = reportLimit;
-  }
-
   CONFIG_OUTPUT_PATH = ConfigOutputPath;
   TARGET_MODULE_PATH = TargetModulePath;
 
@@ -285,7 +278,7 @@ int main(int argc, char **argv) {
 
   auto analyzer = new SolanaAnalysisPass();
   auto sves = conflib::Get<SVE::Database>("solana.sve", {});
-  analyzer->initialize(sves, ConfigReportLimit);
+  analyzer->initialize(sves, reportLimit);
 
   analysisPasses.add(analyzer);
 

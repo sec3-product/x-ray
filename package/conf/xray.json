@@ -10,9 +10,6 @@
     "enableTerminal": true,
     "//ouputDir": "please remove // and set the right path here"
   },
-  "//solPaths": "Remove // and specify a list of comma-separated paths",
-  "mode": "normal",
-  "raceLimit": 99,
   "solana": {
     "on": true,
     "account": {
