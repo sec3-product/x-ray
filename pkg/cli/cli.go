@@ -381,7 +381,9 @@ func Start(coderrectHome string, args []string) error {
 			cmdArgument = append(cmdArgument, displayFlag)
 		}
 		cmdArgument = append(cmdArgument, "-o", tmpJSONPath, bcFile)
-		cmdline := filepath.Join(coderrectHome, "bin", codeAnalyzerExe)
+		analyzer := filepath.Join(coderrectHome, "bin", codeAnalyzerExe)
+		libompPath := filepath.Join(coderrectHome, "bin", "libomp.so")
+		cmdline := fmt.Sprintf("export LD_PRELOAD=%s; %s", libompPath, analyzer)
 		for _, s := range cmdArgument {
 			cmdline += " " + normalizeCmdlineArg(s)
 		}
