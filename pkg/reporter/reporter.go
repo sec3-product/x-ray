@@ -236,9 +236,8 @@ func GenerateReport(rawJSONDir string) error {
 	// parse index.json and create a struct to store the information of conent of index.json
 	var indexInfo IndexInfo
 	if loadIndex == 1 {
-		res := ReadIndexJSON(&indexInfo, rawJSONDir)
-		if res == 0 {
-			logger.Errorf("Fail to find index.json. rawJSONDir=%s", rawJSONDir)
+		if err := ReadIndexJSON(&indexInfo, rawJSONDir); err != nil {
+			logger.Errorf("Failed to read index.json %q: %v", rawJSONDir, err)
 			os.Exit(1)
 		}
 	} else {

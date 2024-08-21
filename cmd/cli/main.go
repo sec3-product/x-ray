@@ -109,37 +109,6 @@ func exitGracefully(exitCode int, tmpDir string) {
 	os.Exit(exitCode)
 }
 
-/**
- *
- * It checks index.json under $cwd/.xray/build/index.json. It returns 0
- * if .xray/build/index.json doesn't exist or none of executables tracked by
- * index.json has races. Otherwise, it returns 1.
- *
- * Panic if there are other errors.
- *
- * If there are races found, it also calls reporter to generate
- * a terminal-based report
- */
-func checkResults() (bool, bool) {
-	var indexInfo IndexInfo
-	// NOTE: Now only read from default path, maybe this need to change in the future
-	res := reporter.ReadIndexJSON(&indexInfo, "")
-	// index.json not found
-	if res == 0 {
-		return false, false
-	}
-
-	foundRaces := false
-	for _, executable := range indexInfo.Executables {
-		if executable.DataRaces > 0 {
-			foundRaces = true
-			break
-		}
-	}
-
-	return foundRaces, false
-}
-
 func addOrReplaceCommandline(jsonOptStr string, key string, value string) string {
 	type CmdlineOpts struct {
 		Opts []string
@@ -499,63 +468,6 @@ func main() {
 		if err = os.Mkdir(coderrectBuildDir, fi.Mode()); err != nil {
 			panicGracefully("Failed to create build directory.", err, "")
 		}
-	}
-
-	// upload report to remote host, used for CI/CD integration
-	host := conflib.GetString("publish.cloud", "")
-	if conflib.GetBool("publish", false) {
-		host = "DEFAULT"
-	}
-	if conflib.GetBool("publish.jenkins", false) || host != "" {
-		foundRace, foundNewRace := checkResults()
-
-		// Force push the report to cloud server
-		// This is used in some special cases like we have a manually generated report from race.json
-		// therefore `checkResults` fail to return correct result
-		force := conflib.GetBool("publish.force", false)
-
-		// if any race is detected
-		if foundRace || force {
-			// only upload report to cloud if cloud host is set
-			if host != "" {
-				logger.Infof("Upload report to remote server")
-				cwd, err := os.Getwd()
-				if err != nil {
-					panicGracefully("Failed to obtain the current working directory", err, "")
-				}
-
-				reportDir := conflib.GetString("publish.src", "")
-				if reportDir == "" {
-					// use default report path if `publish.src` is not specified
-					reportDir = filepath.Join(cwd, ".xray", "report")
-				}
-
-				url := reporter.PublishReport(reportDir, host)
-
-				// dump the url for the uploaded report to a file
-				// use for our CI/CD tasks
-				dump := conflib.GetBool("publish.dumpLink", false)
-				if dump {
-					dumpPath := filepath.Join(cwd, "coderrect-publish-result")
-					dumpContent := url
-					if !foundNewRace {
-						dumpContent = dumpContent + "\nNo New Race Detected"
-					}
-					if err = ioutil.WriteFile(dumpPath, []byte(dumpContent), fi.Mode()); err != nil {
-						logger.Errorf("Fail to create index.json. err=%v", err)
-						panicGracefully("Failed to create index.json", err, tmpDir)
-					}
-				}
-			}
-			// check whether user want to suppress coderrect fomr exit(1) when found race
-			exit0 := conflib.GetBool("publish.exit0", false)
-			if exit0 {
-				os.Exit(0)
-			}
-			os.Exit(1)
-		}
-		fmt.Println("No vulnerabilities detected, no report to publish")
-		os.Exit(0)
 	}
 
 	var executablePathList []string

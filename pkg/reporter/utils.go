@@ -2,49 +2,42 @@ package reporter
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"fmt"
+	"os"
 	"path/filepath"
-
-	"github.com/coderrect-inc/coderrect/pkg/util"
-	"github.com/coderrect-inc/coderrect/pkg/util/logger"
 )
 
-// WriteIndexJSON write the `iinfo` back into index.json
-// ps: it will overwrite the original index.json
-func WriteIndexJSON(indexInfo IndexInfo, buildDir string) {
-	indexJSON, _ := json.MarshalIndent(indexInfo, "", " ")
-	indexJSONPath := filepath.Join(buildDir, "index.json")
-	if err := ioutil.WriteFile(indexJSONPath, indexJSON, 0644); err != nil {
-		logger.Errorf("Fail to create index.json. err=%v", err)
-		panic(err)
+// WriteIndexJSON write the `iinfo` back into index.json. It will overwrite
+// the original index.json.
+func WriteIndexJSON(indexInfo IndexInfo, buildDir string) error {
+	indexJSON, err := json.MarshalIndent(indexInfo, "", " ")
+	if err != nil {
+		return fmt.Errorf("unable to marshal indexInfo: %w", err)
 	}
+	indexJSONPath := filepath.Join(buildDir, "index.json")
+	if err := os.WriteFile(indexJSONPath, indexJSON, 0644); err != nil {
+		return fmt.Errorf("unable to write index.json: %w", err)
+	}
+	return nil
 }
 
-// ReadIndexJSON returns 0 if index.json is not found
-// Otherwise, returns 1
-// The parsed JSON will be stored into `indexInfo`
-func ReadIndexJSON(indexInfo *IndexInfo, rawJSONDir string) int {
-	var indexJSONPath string
-	if rawJSONDir == "" {
-		indexJSONPath = filepath.Join(".xray", "build", "index.json")
-	} else {
+// ReadIndexJSON returns parsed JSON.
+func ReadIndexJSON(indexInfo *IndexInfo, rawJSONDir string) error {
+	indexJSONPath := filepath.Join(".xray", "build", "index.json")
+	if rawJSONDir != "" {
 		indexJSONPath = filepath.Join(rawJSONDir, "index.json")
 	}
 
-	if !util.FileExists(indexJSONPath) {
-		return 0
+	if _, err := os.Stat(indexJSONPath); os.IsNotExist(err) {
+		return fmt.Errorf("index.json not found: %s", indexJSONPath)
 	}
 
-	indexJSONBytes, err := ioutil.ReadFile(indexJSONPath)
+	indexJSONBytes, err := os.ReadFile(indexJSONPath)
 	if err != nil {
-		logger.Errorf("Fail to read index.json. indexjson=%s, err=%v", indexJSONPath, err)
-		panic(err)
+		return fmt.Errorf("unable to read index.json at %s: %w", indexJSONPath, err)
 	}
-
-	// var indexInfo IndexInfo
-	if err = json.Unmarshal(indexJSONBytes, indexInfo); err != nil {
-		logger.Errorf("Fail to parse index.json. err=%v", err)
-		panic(err)
+	if err := json.Unmarshal(indexJSONBytes, indexInfo); err != nil {
+		return fmt.Errorf("unable to unmarshal index.json: %w", err)
 	}
-	return 1
+	return nil
 }
