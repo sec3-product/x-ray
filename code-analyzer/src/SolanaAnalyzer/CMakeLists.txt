@@ -24,7 +24,6 @@ set(SOLANA_ANALYZER_SOURCES
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/utils/jsoncons/include
 )
 
 add_library(SolanaAnalyzer ${SOLANA_ANALYZER_SOURCES})
@@ -53,6 +52,7 @@ llvm_map_components_to_libnames(LLVM_LIBS
 target_link_libraries(SolanaAnalyzer
     PointerAnalysis
     Util
+    jsoncons
     ${LLVM_LIBS}
 )
 

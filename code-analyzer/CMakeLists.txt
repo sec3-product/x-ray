@@ -76,7 +76,6 @@ endif()
 
 include_directories(
     external
-    external/jsoncons/include
 )
 
 add_subdirectory(src)
