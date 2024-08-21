@@ -1,4 +1,4 @@
-#include "Collectors/Races.h"
+#include "Collectors/Output.h"
 
 #include <algorithm>
 #include <fstream>
@@ -15,16 +15,9 @@
 #include "LogColor.h"
 #include "SolanaAnalysisPass.h"
 
-using namespace aser;
-using namespace llvm;
-
-extern unsigned int NUM_OF_IR_LINES;
-extern unsigned int NUM_OF_ATTACK_VECTORS;
-extern std::set<llvm::StringRef> SMART_CONTRACT_ADDRESSES;
-
 /* --------------------------------
 
-                Utils
+            Output Utils
 
 ----------------------------------- */
 void aser::outputJSON(std::string OutputPath) {

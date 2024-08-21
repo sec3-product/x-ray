@@ -23,9 +23,9 @@
 #include <llvm/Support/SourceMgr.h> // for SMDiagnostic
 
 #include "AccountIDL.h"
-#include "CustomAPIRewriters/RustAPIRewriter.h"
 #include "DebugFlags.h"
 #include "PTAModels/GraphBLASModel.h"
+#include "RustAPIRewriter.h"
 #include "SVE.h"
 #include "SolanaAnalysisPass.h"
 
@@ -130,8 +130,6 @@ logger::LoggingConfig initLoggingConf() {
 
   return config;
 }
-
-extern unsigned int NUM_OF_IR_LINES;
 
 static std::unique_ptr<Module>
 loadFile(const std::string &FN, LLVMContext &Context, bool abortOnFail) {

@@ -1,9 +1,10 @@
-#include "CustomAPIRewriters/RustAPIRewriter.h"
+#include "RustAPIRewriter.h"
 
 #include <map>
 #include <set>
 #include <string>
 
+#include <Util/Util.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
@@ -11,7 +12,6 @@
 #include "DebugFlags.h"
 #include "LogColor.h"
 #include "PTAModels/GraphBLASModel.h"
-#include "Util/Util.h"
 
 namespace aser {
 

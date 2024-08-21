@@ -148,12 +148,6 @@ private:
 
   FuncArgTypesMap funcArgTypesMap;
 
-  // TODO: Drop the following three functions.
-  bool hasValueLessMoreThan(const llvm::Value *value,
-                            const llvm::Instruction *inst, bool isLess);
-  bool isSafeType(const llvm::Function *func, const llvm::Value *value);
-  bool isSafeVariable(const llvm::Function *func, const llvm::Value *value);
-
   // list of forked thread that haven't been visited yet
   std::queue<StaticThread *> threadList;
   std::map<const llvm::Function *,
@@ -387,5 +381,7 @@ extern void computeCargoTomlConfig(llvm::Module *module);
 
 extern std::string CONFIG_OUTPUT_PATH;
 extern std::string TARGET_MODULE_PATH;
+extern unsigned int NUM_OF_ATTACK_VECTORS;
+extern unsigned int NUM_OF_IR_LINES;
 
 } // namespace aser

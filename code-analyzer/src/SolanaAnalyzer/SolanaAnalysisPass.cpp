@@ -11,7 +11,7 @@
 #include <llvm/Analysis/TypeBasedAliasAnalysis.h>
 
 #include "Collectors/CosplayAccounts.h"
-#include "Collectors/Races.h"
+#include "Collectors/Output.h"
 #include "Collectors/UnsafeOperation.h"
 #include "Collectors/UntrustfulAccount.h"
 #include "DebugFlags.h"
@@ -29,6 +29,8 @@ using namespace aser;
 
 std::string aser::CONFIG_OUTPUT_PATH;
 std::string aser::TARGET_MODULE_PATH;
+unsigned int aser::NUM_OF_IR_LINES;
+unsigned int aser::NUM_OF_ATTACK_VECTORS;
 
 EventID Event::ID_counter = 0;
 llvm::StringRef stripSelfAccountName(llvm::StringRef account_name) {
@@ -275,55 +277,56 @@ static std::map<StringRef, StringRef> CARGO_TOML_CONFIG_MAP;
 
 void aser::computeCargoTomlConfig(llvm::Module *module) {
   auto f = module->getFunction("sol.model.cargo.toml");
-  if (f) {
-    for (auto &BB : *f) {
-      for (auto &I : BB) {
-        if (isa<CallBase>(&I)) {
-          aser::CallSite CS(&I);
-          if (CS.getNumArgOperands() < 2)
-            continue;
-          auto v1 = CS.getArgOperand(0);
-          auto v2 = CS.getArgOperand(1);
+  if (!f) {
+    return;
+  }
+  for (auto &BB : *f) {
+    for (auto &I : BB) {
+      if (isa<CallBase>(&I)) {
+        aser::CallSite CS(&I);
+        if (CS.getNumArgOperands() < 2)
+          continue;
+        auto v1 = CS.getArgOperand(0);
+        auto v2 = CS.getArgOperand(1);
 
-          auto valueName1 = LangModel::findGlobalString(v1);
-          auto valueName2 = LangModel::findGlobalString(v2);
-          auto overflow_checks = "profile.release.overflow-checks";
-          if (valueName1 == overflow_checks) {
-            if (valueName2.contains("1"))
-              hasOverFlowChecks = true;
-            llvm::outs() << "overflow_checks: " << hasOverFlowChecks << "\n";
-          }
-
-          auto anchor_lang_version = "dependencies.anchor-lang.version";
-          // prior to 0.24.x, insecure init_if_needed
-          if (valueName1 == anchor_lang_version) {
-            if (versionCompare(valueName2.str(), "0.24.2") == -1)
-              anchorVersionTooOld = true;
-            llvm::outs() << "anchor_lang_version: " << valueName2
-                         << " anchorVersionTooOld: " << anchorVersionTooOld
-                         << "\n";
-          }
-          auto anchor_spl_version = "dependencies.anchor-spl.version";
-          auto spl_token_version = "dependencies.spl-token.version";
-          if (valueName1 == spl_token_version) {
-            if (versionCompare(valueName2.str(), "3.1.1") == -1)
-              splVersionTooOld = true;
-            llvm::outs() << "spl_version: " << valueName2
-                         << " splVersionTooOld: " << splVersionTooOld << "\n";
-          }
-          // prior to v3.1.1, insecure spl invoke
-
-          auto solana_program_version = "dependencies.solana_program.version";
-          if (valueName1 == solana_program_version) {
-            if (versionCompare(valueName2.str(), "1.10.29") == -1)
-              solanaVersionTooOld = true;
-            llvm::outs() << "solana_version: " << valueName2
-                         << " solanaVersionTooOld: " << solanaVersionTooOld
-                         << "\n";
-          }
-
-          CARGO_TOML_CONFIG_MAP[valueName1] = valueName2;
+        auto valueName1 = LangModel::findGlobalString(v1);
+        auto valueName2 = LangModel::findGlobalString(v2);
+        auto overflow_checks = "profile.release.overflow-checks";
+        if (valueName1 == overflow_checks) {
+          if (valueName2.contains("1"))
+            hasOverFlowChecks = true;
+          llvm::outs() << "overflow_checks: " << hasOverFlowChecks << "\n";
         }
+
+        auto anchor_lang_version = "dependencies.anchor-lang.version";
+        // prior to 0.24.x, insecure init_if_needed
+        if (valueName1 == anchor_lang_version) {
+          if (versionCompare(valueName2.str(), "0.24.2") == -1)
+            anchorVersionTooOld = true;
+          llvm::outs() << "anchor_lang_version: " << valueName2
+                       << " anchorVersionTooOld: " << anchorVersionTooOld
+                       << "\n";
+        }
+        auto anchor_spl_version = "dependencies.anchor-spl.version";
+        auto spl_token_version = "dependencies.spl-token.version";
+        if (valueName1 == spl_token_version) {
+          if (versionCompare(valueName2.str(), "3.1.1") == -1)
+            splVersionTooOld = true;
+          llvm::outs() << "spl_version: " << valueName2
+                       << " splVersionTooOld: " << splVersionTooOld << "\n";
+        }
+        // prior to v3.1.1, insecure spl invoke
+
+        auto solana_program_version = "dependencies.solana_program.version";
+        if (valueName1 == solana_program_version) {
+          if (versionCompare(valueName2.str(), "1.10.29") == -1)
+            solanaVersionTooOld = true;
+          llvm::outs() << "solana_version: " << valueName2
+                       << " solanaVersionTooOld: " << solanaVersionTooOld
+                       << "\n";
+        }
+
+        CARGO_TOML_CONFIG_MAP[valueName1] = valueName2;
       }
     }
   }
@@ -341,93 +344,10 @@ void SolanaAnalysisPass::initialize(SVE::Database sves, int limit) {
   CosplayAccounts::init(limit, unlimited);
 }
 
-bool SolanaAnalysisPass::hasValueLessMoreThan(const llvm::Value *value,
-                                              const llvm::Instruction *inst,
-                                              bool isLess) {
-  auto symbol = "<";
-  if (!isLess)
-    symbol = ">";
-  auto valueLessThan = LangModel::findGlobalString(value).str() + symbol;
-  std::string snippet = getSourceLoc(inst).getSnippet();
-  snippet.erase(std::remove(snippet.begin(), snippet.end(), ' '),
-                snippet.end());
-  if (DEBUG_RUST_API) {
-    llvm::outs() << "valueLessThan: " << valueLessThan << "\n";
-    llvm::outs() << "snippet: \n" << snippet << "\n";
-  }
-  if (snippet.find(valueLessThan) != std::string::npos)
-    return true;
-  return false;
-}
-
 static bool isUpper(const std::string &s) {
   return std::all_of(s.begin(), s.end(), [](unsigned char c) {
     return std::isupper(c) || c == '_';
   });
-}
-
-static bool is_all_capital_or_number(const std::string &s) {
-  std::string::const_iterator it = s.begin();
-  while (it != s.end() &&
-         (std::isupper(*it) || std::isdigit(*it) || *it == '_'))
-    ++it;
-  return !s.empty() && it == s.end();
-}
-
-static bool is_all_capital(const std::string &s) {
-  std::string::const_iterator it = s.begin();
-  while (it != s.end() && (std::isupper(*it) || *it == '_'))
-    ++it;
-  return !s.empty() && it == s.end();
-}
-
-static bool is_number(const std::string &s) {
-  std::string::const_iterator it = s.begin();
-  while (it != s.end() && std::isdigit(*it))
-    ++it;
-  return !s.empty() && it == s.end();
-}
-
-static bool is_constant(const std::string &s) {
-  return is_number(s) || is_all_capital(s);
-}
-
-bool SolanaAnalysisPass::isSafeType(const llvm::Function *func,
-                                    const llvm::Value *value) {
-  if (auto arg = llvm::dyn_cast<llvm::Argument>(value)) {
-    auto type = funcArgTypesMap[func][arg->getArgNo()].second;
-    if (isUpper(type.str()) || type.size() >= 5 || type.startswith("i") ||
-        type.contains("Dec"))
-      return true;
-  }
-  return false;
-}
-
-bool SolanaAnalysisPass::isSafeVariable(const llvm::Function *func,
-                                        const llvm::Value *value) {
-  if (auto arg = dyn_cast<Argument>(value)) {
-    auto valueName = funcArgTypesMap[func][arg->getArgNo()].first;
-    // current_timestamp - self.last_timestamp
-    if (valueName.contains("_time")) {
-      return true;
-    }
-  } else {
-    auto valueName = LangModel::findGlobalString(value);
-    if (valueName.find("as i") != std::string::npos ||
-        valueName.find(".len") != std::string::npos ||
-        valueName.find("_len") != std::string::npos ||
-        valueName.find("length_") != std::string::npos ||
-        valueName.find("size") != std::string::npos ||
-        valueName.find("steps") != std::string::npos ||
-        valueName.find("gas") != std::string::npos ||
-        valueName.find("bits") != std::string::npos ||
-        valueName.find("shift") != std::string::npos ||
-        (valueName.find("pos") != std::string::npos &&
-         valueName.find("iter") == std::string::npos)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 const llvm::Function *
@@ -991,7 +911,6 @@ void SolanaAnalysisPass::handleConditionalCheck0(const aser::ctx *ctx, TID tid,
         }
       }
     }
-    //}
   }
 }
 
@@ -1044,18 +963,12 @@ void SolanaAnalysisPass::updateKeyEqualMap(StaticThread *thread, const Event *e,
   }
 }
 
-static unsigned int call_stack_level = 0;
-
-static std::string DEBUG_STRING_SPACE = "";
 static std::map<TID, unsigned int> threadNFuncMap;
+static aser::trie::TrieNode *cur_trie;
 
 int FUNC_COUNT_BUDGET;
 static unsigned int FUNC_COUNT_PROGRESS_THESHOLD = 10000;
 int SAME_FUNC_BUDGET_SIZE = 10; // keep at most x times per func per thread 10
-
-unsigned int NUM_OF_IR_LINES;
-
-static aser::trie::TrieNode *cur_trie;
 
 bool SolanaAnalysisPass::mayBeExclusive(const Event *const e1,
                                         const Event *const e2) {
@@ -4376,8 +4289,6 @@ StaticThread *SolanaAnalysisPass::forkNewThread(ForkEvent *forkEvent) {
   forkEvent->setSpawnedThread(thread);
   return thread;
 }
-
-unsigned int NUM_OF_ATTACK_VECTORS;
 
 bool SolanaAnalysisPass::runOnModule(llvm::Module &module) {
   thisModule = &module;

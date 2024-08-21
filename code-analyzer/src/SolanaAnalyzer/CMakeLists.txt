@@ -2,10 +2,9 @@
 set(SOLANA_ANALYZER_SOURCES
     AccountIDL.cpp
     Collectors/CosplayAccounts.cpp
-    Collectors/Races.cpp
+    Collectors/Output.cpp
     Collectors/UnsafeOperation.cpp
     Collectors/UntrustfulAccount.cpp
-    CustomAPIRewriters/RustAPIRewriter.cpp
     DebugFlags.cpp
     LocksetManager.cpp
     LogColor.cpp
@@ -16,6 +15,7 @@ set(SOLANA_ANALYZER_SOURCES
     Rules/OverflowSub.cpp
     Rules/Rule.cpp
     Rules/Ruleset.cpp
+    RustAPIRewriter.cpp
     SolanaAnalysisPass.cpp
     SourceInfo.cpp
     StaticThread.cpp
