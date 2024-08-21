@@ -10,40 +10,9 @@
     "enableTerminal": true,
     "//ouputDir": "please remove // and set the right path here"
   },
-  "cleanBuild": false,
-  "continueIfBuildErrorPresents": false,
   "//solPaths": "Remove // and specify a list of comma-separated paths",
-  "//analyzeBinaries": "Remove // and specify a list of comma-separated binary names",
-  "publishResults": false,
   "mode": "normal",
-  "enableOpenMP": true,
-  "enableOrderViolation": true,
-  "enableMismatchedAPI": true,
-  "enableFilter": true,
-  "enableLockSet": true,
   "raceLimit": 99,
-  "skipFunctions": [],
-  "indirectFunctions": [],
-  "ignoreRacesAtLocations": [],
-  "ignoreRaceVariables": [],
-  "lowPriorityFiles": [],
-  "lowPriorityRaces": [],
-  "highPriorityRaces": [],
-  "heapAllocFunctions": [
-    "je_malloc",
-    "je_calloc",
-    "je_mallocx",
-    "u_malloc",
-    "u_calloc",
-    "rm_malloc",
-    "rm_calloc"
-  ],
-  "lockUnlockFunctions": { "malloc_mutex_lock": "malloc_mutex_unlock" },
-  "highPriorityFiles": [],
-  "openlib": {
-    "entryPoints": [],
-    "limit": 999
-  },
   "solana": {
     "on": true,
     "account": {
@@ -65,25 +34,25 @@
       "1003": {
         "name": "IntegerAddOverflow",
         "description": "The add operation may result in overflows",
-        "url": "https://medium.com/coinmonks/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts-9f3c9802dc45",
+        "url": "https://www.sec3.dev/blog/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts",
         "free": true
       },
       "1004": {
         "name": "IntegerUnderflow",
         "description": "The sub operation may result in underflows",
-        "url": "https://medium.com/coinmonks/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts-9f3c9802dc45",
+        "url": "https://www.sec3.dev/blog/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts",
         "free": true
       },
       "1005": {
         "name": "IntegerMulOverflow",
         "description": "The mul operation may result in overflows",
-        "url": "https://medium.com/coinmonks/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts-9f3c9802dc45",
+        "url": "https://www.sec3.dev/blog/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts",
         "free": true
       },
       "1006": {
         "name": "IntegerDivOverflow",
         "description": "The div operation may result in overflows",
-        "url": "https://medium.com/coinmonks/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts-9f3c9802dc45",
+        "url": "https://www.sec3.dev/blog/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts",
         "free": true
       },
       "1007": {
@@ -164,7 +133,7 @@
       "1021": {
         "name": "UnsafeRust",
         "description": "The program contains unsafe Rust code",
-        "url": "https://medium.com/coinmonks/solana-internals-part-4-the-bank-a-key-component-1d47b94cd705"
+        "url": "https://www.sec3.dev/blog/solana-internals-part-4-the-bank-a-key-component"
       },
       "1022": {
         "name": "OverPayment",
@@ -179,7 +148,7 @@
       "1024": {
         "name": "MissInitTokenMint",
         "description": "The init instruction misses minting pool tokens",
-        "url": "https://medium.com/coinmonks/solana-stake-pool-a-semantic-inconsistency-vulnerability-discovered-by-soteria-b92abcbaf909"
+        "url": "https://www.sec3.dev/blog/solana-stake-pool-a-semantic-inconsistency-vulnerability-discovered-by-x-ray"
       },
       "1025": {
         "name": "MissRentExempt",
@@ -199,7 +168,7 @@
       "1028": {
         "name": "BidirectionalRounding",
         "description": "The arithmetics here may suffer from bidirectional rounding vulnerabilities",
-        "url": "https://medium.com/coinmonks/bidirectional-rounding-a-common-security-vulnerability-in-defi-smart-contracts-899f64143b72"
+        "url": "https://www.sec3.dev/blog/bidirectional-rounding"
       },
       "1029": {
         "name": "LossyCastTruncation",
@@ -214,7 +183,7 @@
       "1031": {
         "name": "UnvalidatedDestinationAccount",
         "description": "The account is used as destination in token transfer without validation and it could be the same as the transfer source account",
-        "url": "https://medium.com/coinmonks/how-to-audit-solana-smart-contracts-part-1-a-systematic-approach-56a434f6c9ed"
+        "url": "https://www.sec3.dev/blog/how-to-audit-solana-smart-contracts-part-1-a-systematic-approach"
       },
       "1032": {
         "name": "IncorrectAuthorityAccount",
@@ -256,12 +225,12 @@
       "2002": {
         "name": "IncorrectConditionCheck",
         "description": "Liquidation condition >= should be >",
-        "url": "https://medium.com/coinmonks/how-to-audit-solana-smart-contracts-part-1-a-systematic-approach-56a434f6c9ed"
+        "url": "https://www.sec3.dev/blog/how-to-audit-solana-smart-contracts-part-1-a-systematic-approach"
       },
       "2003": {
         "name": "ExponentialCalculation",
         "description": "The calculation has exponential complexity",
-        "url": "https://medium.com/coinmonks/how-to-audit-solana-smart-contracts-part-1-a-systematic-approach-56a434f6c9ed"
+        "url": "https://www.sec3.dev/blog/how-to-audit-solana-smart-contracts-part-1-a-systematic-approach"
       },
       "2004": {
         "name": "IncorrectDivisionLogic",
@@ -277,22 +246,22 @@
       "3001": {
         "name": "BestSecurityPractice",
         "description": "The code does not follow best security practices",
-        "url": "https://medium.com/coinmonks/how-to-audit-solana-smart-contracts-part-1-a-systematic-approach-56a434f6c9ed"
+        "url": "https://www.sec3.dev/blog/how-to-audit-solana-smart-contracts-part-1-a-systematic-approach"
       },
       "3002": {
         "name": "CriticalUnusedCode",
         "description": "The code may be redundant or unused, but appears critical",
-        "url": "https://medium.com/coinmonks/how-to-audit-solana-smart-contracts-part-1-a-systematic-approach-56a434f6c9ed"
+        "url": "https://www.sec3.dev/blog/how-to-audit-solana-smart-contracts-part-1-a-systematic-approach"
       },
       "3003": {
         "name": "InconsistentAnchor",
         "description": "The program uses Anchor inconsistently across different instructions",
-        "url": "https://medium.com/coinmonks/how-to-audit-solana-smart-contracts-part-1-a-systematic-approach-56a434f6c9ed"
+        "url": "https://www.sec3.dev/blog/how-to-audit-solana-smart-contracts-part-1-a-systematic-approach"
       },
       "3004": {
         "name": "InconsistentConfig",
         "description": "The configuration and initialization data are inconsistent",
-        "url": "https://medium.com/coinmonks/how-to-audit-solana-smart-contracts-part-1-a-systematic-approach-56a434f6c9ed"
+        "url": "https://www.sec3.dev/blog/how-to-audit-solana-smart-contracts-part-1-a-systematic-approach"
       },
       "3005": {
         "name": "MissingCPIAccountReload",
@@ -376,5 +345,17 @@
         "free": true
       }
     }
+  },
+  "heapAllocFunctions": [
+    "je_malloc",
+    "je_calloc",
+    "je_mallocx",
+    "u_malloc",
+    "u_calloc",
+    "rm_malloc",
+    "rm_calloc"
+  ],
+  "lockUnlockFunctions": {
+    "malloc_mutex_lock": "malloc_mutex_unlock"
   }
 }
