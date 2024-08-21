@@ -25,17 +25,17 @@ namespace std {
 template <>
 struct iterator_traits<typename llvm::SparseBitVector<64>::iterator> {
   typedef forward_iterator_tag iterator_category;
-  typedef aser::NodeID value_type;
+  typedef xray::NodeID value_type;
   typedef ptrdiff_t difference_type;
-  typedef const aser::NodeID *pointer;
-  typedef const aser::NodeID &reference;
+  typedef const xray::NodeID *pointer;
+  typedef const xray::NodeID &reference;
 };
 
 } // namespace std
 
 using namespace llvm;
 
-namespace aser {
+namespace xray {
 
 template <typename ctx> class CallGraphNode;
 
@@ -588,6 +588,6 @@ static std::string getPTASourceLocSnippet(const Value *val) {
   // return SourceInfo(val, line, col, filename, directory, name);
 }
 
-} // namespace aser
+} // namespace xray
 
 #endif

@@ -23,7 +23,7 @@
 #include "SVE.h"
 #include "StaticThread.h"
 
-namespace aser {
+namespace xray {
 
 class Event;
 class ReachGraph;
@@ -80,14 +80,14 @@ public:
 
   StaticThread *forkNewThread(ForkEvent *forkEvent);
 
-  void detectRaceCondition(const aser::ctx *ctx, TID tid);
-  void detectDeadCode(const aser::ctx *ctx, TID tid);
-  void detectAccountsCosplay(const aser::ctx *ctx, TID tid);
+  void detectRaceCondition(const xray::ctx *ctx, TID tid);
+  void detectDeadCode(const xray::ctx *ctx, TID tid);
+  void detectAccountsCosplay(const xray::ctx *ctx, TID tid);
 
   void printStatistics();
 
   void traverseFunction(
-      const aser::ctx *ctx, const llvm::Function *f, StaticThread *thread,
+      const xray::ctx *ctx, const llvm::Function *f, StaticThread *thread,
       std::vector<const llvm::Function *> &callStack,
       std::map<uint8_t, const llvm::Constant *> *constArgs = nullptr);
 
@@ -339,10 +339,10 @@ private:
   void detectUntrustfulAccounts(TID tid);
   TID addNewThread(ForkEvent *fork);
 
-  void addCheckKeyEqual(const aser::ctx *ctx, TID tid,
+  void addCheckKeyEqual(const xray::ctx *ctx, TID tid,
                         const llvm::Instruction *inst, StaticThread *thread,
                         CallSite &CS);
-  void handleConditionalCheck0(const aser::ctx *ctx, TID tid,
+  void handleConditionalCheck0(const xray::ctx *ctx, TID tid,
                                const llvm::Function *func,
                                const llvm::Instruction *inst,
                                StaticThread *thread, const llvm::Value *value);
@@ -358,7 +358,7 @@ private:
                                            const llvm::StringRef name);
 
   void traverseFunctionWrapper(
-      const aser::ctx *ctx, StaticThread *thread,
+      const xray::ctx *ctx, StaticThread *thread,
       std::vector<const llvm::Function *> &callStack,
       const llvm::Instruction *inst, const llvm::Function *f,
       std::map<uint8_t, const llvm::Constant *> *constArgs = nullptr);
@@ -367,10 +367,10 @@ private:
       exclusiveFunctionsMap;
   bool mayBeExclusive(const Event *const e1, const Event *const e2);
 
-  void handleRustModelAPI(const aser::ctx *ctx, TID tid, llvm::Function *func,
+  void handleRustModelAPI(const xray::ctx *ctx, TID tid, llvm::Function *func,
                           const llvm::Instruction *inst, StaticThread *thread,
                           CallSite CS, bool isMacroArrayRefUsedInFunction);
-  void handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
+  void handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
                              llvm::Function *func, const Instruction *inst,
                              StaticThread *thread, CallSite CS);
 
@@ -384,4 +384,4 @@ extern std::string TARGET_MODULE_PATH;
 extern unsigned int NUM_OF_ATTACK_VECTORS;
 extern unsigned int NUM_OF_IR_LINES;
 
-} // namespace aser
+} // namespace xray

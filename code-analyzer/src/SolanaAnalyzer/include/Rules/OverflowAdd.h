@@ -7,7 +7,7 @@
 
 #include "Rule.h"
 
-namespace aser {
+namespace xray {
 
 bool matchPlusEqual(const CallSite &);
 void handlePlusEqual(const RuleContext &, const CallSite &);
@@ -15,4 +15,4 @@ void handlePlusEqual(const RuleContext &, const CallSite &);
 bool matchPlus(const CallSite &);
 void handlePlus(const RuleContext &, const CallSite &);
 
-}; // namespace aser
+}; // namespace xray

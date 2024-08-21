@@ -23,7 +23,7 @@
 #include "PreProcessing/Passes/CanonicalizeGEPPass.h"
 #include "Util/SingleInstanceOwner.h"
 
-namespace aser {
+namespace xray {
 
 template <typename ctx>
 class FIMemModel : public SingleInstanceOwner<FIObject<ctx>> {
@@ -178,6 +178,6 @@ struct MemModelTrait<FIMemModel<ctx>> : public MemModelHelper<FIMemModel<ctx>> {
   static const bool NEED_TYPE_INFO = false;
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif

@@ -7,9 +7,9 @@
 
 #include "Rule.h"
 
-namespace aser {
+namespace xray {
 
 bool matchMul(const CallSite &);
 void handleMul(const RuleContext &, const CallSite &);
 
-}; // namespace aser
+}; // namespace xray

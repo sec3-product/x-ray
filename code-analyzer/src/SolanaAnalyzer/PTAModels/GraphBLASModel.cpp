@@ -9,7 +9,7 @@
 #include "PTAModels/GraphBLASHeapModel.h"
 #include "PointerAnalysis/Context/KOrigin.h"
 
-using namespace aser;
+using namespace xray;
 using namespace llvm;
 
 std::set<StringRef> GraphBLASHeapModel::USER_HEAP_API;
@@ -95,8 +95,8 @@ IndirectResolveOption GraphBLASModel::onNewIndirectTargetResolvation(
 }
 
 void GraphBLASModel::interceptHeapAllocSite(
-    const aser::CtxFunction<aser::ctx> *caller,
-    const aser::CtxFunction<aser::ctx> *callee,
+    const xray::CtxFunction<xray::ctx> *caller,
+    const xray::CtxFunction<xray::ctx> *callee,
     const llvm::Instruction *callsite) {
   // GrB_Matrix_new and GB_new take a pointer pointer of a Matrix to initialize
   // therefore we need to create a fake pointer node representing the pointer of
@@ -163,7 +163,7 @@ GraphBLASModel::findSignalHandlerFunc(const llvm::Instruction *callsite) {
   if (sigActionHandlerMap.find(callsite) != sigActionHandlerMap.end())
     return sigActionHandlerMap.at(callsite);
   auto func = callsite->getFunction();
-  aser::CallSite CS(callsite);
+  xray::CallSite CS(callsite);
   const llvm::Value *v = CS.getArgOperand(1); //%struct.sigaction*
   if (llvm::isa<llvm::AllocaInst>(v)) {
     LOG_TRACE("signal handle alloca ptr: {}", *v);
@@ -295,7 +295,7 @@ GraphBLASModel::interceptFunction(const ctx *calleeCtx, const ctx *callerCtx,
       if (callableTy->isPointerTy() &&
           callableTy->getPointerElementType()->isFunctionTy()) {
         // if the function is the a function
-        aser::CallSite CS(callsite);
+        xray::CallSite CS(callsite);
         const llvm::Value *v = CS.getArgOperand(1);
 
         if (auto threadFun =
@@ -309,7 +309,7 @@ GraphBLASModel::interceptFunction(const ctx *calleeCtx, const ctx *callerCtx,
       }
     }
   } else if (F->getName().equals("evhttp_set_gencb")) {
-    aser::CallSite CS(callsite);
+    xray::CallSite CS(callsite);
     assert(CS.isCallOrInvoke());
     const llvm::Value *v = CS.getArgOperand(1);
 
@@ -322,7 +322,7 @@ GraphBLASModel::interceptFunction(const ctx *calleeCtx, const ctx *callerCtx,
       return {v, InterceptResult::Option::EXPAND_BODY};
     }
   } else if (LangModel::isRegisterSignal(callsite)) {
-    aser::CallSite CS(callsite);
+    xray::CallSite CS(callsite);
     assert(CS.isCallOrInvoke());
     const llvm::Value *v = CS.getArgOperand(1);
 
@@ -335,7 +335,7 @@ GraphBLASModel::interceptFunction(const ctx *calleeCtx, const ctx *callerCtx,
       return {v, InterceptResult::Option::EXPAND_BODY};
     }
   } else if (LangModel::isRegisterSignalAction(callsite)) {
-    aser::CallSite CS(callsite);
+    xray::CallSite CS(callsite);
     assert(CS.isCallOrInvoke());
     const llvm::Value *v = CS.getArgOperand(1);
     // TODO: we need to find signal handler here
@@ -363,7 +363,7 @@ GraphBLASModel::interceptFunction(const ctx *calleeCtx, const ctx *callerCtx,
     }
   } else if (F->isDeclaration()) {
     if (LangModel::isRustNormalCall(callsite)) {
-      aser::CallSite CS(callsite);
+      xray::CallSite CS(callsite);
       if (DEBUG_RUST_API)
         llvm::outs() << "TODO: intercepting sol library call: " << F->getName()
                      << "\n";
@@ -434,7 +434,7 @@ bool GraphBLASModel::interceptCallSite(const CtxFunction<ctx> *caller,
   assert(CT::contextEvolve(caller->getContext(), callsite) ==
          callee->getContext());
   // the rule of context evolution should be obeyed.
-  aser::CallSite CS(callsite);
+  xray::CallSite CS(callsite);
   assert(CS.isCallOrInvoke());
 
   if (isRegisterSignal(callsite) || isRegisterSignalAction(callsite)) {
@@ -622,7 +622,7 @@ bool GraphBLASModel::interceptCallSite(const CtxFunction<ctx> *caller,
 }
 
 bool GraphBLASModel::isRegisterSignal(const llvm::Instruction *inst) {
-  aser::CallSite CS(inst);
+  xray::CallSite CS(inst);
   if (CS.isIndirectCall()) {
     return false;
   } else {
@@ -630,7 +630,7 @@ bool GraphBLASModel::isRegisterSignal(const llvm::Instruction *inst) {
   }
 }
 bool GraphBLASModel::isRegisterSignalAction(const llvm::Instruction *inst) {
-  aser::CallSite CS(inst);
+  xray::CallSite CS(inst);
   if (CS.isIndirectCall()) {
     return false;
   } else {
@@ -654,7 +654,7 @@ bool GraphBLASModel::isRustNormalCall(const llvm::Function *func) {
   return isRustAPI(func) && !isRustModelAPI(func);
 }
 bool GraphBLASModel::isRustNormalCall(const llvm::Instruction *inst) {
-  aser::CallSite CS(inst);
+  xray::CallSite CS(inst);
   if (CS.isIndirectCall()) {
     return false;
   } else {

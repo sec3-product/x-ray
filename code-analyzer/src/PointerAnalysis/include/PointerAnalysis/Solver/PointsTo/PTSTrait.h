@@ -6,7 +6,7 @@
 
 #include "PointerAnalysis/Graph/NodeID.def"
 
-namespace aser {
+namespace xray {
 
 template <typename Pts> struct PTSTrait {
   using TargetID = NodeID;
@@ -69,10 +69,10 @@ template <typename Pts> struct PTSTrait {
   static inline constexpr bool supportPointedBy() { return Pts::unknownBool; }
 };
 
-} // namespace aser
+} // namespace xray
 
 #define DEFINE_PTS_TRAIT(IMPL)                                                 \
-  template <> struct aser::PTSTrait<IMPL> {                                    \
+  template <> struct xray::PTSTrait<IMPL> {                                    \
     using TargetID = NodeID;                                                   \
                                                                                \
     using PtsTy = typename IMPL::PtsTy;                                        \

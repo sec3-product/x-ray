@@ -13,7 +13,7 @@
 #ifndef ASER_PTA_VTABLEPTR_H
 #define ASER_PTA_VTABLEPTR_H
 
-namespace aser {
+namespace xray {
 
 bool isVTablePtrType(const llvm::Type *type);
 
@@ -133,5 +133,5 @@ public:
   };
 };
 
-} // namespace aser
+} // namespace xray
 #endif // ASER_PTA_VTABLEPTR_H

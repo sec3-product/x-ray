@@ -7,7 +7,7 @@
 
 #include "PointerAnalysis/Graph/NodeID.def"
 
-namespace aser {
+namespace xray {
 
 // forward declaration
 template <typename ctx, typename ObjT> class CGObjNode;
@@ -61,5 +61,5 @@ public:
 template <typename ctx, typename SubClass>
 ObjID Object<ctx, SubClass>::CurID = 0;
 
-} // namespace aser
+} // namespace xray
 #endif // ASER_PTA_OBJECT_H

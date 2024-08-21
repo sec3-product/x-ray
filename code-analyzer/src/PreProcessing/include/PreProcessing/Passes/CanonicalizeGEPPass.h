@@ -28,7 +28,7 @@
 // 3rd, for every uses of inline asm
 // change it to undef value
 
-namespace aser {
+namespace xray {
 
 class CanonicalizeGEPPass : public llvm::FunctionPass {
 
@@ -40,6 +40,6 @@ public:
   bool doInitialization(llvm::Module &M) override;
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif // ASER_PTA_CANONICALIZEGEPPASS_H

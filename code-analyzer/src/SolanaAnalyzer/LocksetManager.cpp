@@ -6,7 +6,7 @@
 
 extern bool DEBUG_LOCK_STR; // for debug only
 
-using namespace aser;
+using namespace xray;
 
 // Set to 1 due to performance issue
 static const unsigned int MAX_LOCKS_TO_CONSIDER = 1;

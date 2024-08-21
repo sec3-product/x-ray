@@ -11,7 +11,7 @@
 #include "CtxTrait.h"
 #include "KCallSite.h"
 
-namespace aser {
+namespace xray {
 
 template <uint32_t K, uint32_t L = 1> struct OriginsSetter;
 
@@ -102,14 +102,14 @@ std::function<bool(const KOrigin<K, L> *, const llvm::Instruction *)>
           return false;
         };
 
-} // namespace aser
+} // namespace xray
 
 namespace std {
 
 // only hash context and value
-template <uint32_t K, uint32_t L> struct hash<aser::KOrigin<K, L>> {
-  size_t operator()(const aser::KOrigin<K, L> &origin) const {
-    return hash<aser::KCallSite<K * L>>()(origin);
+template <uint32_t K, uint32_t L> struct hash<xray::KOrigin<K, L>> {
+  size_t operator()(const xray::KOrigin<K, L> &origin) const {
+    return hash<xray::KCallSite<K * L>>()(origin);
   }
 };
 

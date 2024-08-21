@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace aser {
+namespace xray {
 
 void highlight(std::string msg);
 
@@ -13,4 +13,4 @@ void error(std::string msg);
 
 std::string getCurrentTimeStr();
 
-} // namespace aser
+} // namespace xray

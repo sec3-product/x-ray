@@ -14,7 +14,7 @@
 #include "Util/Log.h"
 
 using namespace llvm;
-using namespace aser;
+using namespace xray;
 
 static bool expandNestedGEP(Function &F, IRBuilder<NoFolder> &builder) {
   bool fixPoint;

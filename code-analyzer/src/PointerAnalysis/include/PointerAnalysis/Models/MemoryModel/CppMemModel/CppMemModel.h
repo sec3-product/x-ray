@@ -21,7 +21,7 @@
 
 extern cl::opt<bool> CONFIG_VTABLE_MODE;
 
-namespace aser {
+namespace xray {
 
 template <typename ctx> class FSMemModel;
 
@@ -308,6 +308,6 @@ struct MemModelTrait<cpp::CppMemModel<ctx>>
 
 #undef super
 
-} // namespace aser
+} // namespace xray
 
 #endif // ASER_PTA_CPPMEMMODEL_H

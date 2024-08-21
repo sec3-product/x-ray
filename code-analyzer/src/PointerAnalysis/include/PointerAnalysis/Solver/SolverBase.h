@@ -20,7 +20,7 @@ extern llvm::cl::opt<bool> ConfigPrintConstraintGraph;
 extern llvm::cl::opt<bool> ConfigPrintCallGraph;
 extern llvm::cl::opt<bool> ConfigDumpPointsToSet;
 
-namespace aser {
+namespace xray {
 
 template <typename ctx> class CallGraph;
 
@@ -680,7 +680,7 @@ bool SolverBase<LangModel, SubClass>::processCopy(CGNodeTy *src,
   return false;
 }
 
-} // namespace aser
+} // namespace xray
 
 #undef DEBUG_TYPE
 

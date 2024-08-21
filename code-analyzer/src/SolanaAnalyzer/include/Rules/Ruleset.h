@@ -7,13 +7,13 @@
 
 #include "Rule.h"
 
-namespace aser {
+namespace xray {
 
 class Ruleset {
 public:
   void addRule(Rule R) { Rules.push_back(std::move(R)); }
 
-  bool evaluate(const RuleContext &RC, const aser::CallSite &CS) const {
+  bool evaluate(const RuleContext &RC, const xray::CallSite &CS) const {
     for (const auto &R : Rules) {
       if (R.match(CS)) {
         R.handle(RC, CS);
@@ -30,4 +30,4 @@ private:
   std::vector<Rule> Rules;
 };
 
-} // namespace aser
+} // namespace xray

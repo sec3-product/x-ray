@@ -11,7 +11,7 @@
 namespace llvm::legacy {
 class PassManager;
 }
-namespace aser {
+namespace xray {
 template <typename ctx> class CtxFunction;
 
 // this class handles static object modelling,
@@ -199,6 +199,6 @@ template <typename MemModel> struct MemModelHelper {
   }
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif

@@ -11,7 +11,7 @@
 
 #include "CtxTrait.h"
 
-namespace aser {
+namespace xray {
 // although we only have two context (origin, callsite)
 // we make it va_args in case of future extension
 template <typename... Args> class HybridCtx {
@@ -35,7 +35,7 @@ public:
   const std::tuple<const Args *...> &getContext() const { return ctx; }
 
   friend CtxTrait<HybridCtx<Args...>>;
-  friend std::hash<aser::HybridCtx<Args...>>;
+  friend std::hash<xray::HybridCtx<Args...>>;
 };
 
 // for container operation
@@ -86,21 +86,21 @@ const HybridCtx<Args...> CtxTrait<HybridCtx<Args...>>::globCtx{
 template <typename... Args>
 std::unordered_set<HybridCtx<Args...>> CtxTrait<HybridCtx<Args...>>::ctxSet{};
 
-} // namespace aser
+} // namespace xray
 
 namespace std {
 
 // only hash context and value
-template <typename... Args> struct hash<aser::HybridCtx<Args...>> {
+template <typename... Args> struct hash<xray::HybridCtx<Args...>> {
   template <size_t... N>
-  size_t hash_tuple(const aser::HybridCtx<Args...> &wrapper,
+  size_t hash_tuple(const xray::HybridCtx<Args...> &wrapper,
                     std::index_sequence<N...> sequence) const {
     llvm::hash_code code =
         llvm::hash_combine(((const void *)std::get<N>(wrapper.ctx))...);
     return hash_value(code);
   }
 
-  size_t operator()(const aser::HybridCtx<Args...> &wrapper) const {
+  size_t operator()(const xray::HybridCtx<Args...> &wrapper) const {
     return this->hash_tuple(wrapper, std::index_sequence_for<Args...>{});
   }
 };

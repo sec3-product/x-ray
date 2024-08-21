@@ -18,7 +18,7 @@ extern bool DEBUG_PTA;
 extern bool DEBUG_PTA_VERBOSE;
 extern size_t PTAAnonLimit;
 
-namespace aser {
+namespace xray {
 
 size_t getGEPStepSize(const llvm::GetElementPtrInst *GEP,
                       const llvm::DataLayout &DL);
@@ -653,4 +653,4 @@ struct MemModelTrait<FSMemModel<ctx>> : MemModelHelper<FSMemModel<ctx>> {
   static const bool NEED_TYPE_INFO = true;
 };
 
-} // namespace aser
+} // namespace xray

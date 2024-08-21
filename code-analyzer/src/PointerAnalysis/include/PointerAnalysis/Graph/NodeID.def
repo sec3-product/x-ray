@@ -1,4 +1,4 @@
-namespace aser {
+namespace xray {
 
 using NodeID = uint32_t;
 

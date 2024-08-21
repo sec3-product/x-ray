@@ -10,7 +10,7 @@
 #define MORE_COMPLETE_TYPE_INFO
 
 using namespace llvm;
-using namespace aser;
+using namespace xray;
 
 Type *DefaultHeapModel::getNextBitCastDestType(const Instruction *allocSite) {
   // a call instruction
@@ -67,7 +67,7 @@ Type *DefaultHeapModel::inferCallocType(const Function *fun,
   if (auto elemType = getNextBitCastDestType(allocSite)) {
     assert(elemType->isSized());
 
-    aser::CallSite CS(allocSite);
+    xray::CallSite CS(allocSite);
     const DataLayout &DL = fun->getParent()->getDataLayout();
     const size_t elemSize = DL.getTypeAllocSize(elemType);
     const Value *elementNum = CS.getArgOperand(numArgNo);
@@ -107,7 +107,7 @@ Type *DefaultHeapModel::inferMallocType(const Function *fun,
       }
     }
 
-    aser::CallSite CS(allocSite);
+    xray::CallSite CS(allocSite);
     const DataLayout &DL = fun->getParent()->getDataLayout();
     const size_t elemSize = DL.getTypeAllocSize(elemType);
     const Value *totalSize = nullptr;

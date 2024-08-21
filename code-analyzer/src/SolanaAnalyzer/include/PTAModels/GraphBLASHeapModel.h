@@ -13,7 +13,7 @@
 #include "Util/Log.h"
 #include "Util/Util.h"
 
-namespace aser {
+namespace xray {
 
 class GraphBLASHeapModel : public DefaultHeapModel {
 private:
@@ -66,8 +66,8 @@ public:
     LOG_WARN("can not infer type for heap. type={}", *allocSite);
     return nullptr;
   }
-}; // namespace aser
+}; // namespace xray
 
-} // namespace aser
+} // namespace xray
 
 #endif // ASER_PTA_GRAPHBLASHEAPMODEL_H

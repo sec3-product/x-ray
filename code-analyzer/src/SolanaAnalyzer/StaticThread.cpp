@@ -3,7 +3,7 @@
 #include "AccountIDL.h"
 #include "Graph/Event.h"
 
-using namespace aser;
+using namespace xray;
 using namespace std;
 
 TID StaticThread::curID = 0;

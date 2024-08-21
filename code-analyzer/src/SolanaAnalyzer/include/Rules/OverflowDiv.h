@@ -7,10 +7,10 @@
 
 #include "Rule.h"
 
-namespace aser {
+namespace xray {
 
 bool matchDiv(const CallSite &);
 void handleDiv(const RuleContext &, const CallSite &);
 
-}; // namespace aser
+}; // namespace xray
 

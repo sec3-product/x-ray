@@ -16,7 +16,7 @@
 
 #include "Graph/Event.h"
 
-namespace aser {
+namespace xray {
 
 using CallingCtx = std::pair<std::vector<CallEvent *>, TID>;
 using json = nlohmann::json;
@@ -279,4 +279,4 @@ void printCallEventStackTrace(std::vector<CallEvent *> &st);
 
 void printSrcInfo(SourceInfo &srcInfo, TID tid);
 
-} // namespace aser
+} // namespace xray

@@ -14,7 +14,7 @@
 #include "Util/Log.h"
 
 using namespace std;
-using namespace aser;
+using namespace xray;
 using namespace llvm;
 
 void LoweringMemCpyPass::lowerMemCpyForType(Type *type, Value *src, Value *dst,
@@ -140,7 +140,7 @@ bool LoweringMemCpyPass::runOnModule(llvm::Module &M) {
   return changed;
 }
 
-char aser::LoweringMemCpyPass::ID = 0;
-static RegisterPass<aser::LoweringMemCpyPass> LMCPY("", "Lowering MemCpy call",
+char xray::LoweringMemCpyPass::ID = 0;
+static RegisterPass<xray::LoweringMemCpyPass> LMCPY("", "Lowering MemCpy call",
                                                     false, /*CFG only*/
                                                     false /*is analysis*/);

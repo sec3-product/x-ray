@@ -11,7 +11,7 @@
 
 // #define DEBUG_OUTPUT
 
-namespace aser {
+namespace xray {
 
 // SCC iterator on constraint graph
 // extend from llvm::scc_iterator, specialized for constraint graph
@@ -335,6 +335,6 @@ SCCIterator<ctx, cons, reverse> scc_end(const ConstraintGraph<ctx> &G,
   return SCCIterator<ctx, cons, reverse>::end(G);
 }
 
-} // namespace aser
+} // namespace xray
 
 #endif

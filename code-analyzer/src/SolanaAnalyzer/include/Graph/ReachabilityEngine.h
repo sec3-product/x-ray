@@ -10,7 +10,7 @@
 
 extern bool DEBUG_HB;
 
-namespace aser {
+namespace xray {
 
 class ReachabilityEngine {
 private:
@@ -139,6 +139,6 @@ public:
     }
   }
 };
-} // namespace aser
+} // namespace xray
 
 #endif

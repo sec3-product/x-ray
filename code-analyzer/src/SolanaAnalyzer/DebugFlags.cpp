@@ -1,6 +1,6 @@
 #include "DebugFlags.h"
 
-namespace aser {
+namespace xray {
 
 bool CONFIG_SHOW_SUMMARY;
 bool CONFIG_SHOW_DETAIL;
@@ -18,4 +18,4 @@ bool TERMINATE_IMMEDIATELY;
 bool DEBUG_HB;       // Referenced by Graph/ReachabilityEngine.h.
 bool DEBUG_LOCK_STR; // Referenced by LocksetManager.cpp.
 
-} // namespace aser
+} // namespace xray

@@ -13,13 +13,13 @@
 
 ----------------------------------- */
 
-void aser::highlight(std::string msg) {
+void xray::highlight(std::string msg) {
   llvm::outs().changeColor(llvm::raw_ostream::Colors::YELLOW);
   llvm::outs() << msg << "\n"; // add line break
   llvm::outs().resetColor();
 }
 
-void aser::info(std::string msg, bool newline) {
+void xray::info(std::string msg, bool newline) {
   llvm::outs().changeColor(llvm::raw_ostream::Colors::GREEN);
   if (newline) {
     llvm::outs() << msg << "\n";
@@ -29,16 +29,16 @@ void aser::info(std::string msg, bool newline) {
   llvm::outs().resetColor();
 }
 
-void aser::error(std::string msg) {
+void xray::error(std::string msg) {
   llvm::outs().changeColor(llvm::raw_ostream::Colors::RED);
   llvm::outs() << msg << "\n";
   llvm::outs().resetColor();
 }
 
-void aser::info(std::string msg) { info(msg, true); }
+void xray::info(std::string msg) { info(msg, true); }
 
 // TODO: add time zone info if needed
-std::string aser::getCurrentTimeStr() {
+std::string xray::getCurrentTimeStr() {
   char buf[80];
   std::time_t t = std::time(nullptr);
   auto local = std::localtime(&t);

@@ -5,7 +5,7 @@
 
 #include <llvm/Support/GraphWriter.h>
 
-namespace aser {
+namespace xray {
 
 bool DisplayGraph(llvm::StringRef Filename, bool wait = true,
                   llvm::GraphProgram::Name program = llvm::GraphProgram::DOT);
@@ -256,7 +256,7 @@ llvm::raw_ostream &WriteGraph(llvm::raw_ostream &O, const GraphType &G,
                               bool ShortNames = false,
                               const llvm::Twine &Title = "") {
   // Start the callgraph emission process...
-  aser::GraphWriter<const GraphType> W(O, G, ShortNames);
+  xray::GraphWriter<const GraphType> W(O, G, ShortNames);
 
   // Emit the callgraph.
   W.writeGraph(Title.str());
@@ -274,7 +274,7 @@ void WriteGraphToFile(const std::string &graphName, const GraphType &graph,
   llvm::ToolOutputFile F(fileName, ErrInfo, llvm::sys::fs::OF_None);
   if (!ErrInfo) {
     // dump the ValueFlowGraph here
-    aser::WriteGraph(F.os(), graph, simple);
+    xray::WriteGraph(F.os(), graph, simple);
     F.os().close();
 
     if (!F.os().has_error()) {
@@ -287,6 +287,6 @@ void WriteGraphToFile(const std::string &graphName, const GraphType &graph,
   F.os().clear_error();
 }
 
-} // namespace aser
+} // namespace xray
 
 #endif

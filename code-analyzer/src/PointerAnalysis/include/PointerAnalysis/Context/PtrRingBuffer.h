@@ -5,7 +5,7 @@
 #ifndef ASER_PTA_PTRRINGBUFFER_H
 #define ASER_PTA_PTRRINGBUFFER_H
 
-namespace aser {
+namespace xray {
 
 // forward declaration
 template <typename PtrT, uint32_t N> class PtrRingBuffer;
@@ -91,6 +91,6 @@ public:
   friend iterator;
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif // ASER_PTA_PTRRINGBUFFER_H

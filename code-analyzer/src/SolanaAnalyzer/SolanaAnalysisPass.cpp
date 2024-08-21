@@ -25,12 +25,12 @@
 #include "Util/Log.h"
 
 using namespace llvm;
-using namespace aser;
+using namespace xray;
 
-std::string aser::CONFIG_OUTPUT_PATH;
-std::string aser::TARGET_MODULE_PATH;
-unsigned int aser::NUM_OF_IR_LINES;
-unsigned int aser::NUM_OF_ATTACK_VECTORS;
+std::string xray::CONFIG_OUTPUT_PATH;
+std::string xray::TARGET_MODULE_PATH;
+unsigned int xray::NUM_OF_IR_LINES;
+unsigned int xray::NUM_OF_ATTACK_VECTORS;
 
 EventID Event::ID_counter = 0;
 llvm::StringRef stripSelfAccountName(llvm::StringRef account_name) {
@@ -275,7 +275,7 @@ static int versionCompare(std::string v1,
 
 static std::map<StringRef, StringRef> CARGO_TOML_CONFIG_MAP;
 
-void aser::computeCargoTomlConfig(llvm::Module *module) {
+void xray::computeCargoTomlConfig(llvm::Module *module) {
   auto f = module->getFunction("sol.model.cargo.toml");
   if (!f) {
     return;
@@ -283,7 +283,7 @@ void aser::computeCargoTomlConfig(llvm::Module *module) {
   for (auto &BB : *f) {
     for (auto &I : BB) {
       if (isa<CallBase>(&I)) {
-        aser::CallSite CS(&I);
+        xray::CallSite CS(&I);
         if (CS.getNumArgOperands() < 2)
           continue;
         auto v1 = CS.getArgOperand(0);
@@ -478,7 +478,7 @@ llvm::StringRef SolanaAnalysisPass::findCallStackAccountAliasName(
   return valueName;
 }
 
-void SolanaAnalysisPass::addCheckKeyEqual(const aser::ctx *ctx, TID tid,
+void SolanaAnalysisPass::addCheckKeyEqual(const xray::ctx *ctx, TID tid,
                                           const llvm::Instruction *inst,
                                           StaticThread *thread, CallSite &CS) {
   if (DEBUG_RUST_API)
@@ -589,7 +589,7 @@ void SolanaAnalysisPass::addCheckKeyEqual(const aser::ctx *ctx, TID tid,
   }
 }
 
-void SolanaAnalysisPass::handleConditionalCheck0(const aser::ctx *ctx, TID tid,
+void SolanaAnalysisPass::handleConditionalCheck0(const xray::ctx *ctx, TID tid,
                                                  const llvm::Function *func,
                                                  const llvm::Instruction *inst,
                                                  StaticThread *thread,
@@ -964,7 +964,7 @@ void SolanaAnalysisPass::updateKeyEqualMap(StaticThread *thread, const Event *e,
 }
 
 static std::map<TID, unsigned int> threadNFuncMap;
-static aser::trie::TrieNode *cur_trie;
+static xray::trie::TrieNode *cur_trie;
 
 int FUNC_COUNT_BUDGET;
 static unsigned int FUNC_COUNT_PROGRESS_THESHOLD = 10000;
@@ -1093,7 +1093,7 @@ bool SolanaAnalysisPass::mayBeExclusive(const Event *const e1,
 }
 
 void SolanaAnalysisPass::handleRustModelAPI(
-    const aser::ctx *ctx, TID tid, llvm::Function *func,
+    const xray::ctx *ctx, TID tid, llvm::Function *func,
     const llvm::Instruction *inst, StaticThread *thread, CallSite CS,
     bool isMacroArrayRefUsedInFunction) {
   auto calledFuncName = CS.getCalledFunction()->getName();
@@ -2015,7 +2015,7 @@ void SolanaAnalysisPass::handleRustModelAPI(
   }
 }
 
-void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
+void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
                                                Function *func,
                                                const Instruction *inst,
                                                StaticThread *thread,
@@ -2025,7 +2025,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
                  << "\n";
   }
 
-  auto createReadEventFunc = std::bind(&aser::ReachGraph::createReadEvent,
+  auto createReadEventFunc = std::bind(&xray::ReachGraph::createReadEvent,
                                        graph, ctx, std::placeholders::_1, tid);
   auto isInLoop = std::bind(&SolanaAnalysisPass::isInLoop, this);
   auto collectUnsafeOperationFunc =
@@ -3329,7 +3329,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const aser::ctx *ctx, TID tid,
 
 // inline all the calls and make copies on different threads.
 void SolanaAnalysisPass::traverseFunction(
-    const aser::ctx *ctx, const Function *func0, StaticThread *thread,
+    const xray::ctx *ctx, const Function *func0, StaticThread *thread,
     std::vector<const Function *> &callStack,
     std::map<uint8_t, const llvm::Constant *> *valMap) {
   auto tid = thread->getTID();
@@ -3360,7 +3360,7 @@ void SolanaAnalysisPass::traverseFunction(
   bool isMacroArrayRefUsedInFunction = false;
   // LOG_DEBUG("thread {} enter func : {}", tid,
   // demangle(func->getName().str()));
-  cur_trie = aser::trie::getNode(cur_trie, func);
+  cur_trie = xray::trie::getNode(cur_trie, func);
   for (auto &BB : *func) {
     for (BasicBlock::const_iterator BI = BB.begin(), BE = BB.end(); BI != BE;
          ++BI) {
@@ -3490,7 +3490,7 @@ void SolanaAnalysisPass::traverseFunction(
 }
 
 void SolanaAnalysisPass::traverseFunctionWrapper(
-    const aser::ctx *ctx, StaticThread *thread,
+    const xray::ctx *ctx, StaticThread *thread,
     std::vector<const Function *> &callStack, const Instruction *inst,
     const Function *f, std::map<uint8_t, const Constant *> *valMap) {
   // llvm::outs() << "  traverseFunctionWrapper: " << f->getName() << "\n";
@@ -3606,7 +3606,7 @@ void SolanaAnalysisPass::initStructFunctions() {
       for (auto &BB : *func) {
         for (auto &I : BB) {
           if (isa<CallBase>(&I)) {
-            aser::CallSite CS(&I);
+            xray::CallSite CS(&I);
             if (CS.getCalledFunction()->getName().startswith(
                     "sol.model.struct.field")) {
               auto value1 = CS.getArgOperand(0);
@@ -4096,7 +4096,7 @@ void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
   }
 }
 
-void SolanaAnalysisPass::detectAccountsCosplay(const aser::ctx *ctx, TID tid) {
+void SolanaAnalysisPass::detectAccountsCosplay(const xray::ctx *ctx, TID tid) {
   // find one with user-provided seeds
   for (auto account : userProvidedInputStringPDAAccounts) {
     if (DEBUG_RUST_API)
@@ -4190,7 +4190,7 @@ void SolanaAnalysisPass::detectAccountsCosplay(const aser::ctx *ctx, TID tid) {
   }
 }
 
-void SolanaAnalysisPass::detectRaceCondition(const aser::ctx *ctx, TID tid) {
+void SolanaAnalysisPass::detectRaceCondition(const xray::ctx *ctx, TID tid) {
   for (auto [funcCancel, cancelAccounts] :
        potentialCancelOrderRelatedAccountsMap) {
     if (DEBUG_RUST_API)
@@ -4259,7 +4259,7 @@ void SolanaAnalysisPass::detectRaceCondition(const aser::ctx *ctx, TID tid) {
 }
 
 StaticThread *SolanaAnalysisPass::forkNewThread(ForkEvent *forkEvent) {
-  aser::CallSite forkSite(forkEvent->getInst());
+  xray::CallSite forkSite(forkEvent->getInst());
   assert(forkSite.isCallOrInvoke());
 
   if (LangModel::isRustAPI(forkSite.getTargetFunction())) {
@@ -4308,7 +4308,7 @@ bool SolanaAnalysisPass::runOnModule(llvm::Module &module) {
   auto mainThread = new StaticThread(entryNode);
 
   graph = new ReachGraph(*this);
-  aser::trie::TrieNode *rootTrie = nullptr;
+  xray::trie::TrieNode *rootTrie = nullptr;
 
   // start traversing with the main thread
   threadList.push(mainThread);
@@ -4328,9 +4328,9 @@ bool SolanaAnalysisPass::runOnModule(llvm::Module &module) {
     threadSet.push_back(curThread);
 
     if (rootTrie) {
-      aser::trie::cleanTrie(rootTrie);
+      xray::trie::cleanTrie(rootTrie);
     }
-    rootTrie = aser::trie::getNode(nullptr, nullptr);
+    rootTrie = xray::trie::getNode(nullptr, nullptr);
     cur_trie = rootTrie; // init cur_trie to root
 
     auto tid = curThread->getTID();

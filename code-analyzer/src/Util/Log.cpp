@@ -6,7 +6,7 @@
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
-namespace aser {
+namespace xray {
 namespace logger {
 
 std::shared_ptr<spdlog::logger> logger;
@@ -154,4 +154,4 @@ void endPhase() {
 }
 
 } // namespace logger
-} // namespace aser
+} // namespace xray

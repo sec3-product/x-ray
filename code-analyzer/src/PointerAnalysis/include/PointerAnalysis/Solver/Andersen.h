@@ -7,7 +7,7 @@
 #include "SolverBase.h"
 
 // a simple andersen solver (no scc detection as well as no topo sort)
-namespace aser {
+namespace xray {
 
 template <typename LangModel>
 class Andersen : public SolverBase<LangModel, Andersen<LangModel>> {
@@ -84,6 +84,6 @@ protected:
   friend super;
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif

@@ -12,7 +12,7 @@ using namespace llvm;
 
 extern cl::opt<bool> CONFIG_VTABLE_MODE;
 
-namespace aser {
+namespace xray {
 namespace cpp {
 
 inline bool isVTableVariable(const llvm::Value *g) {
@@ -39,7 +39,7 @@ bool RewriteModeledAPIPass::runOnFunction(llvm::Function &F) {
   if (CONFIG_VTABLE_MODE) {
     // here mark the vtable instruction
     bool changed = false;
-    aser::Demangler demangler;
+    xray::Demangler demangler;
 
     if (!demangler.partialDemangle(F.getName())) {
       std::vector<StoreInst *> removedInst;
@@ -91,4 +91,4 @@ static RegisterPass<RewriteModeledAPIPass>
     RMP("", "", false, /*CFG only*/ false /*is analysis*/);
 } // namespace cpp
 
-} // namespace aser
+} // namespace xray

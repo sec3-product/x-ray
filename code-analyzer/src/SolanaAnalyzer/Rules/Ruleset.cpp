@@ -5,7 +5,7 @@
 #include "Rules/OverflowMul.h"
 #include "Rules/OverflowSub.h"
 
-namespace aser {
+namespace xray {
 
 Ruleset Ruleset::createRustModelRuleset() {
   Ruleset RS;
@@ -29,4 +29,4 @@ Ruleset Ruleset::createRustModelRuleset() {
 
 Ruleset Ruleset::createNonRustModelRuleset() { return Ruleset(); }
 
-} // namespace aser
+} // namespace xray

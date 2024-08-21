@@ -17,7 +17,7 @@
 
 extern cl::opt<bool> USE_MEMLAYOUT_FILTERING;
 
-namespace aser {
+namespace xray {
 
 namespace cpp {
 template <typename ctx> class CppMemModel;
@@ -418,6 +418,6 @@ public:
   friend cpp::CppMemModel<ctx>;
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif // ASER_PTA_MEMBLOCK_H

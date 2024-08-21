@@ -6,7 +6,7 @@
 
 #include <unordered_set>
 
-namespace aser {
+namespace xray {
 
 template <typename T> class SingleInstanceOwner {
 protected:
@@ -68,6 +68,6 @@ public:
   }
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif

@@ -22,7 +22,7 @@ namespace llvm {
 class CallBase;
 }
 
-namespace aser {
+namespace xray {
 namespace cpp {
 
 // forward declaration
@@ -186,6 +186,6 @@ public:
 };
 
 } // namespace cpp
-} // namespace aser
+} // namespace xray
 
 #endif // ASER_PTA_VECTOR_H

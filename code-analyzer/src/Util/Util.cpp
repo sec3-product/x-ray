@@ -14,7 +14,7 @@
 #include <llvm/Transforms/Utils/Local.h>
 
 using namespace llvm;
-using namespace aser;
+using namespace xray;
 
 static bool isCompatibleFunctionType(const FunctionType *FT1,
                                      const FunctionType *FT2);
@@ -104,7 +104,7 @@ static bool isTypeEqual(const llvm::Type *T1, const llvm::Type *T2,
   return false;
 }
 
-bool aser::isZeroOffsetTypeInRootType(const Type *rootType,
+bool xray::isZeroOffsetTypeInRootType(const Type *rootType,
                                       const Type *elemType,
                                       const DataLayout &DL) {
   if (rootType == nullptr || elemType == nullptr) {
@@ -157,7 +157,7 @@ bool aser::isZeroOffsetTypeInRootType(const Type *rootType,
   return isTypeEqual(rootType, elemType, DL);
 }
 
-const Type *aser::getTypeAtOffset(const Type *ctype, size_t offset,
+const Type *xray::getTypeAtOffset(const Type *ctype, size_t offset,
                                   const DataLayout &DL, bool stripArray) {
   if (offset == 0) {
     if (stripArray) {
@@ -194,7 +194,7 @@ const Type *aser::getTypeAtOffset(const Type *ctype, size_t offset,
 
 // TODO. can llvm names has more than one number post fix?
 // e.g., fun.123.456
-StringRef aser::stripNumberPostFix(StringRef originalName) {
+StringRef xray::stripNumberPostFix(StringRef originalName) {
   auto splited = originalName.rsplit(".");
   if (!splited.second.empty()) {
     int tmp;
@@ -206,7 +206,7 @@ StringRef aser::stripNumberPostFix(StringRef originalName) {
   return originalName;
 }
 
-void aser::prettyFunctionPrinter(const Function *func, raw_ostream &os) {
+void xray::prettyFunctionPrinter(const Function *func, raw_ostream &os) {
   os << *func->getReturnType() << " @" << func->getName() << "(";
   auto funcType = func->getFunctionType();
   for (unsigned I = 0, E = funcType->getNumParams(); I != E; ++I) {
@@ -222,7 +222,7 @@ void aser::prettyFunctionPrinter(const Function *func, raw_ostream &os) {
   os << ")";
 }
 
-std::string aser::getDemangledName(StringRef mangledName) {
+std::string xray::getDemangledName(StringRef mangledName) {
   //    ItaniumPartialDemangler demangler;
 
   mangledName = stripNumberPostFix(mangledName);
@@ -356,7 +356,7 @@ static bool isCompatibleFunctionType(const FunctionType *FT1,
 }
 
 static std::map<std::string, size_t> NodeDistribution;
-void aser::recordCGNode(const llvm::Value *val) {
+void xray::recordCGNode(const llvm::Value *val) {
   auto dir = getSourceDir(val);
   if (NodeDistribution.find(dir) == NodeDistribution.end()) {
     NodeDistribution.insert(std::make_pair(dir, 1));
@@ -365,7 +365,7 @@ void aser::recordCGNode(const llvm::Value *val) {
   }
 }
 
-void aser::dumpCGNodeDistribution() {
+void xray::dumpCGNodeDistribution() {
   llvm::outs() << "*************************************\n";
   for (auto it = NodeDistribution.begin(), ie = NodeDistribution.end();
        it != ie; it++) {
@@ -374,7 +374,7 @@ void aser::dumpCGNodeDistribution() {
   llvm::outs() << "*************************************\n";
 }
 
-std::string aser::getSourceDir(const Value *val) {
+std::string xray::getSourceDir(const Value *val) {
   assert(val != nullptr);
 
   if (auto inst = llvm::dyn_cast<Instruction>(val)) {
@@ -463,7 +463,7 @@ static bool isLooslyCompatibleCall(const llvm::CallBase *CS,
   return true;
 }
 
-llvm::Type *aser::isStructWithFlexibleArray(const llvm::StructType *ST) {
+llvm::Type *xray::isStructWithFlexibleArray(const llvm::StructType *ST) {
   // C99, only structure type can have flexible array elements
   size_t numElem = ST->getNumElements();
   if (numElem) {
@@ -477,7 +477,7 @@ llvm::Type *aser::isStructWithFlexibleArray(const llvm::StructType *ST) {
 }
 
 llvm::StructType *
-aser::getConvertedFlexibleArrayType(const llvm::StructType *ST,
+xray::getConvertedFlexibleArrayType(const llvm::StructType *ST,
                                     llvm::Type *flexibleArrayElem) {
   assert(isStructWithFlexibleArray(ST));
 
@@ -503,7 +503,7 @@ extern cl::opt<bool> CONFIG_EXHAUST_MODE;
 
 // simple type check fails when cases like
 // call void (...) %ptr()
-bool aser::isCompatibleCall(const llvm::Instruction *indirectCall,
+bool xray::isCompatibleCall(const llvm::Instruction *indirectCall,
                             const llvm::Function *target) {
   auto call = cast<CallBase>(indirectCall);
 

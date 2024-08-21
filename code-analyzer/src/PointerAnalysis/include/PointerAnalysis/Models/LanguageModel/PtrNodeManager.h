@@ -13,7 +13,7 @@
 extern bool DEBUG_PTA;
 extern bool DEBUG_PTA_VERBOSE;
 
-namespace aser {
+namespace xray {
 
 template <typename ctx>
 class PtrNodeManager : public SingleInstanceOwner<Pointer<ctx>> {
@@ -212,5 +212,5 @@ public:
   }
 };
 
-} // namespace aser
+} // namespace xray
 #endif // ASER_PTA_PTRNODEMANAGER_H

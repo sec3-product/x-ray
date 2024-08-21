@@ -6,7 +6,7 @@
 
 #include "CGNodeBase.h"
 
-namespace aser {
+namespace xray {
 
 template <typename MemModel> struct MemModelTrait;
 
@@ -62,6 +62,6 @@ public:
   friend class ConstraintGraph<ctx>;
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif

@@ -9,7 +9,7 @@
 // represent pointers in programs
 #include <llvm/ADT/Hashing.h>
 
-namespace aser {
+namespace xray {
 
 template <typename ctx> class CGPtrNode;
 
@@ -56,12 +56,12 @@ bool operator<(const Pointer<ctx> &lhs, const Pointer<ctx> &rhs) {
   return lhs.getValue() < rhs.getValue();
 }
 
-} // namespace aser
+} // namespace xray
 
 namespace std {
 // only hash context and value
-template <typename ctx> struct hash<aser::Pointer<ctx>> {
-  size_t operator()(const aser::Pointer<ctx> &ptr) const {
+template <typename ctx> struct hash<xray::Pointer<ctx>> {
+  size_t operator()(const xray::Pointer<ctx> &ptr) const {
     llvm::hash_code seed = llvm::hash_value(ptr.getContext());
     llvm::hash_code hash = llvm::hash_combine(ptr.getValue(), seed);
     return hash_value(hash);

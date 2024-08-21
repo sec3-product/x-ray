@@ -17,7 +17,7 @@ class StructType;
 
 } // namespace llvm
 
-namespace aser {
+namespace xray {
 
 llvm::DIType *stripTypeDefDI(llvm::DIType *DI);
 llvm::DIType *stripArrayDI(llvm::DIType *DI);
@@ -50,6 +50,6 @@ inline llvm::DIType *getBaseType(DebugInfoType *T) {
 }
 
 std::size_t getDISize(llvm::DIDerivedType *T);
-} // namespace aser
+} // namespace xray
 
 #endif // ASER_PTA_TYPEMETADATA_H

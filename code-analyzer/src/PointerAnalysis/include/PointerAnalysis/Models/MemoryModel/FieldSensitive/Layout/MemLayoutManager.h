@@ -15,7 +15,7 @@
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/Layout/MemLayout.h"
 #include "Util/Log.h"
 
-namespace aser {
+namespace xray {
 
 class MemLayoutManager {
 private:
@@ -274,6 +274,6 @@ public:
   }
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif // ASER_PTA_MEMLAYOUTMANAGER_H

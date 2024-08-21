@@ -4,7 +4,7 @@
 #include <set>
 #include <string>
 
-namespace aser {
+namespace xray {
 
 class SVE {
 public:
@@ -80,4 +80,4 @@ public:
   static bool isCheckerDisabled(SVE::Type type);
 };
 
-} // namespace aser
+} // namespace xray

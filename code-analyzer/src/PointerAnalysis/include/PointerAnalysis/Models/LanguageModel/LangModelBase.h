@@ -8,7 +8,7 @@
 #include "ConsGraphBuilder.h"
 #include "Util/Util.h"
 
-namespace aser {
+namespace xray {
 
 // TODO: what about the function subroutine is an indirect call
 // TODO: what about the indirect call resolved to pthread_create?
@@ -318,5 +318,5 @@ struct LangModelTrait<LangModelBase<ctx, MemModel, PtsTy, SubClass>> {
   template <typename Key, typename PT> friend class MapObject;
 };
 
-} // namespace aser
+} // namespace xray
 #endif // ASER_PTA_LANGMODELBASE_H

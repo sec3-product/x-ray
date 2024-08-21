@@ -9,7 +9,7 @@
 #include "PTSTrait.h"
 #include "Util/Util.h"
 
-namespace aser {
+namespace xray {
 
 // this can be slow as the pointedBy relation can not be
 // updated in constant time.
@@ -139,8 +139,8 @@ class PointedByPts {
   friend class PTSTrait<PointedByPts>;
 };
 
-} // namespace aser
+} // namespace xray
 
-DEFINE_PTS_TRAIT(aser::PointedByPts)
+DEFINE_PTS_TRAIT(xray::PointedByPts)
 
 #endif

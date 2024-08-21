@@ -20,7 +20,7 @@
             Output Utils
 
 ----------------------------------- */
-void aser::outputJSON(std::string OutputPath) {
+void xray::outputJSON(std::string OutputPath) {
   std::string path;
   if (!OutputPath.empty()) {
     path = OutputPath;

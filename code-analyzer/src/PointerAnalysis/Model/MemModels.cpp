@@ -11,7 +11,7 @@
 #include "Util/Log.h"
 #include "Util/Util.h"
 
-using namespace aser;
+using namespace xray;
 using namespace llvm;
 
 extern cl::opt<bool> USE_MEMLAYOUT_FILTERING;
@@ -47,7 +47,7 @@ static const Value *stripNullOrUnDef(const Value *V) {
 }
 
 // modified from llvm::stripPointerCastsAndOffsets
-const Value *aser::stripPointerCastsAndOffsets(const Value *V) {
+const Value *xray::stripPointerCastsAndOffsets(const Value *V) {
   // Even though we don't look through PHI nodes, we could be called on an
   // instruction in an unreachable block, which may be on a cycle.
   SmallPtrSet<const Value *, 4> Visited;
@@ -160,7 +160,7 @@ const Value *FSCanonicalizer::canonicalize(const llvm::Value *V) {
   return V;
 }
 
-namespace aser {
+namespace xray {
 
 // get the step size of the getelementptr (which uses variable index)
 // return MAX_size_t when it can not be resolved
@@ -234,4 +234,4 @@ bool isArrayExistAtOffset(const std::map<size_t, ArrayLayout *> &arrayMap,
   return false;
 }
 
-} // namespace aser
+} // namespace xray

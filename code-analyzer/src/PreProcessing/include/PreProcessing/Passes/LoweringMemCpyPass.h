@@ -14,7 +14,7 @@ template <typename T, unsigned N> class SmallVector;
 class NoFolder;
 } // namespace llvm
 
-namespace aser {
+namespace xray {
 
 class LoweringMemCpyPass : public llvm::ModulePass {
 private:
@@ -31,6 +31,6 @@ public:
   bool runOnModule(llvm::Module &) override;
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif // ASER_PTA_LOWERINGMEMCPYPASS_H

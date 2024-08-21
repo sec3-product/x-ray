@@ -11,7 +11,7 @@
 #define DEBUG_TYPE "pta-cons-graph"
 extern bool DEBUG_PTA;
 extern bool DEBUG_PTA_VERBOSE;
-namespace aser {
+namespace xray {
 
 // IMPORTANT!!
 // To guarantee the correctness of the SCC detection algorithm,
@@ -212,26 +212,26 @@ public:
         callBack(nullptr){};
 };
 
-} // namespace aser
+} // namespace xray
 
 namespace llvm {
 
 template <typename ctx>
-struct GraphTraits<const aser::ConstraintGraph<ctx>>
+struct GraphTraits<const xray::ConstraintGraph<ctx>>
     : public GraphTraits<
-          const aser::GraphBase<aser::CGNodeBase<ctx>, aser::Constraints>> {};
+          const xray::GraphBase<xray::CGNodeBase<ctx>, xray::Constraints>> {};
 
 template <typename ctx>
-struct GraphTraits<aser::ConstraintGraph<ctx>>
+struct GraphTraits<xray::ConstraintGraph<ctx>>
     : public GraphTraits<
-          aser::GraphBase<aser::CGNodeBase<ctx>, aser::Constraints>> {};
+          xray::GraphBase<xray::CGNodeBase<ctx>, xray::Constraints>> {};
 
 // for callgraph visualization
 template <typename ctx>
-struct DOTGraphTraits<const aser::ConstraintGraph<ctx>>
+struct DOTGraphTraits<const xray::ConstraintGraph<ctx>>
     : public DefaultDOTGraphTraits {
-  using GraphTy = aser::ConstraintGraph<ctx>;
-  using NodeTy = aser::CGNodeBase<ctx>;
+  using GraphTy = xray::ConstraintGraph<ctx>;
+  using NodeTy = xray::CGNodeBase<ctx>;
 
   explicit DOTGraphTraits(bool simple = false)
       : DefaultDOTGraphTraits(simple) {}
@@ -264,19 +264,19 @@ struct DOTGraphTraits<const aser::ConstraintGraph<ctx>>
   template <typename EdgeIter>
   static std::string getEdgeAttributes(const NodeTy *node, EdgeIter EI,
                                        const GraphTy &graph) {
-    aser::Constraints edgeTy = (*EI).first;
+    xray::Constraints edgeTy = (*EI).first;
     switch (edgeTy) {
-    case aser::Constraints::load:
+    case xray::Constraints::load:
       return "color=red";
-    case aser::Constraints::store:
+    case xray::Constraints::store:
       return "color=blue";
-    case aser::Constraints::copy:
+    case xray::Constraints::copy:
       break;
-    case aser::Constraints::addr_of:
+    case xray::Constraints::addr_of:
       return "color=green";
-    case aser::Constraints::offset:
+    case xray::Constraints::offset:
       return "color=purple";
-    case aser::Constraints::special:
+    case xray::Constraints::special:
       return "color=olive";
     }
     return "";

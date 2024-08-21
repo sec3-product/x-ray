@@ -9,7 +9,7 @@
 #include "CGObjNode.h"
 #include "CGPtrNode.h"
 
-namespace aser {
+namespace xray {
 // nodes represent collapsed SCC
 template <typename ctx> class CGSuperNode : public CGNodeBase<ctx> {
 private:
@@ -75,6 +75,6 @@ public:
   friend class ConstraintGraph<ctx>;
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif

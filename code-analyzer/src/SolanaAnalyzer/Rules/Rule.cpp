@@ -6,7 +6,7 @@
 #include "PTAModels/GraphBLASModel.h"
 #include "SourceInfo.h"
 
-namespace aser {
+namespace xray {
 
 bool isUpper(const std::string &s) {
   return std::all_of(s.begin(), s.end(), [](unsigned char c) {
@@ -89,4 +89,4 @@ bool RuleContext::hasValueLessMoreThan(const llvm::Value *value,
   return snippet.find(valueLessThan) != std::string::npos;
 }
 
-} // namespace aser
+} // namespace xray

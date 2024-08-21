@@ -28,14 +28,14 @@ static bool nolimit = false;
 ----------------------------------- */
 
 // static fields
-uint aser::UnsafeOperation::budget = DEFAULT_BUDGET;
-std::vector<aser::UnsafeOperation> aser::UnsafeOperation::unsafeOperations;
+uint xray::UnsafeOperation::budget = DEFAULT_BUDGET;
+std::vector<xray::UnsafeOperation> xray::UnsafeOperation::unsafeOperations;
 
 // used for filtering
-std::set<std::string> aser::UnsafeOperation::apiSigs;
-std::set<std::vector<std::string>> aser::UnsafeOperation::callStackSigs;
+std::set<std::string> xray::UnsafeOperation::apiSigs;
+std::set<std::vector<std::string>> xray::UnsafeOperation::callStackSigs;
 
-void aser::UnsafeOperation::init(int configReportLimit,
+void xray::UnsafeOperation::init(int configReportLimit,
                                  bool configNoReportLimit) {
   if (configReportLimit != -1) {
     budget = configReportLimit;
@@ -43,7 +43,7 @@ void aser::UnsafeOperation::init(int configReportLimit,
   nolimit = configNoReportLimit;
 }
 
-std::string aser::UnsafeOperation::getErrorMsg(SVE::Type type) {
+std::string xray::UnsafeOperation::getErrorMsg(SVE::Type type) {
   std::string msg;
   switch (type) {
   case SVE::Type::OVERFLOW_ADD:
@@ -126,7 +126,7 @@ std::string aser::UnsafeOperation::getErrorMsg(SVE::Type type) {
   return msg;
 }
 
-bool aser::UnsafeOperation::filter(SourceInfo &srcInfo) {
+bool xray::UnsafeOperation::filter(SourceInfo &srcInfo) {
   if (apiSigs.find(srcInfo.sig()) != apiSigs.end()) {
     return true;
   }
@@ -135,7 +135,7 @@ bool aser::UnsafeOperation::filter(SourceInfo &srcInfo) {
   return false;
 }
 
-bool aser::UnsafeOperation::filterByCallStack(std::vector<std::string> &st0) {
+bool xray::UnsafeOperation::filterByCallStack(std::vector<std::string> &st0) {
   auto st = st0;
   // this one is special: keep only the last few entries
   if (st0.size() > 1) {
@@ -152,7 +152,7 @@ bool aser::UnsafeOperation::filterByCallStack(std::vector<std::string> &st0) {
 }
 
 extern bool hasOverFlowChecks;
-void aser::UnsafeOperation::collect(
+void xray::UnsafeOperation::collect(
     const Event *e, std::map<TID, std::vector<CallEvent *>> &callEventTraces,
     SVE::Type type, int P) {
   if (hasOverFlowChecks && type != SVE::Type::CAST_TRUNCATE)
@@ -208,7 +208,7 @@ void aser::UnsafeOperation::collect(
   }
 }
 
-aser::UnsafeOperation::UnsafeOperation(SourceInfo &srcInfo, std::string msg,
+xray::UnsafeOperation::UnsafeOperation(SourceInfo &srcInfo, std::string msg,
                                        SVE::Type t, int P, bool isIgnored,
                                        bool isHidden)
     : apiInst(srcInfo), errorMsg(msg), type(t), p(P), ignore(isIgnored),
@@ -219,7 +219,7 @@ aser::UnsafeOperation::UnsafeOperation(SourceInfo &srcInfo, std::string msg,
   url = SVE::SOLANA_SVE_DB[id]["url"];
 }
 
-json aser::UnsafeOperation::to_json() {
+json xray::UnsafeOperation::to_json() {
   json j({{"priority", p},
           {"inst", apiInst},
           {"errorMsg", errorMsg},
@@ -231,7 +231,7 @@ json aser::UnsafeOperation::to_json() {
   return j;
 }
 
-void aser::UnsafeOperation::print() {
+void xray::UnsafeOperation::print() {
   // llvm::outs() << "=============This arithmetic operation may be
   // UNSAFE!================\n"; outs() << "Found a potential vulnerability at
   // line " << apiInst.getLine() << ", column " << apiInst.getCol()
@@ -255,14 +255,14 @@ void aser::UnsafeOperation::print() {
   outs() << "For more info, see " << url << "\n\n\n";
 }
 
-void aser::UnsafeOperation::printAll() {
+void xray::UnsafeOperation::printAll() {
   std::sort(unsafeOperations.begin(), unsafeOperations.end());
   for (auto r : unsafeOperations) {
     r.print();
   }
 }
 
-void aser::UnsafeOperation::printSummary() {
+void xray::UnsafeOperation::printSummary() {
   info("detected " + std::to_string(unsafeOperations.size()) +
        " unsafe operations in total.");
 }

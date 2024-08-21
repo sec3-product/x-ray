@@ -8,7 +8,7 @@
 
 #include "Util/Util.h"
 
-namespace aser {
+namespace xray {
 
 // wrapper around llvm::CallSite,
 // but resolve constant expression evaluated to a function
@@ -92,6 +92,6 @@ public:
   inline llvm::Type *getType() const { return CB->getType(); };
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif

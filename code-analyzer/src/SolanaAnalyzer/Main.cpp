@@ -30,7 +30,7 @@
 #include "SolanaAnalysisPass.h"
 
 using namespace llvm;
-using namespace aser;
+using namespace xray;
 using namespace std;
 
 cl::opt<std::string> TargetModulePath(cl::Positional,

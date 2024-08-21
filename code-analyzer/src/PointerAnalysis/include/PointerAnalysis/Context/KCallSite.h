@@ -12,7 +12,7 @@
 #include "PointerAnalysis/Program/CallSite.h"
 #include "Util/SingleInstanceOwner.h"
 
-namespace aser {
+namespace xray {
 
 template <uint32_t K> class KCallSite {
 private:
@@ -26,7 +26,7 @@ public:
 
   KCallSite(const self *prevCtx, const llvm::Instruction *I)
       : ctxBuffer(prevCtx->ctxBuffer) {
-    assert(aser::CallSite(I).isCallOrInvoke());
+    assert(xray::CallSite(I).isCallOrInvoke());
     ctxBuffer.push(I);
   }
 
@@ -127,13 +127,13 @@ template <uint32_t K> const KCallSite<K> CtxTrait<KCallSite<K>>::globCtx{};
 template <uint32_t K>
 std::unordered_set<KCallSite<K>> CtxTrait<KCallSite<K>>::ctxSet{};
 
-} // namespace aser
+} // namespace xray
 
 namespace std {
 
 // only hash context and value
-template <uint32_t K> struct hash<aser::KCallSite<K>> {
-  size_t operator()(const aser::KCallSite<K> &cs) const {
+template <uint32_t K> struct hash<xray::KCallSite<K>> {
+  size_t operator()(const xray::KCallSite<K> &cs) const {
     llvm::hash_code hash = llvm::hash_combine_range(cs.begin(), cs.end());
     return hash_value(hash);
   }

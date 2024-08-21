@@ -8,7 +8,7 @@
 
 #include <llvm/ADT/iterator.h>
 
-namespace aser {
+namespace xray {
 
 template <typename _Tp> struct const_pointer {
   typedef const typename std::remove_pointer<_Tp>::type *type;
@@ -325,6 +325,6 @@ public:
   }
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif

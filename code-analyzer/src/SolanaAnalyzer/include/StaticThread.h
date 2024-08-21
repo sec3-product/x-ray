@@ -11,7 +11,7 @@
 #include "DebugFlags.h"
 #include "PTAModels/GraphBLASModel.h"
 
-namespace aser {
+namespace xray {
 
 using TID = uint32_t;
 class Event;
@@ -1157,4 +1157,4 @@ private:
   std::vector<ForkEvent *> forkSites;
 };
 
-} // namespace aser
+} // namespace xray

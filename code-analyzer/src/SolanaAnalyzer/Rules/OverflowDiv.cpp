@@ -11,7 +11,7 @@
 #include "PTAModels/GraphBLASModel.h"
 #include "Rules/Rule.h"
 
-namespace aser {
+namespace xray {
 
 bool matchDiv(const CallSite &callSite) {
   return callSite.getTargetFunction()->getName().equals("sol./");
@@ -49,5 +49,5 @@ void handleDiv(const RuleContext &ruleContext, const CallSite &callSite) {
   }
 }
 
-} // namespace aser
+} // namespace xray
 

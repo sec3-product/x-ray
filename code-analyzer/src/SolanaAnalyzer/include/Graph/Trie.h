@@ -16,7 +16,7 @@ extern int SAME_FUNC_BUDGET_SIZE; // keep at most x times per func per thread 10
 // stack trace too many times.
 // The Trie data structure can potentially be used in many other places
 // we can later implentent a better version
-namespace aser {
+namespace xray {
 namespace trie {
 
 // keep at most x times of the same callees
@@ -100,5 +100,5 @@ static void cleanTrie(TrieNode *root) {
 }
 
 } // namespace trie
-} // namespace aser
+} // namespace xray
 #endif

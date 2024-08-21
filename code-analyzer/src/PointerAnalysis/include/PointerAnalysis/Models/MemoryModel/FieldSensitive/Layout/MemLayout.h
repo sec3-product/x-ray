@@ -16,7 +16,7 @@ namespace llvm {
 class Type;
 }
 
-namespace aser {
+namespace xray {
 
 // forward declaration
 class MemLayoutManager;
@@ -175,6 +175,6 @@ public:
   friend MemLayoutManager;
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif // ASER_PTA_MEMLAYOUT_H

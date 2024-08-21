@@ -14,7 +14,7 @@
 #include "PointerAnalysis/Program/CallSite.h"
 #include "Util/Demangler.h"
 
-namespace aser {
+namespace xray {
 using EventID = uint64_t;
 enum class EventType : uint8_t {
   Write,
@@ -74,9 +74,9 @@ public:
   inline const std::vector<std::string>
   getInlinedCallSiteStrings(bool isCpp) const {
     std::vector<std::string> csStrs;
-    // use aser::demangler as it will strip the number postfix
+    // use xray::demangler as it will strip the number postfix
     // e.g., funName.123 will demangled to funName
-    aser::Demangler demangler;
+    xray::Demangler demangler;
 
     if (DILocation *Loc = inst->getDebugLoc()) {
       while (auto Loc2 = Loc->getInlinedAt()) {
@@ -292,7 +292,7 @@ public:
     }
 
     if (isCpp) {
-      aser::Demangler demangler;
+      xray::Demangler demangler;
       if (demangler.partialDemangle(funcName.str())) {
         // demange error
         funcName = stripNumberPostFix(funcName);
@@ -349,5 +349,5 @@ public:
   inline const llvm::Value *getLockPointer() const { return lockPtr; }
 };
 
-} // namespace aser
+} // namespace xray
 #endif

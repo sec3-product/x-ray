@@ -27,7 +27,7 @@
 extern bool DEBUG_PTA;
 extern bool DEBUG_PTA_VERBOSE;
 
-namespace aser {
+namespace xray {
 
 #define MODEL static_cast<SubClass *>(this)
 #define ALLOCATE(name, ...)                                                    \
@@ -305,7 +305,7 @@ protected:
       return;
     }
 
-    aser::CallSite CS(callsite);
+    xray::CallSite CS(callsite);
     // must be a call instruction
     assert(CS.isCallOrInvoke());
     // the target function should match
@@ -332,9 +332,9 @@ protected:
     }
 
     if (callee->getFunction()->isDeclaration()) {
-      if (callee->getFunction()->getName().startswith("__aser_")) {
+      if (callee->getFunction()->getName().startswith("__xray_")) {
         // marker function for verifying the result of the pointer analysis
-        // e.g., "__aser_no_alias__", "__aser_alias__"
+        // e.g., "__xray_no_alias__", "__xray_alias__"
         return;
       }
       LOG_TRACE("unhandled external function. function={}",
@@ -771,7 +771,7 @@ protected:
   }
 };
 
-} // namespace aser
+} // namespace xray
 
 namespace std {
 

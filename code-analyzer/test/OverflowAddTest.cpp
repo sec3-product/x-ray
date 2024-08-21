@@ -10,7 +10,7 @@
 #include "Rules/OverflowAdd.h"
 #include "Rules/Rule.h"
 
-namespace aser {
+namespace xray {
 
 class TestableRuleContext : public RuleContext {
 public:
@@ -45,7 +45,7 @@ private:
   bool safeType;
   bool inLoop;
   bool safeVariable;
-  aser::FuncArgTypesMap dummyFuncArgTypesMap;
+  xray::FuncArgTypesMap dummyFuncArgTypesMap;
   mutable size_t unsafeOps;
 };
 
@@ -62,7 +62,7 @@ TEST(HandlePlusEqualTest, NoOverflowTriggered) {
       llvm::BasicBlock::Create(context, "entry", function);
   llvm::CallInst *callInst = llvm::CallInst::Create(function, "", block);
 
-  aser::CallSite callSite(callInst);
+  xray::CallSite callSite(callInst);
   TestableRuleContext ruleContext(true,  // safeType
                                   false, // inLoop
                                   true); // safeVariable
@@ -127,7 +127,7 @@ TEST(HandlePlusEqualTest, OverflowTriggeredUnsafeTypes) {
   llvm::CallInst *callInst = llvm::CallInst::Create(
       solPlusEqualFunc, {greetingAccountCounter, oneValue}, "sol_plus_equal",
       block);
-  aser::CallSite callSite(callInst);
+  xray::CallSite callSite(callInst);
 
   TestableRuleContext ruleContext(false,  // safeType
                                   false,  // inLoop
@@ -138,4 +138,4 @@ TEST(HandlePlusEqualTest, OverflowTriggeredUnsafeTypes) {
   EXPECT_EQ(1, ruleContext.unsafeOperations());
 }
 
-} // namespace aser
+} // namespace xray

@@ -10,7 +10,7 @@
 
 #include <set>
 
-namespace aser {
+namespace xray {
 
 class DefaultHeapModel {
 private:
@@ -64,6 +64,6 @@ public:
   }
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif // ASER_PTA_DEFAULTHEAPMODEL_H

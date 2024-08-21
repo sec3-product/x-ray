@@ -13,7 +13,7 @@
 
 // a special object that models the behavior of a map
 
-namespace aser {
+namespace xray {
 
 template <typename MemModel> struct LangModelTrait;
 
@@ -104,6 +104,6 @@ public:
   }
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif // ASER_PTA_MAPOBJECT_H

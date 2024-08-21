@@ -8,7 +8,7 @@
 
 using namespace llvm;
 
-namespace aser {
+namespace xray {
 
 bool isVTablePtrType(const llvm::Type *type) {
   static Type *vtableType = nullptr;
@@ -23,4 +23,4 @@ bool isVTablePtrType(const llvm::Type *type) {
   return type == vtableType;
 }
 
-} // namespace aser
+} // namespace xray

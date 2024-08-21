@@ -12,7 +12,7 @@
 #include "PointerAnalysis/Solver/PointsTo/BitVectorPTS.h"
 #include "Util/Log.h"
 
-namespace aser {
+namespace xray {
 
 // this class deals with conventions that specific to different programming
 // language e.g., virtual pointers, the default one uses no convention
@@ -104,7 +104,7 @@ public:
     if (DefaultExtFunctions::isThreadCreation(fun)) {
       // thread creation site is intercepted, and the body of the thread
       // need to be handled. dbg_os() << *callsite << "\n";
-      aser::CallSite CS(callsite);
+      xray::CallSite CS(callsite);
       assert(CS.isCallOrInvoke());
       const llvm::Value *v = CS.getArgOperand(2);
       if (auto threadFun =
@@ -128,7 +128,7 @@ public:
                                 const llvm::Function *originalTarget,
                                 const llvm::Instruction *callsite) {
     // the rule of context evolution should be obeyed.
-    aser::CallSite CS(callsite);
+    xray::CallSite CS(callsite);
     assert(CS.isCallOrInvoke());
 
     // we need to use callsite to identify the thread creation as the
@@ -167,6 +167,6 @@ class LangModelTrait<DefaultLangModel<ctx, MemModel, PtsTy>>
     : public LangModelTrait<LangModelBase<
           ctx, MemModel, PtsTy, DefaultLangModel<ctx, MemModel, PtsTy>>> {};
 
-} // namespace aser
+} // namespace xray
 
 #endif

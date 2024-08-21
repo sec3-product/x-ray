@@ -10,7 +10,7 @@ namespace llvm {
 class Value;
 }
 
-namespace aser {
+namespace xray {
 
 struct InterceptResult {
   enum class Option {
@@ -28,5 +28,5 @@ struct InterceptResult {
       : redirectTo(target), option(opt) {}
 };
 
-} // namespace aser
+} // namespace xray
 #endif // ASER_PTA_INTERCEPTRESULT_H

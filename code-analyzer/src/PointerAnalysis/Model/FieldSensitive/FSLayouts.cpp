@@ -17,7 +17,7 @@
 using namespace llvm;
 using namespace std;
 
-namespace aser {
+namespace xray {
 
 static size_t indexBetweenArrays(const std::map<size_t, ArrayLayout *> &arrays,
                                  size_t &pOffset) {
@@ -207,4 +207,4 @@ MemLayout::getFieldAccessPath(const Module *M, size_t pOffset,
   return "";
 }
 
-} // namespace aser
+} // namespace xray

@@ -7,7 +7,7 @@
 #include "PointerAnalysis/Program/CtxFunction.h"
 #include "Util/Util.h"
 
-namespace aser {
+namespace xray {
 
 template <typename ctx> class CtxModule;
 
@@ -143,36 +143,36 @@ public:
   friend CtxModule<ctx>;
 };
 
-} // namespace aser
+} // namespace xray
 
 namespace llvm {
 
 template <typename ctx>
-struct GraphTraits<aser::CallGraph<ctx>>
+struct GraphTraits<xray::CallGraph<ctx>>
     : public GraphTraits<
-          aser::GraphBase<aser::CallGraphNode<ctx>, aser::CallEdge>> {};
+          xray::GraphBase<xray::CallGraphNode<ctx>, xray::CallEdge>> {};
 
 template <typename ctx>
-struct GraphTraits<const aser::CallGraph<ctx>>
+struct GraphTraits<const xray::CallGraph<ctx>>
     : public GraphTraits<
-          const aser::GraphBase<aser::CallGraphNode<ctx>, aser::CallEdge>> {};
+          const xray::GraphBase<xray::CallGraphNode<ctx>, xray::CallEdge>> {};
 
 template <typename ctx>
-struct DOTGraphTraits<const aser::CallGraph<ctx>>
+struct DOTGraphTraits<const xray::CallGraph<ctx>>
     : public DefaultDOTGraphTraits {
   explicit DOTGraphTraits(bool simple = false)
       : DefaultDOTGraphTraits(simple) {}
 
-  static std::string getGraphName(const aser::CallGraph<ctx> &) {
+  static std::string getGraphName(const xray::CallGraph<ctx> &) {
     return "CallGraph";
   }
 
   /// Return function name;
-  static std::string getNodeLabel(const aser::CallGraphNode<ctx> *node,
-                                  const aser::CallGraph<ctx> &graph) {
+  static std::string getNodeLabel(const xray::CallGraphNode<ctx> *node,
+                                  const xray::CallGraph<ctx> &graph) {
     std::string str;
     raw_string_ostream os(str);
-    os << aser::CtxTrait<ctx>::toString(node->getContext()) << "\n";
+    os << xray::CtxTrait<ctx>::toString(node->getContext()) << "\n";
     if (node->isIndirectCall()) {
       os << "ID : " << node->getNodeID() << ", ";
       os << "Indirect, resolved to ";
@@ -182,7 +182,7 @@ struct DOTGraphTraits<const aser::CallGraph<ctx>>
       }
     } else {
       os << "ID : " << node->getNodeID() << ", ";
-      aser::prettyFunctionPrinter(node->getTargetFun()->getFunction(), os);
+      xray::prettyFunctionPrinter(node->getTargetFun()->getFunction(), os);
       // os << node->getMethod().getFunction()->getName();
     }
     return os.str();

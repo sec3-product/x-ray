@@ -12,7 +12,7 @@ namespace llvm {
 class Instruction;
 }
 
-namespace aser {
+namespace xray {
 
 // for context insensitive PTA
 using NoCtx = std::nullptr_t;
@@ -32,6 +32,6 @@ template <> struct CtxTrait<NoCtx> {
   inline static void release(){};
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif // ASER_PTA_NOCTX_H

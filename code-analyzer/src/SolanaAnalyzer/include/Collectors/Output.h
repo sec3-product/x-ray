@@ -11,7 +11,7 @@
 #include "SVE.h"
 #include "SourceInfo.h"
 
-namespace aser {
+namespace xray {
 
 using json = nlohmann::json;
 
@@ -107,4 +107,4 @@ public:
 void outputJSON(std::string);
 void ignoreRaceLocations(Event *e1, Event *e2);
 
-} // namespace aser
+} // namespace xray

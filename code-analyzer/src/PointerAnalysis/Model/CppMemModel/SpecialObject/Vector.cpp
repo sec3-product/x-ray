@@ -12,7 +12,7 @@
 
 using namespace llvm;
 
-namespace aser {
+namespace xray {
 namespace cpp {
 
 std::map<StringRef, VectorAPI::APIKind> VectorAPI::VecAPIMap = {
@@ -79,4 +79,4 @@ const Type *VectorAPI::resolveVecElemType(const Type *T) {
 }
 
 } // namespace cpp
-} // namespace aser
+} // namespace xray

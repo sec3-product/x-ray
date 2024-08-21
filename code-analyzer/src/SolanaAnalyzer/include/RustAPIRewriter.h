@@ -5,13 +5,13 @@ namespace llvm {
 class Module;
 }
 
-namespace aser {
+namespace xray {
 
 class RustAPIRewriter {
 public:
   static void rewriteModule(llvm::Module *M);
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif // ASER_PTA_RUSTAPIWRITER_H

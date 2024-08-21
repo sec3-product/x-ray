@@ -15,7 +15,7 @@
 
 #include "PTAModels/GraphBLASModel.h"
 
-namespace aser {
+namespace xray {
 
 static std::map<std::string, std::vector<AccountIDL>> IDL_INSTRUCTION_ACCOUNTS;
 
@@ -74,7 +74,7 @@ void computeDeclareIdAddresses(llvm::Module *module) {
     for (auto &BB : *f) {
       for (auto &I : BB) {
         if (llvm::isa<llvm::CallBase>(&I)) {
-          aser::CallSite CS(&I);
+          xray::CallSite CS(&I);
           if (CS.getNumArgOperands() < 1) {
             continue;
           }
@@ -128,4 +128,4 @@ void computeDeclareIdAddresses(llvm::Module *module) {
   }
 }
 
-} // namespace aser
+} // namespace xray

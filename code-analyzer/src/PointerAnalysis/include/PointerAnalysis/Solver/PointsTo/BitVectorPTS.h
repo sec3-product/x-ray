@@ -10,7 +10,7 @@
 
 #include "PointerAnalysis/Solver/PointsTo/PTSTrait.h"
 
-namespace aser {
+namespace xray {
 
 class BitVectorPTS {
 private:
@@ -148,8 +148,8 @@ private:
   friend class PTSTrait<BitVectorPTS>;
 };
 
-} // namespace aser
+} // namespace xray
 
-DEFINE_PTS_TRAIT(aser::BitVectorPTS)
+DEFINE_PTS_TRAIT(xray::BitVectorPTS)
 
 #endif

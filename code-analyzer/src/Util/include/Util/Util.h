@@ -16,7 +16,7 @@
 
 #include <queue>
 
-namespace aser {
+namespace xray {
 
 struct Noop {
   template <typename... Args>
@@ -141,6 +141,6 @@ bool isZeroOffsetTypeInRootType(const llvm::Type *rootType,
                                 const llvm::DataLayout &);
 
 const llvm::Value *stripPointerCastsAndOffsets(const llvm::Value *V);
-} // namespace aser
+} // namespace xray
 
 #endif

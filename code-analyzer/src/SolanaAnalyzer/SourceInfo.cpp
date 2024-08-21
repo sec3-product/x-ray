@@ -11,23 +11,23 @@
 #include "Graph/Event.h"
 #include "LogColor.h"
 
-using namespace aser;
+using namespace xray;
 
-aser::SourceInfo::SourceInfo()
+xray::SourceInfo::SourceInfo()
     : line(0), col(0), filename(""), dir(""), inaccurate(false), tyStr("") {}
 
-aser::SourceInfo::SourceInfo(const llvm::Value *V, unsigned L, unsigned C,
+xray::SourceInfo::SourceInfo(const llvm::Value *V, unsigned L, unsigned C,
                              std::string FN, std::string D, std::string N,
                              bool inaccurate, std::string tyStr)
     : val(V), line(L), col(C), filename(FN), dir(D), name(N),
       inaccurate(inaccurate), tyStr(tyStr) {
   // FIXME: potential performance issue?
   // read source file twice
-  this->sourceLine = aser::getSourceLine(this->dir, this->filename, this->line);
+  this->sourceLine = xray::getSourceLine(this->dir, this->filename, this->line);
   this->snippet = getCodeSnippet(this->dir, this->filename, this->line);
 }
 
-std::string aser::SourceInfo::str() {
+std::string xray::SourceInfo::str() {
   std::stringstream ss;
   ss << this->filename << "@" << this->line << ":" << this->col << "\n";
   ss << "Code snippet: "
@@ -38,7 +38,7 @@ std::string aser::SourceInfo::str() {
   return ss.str();
 }
 
-std::string aser::SourceInfo::overview() const {
+std::string xray::SourceInfo::overview() const {
   std::stringstream ss;
   ss << "line " << this->line << ", column " << this->col << " in "
      << this->filename;
@@ -46,7 +46,7 @@ std::string aser::SourceInfo::overview() const {
   return ss.str();
 }
 
-std::string aser::SourceInfo::sig() const {
+std::string xray::SourceInfo::sig() const {
   std::stringstream ss;
   ss << this->dir << "/" << this->filename << "@" << this->line << ":"
      << this->col;
@@ -60,7 +60,7 @@ std::string aser::SourceInfo::sig() const {
 
  ------------------------------------ */
 
-std::string aser::getRawSourceLine(std::string directory, std::string filename,
+std::string xray::getRawSourceLine(std::string directory, std::string filename,
                                    unsigned line) {
   // line number should be an integer greater or equal to 1
   if (line == 0)
@@ -87,7 +87,7 @@ std::string aser::getRawSourceLine(std::string directory, std::string filename,
   return ln;
 }
 
-void aser::getSourceLinesForSoteriaAnchorAccount(
+void xray::getSourceLinesForSoteriaAnchorAccount(
     SourceInfo &srcInfo, std::vector<std::string> &out) {
   auto snippet = srcInfo.getSnippet();
   std::stringstream ss(snippet);
@@ -110,7 +110,7 @@ void aser::getSourceLinesForSoteriaAnchorAccount(
   // "getSourceLinesForSoteriaAnchorAccount line: " << line << "\n";
 }
 
-std::string aser::getSourceLinesForSoteria(SourceInfo &srcInfo,
+std::string xray::getSourceLinesForSoteria(SourceInfo &srcInfo,
                                            unsigned range) {
   std::vector<std::string> out;
   auto snippet = srcInfo.getSnippet();
@@ -133,7 +133,7 @@ std::string aser::getSourceLinesForSoteria(SourceInfo &srcInfo,
   return res;
 }
 
-std::string aser::getSourceLine(std::string directory, std::string filename,
+std::string xray::getSourceLine(std::string directory, std::string filename,
                                 unsigned line) {
   std::stringstream raw;
   raw << " " << line << "|" << getRawSourceLine(directory, filename, line)
@@ -141,7 +141,7 @@ std::string aser::getSourceLine(std::string directory, std::string filename,
   return raw.str();
 }
 
-std::string aser::getCodeSnippet(std::string directory, std::string filename,
+std::string xray::getCodeSnippet(std::string directory, std::string filename,
                                  unsigned line) {
   return getCodeSnippet(directory, filename, line, 0);
 }
@@ -149,13 +149,13 @@ std::string aser::getCodeSnippet(std::string directory, std::string filename,
 // For now, always treat "col" as 0
 // NOTE: by default the code snippet we show is 5 lines
 // TODO: later we can highlight variable names based on col
-std::string aser::getCodeSnippet(std::string directory, std::string filename,
+std::string xray::getCodeSnippet(std::string directory, std::string filename,
                                  unsigned line, unsigned col) {
   return getCodeSnippet(directory, filename, line, col, 13);
 }
 
 // `length` --- number of lines for the code snippet, must be an odd number
-std::string aser::getCodeSnippet(std::string directory, std::string filename,
+std::string xray::getCodeSnippet(std::string directory, std::string filename,
                                  unsigned line, unsigned col, unsigned length) {
   assert(length % 2 == 1 && "length should be an odd number");
   // the span for the code snippet on each direction
@@ -167,7 +167,7 @@ std::string aser::getCodeSnippet(std::string directory, std::string filename,
 
 // `above` --- number of lines above the target line
 // `below` --- number of lines below the target line
-std::string aser::getCodeSnippet(std::string directory, std::string filename,
+std::string xray::getCodeSnippet(std::string directory, std::string filename,
                                  unsigned line, unsigned col, unsigned above,
                                  unsigned below) {
   assert(above >= 0 && below >= 0);
@@ -206,7 +206,7 @@ std::string aser::getCodeSnippet(std::string directory, std::string filename,
   return raw.str();
 }
 
-unsigned aser::getAccurateCol(std::string directory, std::string filename,
+unsigned xray::getAccurateCol(std::string directory, std::string filename,
                               unsigned line, unsigned col, bool isStore) {
   if (line == 0 || col == 0)
     return 0; // this condition is unclear
@@ -239,7 +239,7 @@ unsigned aser::getAccurateCol(std::string directory, std::string filename,
 
 // Refer to the complete implementation below
 // https://github.com/SVF-tools/SVF/blob/master/lib/Util/SVFUtil.cpp#L345
-aser::SourceInfo aser::getSourceLoc(const Value *val) {
+xray::SourceInfo xray::getSourceLoc(const Value *val) {
   if (val == NULL)
     return SourceInfo();
 
@@ -524,7 +524,7 @@ aser::SourceInfo aser::getSourceLoc(const Value *val) {
                     tyStr);
 }
 
-void aser::findCorrectSourceInfo(SourceInfo &srcInfo1, std::string &varName) {
+void xray::findCorrectSourceInfo(SourceInfo &srcInfo1, std::string &varName) {
   // let's search line after and before
   for (int k = 1; k <= 3; k++) {
     auto srcLine1 = getRawSourceLine(srcInfo1.getDir(), srcInfo1.getFilename(),
@@ -553,7 +553,7 @@ void aser::findCorrectSourceInfo(SourceInfo &srcInfo1, std::string &varName) {
   }
 }
 
-void aser::tryCorrectSourceInfo(SourceInfo &srcInfo1, SourceInfo &srcInfo2,
+void xray::tryCorrectSourceInfo(SourceInfo &srcInfo1, SourceInfo &srcInfo2,
                                 SourceInfo &sharedObjLoc) {
   // handle case either srcInfo1 or srcInfo2 has line 0, but not both
   if (srcInfo1.getLine() == 0 || srcInfo2.getLine() == 0 ||
@@ -588,7 +588,7 @@ void aser::tryCorrectSourceInfo(SourceInfo &srcInfo1, SourceInfo &srcInfo2,
 }
 
 // a source-level race pair signature based on source code Information
-std::string aser::getRaceSrcSig(SourceInfo &srcInfo1, SourceInfo &srcInfo2) {
+std::string xray::getRaceSrcSig(SourceInfo &srcInfo1, SourceInfo &srcInfo2) {
   std::stringstream ss;
   auto sig1 = srcInfo1.sig();
   auto sig2 = srcInfo2.sig();
@@ -602,7 +602,7 @@ std::string aser::getRaceSrcSig(SourceInfo &srcInfo1, SourceInfo &srcInfo2) {
 
 // a file-level race pair signature based on source code information
 // used for AGREESIVE filtering
-std::string aser::getRaceFileSig(SourceInfo &srcInfo1, SourceInfo &srcInfo2) {
+std::string xray::getRaceFileSig(SourceInfo &srcInfo1, SourceInfo &srcInfo2) {
   std::stringstream ss;
   auto f1 = srcInfo1.getFilename();
   auto f2 = srcInfo1.getFilename();
@@ -614,7 +614,7 @@ std::string aser::getRaceFileSig(SourceInfo &srcInfo1, SourceInfo &srcInfo2) {
   return ss.str();
 }
 
-std::string aser::getRaceMethodSig(Event *e1, Event *e2, const ObjTy *obj) {
+std::string xray::getRaceMethodSig(Event *e1, Event *e2, const ObjTy *obj) {
   auto m1 = e1->getInst()->getFunction()->getName().str();
   auto m2 = e2->getInst()->getFunction()->getName().str();
   std::stringstream ss;
@@ -628,7 +628,7 @@ std::string aser::getRaceMethodSig(Event *e1, Event *e2, const ObjTy *obj) {
   return ss.str();
 }
 
-std::string aser::getRaceRawLineSig(SourceInfo &srcInfo1,
+std::string xray::getRaceRawLineSig(SourceInfo &srcInfo1,
                                     SourceInfo &srcInfo2) {
   auto raw1 = getRawSourceLine(srcInfo1.getDir(), srcInfo1.getFilename(),
                                srcInfo1.getLine());
@@ -656,7 +656,7 @@ std::string aser::getRaceRawLineSig(SourceInfo &srcInfo1,
   return ss.str();
 }
 
-std::string aser::getRaceRawLineSig(const SourceInfo &srcInfo) {
+std::string xray::getRaceRawLineSig(const SourceInfo &srcInfo) {
   auto raw = getRawSourceLine(srcInfo.getDir(), srcInfo.getFilename(),
                               srcInfo.getLine());
   return trim(raw);
@@ -669,7 +669,7 @@ static llvm::Regex
                Regex::IgnoreCase);
 
 // FIXME: don't EVER learn from this
-bool aser::filterStrPattern(std::string src) {
+bool xray::filterStrPattern(std::string src) {
   if (tidPattern.match(src)) {
     LOG_DEBUG("Source line filtered by string pattern. line={}", src);
     return true;
@@ -677,7 +677,7 @@ bool aser::filterStrPattern(std::string src) {
   return false;
 }
 
-bool aser::customizedFilterSoteriaIgnoreSymbol(const Event *e,
+bool xray::customizedFilterSoteriaIgnoreSymbol(const Event *e,
                                                const std::string symbol) {
   SourceInfo srcInfo1 = getSourceLoc(e->getInst());
   auto sig0 = "#[soteria(";
@@ -708,7 +708,7 @@ bool aser::customizedFilterSoteriaIgnoreSymbol(const Event *e,
   return false;
 }
 
-bool aser::customizedFilterSoteriaIgnoreFullSymbol(const Event *e) {
+bool xray::customizedFilterSoteriaIgnoreFullSymbol(const Event *e) {
   SourceInfo srcInfo = getSourceLoc(e->getInst());
 
   std::vector<std::string> lines;
@@ -740,7 +740,7 @@ bool aser::customizedFilterSoteriaIgnoreFullSymbol(const Event *e) {
   return false;
 }
 
-bool aser::customizedFilterIgnoreLocations(const Event *e1, const Event *e2) {
+bool xray::customizedFilterIgnoreLocations(const Event *e1, const Event *e2) {
   if (customizedFilterSoteriaIgnoreFullSymbol(e1) ||
       customizedFilterSoteriaIgnoreFullSymbol(e2)) {
     return true;
@@ -748,7 +748,7 @@ bool aser::customizedFilterIgnoreLocations(const Event *e1, const Event *e2) {
   return false;
 }
 
-int aser::customizedPriorityAdjust(int P, std::string name,
+int xray::customizedPriorityAdjust(int P, std::string name,
                                    SourceInfo &srcInfo1, SourceInfo &srcInfo2,
                                    std::vector<std::string> &st1,
                                    std::vector<std::string> &st2) {
@@ -790,7 +790,7 @@ int aser::customizedPriorityAdjust(int P, std::string name,
 
 // JEFF to Yanze: the following filter can be too strong
 // FIXME: this API may be simplified
-bool aser::customizedFilter(Event *e1, Event *e2, std::vector<std::string> &st1,
+bool xray::customizedFilter(Event *e1, Event *e2, std::vector<std::string> &st1,
                             std::vector<std::string> &st2,
                             std::vector<std::string> &ignoreRaceInFun) {
   for (auto &str : ignoreRaceInFun) {
@@ -807,7 +807,7 @@ bool aser::customizedFilter(Event *e1, Event *e2, std::vector<std::string> &st1,
   return false;
 }
 
-bool aser::customizedOMPFilter(Event *e1, Event *e2,
+bool xray::customizedOMPFilter(Event *e1, Event *e2,
                                std::vector<std::string> &st1,
                                std::vector<std::string> &st2,
                                const std::vector<std::string> &callingCtx,
@@ -827,7 +827,7 @@ bool aser::customizedOMPFilter(Event *e1, Event *e2,
   return false;
 }
 
-std::vector<std::string> aser::getCallingCtx(CallingCtx &callingCtx,
+std::vector<std::string> xray::getCallingCtx(CallingCtx &callingCtx,
                                              bool isCpp) {
   std::vector<std::string> result;
 
@@ -841,13 +841,13 @@ std::vector<std::string> aser::getCallingCtx(CallingCtx &callingCtx,
 }
 
 std::vector<std::string>
-aser::getStackTrace(const Event *e,
+xray::getStackTrace(const Event *e,
                     std::map<TID, std::vector<CallEvent *>> &callEventTraces) {
   return getStackTrace(e, callEventTraces, false);
 }
 
 std::vector<std::string>
-aser::getStackTrace(const Event *e,
+xray::getStackTrace(const Event *e,
                     std::map<TID, std::vector<CallEvent *>> &callEventTraces,
                     bool isCpp) {
   std::vector<std::string> result;
@@ -879,7 +879,7 @@ aser::getStackTrace(const Event *e,
   return result;
 }
 
-std::vector<CallEvent *> aser::getCallEventStack(
+std::vector<CallEvent *> xray::getCallEventStack(
     const Event *e, std::map<TID, std::vector<CallEvent *>> &callEventTraces) {
   std::vector<CallEvent *> result;
   TID tid = e->getTID();
@@ -897,7 +897,7 @@ std::vector<CallEvent *> aser::getCallEventStack(
   return result;
 }
 
-void aser::getCallEventStackUntilMain(
+void xray::getCallEventStackUntilMain(
     const Event *e, std::map<TID, std::vector<CallEvent *>> &callEventTraces,
     std::vector<CallEvent *> &result) {
   auto ces = getCallEventStack(e, callEventTraces);
@@ -909,14 +909,14 @@ void aser::getCallEventStackUntilMain(
   }
 }
 
-std::vector<CallEvent *> aser::getCallEventStackUntilMain(
+std::vector<CallEvent *> xray::getCallEventStackUntilMain(
     const Event *e, std::map<TID, std::vector<CallEvent *>> &callEventTraces) {
   std::vector<CallEvent *> result;
   getCallEventStackUntilMain(e, callEventTraces, result);
   return result;
 }
 
-void aser::printStackTrace(
+void xray::printStackTrace(
     const Event *e, std::map<TID, std::vector<CallEvent *>> &callEventTraces,
     bool isCpp) {
   std::vector<std::string> st = getStackTrace(e, callEventTraces, isCpp);
@@ -927,9 +927,9 @@ void aser::printStackTrace(
   }
 }
 
-void aser::printStackTrace(
+void xray::printStackTrace(
     const Event *e, std::map<TID, std::vector<CallEvent *>> &callEventTraces) {
-  aser::printStackTrace(e, callEventTraces, false);
+  xray::printStackTrace(e, callEventTraces, false);
 }
 
 bool stringStartsWithAny(std::string s, std::vector<std::string> substrs) {
@@ -942,7 +942,7 @@ bool stringStartsWithAny(std::string s, std::vector<std::string> substrs) {
   return false;
 }
 
-void aser::printStackTrace(const std::vector<std::string> &stackTrace) {
+void xray::printStackTrace(const std::vector<std::string> &stackTrace) {
   int count = 0;
   for (auto it = stackTrace.begin(); it != stackTrace.end(); ++it) {
     auto content = *it;
@@ -955,7 +955,7 @@ void aser::printStackTrace(const std::vector<std::string> &stackTrace) {
   }
 }
 
-void aser::printCallEventStackTrace(std::vector<CallEvent *> &st) {
+void xray::printCallEventStackTrace(std::vector<CallEvent *> &st) {
   int count = 0;
   for (auto it = st.begin(); it != st.end(); ++it) {
     llvm::outs() << ">>>" << std::string(count * 2, ' ')
@@ -964,7 +964,7 @@ void aser::printCallEventStackTrace(std::vector<CallEvent *> &st) {
   }
 }
 
-void aser::printSrcInfo(SourceInfo &srcInfo, TID tid) {
+void xray::printSrcInfo(SourceInfo &srcInfo, TID tid) {
   highlight("Thread " + std::to_string(tid) + ": ");
 #ifdef RACE_DETECT_DEBUG
   llvm::outs() << "Instruction:" << *srcInfo.getValue() << "\n";

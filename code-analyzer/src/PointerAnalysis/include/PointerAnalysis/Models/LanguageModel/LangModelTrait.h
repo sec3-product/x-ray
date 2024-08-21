@@ -6,7 +6,7 @@
 
 #include <llvm/IR/LegacyPassManager.h>
 
-namespace aser {
+namespace xray {
 
 // a language langModel trait
 template <typename Model> struct LangModelTrait {
@@ -58,6 +58,6 @@ template <typename Model> struct LangModelTrait {
   // static inline StringRef getEntryName(LangModelTy *langModel);
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif

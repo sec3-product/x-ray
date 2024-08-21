@@ -13,7 +13,7 @@
 #include "PointerAnalysis/Models/MemoryModel/AllocSite.h"
 #include "PointerAnalysis/Models/MemoryModel/Object.h"
 
-namespace aser {
+namespace xray {
 
 template <typename ctx, typename ObjT> class CGObjNode;
 template <typename ctx> class FSMemModel;
@@ -186,6 +186,6 @@ public:
   friend ObjNode;
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif // ASER_PTA_FSOBJECT_H

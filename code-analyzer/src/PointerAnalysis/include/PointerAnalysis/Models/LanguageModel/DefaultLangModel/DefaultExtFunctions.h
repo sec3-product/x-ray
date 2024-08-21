@@ -6,7 +6,7 @@
 
 #include <llvm/IR/Function.h>
 
-namespace aser {
+namespace xray {
 
 // TODO: think about this!
 
@@ -20,6 +20,6 @@ public:
   }
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif

@@ -11,7 +11,7 @@
 #include "PTAModels/GraphBLASModel.h"
 #include "Rules/Rule.h"
 
-namespace aser {
+namespace xray {
 
 bool matchMul(const CallSite &callSite) {
   return callSite.getTargetFunction()->getName().equals("sol.*");
@@ -30,4 +30,4 @@ void handleMul(const RuleContext &ruleContext, const CallSite &callSite) {
   }
 }
 
-} // namespace aser
+} // namespace xray

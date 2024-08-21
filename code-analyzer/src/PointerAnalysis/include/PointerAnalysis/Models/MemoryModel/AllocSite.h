@@ -8,7 +8,7 @@
 #include <llvm/IR/Operator.h>
 #include <llvm/IR/Value.h>
 
-namespace aser {
+namespace xray {
 
 // forward declaration
 template <typename ctx> class FIObject;
@@ -76,6 +76,6 @@ public:
   friend MemBlock<ctx>;
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif

@@ -9,7 +9,7 @@
 #include "PointerAnalysis/Graph/CallGraph.h"
 #include "PointerAnalysis/Program/InterceptResult.h"
 
-namespace aser {
+namespace xray {
 
 // a program module but with context information
 template <typename ctx> class CtxModule {
@@ -219,7 +219,7 @@ private:
       for (const auto &inst : BB) {
         if (llvm::isa<llvm::CallInst>(inst) ||
             llvm::isa<llvm::InvokeInst>(inst)) {
-          aser::CallSite cs(const_cast<llvm::Instruction *>(&inst));
+          xray::CallSite cs(const_cast<llvm::Instruction *>(&inst));
 
           if (cs.isIndirectCall()) {
             // llvm::outs() << "!!! visitCallNode isIndirectCall: " << inst <<
@@ -417,6 +417,6 @@ public:
   }
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif

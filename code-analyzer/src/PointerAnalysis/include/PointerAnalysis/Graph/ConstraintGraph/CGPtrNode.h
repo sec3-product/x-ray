@@ -9,7 +9,7 @@
 #include "CGNodeBase.h"
 #include "PointerAnalysis/Context/CtxTrait.h"
 
-namespace aser {
+namespace xray {
 
 template <typename ctx> class Pointer;
 template <typename ctx> class CallGraphNode;
@@ -106,6 +106,6 @@ public:
   friend class ConstraintGraph<ctx>;
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif

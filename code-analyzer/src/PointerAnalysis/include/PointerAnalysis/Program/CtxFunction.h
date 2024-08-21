@@ -6,7 +6,7 @@
 
 extern size_t MaxIndirectTarget;
 
-namespace aser {
+namespace xray {
 
 template <typename ctx> class CallGraphNode;
 template <typename ctx> class CtxModule;
@@ -80,7 +80,7 @@ public:
 template <typename ctx> class InDirectCallSite {
 private:
   const ctx *context;
-  const aser::CallSite callSite;
+  const xray::CallSite callSite;
   const llvm::Value *const funPtr;
 
   std::set<const llvm::Function *> targets; // possible targets
@@ -160,4 +160,4 @@ public:
   friend CtxModule<ctx>;
 };
 
-} // namespace aser
+} // namespace xray

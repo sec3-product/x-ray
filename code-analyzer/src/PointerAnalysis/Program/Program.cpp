@@ -3,13 +3,13 @@
 #include "PointerAnalysis/Program/CallSite.h"
 #include "Util/Log.h"
 
-using namespace aser;
+using namespace xray;
 using namespace llvm;
 
 size_t MaxIndirectTarget = 2;
 
 const Function *
-aser::CallSite::resolveTargetFunction(const Value *calledValue) {
+xray::CallSite::resolveTargetFunction(const Value *calledValue) {
   // TODO: In this case, a constant expression/global aliases, which can be
   // resolved directly
   if (auto bitcast = dyn_cast<BitCastOperator>(calledValue)) {

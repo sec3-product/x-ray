@@ -26,13 +26,13 @@ static bool nolimit = false;
 ----------------------------------- */
 
 // static fields
-uint aser::CosplayAccounts::budget = DEFAULT_BUDGET;
-std::vector<aser::CosplayAccounts> aser::CosplayAccounts::cosplayAccounts;
+uint xray::CosplayAccounts::budget = DEFAULT_BUDGET;
+std::vector<xray::CosplayAccounts> xray::CosplayAccounts::cosplayAccounts;
 
 // used for filtering
-std::set<std::string> aser::CosplayAccounts::apiSigs;
+std::set<std::string> xray::CosplayAccounts::apiSigs;
 
-void aser::CosplayAccounts::init(int configReportLimit,
+void xray::CosplayAccounts::init(int configReportLimit,
                                  bool configNoReportLimit) {
   if (configReportLimit != -1) {
     budget = configReportLimit;
@@ -40,7 +40,7 @@ void aser::CosplayAccounts::init(int configReportLimit,
   nolimit = configNoReportLimit;
 }
 
-std::string aser::CosplayAccounts::getErrorMsg(SVE::Type type) {
+std::string xray::CosplayAccounts::getErrorMsg(SVE::Type type) {
   std::string msg;
   switch (type) {
   case SVE::Type::COSPLAY_FULL:
@@ -69,7 +69,7 @@ std::string aser::CosplayAccounts::getErrorMsg(SVE::Type type) {
 }
 
 // we report at most 1 UntrustfulAccount bug for each function call
-bool aser::CosplayAccounts::filter(SourceInfo &srcInfo) {
+bool xray::CosplayAccounts::filter(SourceInfo &srcInfo) {
   if (apiSigs.find(srcInfo.sig()) != apiSigs.end()) {
     return true;
   }
@@ -78,7 +78,7 @@ bool aser::CosplayAccounts::filter(SourceInfo &srcInfo) {
   return false;
 }
 
-void aser::CosplayAccounts::collect(
+void xray::CosplayAccounts::collect(
     const Event *e1, const Event *e2,
     std::map<TID, std::vector<CallEvent *>> &callEventTraces, SVE::Type type,
     int P) {
@@ -145,7 +145,7 @@ void aser::CosplayAccounts::collect(
   }
 }
 
-aser::CosplayAccounts::CosplayAccounts(SourceInfo &srcInfo1,
+xray::CosplayAccounts::CosplayAccounts(SourceInfo &srcInfo1,
                                        SourceInfo &srcInfo2, std::string msg,
                                        SVE::Type t, int P, bool isIgnored,
                                        bool isHidden)
@@ -157,7 +157,7 @@ aser::CosplayAccounts::CosplayAccounts(SourceInfo &srcInfo1,
   url = SVE::SOLANA_SVE_DB[id]["url"];
 }
 
-json aser::CosplayAccounts::to_json() {
+json xray::CosplayAccounts::to_json() {
   json j({{"priority", p},
           {"inst1", apiInst1},
           {"inst2", apiInst2},
@@ -170,7 +170,7 @@ json aser::CosplayAccounts::to_json() {
   return j;
 }
 
-void aser::CosplayAccounts::print() {
+void xray::CosplayAccounts::print() {
   // llvm::errs() << "==============VULNERABLE: Possible Accounts Cosplay
   // Attacks!============\n"; outs() << errorMsg; outs() << " Data Type1 defined
   // at line " << apiInst1.getLine() << ", column " << apiInst1.getCol() << " in
@@ -210,14 +210,14 @@ void aser::CosplayAccounts::print() {
   outs() << "For more info, see " << url << "\n\n\n";
 }
 
-void aser::CosplayAccounts::printAll() {
+void xray::CosplayAccounts::printAll() {
   std::sort(cosplayAccounts.begin(), cosplayAccounts.end());
   for (auto r : cosplayAccounts) {
     r.print();
   }
 }
 
-void aser::CosplayAccounts::printSummary() {
+void xray::CosplayAccounts::printSummary() {
   info("detected " + std::to_string(cosplayAccounts.size()) +
        " accounts cosplay issues in total.");
 }

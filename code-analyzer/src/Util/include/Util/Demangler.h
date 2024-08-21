@@ -10,7 +10,7 @@
 
 #include "Util/Util.h"
 
-namespace aser {
+namespace xray {
 
 struct Demangler : public llvm::ItaniumPartialDemangler {
 private:
@@ -48,6 +48,6 @@ public:
   }
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif // ASER_PTA_DEMANGLER_H

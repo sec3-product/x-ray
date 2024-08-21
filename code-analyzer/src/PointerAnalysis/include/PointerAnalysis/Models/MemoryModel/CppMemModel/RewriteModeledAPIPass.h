@@ -6,7 +6,7 @@
 #define ASER_PTA_REWRITEMODELEDAPIPASS_H
 
 #include <llvm/Pass.h>
-namespace aser {
+namespace xray {
 namespace cpp {
 
 class RewriteModeledAPIPass : public llvm::FunctionPass {
@@ -18,6 +18,6 @@ public:
 };
 
 } // namespace cpp
-} // namespace aser
+} // namespace xray
 
 #endif // ASER_PTA_REWRITEMODELEDAPIPASS_H

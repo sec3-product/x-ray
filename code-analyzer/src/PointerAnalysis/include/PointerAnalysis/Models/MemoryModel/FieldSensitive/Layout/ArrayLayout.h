@@ -10,7 +10,7 @@
 #include <limits>
 #include <map>
 
-namespace aser {
+namespace xray {
 
 class MemLayout;
 class MemLayoutManager;
@@ -69,6 +69,6 @@ public:
   friend MemLayoutManager;
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif // ASER_PTA_ARRAYLAYOUT_H

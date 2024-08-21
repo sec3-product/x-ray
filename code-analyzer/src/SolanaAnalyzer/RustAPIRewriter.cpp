@@ -13,7 +13,7 @@
 #include "LogColor.h"
 #include "PTAModels/GraphBLASModel.h"
 
-namespace aser {
+namespace xray {
 
 llvm::StringRef stripSolFileName(llvm::StringRef originalName, bool isDeclare) {
   // oracles.refresh_oracle_price.3$1
@@ -67,7 +67,7 @@ void rewriteIndirectTargets(llvm::Module *M) {
   std::map<llvm::StringRef, std::set<llvm::Function *>> solIndexedFunctionsMap;
   for (llvm::Function &F : *M) {
     if (F.isDeclaration()) {
-      if (aser::LangModel::isRustNormalCall(&F)) {
+      if (xray::LangModel::isRustNormalCall(&F)) {
         // llvm::outs() << "declare: " << F.getName() << "\n";
         auto name = stripSolFileName(F.getName(), true);
         // function_name
@@ -211,4 +211,4 @@ void RustAPIRewriter::rewriteModule(llvm::Module *M) {
   rewriteIndirectTargets(M);
 }
 
-} // namespace aser
+} // namespace xray

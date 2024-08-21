@@ -15,7 +15,7 @@
 #include <spdlog/fmt/ostr.h>
 #include <spdlog/spdlog.h>
 
-namespace aser {
+namespace xray {
 namespace logger {
 
 #ifndef USE_DEFAULT_SPDLOG
@@ -35,7 +35,7 @@ inline void trimmed_log(spdlog::source_loc source,
 }
 
 #define LOG_INTERNAL(level, ...)                                               \
-  aser::logger::trimmed_log(                                                   \
+  xray::logger::trimmed_log(                                                   \
       spdlog::source_loc{__FILE__, __LINE__, SPDLOG_FUNCTION}, level,          \
       __VA_ARGS__)
 
@@ -117,7 +117,7 @@ inline void newPhaseSpinner(std::string msg, int tickIntervalms = 200) {
 void endPhase();
 
 } // namespace logger
-} // namespace aser
+} // namespace xray
 
 #ifndef USE_DEFAULT_SPDLOG
 

@@ -6,7 +6,7 @@
 
 #include "PointerAnalysis/Models/MemoryModel/AllocSite.h"
 
-namespace aser {
+namespace xray {
 
 template <typename ctx, typename ObjT> class CGObjNode;
 template <typename ctx> class FIMemModel;
@@ -97,13 +97,13 @@ bool operator==(const FIObject<ctx> &lhs, const FIObject<ctx> &rhs) {
          lhs.getContext() == rhs.getContext();
 }
 
-} // namespace aser
+} // namespace xray
 
 // for container operation
 namespace std {
 
-template <typename ctx> struct hash<aser::FIObject<ctx>> {
-  size_t operator()(const aser::FIObject<ctx> &obj) const {
+template <typename ctx> struct hash<xray::FIObject<ctx>> {
+  size_t operator()(const xray::FIObject<ctx> &obj) const {
     llvm::hash_code seed = llvm::hash_value(obj.getContext());
     llvm::hash_code hash = llvm::hash_combine(obj.getValue(), seed);
     return hash_value(hash);

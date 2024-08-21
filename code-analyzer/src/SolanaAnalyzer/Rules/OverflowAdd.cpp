@@ -11,7 +11,7 @@
 #include "PTAModels/GraphBLASModel.h"
 #include "Rules/Rule.h"
 
-namespace aser {
+namespace xray {
 
 bool matchPlusEqual(const CallSite &CS) {
   return CS.getTargetFunction()->getName().equals("sol.+=");
@@ -86,4 +86,4 @@ void handlePlus(const RuleContext &ruleContext, const CallSite &callSite) {
   }
 }
 
-} // namespace aser
+} // namespace xray

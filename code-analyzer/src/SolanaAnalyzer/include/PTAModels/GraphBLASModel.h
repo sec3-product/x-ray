@@ -13,7 +13,7 @@
 #include "PointerAnalysis/Solver/PartialUpdateSolver.h"
 #include "PointerAnalysis/Solver/PointsTo/BitVectorPTS.h"
 
-namespace aser {
+namespace xray {
 
 using ctx = KOrigin<3>;
 using MemModel = cpp::CppMemModel<ctx>;
@@ -119,6 +119,6 @@ using CT = CtxTrait<ctx>;
 using GT = llvm::GraphTraits<const GraphBLASModel::CallGraphTy>;
 using CallGraphTy = GraphBLASModel::CallGraphTy;
 
-} // namespace aser
+} // namespace xray
 
 #endif

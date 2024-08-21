@@ -12,7 +12,7 @@
 //#define HASH_EDGE_LIMIT 6700417 // a large enough prime number
 #define HASH_EDGE_LIMIT 1000032953
 
-namespace aser {
+namespace xray {
 // just experimental feature for now.
 // after resolving the indirect call, do not traverse the whole
 // constraint graph again, instead, we only solve the newly resolved
@@ -412,6 +412,6 @@ protected:
 //        "of the constraint graph when new indirect calls are resolved",
 //        true, true);
 
-} // namespace aser
+} // namespace xray
 
 #endif // ASER_PTA_PARTIALUPDATESOLVER_H

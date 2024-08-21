@@ -18,7 +18,7 @@
 #include "Util/TypeMetaData.h"
 #include "Util/Util.h"
 
-using namespace aser;
+using namespace xray;
 using namespace llvm;
 using namespace std;
 
@@ -169,7 +169,7 @@ private:
           if (useStructName) {
             isNameEqual = DI->getName().startswith(strippedName);
           } else {
-            aser::Demangler demangler;
+            xray::Demangler demangler;
             if (!demangler.partialDemangle(DI->getIdentifier())) {
               if (demangler.isSpecialName()) { // is a special name; should be
                                                // typeinfo for XXX
@@ -262,7 +262,7 @@ public:
                              ->getType()
                              ->getPointerElementType()) == ST) {
             auto objType =
-                dyn_cast_or_null<DICompositeType>(aser::stripArrayAndTypeDefDI(
+                dyn_cast_or_null<DICompositeType>(xray::stripArrayAndTypeDefDI(
                     dbgDeclare->getVariable()->getType()));
             // alloca instruction create a pointer, we want the pointer base
             // type.
@@ -328,7 +328,7 @@ public:
       if (castInst && ctorInst && ctorInst->getCalledFunction() &&
           castInst->getOperand(0) == allocInst &&
           ctorInst->getArgOperand(0) == castInst) {
-        aser::Demangler demangler;
+        xray::Demangler demangler;
         if (!demangler.partialDemangle(
                 ctorInst->getCalledFunction()->getName())) {
           if (demangler.isCtor()) {
@@ -374,7 +374,7 @@ static DICompositeTypeCollector collector;
 
 } // namespace
 
-namespace aser {
+namespace xray {
 
 DIType *stripTypeDefDI(DIType *DI) {
   while (DI->getTag() == dwarf::DW_TAG_typedef) {
@@ -509,4 +509,4 @@ std::size_t getDISize(llvm::DIDerivedType *T) {
   return size;
 }
 
-} // namespace aser
+} // namespace xray

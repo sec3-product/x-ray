@@ -9,7 +9,7 @@
 
 #include "Util/Log.h"
 
-namespace aser {
+namespace xray {
 
 /// This class defines a simple visitor class that may be used for
 /// various SCEV analysis purposes.
@@ -33,6 +33,6 @@ template <typename SC, typename RetVal = void> struct ConstExprVisitor {
   }
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif // ASER_PTA_CONSTEXPRVISITOR_H

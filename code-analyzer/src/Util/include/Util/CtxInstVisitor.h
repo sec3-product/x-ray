@@ -86,7 +86,7 @@ public:
       static_cast<SubClass *>(this)->visit(*Start++, context);
   }
 
-  void visit(const aser::CtxFunction<ctx> *ctxFun) {
+  void visit(const xray::CtxFunction<ctx> *ctxFun) {
     auto func = const_cast<Function *>(ctxFun->getFunction());
     if (func != nullptr) {
       visit(func->begin(), func->end(), ctxFun->getContext());

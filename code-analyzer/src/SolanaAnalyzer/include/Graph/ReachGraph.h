@@ -14,7 +14,7 @@
 #include "SolanaAnalysisPass.h"
 #include "SourceInfo.h"
 
-namespace aser {
+namespace xray {
 
 struct UnLockState {
   LocksetManager::ID lastUnLockLocksetId;
@@ -145,7 +145,7 @@ public:
 private:
   SolanaAnalysisPass &pass;
   // a cached graph connectivity engine
-  aser::ReachabilityEngine reachEngine;
+  xray::ReachabilityEngine reachEngine;
   // for each thread (TID), we record the sync point (NodeID)
   std::map<TID, std::vector<EventID>> syncData;
 
@@ -192,4 +192,4 @@ private:
   }
 }; // class ReachGraph
 
-} // namespace aser
+} // namespace xray

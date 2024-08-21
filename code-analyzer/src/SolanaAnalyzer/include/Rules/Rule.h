@@ -15,7 +15,7 @@
 #include "SourceInfo.h"
 #include "StaticThread.h"
 
-namespace aser {
+namespace xray {
 
 using FuncArgTypesMap =
     std::map<const llvm::Function *,
@@ -89,4 +89,4 @@ bool isAllCapital(const std::string &s);
 bool isNumber(const std::string &s);
 bool isConstant(const std::string &s);
 
-} // namespace aser
+} // namespace xray

@@ -14,7 +14,7 @@
 
 #define DEFAULT_BUDGET 25
 
-using namespace aser;
+using namespace xray;
 using namespace llvm;
 
 using json = nlohmann::json;
@@ -33,14 +33,14 @@ static bool nolimit = false;
 ----------------------------------- */
 
 // static fields
-uint aser::UntrustfulAccount::budget = DEFAULT_BUDGET;
-std::vector<UntrustfulAccount> aser::UntrustfulAccount::untrustfulAccounts;
-std::set<const llvm::Value *> aser::UntrustfulAccount::apiSigs;
-std::set<std::string> aser::UntrustfulAccount::cpiSigs;
+uint xray::UntrustfulAccount::budget = DEFAULT_BUDGET;
+std::vector<UntrustfulAccount> xray::UntrustfulAccount::untrustfulAccounts;
+std::set<const llvm::Value *> xray::UntrustfulAccount::apiSigs;
+std::set<std::string> xray::UntrustfulAccount::cpiSigs;
 
-std::set<std::vector<std::string>> aser::UntrustfulAccount::callStackSigs;
+std::set<std::vector<std::string>> xray::UntrustfulAccount::callStackSigs;
 
-void aser::UntrustfulAccount::init(int configReportLimit,
+void xray::UntrustfulAccount::init(int configReportLimit,
                                    bool configNoReportLimit) {
   if (configReportLimit != -1) {
     budget = configReportLimit;
@@ -48,7 +48,7 @@ void aser::UntrustfulAccount::init(int configReportLimit,
   nolimit = configNoReportLimit;
 }
 
-std::string aser::UntrustfulAccount::getErrorMsg(SVE::Type type) {
+std::string xray::UntrustfulAccount::getErrorMsg(SVE::Type type) {
   std::string msg;
   switch (type) {
   case SVE::Type::ACCOUNT_UNVALIDATED_BORROWED:
@@ -131,7 +131,7 @@ std::string aser::UntrustfulAccount::getErrorMsg(SVE::Type type) {
 }
 
 // we report at most 1 UntrustfulAccount bug for each function call
-bool aser::UntrustfulAccount::filter(SVE::Type type, SourceInfo &srcInfo) {
+bool xray::UntrustfulAccount::filter(SVE::Type type, SourceInfo &srcInfo) {
   // for CPI
   if (SVE::Type::ARBITRARY_CPI == type || SVE::Type::ACCOUNT_CLOSE == type) {
     auto sig = srcInfo.sig();
@@ -156,7 +156,7 @@ bool aser::UntrustfulAccount::filter(SVE::Type type, SourceInfo &srcInfo) {
 }
 
 // we report at most 1 UntrustfulAccount bug for each call stack
-bool aser::UntrustfulAccount::filterByCallStack(std::vector<std::string> &st0) {
+bool xray::UntrustfulAccount::filterByCallStack(std::vector<std::string> &st0) {
   auto st = st0;
   // this one is special: keep only the last few entries
   if (st0.size() > 1) {
@@ -172,7 +172,7 @@ bool aser::UntrustfulAccount::filterByCallStack(std::vector<std::string> &st0) {
   return false;
 }
 
-void aser::UntrustfulAccount::collect(
+void xray::UntrustfulAccount::collect(
     llvm::StringRef accountName, const Event *e,
     std::map<TID, std::vector<CallEvent *>> &callEventTraces, SVE::Type type,
     int P) {
@@ -243,7 +243,7 @@ void aser::UntrustfulAccount::collect(
   }
 }
 
-aser::UntrustfulAccount::UntrustfulAccount(std::string account,
+xray::UntrustfulAccount::UntrustfulAccount(std::string account,
                                            SourceInfo &srcInfo, std::string msg,
                                            SVE::Type t, int P, bool isIgnored,
                                            bool isHidden)
@@ -255,7 +255,7 @@ aser::UntrustfulAccount::UntrustfulAccount(std::string account,
   url = SVE::SOLANA_SVE_DB[id]["url"];
 }
 
-json aser::UntrustfulAccount::to_json() {
+json xray::UntrustfulAccount::to_json() {
   json j({{"priority", p},
           {"account", accountName},
           {"inst", apiInst},
@@ -268,7 +268,7 @@ json aser::UntrustfulAccount::to_json() {
   return j;
 }
 
-void aser::UntrustfulAccount::print() {
+void xray::UntrustfulAccount::print() {
   outs() << "ignored: " << ignore << "\n";
   // llvm::outs() << "=============This account may be
   // UNTRUSTFUL!================\n";
@@ -285,14 +285,14 @@ void aser::UntrustfulAccount::print() {
   outs() << "For more info, see " << url << "\n\n\n";
 }
 
-void aser::UntrustfulAccount::printAll() {
+void xray::UntrustfulAccount::printAll() {
   std::sort(untrustfulAccounts.begin(), untrustfulAccounts.end());
   for (auto r : untrustfulAccounts) {
     r.print();
   }
 }
 
-void aser::UntrustfulAccount::printSummary() {
+void xray::UntrustfulAccount::printSummary() {
   info("detected " + std::to_string(untrustfulAccounts.size()) +
        " untrustful accounts in total.");
 }

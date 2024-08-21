@@ -8,7 +8,7 @@
 #include <jsoncons/json.hpp>
 #include <llvm/IR/Module.h>
 
-namespace aser {
+namespace xray {
 
 class AccountIDL {
 public:
@@ -26,4 +26,4 @@ extern std::set<llvm::StringRef> SMART_CONTRACT_ADDRESSES;
 extern void loadIDLInstructionAccounts(std::string api_name, jsoncons::json j);
 extern void computeDeclareIdAddresses(llvm::Module *module);
 
-} // namespace aser
+} // namespace xray

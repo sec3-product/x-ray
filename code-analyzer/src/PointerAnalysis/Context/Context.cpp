@@ -8,7 +8,7 @@
 // llvm::cl::opt<uint32_t> K_Limiting("k", llvm::cl::init(3),
 // llvm::cl::desc("k-limiting for k-CFA"));
 //
-// namespace aser {
+// namespace xray {
 //
 ////bool operator<(const K_CallSite &lhs, const K_CallSite &rhs) {
 ////    // 1st, order by depth

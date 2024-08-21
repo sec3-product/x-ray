@@ -7,7 +7,7 @@
 #include "PTAModels/GraphBLASModel.h"
 #include "llvm/IR/Value.h"
 
-namespace aser {
+namespace xray {
 
 // forward declaration
 class MemAccessEvent;
@@ -150,6 +150,6 @@ public:
   }
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif

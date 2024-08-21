@@ -15,7 +15,7 @@
 #include "PointerAnalysis/Graph/NodeID.def"
 #include "Util/Iterators.h"
 
-namespace aser {
+namespace xray {
 
 // forward declaration
 template <typename EdgeKind, typename NodeTy> class NodeBase;
@@ -141,13 +141,13 @@ public:
   inline const_edge_iterator pred_edge_begin() const { return pred.begin(); }
   inline const_edge_iterator pred_edge_end() const { return pred.end(); }
 };
-} // namespace aser
+} // namespace xray
 
 namespace llvm {
 
 template <typename NodeType, typename EdgeType>
-struct GraphTraits<const aser::GraphBase<NodeType, EdgeType>> {
-  using GraphType = typename aser::GraphBase<NodeType, EdgeType>;
+struct GraphTraits<const xray::GraphBase<NodeType, EdgeType>> {
+  using GraphType = typename xray::GraphBase<NodeType, EdgeType>;
   // Elements to provide:
   // typedef NodeRef           - Type of Node token in the callgraph, which
   // should
@@ -202,8 +202,8 @@ struct GraphTraits<const aser::GraphBase<NodeType, EdgeType>> {
 };
 
 template <typename NodeType, typename EdgeType>
-struct GraphTraits<aser::GraphBase<NodeType, EdgeType>> {
-  using GraphType = typename aser::GraphBase<NodeType, EdgeType>;
+struct GraphTraits<xray::GraphBase<NodeType, EdgeType>> {
+  using GraphType = typename xray::GraphBase<NodeType, EdgeType>;
   // Elements to provide:
   // typedef NodeRef           - Type of Node token in the callgraph, which
   // should
@@ -257,8 +257,8 @@ struct GraphTraits<aser::GraphBase<NodeType, EdgeType>> {
 
 // inverse iterate the
 template <typename NodeType, typename EdgeType>
-struct GraphTraits<Inverse<const aser::GraphBase<NodeType, EdgeType>>> {
-  using GraphType = const typename aser::GraphBase<NodeType, EdgeType>;
+struct GraphTraits<Inverse<const xray::GraphBase<NodeType, EdgeType>>> {
+  using GraphType = const typename xray::GraphBase<NodeType, EdgeType>;
   // Elements to provide:
   // typedef NodeRef           - Type of Node token in the callgraph, which
   // should
@@ -312,8 +312,8 @@ struct GraphTraits<Inverse<const aser::GraphBase<NodeType, EdgeType>>> {
 
 // inverse iterate the
 template <typename NodeType, typename EdgeType>
-struct GraphTraits<Inverse<aser::GraphBase<NodeType, EdgeType>>> {
-  using GraphType = typename aser::GraphBase<NodeType, EdgeType>;
+struct GraphTraits<Inverse<xray::GraphBase<NodeType, EdgeType>>> {
+  using GraphType = typename xray::GraphBase<NodeType, EdgeType>;
   // Elements to provide:
   // typedef NodeRef           - Type of Node token in the callgraph, which
   // should

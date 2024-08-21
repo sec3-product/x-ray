@@ -4,12 +4,12 @@
 #ifndef ASER_PTA_CTXTRAIT_H
 #define ASER_PTA_CTXTRAIT_H
 
-namespace aser {
+namespace xray {
 
 template <typename ctx> class CtxTrait {
   using unknownTypeError = typename ctx::unknownTypeErrorType;
 };
 
-} // namespace aser
+} // namespace xray
 
 #endif

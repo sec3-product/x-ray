@@ -11,7 +11,7 @@
 #include "SVE.h"
 #include "SourceInfo.h"
 
-namespace aser {
+namespace xray {
 
 using json = nlohmann::json;
 
@@ -63,4 +63,4 @@ public:
   }
 };
 
-} // namespace aser
+} // namespace xray
