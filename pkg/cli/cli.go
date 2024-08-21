@@ -335,8 +335,8 @@ func Start(coderrectHome string, args []string) error {
 	//   "Executables": [
 	//     {
 	//        "Name": "prog1",
-	//        "RaceJson": "path/to/prog1_report.json",
-	//        "DataRaces": 2  // number of data races
+	//        "ReportJSON": "path/to/prog1_report.json",
+	//        "IssueCount": 2  // number of issues
 	//     },
 	//     ... ...
 	//   ]
@@ -354,16 +354,16 @@ func Start(coderrectHome string, args []string) error {
 			return fmt.Errorf("invalid file path: %q", filePath)
 		}
 
-		bcFile, err := filepath.Abs(filePath)
+		irFile, err := filepath.Abs(filePath)
 		if err != nil {
 			return fmt.Errorf("unable to get the absolute path of file %q: %w", filePath, err)
 		}
 		// Skip if the file does not exist.
-		if _, err := os.Stat(bcFile); os.IsNotExist(err) {
-			logger.Warnf("File %q does not exist; skipped", bcFile)
+		if _, err := os.Stat(irFile); os.IsNotExist(err) {
+			logger.Warnf("File %q does not exist; skipped", irFile)
 			continue
 		}
-		logger.Infof("Analyzing file to detect issues. file=%s", bcFile)
+		logger.Infof("Analyzing IR file %q for issues...", irFile)
 
 		// Step 3. Call sol-code-analyzer to analyze the file.
 		filename := filepath.Base(filePath)
@@ -380,7 +380,7 @@ func Start(coderrectHome string, args []string) error {
 		if len(displayFlag) > 0 {
 			cmdArgument = append(cmdArgument, displayFlag)
 		}
-		cmdArgument = append(cmdArgument, "-o", tmpJSONPath, bcFile)
+		cmdArgument = append(cmdArgument, "-o", tmpJSONPath, irFile)
 		analyzer := filepath.Join(coderrectHome, "bin", codeAnalyzerExe)
 		libompPath := filepath.Join(coderrectHome, "bin", "libomp.so")
 		cmdline := fmt.Sprintf("export LD_PRELOAD=%s; %s", libompPath, analyzer)
@@ -415,9 +415,9 @@ func Start(coderrectHome string, args []string) error {
 		}
 		executableInfoList = append(executableInfoList,
 			reporter.ExecutableInfo{
-				Name:      filename,
-				RaceJSON:  rawJSONPath,
-				DataRaces: issues,
+				Name:       filename,
+				ReportJSON: rawJSONPath,
+				IssueCount: issues,
 			})
 
 		// TODO: This should be implemented via context.

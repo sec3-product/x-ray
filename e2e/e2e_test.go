@@ -35,45 +35,33 @@ var (
  "Executables": [
   {
    "Name": "e2e-app_dex.ll",
-   "RaceJSON": "PREFIX/.xray/build/raw_e2e-app_dex.ll.json",
-   "DataRaces": 63,
-   "RaceConditions": 0,
-   "NewBugs": false
+   "ReportJSON": "PREFIX/.xray/build/raw_e2e-app_dex.ll.json",
+   "IssueCount": 63
   },
   {
    "Name": "e2e-app_dummy-oracle.ll",
-   "RaceJSON": "PREFIX/.xray/build/raw_e2e-app_dummy-oracle.ll.json",
-   "DataRaces": 0,
-   "RaceConditions": 0,
-   "NewBugs": false
+   "ReportJSON": "PREFIX/.xray/build/raw_e2e-app_dummy-oracle.ll.json",
+   "IssueCount": 0
   },
   {
    "Name": "fees_constant-fees.ll",
-   "RaceJSON": "PREFIX/.xray/build/raw_fees_constant-fees.ll.json",
-   "DataRaces": 1,
-   "RaceConditions": 0,
-   "NewBugs": false
+   "ReportJSON": "PREFIX/.xray/build/raw_fees_constant-fees.ll.json",
+   "IssueCount": 1
   },
   {
    "Name": "e2e-app_instruments.ll",
-   "RaceJSON": "PREFIX/.xray/build/raw_e2e-app_instruments.ll.json",
-   "DataRaces": 4,
-   "RaceConditions": 0,
-   "NewBugs": false
+   "ReportJSON": "PREFIX/.xray/build/raw_e2e-app_instruments.ll.json",
+   "IssueCount": 4
   },
   {
    "Name": "risk_alpha-risk-engine.ll",
-   "RaceJSON": "PREFIX/.xray/build/raw_risk_alpha-risk-engine.ll.json",
-   "DataRaces": 5,
-   "RaceConditions": 0,
-   "NewBugs": false
+   "ReportJSON": "PREFIX/.xray/build/raw_risk_alpha-risk-engine.ll.json",
+   "IssueCount": 5
   },
   {
    "Name": "risk_noop-risk-engine.ll",
-   "RaceJSON": "PREFIX/.xray/build/raw_risk_noop-risk-engine.ll.json",
-   "DataRaces": 5,
-   "RaceConditions": 0,
-   "NewBugs": false
+   "ReportJSON": "PREFIX/.xray/build/raw_risk_noop-risk-engine.ll.json",
+   "IssueCount": 5
   }
  ],
  "CoderrectVer": "Unknown"

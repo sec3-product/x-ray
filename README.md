@@ -74,8 +74,8 @@ xray workspace/example-helloworld
 
 * Example Output
 
-X-Ray will report each detected potential vulnerability along with its code
-snippet. At the end of the output, X-Ray will provide a summary.
+X-Ray will report each detected potential issues along with its code snippet.
+At the end of the output, X-Ray will provide a summary.
 
 ```
 Analyzing /home/sec3/x-ray-toolchain/workspace/program-rust/workspace_program-rust.ll ...
@@ -99,11 +99,12 @@ The add operation may result in overflows:
 >>>Stack Trace:
 >>>sol.process_instruction [workspace/program-rust/src/lib.rs:19]
 
-For more info, see https://medium.com/coinmonks/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts-9f3c9802dc45
+For more info, see https://www.sec3.dev/blog/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts
 
 --------The summary of potential vulnerabilities in workspace_program-rust.ll--------
 
          1 unsafe operation issues
+
 ```
 
 ## Developer Guide
