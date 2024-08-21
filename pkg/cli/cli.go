@@ -343,35 +343,32 @@ func Start(coderrectHome string, args []string) error {
 	// }
 	//
 	var executableInfoList []reporter.ExecutableInfo
-	time_start := time.Now()
+
 	timeout, _ := time.ParseDuration(conflib.GetString("timeout", "8h"))
+	startTime := time.Now()
 
-	for i := 0; i < len(fileList); i++ {
-		var executableInfo reporter.ExecutableInfo
-
-		fmt.Printf("\nAnalyzing %s ...\n", fileList[i])
-		directBCFile := fileList[i]
-		if len(directBCFile) == 0 {
-			logger.Errorf("Invalid path to the executable. path=%s", directBCFile)
-			return fmt.Errorf("invalid path to the files: %v", directBCFile)
+	for i, filePath := range fileList {
+		fmt.Printf("\nAnalyzing %s ...\n", filePath)
+		if len(filePath) == 0 {
+			logger.Errorf("Invalid path to the executable. path=%s", filePath)
+			return fmt.Errorf("invalid file path: %q", filePath)
 		}
 
-		bcFile, _ := filepath.Abs(directBCFile)
-		// skip if BC file does not exist
-		if bcFile == "" {
-			continue
+		bcFile, err := filepath.Abs(filePath)
+		if err != nil {
+			return fmt.Errorf("unable to get the absolute path of file %q: %w", filePath, err)
 		}
+		// Skip if the file does not exist.
 		if _, err := os.Stat(bcFile); os.IsNotExist(err) {
+			logger.Warnf("File %q does not exist; skipped", bcFile)
 			continue
 		}
 		logger.Infof("Analyzing file to detect issues. file=%s", bcFile)
 
-		// Step 3. Call sol-code-analyzer
-		executablePath := fileList[i]
-		_, executableName := filepath.Split(executablePath)
-		executableInfo.Name = executableName
-		tmpJsonPath := filepath.Join(tmpDir, fmt.Sprintf("coderrect_%s_report.json", executableName))
-		logger.Infof("Generating the json file. jsonPath=%s", tmpJsonPath)
+		// Step 3. Call sol-code-analyzer to analyze the file.
+		filename := filepath.Base(filePath)
+		tmpJSONPath := filepath.Join(tmpDir, fmt.Sprintf("xray_%s_report.json", filename))
+		logger.Infof("Generating the JSON file. jsonPath=%s", tmpJSONPath)
 
 		noprogress := conflib.GetBool("noprogress", false)
 		displayFlag := ""
@@ -383,7 +380,7 @@ func Start(coderrectHome string, args []string) error {
 		if len(displayFlag) > 0 {
 			cmdArgument = append(cmdArgument, displayFlag)
 		}
-		cmdArgument = append(cmdArgument, "-o", tmpJsonPath, bcFile)
+		cmdArgument = append(cmdArgument, "-o", tmpJSONPath, bcFile)
 		cmdline := filepath.Join(coderrectHome, "bin", codeAnalyzerExe)
 		for _, s := range cmdArgument {
 			cmdline += " " + normalizeCmdlineArg(s)
@@ -396,34 +393,36 @@ func Start(coderrectHome string, args []string) error {
 			return fmt.Errorf("unable to analyze file (cmdline=%s): %w", cmdArgument, err)
 		}
 
-		// For each file , generate `raw_${file}.json` under `.xray/build`.
-		raceJsonBytes, err := os.ReadFile(tmpJsonPath)
+		// For each file, generate `raw_${file}.json` under `.xray/build`.
+		rawJSON, err := os.ReadFile(tmpJSONPath)
 		if err != nil {
-			return fmt.Errorf("unable to read JSON file %q: %w", tmpJsonPath, err)
+			return fmt.Errorf("unable to read JSON file %q: %w", tmpJSONPath, err)
 		}
-		// copy the raw json file to build
-		rawJsonPath := filepath.Join(coderrectBuildDir, fmt.Sprintf("raw_%s.json", executableName))
-		os.WriteFile(rawJsonPath, raceJsonBytes, fi.Mode())
-		executableInfo.RaceJSON = rawJsonPath
+		// Copy the raw JSON file to build/ directory.
+		rawJSONPath := filepath.Join(coderrectBuildDir, fmt.Sprintf("raw_%s.json", filename))
+		if err := os.WriteFile(rawJSONPath, rawJSON, fi.Mode()); err != nil {
+			return fmt.Errorf("unable to write JSON file %q: %w", rawJSONPath, err)
+		}
 
 		// Check number of detected issues.
-		currentRaces := 0
-		raceTypes := []string{"untrustfulAccounts", "unsafeOperations", "cosplayAccounts"}
-		for _, raceType := range raceTypes {
-			jsonparser.ArrayEach(raceJsonBytes, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-				currentRaces++
-			}, raceType)
+		issues := 0
+		for _, ty := range []string{"untrustfulAccounts", "unsafeOperations", "cosplayAccounts"} {
+			jsonparser.ArrayEach(rawJSON, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+				issues++
+			}, ty)
 		}
-		executableInfo.DataRaces = currentRaces
-		executableInfo.NewBugs = false
-		executableInfoList = append(executableInfoList, executableInfo)
+		executableInfoList = append(executableInfoList,
+			reporter.ExecutableInfo{
+				Name:      filename,
+				RaceJSON:  rawJSONPath,
+				DataRaces: issues,
+			})
 
-		time_duration := time.Since(time_start)
-		if time_duration > timeout {
-			fmt.Printf("Timeout (exceeded %v), skipping the rest %v executables\n", timeout, (len(fileList) - i))
+		// TODO: This should be implemented via context.
+		if time.Since(startTime) > timeout {
+			fmt.Printf("Exceeded overall timeout (%v), skipping the rest %v files\n", timeout, (len(fileList) - i))
 			break
 		}
-
 	}
 
 	// reset the color of terminal
