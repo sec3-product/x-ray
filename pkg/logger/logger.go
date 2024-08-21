@@ -264,3 +264,7 @@ func Warnf(format string, args ...interface{}) {
 func Errorf(format string, args ...interface{}) {
 	_logger.Errorf(format, args...)
 }
+
+func Fatalf(format string, args ...interface{}) {
+	_logger.Fatalf(format, args...)
+}
