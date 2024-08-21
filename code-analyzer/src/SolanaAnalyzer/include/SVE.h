@@ -69,7 +69,7 @@ public:
 
   using Database = std::map<std::string, std::map<std::string, std::string>>;
 
-  static Database SOLANA_SVE_DB;
+  static Database database;
   static void init(Database);
 
   static std::map<SVE::Type, std::string> sveTypeIdMap;

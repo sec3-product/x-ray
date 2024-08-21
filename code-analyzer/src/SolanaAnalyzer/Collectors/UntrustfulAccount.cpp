@@ -10,9 +10,8 @@
 #include <nlohmann/json.hpp>
 
 #include "LogColor.h" // info
+#include "SVE.h"
 #include "SourceInfo.h"
-
-#define DEFAULT_BUDGET 25
 
 using namespace xray;
 using namespace llvm;
@@ -25,6 +24,7 @@ extern bool TERMINATE_IMMEDIATELY;
 // Not to limit the number of bugs we collected
 // by default we only collect at most 25 cases for each type of bug
 static bool nolimit = false;
+constexpr unsigned int DEFAULT_BUDGET = 25;
 
 /* --------------------------------
 
@@ -250,9 +250,9 @@ xray::UntrustfulAccount::UntrustfulAccount(std::string account,
     : apiInst(srcInfo), errorMsg(msg), type(t), accountName(account), p(P),
       ignore(isIgnored), hide(isHidden) {
   id = SVE::getTypeID(t);
-  name = SVE::SOLANA_SVE_DB[id]["name"];
-  description = SVE::SOLANA_SVE_DB[id]["description"];
-  url = SVE::SOLANA_SVE_DB[id]["url"];
+  name = SVE::database[id]["name"];
+  description = SVE::database[id]["description"];
+  url = SVE::database[id]["url"];
 }
 
 json xray::UntrustfulAccount::to_json() {

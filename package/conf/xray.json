@@ -22,38 +22,32 @@
       "1001": {
         "name": "MissingSignerCheck",
         "description": "The account is missing signer check",
-        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/0-signer-authorization",
-        "free": true
+        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/0-signer-authorization"
       },
       "1002": {
         "name": "MissingOwnerCheck",
         "description": "The account is missing owner check",
-        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/2-owner-checks",
-        "free": true
+        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/2-owner-checks"
       },
       "1003": {
         "name": "IntegerAddOverflow",
         "description": "The add operation may result in overflows",
-        "url": "https://www.sec3.dev/blog/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts",
-        "free": true
+        "url": "https://www.sec3.dev/blog/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts"
       },
       "1004": {
         "name": "IntegerUnderflow",
         "description": "The sub operation may result in underflows",
-        "url": "https://www.sec3.dev/blog/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts",
-        "free": true
+        "url": "https://www.sec3.dev/blog/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts"
       },
       "1005": {
         "name": "IntegerMulOverflow",
         "description": "The mul operation may result in overflows",
-        "url": "https://www.sec3.dev/blog/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts",
-        "free": true
+        "url": "https://www.sec3.dev/blog/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts"
       },
       "1006": {
         "name": "IntegerDivOverflow",
         "description": "The div operation may result in overflows",
-        "url": "https://www.sec3.dev/blog/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts",
-        "free": true
+        "url": "https://www.sec3.dev/blog/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts"
       },
       "1007": {
         "name": "UnverifiedParsedAccount",
@@ -73,8 +67,7 @@
       "1010": {
         "name": "TypeFullCosplay",
         "description": "These two account data types are fully compatible and can be used to launch type confusion attacks",
-        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/3-type-cosplay",
-        "free": true
+        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/3-type-cosplay"
       },
       "1011": {
         "name": "TypePartialCosplay",
@@ -84,8 +77,7 @@
       "1012": {
         "name": "DivideByZero",
         "description": "The arithmetic operation may result in a divide-by-zero error",
-        "url": "https://github.com/rust-lang/rust/issues/944",
-        "free": true
+        "url": "https://github.com/rust-lang/rust/issues/944"
       },
       "1013": {
         "name": "AccountReInitialization",
@@ -95,8 +87,7 @@
       "1014": {
         "name": "BumpSeedNotValidated",
         "description": "The account's bump seed is not validated and may be vulnerable to seed canonicalization attacks",
-        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/7-bump-seed-canonicalization",
-        "free": false
+        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/7-bump-seed-canonicalization"
       },
       "1015": {
         "name": "InsecurePDASharing",
@@ -106,8 +97,7 @@
       "1016": {
         "name": "ArbitraryCPI",
         "description": "The CPI may be vulnerable and invoke an arbitrary program",
-        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/5-arbitrary-cpi",
-        "free": true
+        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/5-arbitrary-cpi"
       },
       "1017": {
         "name": "MaliciousSimulation",
@@ -117,8 +107,7 @@
       "1018": {
         "name": "UnsafeSysVarAPI",
         "description": "The sysvar instructions API is unsafe and deprecated (wormhole exploit)",
-        "url": "https://twitter.com/samczsun/status/1489044984296792064",
-        "free": true
+        "url": "https://twitter.com/samczsun/status/1489044984296792064"
       },
       "1019": {
         "name": "UnvalidatedAccount",
@@ -193,8 +182,7 @@
       "1033": {
         "name": "InsecureAnchorInitIfNeeded",
         "description": "The `init_if_needed` keyword in anchor-lang prior to v0.24.x has a critical security bug",
-        "url": "https://twitter.com/armaniferrante/status/1516425854183690257",
-        "free": true
+        "url": "https://twitter.com/armaniferrante/status/1516425854183690257"
       },
       "1034": {
         "name": "InsecureSPLTokenCPI",
@@ -209,8 +197,7 @@
       "1036": {
         "name": "InsecureAccountRealloc",
         "description": "The account realloc in solana_program prior to v1.10.29 may cause programs to malfunction",
-        "url": "https://twitter.com/jacobvcreech/status/1543968742606077952",
-        "free": true
+        "url": "https://twitter.com/jacobvcreech/status/1543968742606077952"
       },
       "1037": {
         "name": "PDASeedCollisions",
@@ -240,8 +227,7 @@
       "2005": {
         "name": "IncorrectTokenCalculation",
         "description": "The token amount calculation may be incorrect. Consider using the reserves instead of the balances.",
-        "url": "https://medium.com/certora/exploiting-an-invariant-break-how-we-found-a-pool-draining-bug-in-sushiswaps-trident-585bd98a4d4f",
-        "free": true
+        "url": "https://medium.com/certora/exploiting-an-invariant-break-how-we-found-a-pool-draining-bug-in-sushiswaps-trident-585bd98a4d4f"
       },
       "3001": {
         "name": "BestSecurityPractice",
@@ -281,68 +267,57 @@
       "3008": {
         "name": "NewAccountNotBackwardsCompatible",
         "description": "The account may break the ABI of the deployed on-chain program as it does not exist in the IDL available on Anchor",
-        "url": "https://twitter.com/pencilflip/status/1559945837844856834",
-        "free": true
+        "url": "https://twitter.com/pencilflip/status/1559945837844856834"
       },
       "3009": {
         "name": "MutableAccountNotBackwardsCompatible",
         "description": "The mutable account may break the ABI of the deployed on-chain program as it is immutable according to the IDL available on Anchor",
-        "url": "https://twitter.com/pencilflip/status/1559945837844856834",
-        "free": true
+        "url": "https://twitter.com/pencilflip/status/1559945837844856834"
       },
       "3010": {
         "name": "ReOrderAccountsNotBackwardsCompatible",
         "description": "These two accounts are reordered in the instruction and may break the ABI of the deployed on-chain program, according to the IDL available on Anchor",
-        "url": "https://twitter.com/pencilflip/status/1559945837844856834",
-        "free": true
+        "url": "https://twitter.com/pencilflip/status/1559945837844856834"
       },
       "10001": {
         "name": "ReentrancyEtherVulnerability",
         "description": "The function may suffer from reentrancy attacks due to the use of call.value, which can invoke an external contract's fallback function",
-        "url": "https://consensys.github.io/smart-contract-best-practices/attacks/reentrancy/",
-        "free": true
+        "url": "https://consensys.github.io/smart-contract-best-practices/attacks/reentrancy/"
       },
       "10002": {
         "name": "ArbitrarySendERC20",
         "description": "The function may allow an attacker to send from an arbitrary address, instead of from the msg.sender",
-        "url": "https://github.com/crytic/slither/wiki/Detector-Documentation#arbitrary-send-erc20",
-        "free": true
+        "url": "https://github.com/crytic/slither/wiki/Detector-Documentation#arbitrary-send-erc20"
       },
       "10003": {
         "name": "UnprotectedSelfDestruct",
         "description": "The function may allow an attacker to destruct the contract",
-        "url": "https://github.com/crytic/slither/wiki/Detector-Documentation#suicidal",
-        "free": true
+        "url": "https://github.com/crytic/slither/wiki/Detector-Documentation#suicidal"
       },
       "10004": {
         "name": "MissingCalleeCheck",
         "description": "The function may be missing a check callee != address(this)",
-        "url": "https://medium.com/certora/certora-technology-white-paper-cae5ab0bdf1",
-        "free": true
+        "url": "https://medium.com/certora/certora-technology-white-paper-cae5ab0bdf1"
       },
       "20001": {
         "name": "MissingInitAdminCheck",
         "description": "The init function misses checking admin uniqueness and may allow an attacker to call the init function more than once",
-        "url": "https://github.com/XP-NETWORK/",
-        "free": true
+        "url": "https://github.com/XP-NETWORK/"
       },
       "20002": {
         "name": "BitShiftOverflow",
         "description": "The bit shift operation may result in overflows",
-        "url": "https://www.zellic.io/blog/move-fast-and-break-things-pt-1",
-        "free": true
+        "url": "https://www.zellic.io/blog/move-fast-and-break-things-pt-1"
       },
       "20003": {
         "name": "DivisionPrecisionLoss",
         "description": "The division operation here may lose precision",
-        "url": "https://www.zellic.io/blog/move-fast-and-break-things-pt-1",
-        "free": true
+        "url": "https://www.zellic.io/blog/move-fast-and-break-things-pt-1"
       },
       "20004": {
         "name": "VulnerableI128Implementation",
         "description": "The I128 signed integer implementation in Move is not recommended and may be vulnerable. Consider using the built-in Move types only.",
-        "url": "https://diem.github.io/move/integers.html",
-        "free": true
+        "url": "https://diem.github.io/move/integers.html"
       }
     }
   },
