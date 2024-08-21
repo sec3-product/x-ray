@@ -23,6 +23,7 @@ func TestGetArgsFromEnvironment(t *testing.T) {
 }
 `
 	os.Setenv("CODERRECT_CMDLINE_OPTS", jsonstr)
+	defer os.Unsetenv("CODERRECT_CMDLINE_OPTS")
 	args = getArgsFromEnvironment()
 	if len(args) != 3 {
 		t.Errorf("normal-env_variable, args=%v", args)
@@ -77,11 +78,11 @@ func TestParseCmdlineArgs(t *testing.T) {
 
 	// case 1 - no command-line opts
 	remainingArgs, err := parseCmdlineArgs(alias, true)
-	if len(remainingArgs) != 0 {
-		t.Errorf("remainingArgs should be empty. remainingArgs=%v", remainingArgs)
-	}
 	if err != nil {
 		t.Errorf("failed. err=%v", err)
+	}
+	if len(remainingArgs) != 0 {
+		t.Errorf("remainingArgs should be empty. remainingArgs=%v", remainingArgs)
 	}
 	json.Unmarshal([]byte(GetCmdlineOpts()), &cmdlinOpts)
 	if len(cmdlinOpts.Opts) != 0 {
@@ -95,6 +96,7 @@ func TestParseCmdlineArgs(t *testing.T) {
 }
 `
 	os.Setenv("CODERRECT_CMDLINE_OPTS", jsonstr)
+	defer os.Unsetenv("CODERRECT_CMDLINE_OPTS")
 	remainingArgs, err = parseCmdlineArgs(alias, true)
 	if err != nil {
 		t.Errorf("failed. err=%v", err)
