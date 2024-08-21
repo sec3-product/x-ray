@@ -383,5 +383,6 @@ extern std::string CONFIG_OUTPUT_PATH;
 extern std::string TARGET_MODULE_PATH;
 extern unsigned int NUM_OF_ATTACK_VECTORS;
 extern unsigned int NUM_OF_IR_LINES;
+extern int FUNC_COUNT_BUDGET;
 
 } // namespace xray

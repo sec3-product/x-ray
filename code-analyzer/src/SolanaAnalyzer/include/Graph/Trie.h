@@ -5,9 +5,10 @@
 
 #include <map>
 
-extern bool USE_MAIN_CALLSTACK_HEURISTIC;
-extern int SAME_FUNC_BUDGET_SIZE; // keep at most x times per func per thread 10
-                                  // by default
+// Debug flags.
+bool USE_MAIN_CALLSTACK_HEURISTIC = false;
+int SAME_FUNC_BUDGET_SIZE = 10; // keep at most x times per func per thread 10
+                                // by default
 
 // TODO: this file should be re-implemented to be more generic
 // Right now this file is a incomplete implementation of Trie

@@ -31,23 +31,17 @@
 
 using namespace llvm;
 using namespace xray;
-using namespace std;
 
 cl::opt<std::string> TargetModulePath(cl::Positional,
                                       cl::desc("path to input bitcode file"));
 cl::opt<bool> ConfigDumpIR("dump-ir", cl::desc("Dump the modified ir file"));
 cl::opt<std::string> ConfigOutputPath("o", cl::desc("JSON output path"),
                                       cl::value_desc("path"));
-cl::opt<bool> ConfigNoOV("no-ov",
-                         cl::desc("Turn off the order violation detection"));
 cl::opt<bool> ConfigDebugLog("v", cl::desc("Turn off log to file"));
 
 cl::opt<int> ConfigReportLimit("limit",
                                cl::desc("Max number of races can be reported"),
                                cl::value_desc("number"), cl::init(-1));
-cl::opt<bool>
-    ConfigNoReportLimit("no-limit",
-                        cl::desc("No limit for the number of races reported"));
 
 cl::opt<bool>
     ConfigPrintImmediately("Xprint-fast",
@@ -62,23 +56,6 @@ cl::opt<bool> ConfigShowDetail("Xshow-race-detail",
 cl::opt<bool> ConfigShowAllTerminal(
     "t", cl::desc("show race detail and summary on the terminal"));
 
-bool USE_MAIN_CALLSTACK_HEURISTIC;
-
-// if fast is enabled, we will do aggressive performance optimization
-cl::opt<bool> CONFIG_FAST_MODE("fast", cl::desc("Use fast detection mode"));
-// if fast is enabled, we will do aggressive performance optimization
-cl::opt<bool> CONFIG_EXHAUST_MODE("full",
-                                  cl::desc("Use exhaustive detection mode"));
-
-cl::opt<bool> ConfigIgnoreRepeatedMainCallStack(
-    "skip-repeat-cs", cl::desc("Skip repeated call stack in main thread"));
-
-cl::opt<bool> ConfigDebugPTA("debug-pta",
-                             cl::desc("Turn on debug pointer analysis"));
-cl::opt<bool> ConfigDebugPTAVerbose(
-    "debug-pta-verbose",
-    cl::desc("Turn on debug pointer analysis verbose mode"));
-
 cl::opt<bool> ConfigDebugRustAPI("debug-sol",
                                  cl::desc("Turn on debug sol api"));
 
@@ -86,11 +63,7 @@ cl::opt<bool>
     ConfigDisableProgress("no-progress",
                           cl::desc("Does not print spinner progress"));
 
-bool CONFIG_NO_REPORT_LIMIT;
-
-extern int FUNC_COUNT_BUDGET; // 100,000 by default
-
-logger::LoggingConfig initLoggingConf() {
+static logger::LoggingConfig initLoggingConf() {
   logger::LoggingConfig config;
 
   config.enableProgress = conflib::Get<bool>("XenableProgress", true);
@@ -236,8 +209,6 @@ int main(int argc, char **argv) {
       conflib::Get<std::vector<std::string>>("heapAllocFunctions", {});
   GraphBLASHeapModel::init(heapAPIs);
 
-  FUNC_COUNT_BUDGET = conflib::Get<int>("functionCountBudget", 20000);
-
   auto enableImmediatePrint =
       conflib::Get<bool>("report.enableTerminal", false);
   auto enableShowRaceSummary =
@@ -245,11 +216,9 @@ int main(int argc, char **argv) {
   auto enableShowRaceDetail =
       conflib::Get<bool>("enablePrintRaceDetail", false);
 
+  FUNC_COUNT_BUDGET = conflib::Get<int>("functionCountBudget", 20000);
   CONFIG_CHECK_UncheckedAccount =
       conflib::Get<bool>("solana.account.UncheckedAccount", true);
-
-  CONFIG_NO_REPORT_LIMIT =
-      ConfigNoReportLimit | (conflib::Get<int>("raceLimit", -1) < 0);
 
   auto reportLimit = conflib::Get<int>("raceLimit", -1);
   if (reportLimit != -1) {
@@ -260,9 +229,6 @@ int main(int argc, char **argv) {
   TARGET_MODULE_PATH = TargetModulePath;
 
   DEBUG_RUST_API = ConfigDebugRustAPI;
-  DEBUG_PTA_VERBOSE = ConfigDebugPTAVerbose;
-  DEBUG_PTA = ConfigDebugPTA | DEBUG_PTA_VERBOSE;
-  USE_MAIN_CALLSTACK_HEURISTIC = ConfigIgnoreRepeatedMainCallStack;
 
   PRINT_IMMEDIATELY =
       ConfigPrintImmediately | enableImmediatePrint | ConfigShowAllTerminal;
@@ -272,15 +238,7 @@ int main(int argc, char **argv) {
   CONFIG_SHOW_DETAIL = ConfigShowDetail | enableShowRaceDetail |
                        ConfigShowAllTerminal; // show race details
 
-  // by default, set the pts size to 999
-  PTSTrait<PtsTy>::setPTSSizeLimit(9); // set pts size limit to 999
-
-  if (CONFIG_FAST_MODE) {
-    MaxIndirectTarget = 1;
-  } else if (CONFIG_EXHAUST_MODE) {
-    // no limit to indirect target
-    MaxIndirectTarget = 999;
-  }
+  PTSTrait<PtsTy>::setPTSSizeLimit(9);
 
   LOG_INFO("Loading IR From File: {}", TargetModulePath);
   logger::newPhaseSpinner("Loading IR From File");

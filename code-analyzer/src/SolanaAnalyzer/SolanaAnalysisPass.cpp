@@ -31,6 +31,7 @@ std::string xray::CONFIG_OUTPUT_PATH;
 std::string xray::TARGET_MODULE_PATH;
 unsigned int xray::NUM_OF_IR_LINES;
 unsigned int xray::NUM_OF_ATTACK_VECTORS;
+int xray::FUNC_COUNT_BUDGET;
 
 EventID Event::ID_counter = 0;
 llvm::StringRef stripSelfAccountName(llvm::StringRef account_name) {
@@ -965,10 +966,6 @@ void SolanaAnalysisPass::updateKeyEqualMap(StaticThread *thread, const Event *e,
 
 static std::map<TID, unsigned int> threadNFuncMap;
 static xray::trie::TrieNode *cur_trie;
-
-int FUNC_COUNT_BUDGET;
-static unsigned int FUNC_COUNT_PROGRESS_THESHOLD = 10000;
-int SAME_FUNC_BUDGET_SIZE = 10; // keep at most x times per func per thread 10
 
 bool SolanaAnalysisPass::mayBeExclusive(const Event *const e1,
                                         const Event *const e2) {
@@ -3327,16 +3324,17 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
   }
 }
 
-// inline all the calls and make copies on different threads.
+constexpr unsigned int FUNC_COUNT_PROGRESS_THESHOLD = 10000;
+
 void SolanaAnalysisPass::traverseFunction(
     const xray::ctx *ctx, const Function *func0, StaticThread *thread,
     std::vector<const Function *> &callStack,
     std::map<uint8_t, const llvm::Constant *> *valMap) {
-  auto tid = thread->getTID();
   Function *func = const_cast<Function *>(func0);
 
-  // FOR SOLANA
-  // llvm::outs() << "SOLANA traverseFunction: " << func->getName() << "\n";
+  if (DEBUG_RUST_API) {
+    llvm::outs() << "SOLANA traverseFunction: " << func->getName() << "\n";
+  }
 
   // simulating call stack
   if (find(callStack.begin(), callStack.end(), func) != callStack.end()) {
@@ -3344,6 +3342,7 @@ void SolanaAnalysisPass::traverseFunction(
   }
 
   // FIXME: unsound heuristic
+  auto tid = thread->getTID();
   int count = threadNFuncMap[tid];
   count++;
   if (count % FUNC_COUNT_PROGRESS_THESHOLD == 0) {

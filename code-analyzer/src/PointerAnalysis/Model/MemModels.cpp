@@ -16,8 +16,9 @@ using namespace llvm;
 
 extern cl::opt<bool> USE_MEMLAYOUT_FILTERING;
 
-bool DEBUG_PTA;
-bool DEBUG_PTA_VERBOSE;
+// Debug flags.
+bool DEBUG_PTA = false;
+bool DEBUG_PTA_VERBOSE = false;
 size_t PTAAnonLimit = 10000;
 
 static const Value *stripNullOrUnDef(const Value *V) {

@@ -4,7 +4,6 @@
 #include "Graph/Event.h"
 
 using namespace xray;
-using namespace std;
 
 TID StaticThread::curID = 0;
 std::map<TID, StaticThread *> StaticThread::tidToThread;
