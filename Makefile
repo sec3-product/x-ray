@@ -81,7 +81,6 @@ install:
 	@cp $(BUILD_DIR)/analyzer/bin/sol-code-analyzer $(INSTALL_DIR)/bin/
 	@cp $(BUILD_DIR)/parser/bin/sol-code-parser $(INSTALL_DIR)/bin/
 	@cp $(BUILD_DIR)/cli/bin/* $(INSTALL_DIR)/bin/
-	@cp $(LLVM_PREBUILT_PATH)/lib/libomp.so $(INSTALL_DIR)/bin/
 	@cp package/conf/xray.json $(INSTALL_DIR)/conf/
 	@echo "Done. X-Ray has been installed to $(INSTALL_DIR)."
 	@echo

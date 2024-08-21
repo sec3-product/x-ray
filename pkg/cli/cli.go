@@ -384,11 +384,9 @@ func Start(coderrectHome string, args []string) error {
 			cmdArgument = append(cmdArgument, displayFlag)
 		}
 		cmdArgument = append(cmdArgument, "-o", tmpJsonPath, bcFile)
-		analyzer := filepath.Join(coderrectHome, "bin", codeAnalyzerExe)
-		omplibPath := filepath.Join(coderrectHome, "bin", "libomp.so")
-		cmdline := fmt.Sprintf("export LD_PRELOAD=%s; %s ", omplibPath, analyzer)
+		cmdline := filepath.Join(coderrectHome, "bin", codeAnalyzerExe)
 		for _, s := range cmdArgument {
-			cmdline = cmdline + normalizeCmdlineArg(s) + " "
+			cmdline += " " + normalizeCmdlineArg(s)
 		}
 		cmdline = "(" + cmdline + ")"
 		cmd := exec.Command("bash", "-c", cmdline)
@@ -398,7 +396,7 @@ func Start(coderrectHome string, args []string) error {
 			return fmt.Errorf("unable to analyze file (cmdline=%s): %w", cmdArgument, err)
 		}
 
-		// For each file , generate raw_${file}.json under .xray/build.
+		// For each file , generate `raw_${file}.json` under `.xray/build`.
 		raceJsonBytes, err := os.ReadFile(tmpJsonPath)
 		if err != nil {
 			return fmt.Errorf("unable to read JSON file %q: %w", tmpJsonPath, err)
@@ -408,7 +406,7 @@ func Start(coderrectHome string, args []string) error {
 		os.WriteFile(rawJsonPath, raceJsonBytes, fi.Mode())
 		executableInfo.RaceJSON = rawJsonPath
 
-		//check number of race detected
+		// Check number of detected issues.
 		currentRaces := 0
 		raceTypes := []string{"untrustfulAccounts", "unsafeOperations", "cosplayAccounts"}
 		for _, raceType := range raceTypes {
