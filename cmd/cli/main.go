@@ -15,9 +15,9 @@ import (
 	"github.com/gookit/color"
 	toml "github.com/pelletier/go-toml"
 
-	"github.com/coderrect-inc/coderrect/pkg/reporter"
-	"github.com/coderrect-inc/coderrect/pkg/util/conflib"
-	"github.com/coderrect-inc/coderrect/pkg/util/logger"
+	"github.com/sec3-product/x-ray/pkg/conflib"
+	"github.com/sec3-product/x-ray/pkg/logger"
+	"github.com/sec3-product/x-ray/pkg/reporter"
 )
 
 const (

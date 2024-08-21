@@ -23,7 +23,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/coderrect-inc/coderrect/pkg/util/conflib"
+	"github.com/sec3-product/x-ray/pkg/conflib"
 )
 
 func stringToLogLevel(levelStr string) log.Level {

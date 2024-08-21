@@ -1,4 +1,4 @@
-module github.com/coderrect-inc/coderrect
+module github.com/sec3-product/x-ray
 
 go 1.22
 

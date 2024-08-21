@@ -10,8 +10,8 @@ import (
 
 	"github.com/buger/jsonparser"
 
-	"github.com/coderrect-inc/coderrect/pkg/util/conflib"
-	"github.com/coderrect-inc/coderrect/pkg/util/logger"
+	"github.com/sec3-product/x-ray/pkg/conflib"
+	"github.com/sec3-product/x-ray/pkg/logger"
 )
 
 func isDirectory(path string) bool {
