@@ -111,56 +111,6 @@
         "description": "The account may not be properly validated and may be untrustful",
         "url": "https://medium.com/coinmonks/the-wormhole-hack-how-soteria-detects-the-vulnerability-automatically-eb0f433e8071"
       },
-      "1020": {
-        "name": "OutdatedDependency",
-        "description": "The program has outdated and vulnerable dependencies",
-        "url": "https://medium.com/coinmonks/the-wormhole-hack-how-soteria-detects-the-vulnerability-automatically-eb0f433e8071"
-      },
-      "1021": {
-        "name": "UnsafeRust",
-        "description": "The program contains unsafe Rust code",
-        "url": "https://www.sec3.dev/blog/solana-internals-part-4-the-bank-a-key-component"
-      },
-      "1022": {
-        "name": "OverPayment",
-        "description": "The code misses checking to prevent over payment",
-        "url": "https://github.com/jet-lab/jet-v1/pull/271"
-      },
-      "1023": {
-        "name": "StalePriceFeed",
-        "description": "The code may use a stale price feed (solend loss)",
-        "url": "https://blog.solend.fi/response-to-solana-network-issues-5c8184607283"
-      },
-      "1024": {
-        "name": "MissInitTokenMint",
-        "description": "The init instruction misses minting pool tokens",
-        "url": "https://www.sec3.dev/blog/solana-stake-pool-a-semantic-inconsistency-vulnerability-discovered-by-x-ray"
-      },
-      "1025": {
-        "name": "MissRentExempt",
-        "description": "The account misses rent exempt check",
-        "url": "https://docs.solana.com/implemented-proposals/rent"
-      },
-      "1026": {
-        "name": "MissFreezeAuthority",
-        "description": "The account misses checking for freeze authority",
-        "url": "https://spl.solana.com/token#freezing-accounts"
-      },
-      "1027": {
-        "name": "FlashLoanRisk",
-        "description": "The instruction may suffer from a flashloan risk due to internal price oracle",
-        "url": "https://docs.solend.fi/developers/flash-loans"
-      },
-      "1028": {
-        "name": "BidirectionalRounding",
-        "description": "The arithmetics here may suffer from bidirectional rounding vulnerabilities",
-        "url": "https://www.sec3.dev/blog/bidirectional-rounding"
-      },
-      "1029": {
-        "name": "LossyCastTruncation",
-        "description": "The cast operation here may lose precision due to truncation",
-        "url": "https://internals.rust-lang.org/t/lets-deprecate-as-for-lossy-numeric-casts/16283"
-      },
       "1030": {
         "name": "UnvalidatedPDAAccount",
         "description": "The PDA account may not be properly validated and may be untrustful",
@@ -226,95 +176,15 @@
         "description": "The token amount calculation may be incorrect. Consider using the reserves instead of the balances.",
         "url": "https://medium.com/certora/exploiting-an-invariant-break-how-we-found-a-pool-draining-bug-in-sushiswaps-trident-585bd98a4d4f"
       },
-      "3001": {
-        "name": "BestSecurityPractice",
-        "description": "The code does not follow best security practices",
-        "url": "https://www.sec3.dev/blog/how-to-audit-solana-smart-contracts-part-1-a-systematic-approach"
-      },
-      "3002": {
-        "name": "CriticalUnusedCode",
-        "description": "The code may be redundant or unused, but appears critical",
-        "url": "https://www.sec3.dev/blog/how-to-audit-solana-smart-contracts-part-1-a-systematic-approach"
-      },
-      "3003": {
-        "name": "InconsistentAnchor",
-        "description": "The program uses Anchor inconsistently across different instructions",
-        "url": "https://www.sec3.dev/blog/how-to-audit-solana-smart-contracts-part-1-a-systematic-approach"
-      },
-      "3004": {
-        "name": "InconsistentConfig",
-        "description": "The configuration and initialization data are inconsistent",
-        "url": "https://www.sec3.dev/blog/how-to-audit-solana-smart-contracts-part-1-a-systematic-approach"
-      },
       "3005": {
         "name": "MissingCPIAccountReload",
         "description": "The token account's amount may be incorrect without calling reload after CPI",
         "url": "https://book.anchor-lang.com/anchor_in_depth/CPIs.html#reloading-an-account"
       },
-      "3006": {
-        "name": "MissingUnstakeAccessControl",
-        "description": "The unstake instruction may be missing an access_control account validation",
-        "url": "https://docs.rs/anchor-lang/latest/anchor_lang/attr.access_control.html"
-      },
-      "3007": {
-        "name": "OrderRaceCondition",
-        "description": "The instruction may suffer from a race condition between order cancellation and order recreation by an attacker",
-        "url": "https://twitter.com/tarunchitra/status/1455204028808376321"
-      },
-      "3008": {
-        "name": "NewAccountNotBackwardsCompatible",
-        "description": "The account may break the ABI of the deployed on-chain program as it does not exist in the IDL available on Anchor",
-        "url": "https://twitter.com/pencilflip/status/1559945837844856834"
-      },
-      "3009": {
-        "name": "MutableAccountNotBackwardsCompatible",
-        "description": "The mutable account may break the ABI of the deployed on-chain program as it is immutable according to the IDL available on Anchor",
-        "url": "https://twitter.com/pencilflip/status/1559945837844856834"
-      },
-      "3010": {
-        "name": "ReOrderAccountsNotBackwardsCompatible",
-        "description": "These two accounts are reordered in the instruction and may break the ABI of the deployed on-chain program, according to the IDL available on Anchor",
-        "url": "https://twitter.com/pencilflip/status/1559945837844856834"
-      },
-      "10001": {
-        "name": "ReentrancyEtherVulnerability",
-        "description": "The function may suffer from reentrancy attacks due to the use of call.value, which can invoke an external contract's fallback function",
-        "url": "https://consensys.github.io/smart-contract-best-practices/attacks/reentrancy/"
-      },
-      "10002": {
-        "name": "ArbitrarySendERC20",
-        "description": "The function may allow an attacker to send from an arbitrary address, instead of from the msg.sender",
-        "url": "https://github.com/crytic/slither/wiki/Detector-Documentation#arbitrary-send-erc20"
-      },
-      "10003": {
-        "name": "UnprotectedSelfDestruct",
-        "description": "The function may allow an attacker to destruct the contract",
-        "url": "https://github.com/crytic/slither/wiki/Detector-Documentation#suicidal"
-      },
-      "10004": {
-        "name": "MissingCalleeCheck",
-        "description": "The function may be missing a check callee != address(this)",
-        "url": "https://medium.com/certora/certora-technology-white-paper-cae5ab0bdf1"
-      },
-      "20001": {
-        "name": "MissingInitAdminCheck",
-        "description": "The init function misses checking admin uniqueness and may allow an attacker to call the init function more than once",
-        "url": "https://github.com/XP-NETWORK/"
-      },
-      "20002": {
-        "name": "BitShiftOverflow",
-        "description": "The bit shift operation may result in overflows",
-        "url": "https://www.zellic.io/blog/move-fast-and-break-things-pt-1"
-      },
       "20003": {
         "name": "DivisionPrecisionLoss",
         "description": "The division operation here may lose precision",
         "url": "https://www.zellic.io/blog/move-fast-and-break-things-pt-1"
-      },
-      "20004": {
-        "name": "VulnerableI128Implementation",
-        "description": "The I128 signed integer implementation in Move is not recommended and may be vulnerable. Consider using the built-in Move types only.",
-        "url": "https://diem.github.io/move/integers.html"
       }
     }
   },

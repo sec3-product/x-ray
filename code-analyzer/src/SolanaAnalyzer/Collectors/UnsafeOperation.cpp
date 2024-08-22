@@ -62,62 +62,6 @@ std::string xray::UnsafeOperation::getErrorMsg(SVE::Type type) {
   case SVE::Type::INCORRECT_BREAK_LOGIC:
     msg = "Loop break instead of continue (jet-v1 exploit):\n";
     break;
-  case SVE::Type::BIDIRECTIONAL_ROUNDING:
-    msg =
-        "The arithmetics here may suffer from inconsistent rounding errors:\n";
-    break;
-  case SVE::Type::CAST_TRUNCATE:
-    msg = "The cast operation here may lose precision due to truncation:\n";
-    break;
-  case SVE::Type::CRITICAL_REDUNDANT_CODE:
-    msg = "The code may be redundant or unused, but appears critical:";
-    break;
-  case SVE::Type::ORDER_RACE_CONDITION:
-    msg = "The instruction may suffer from a race condition between order "
-          "cancellation and order recreation by "
-          "an attacker:";
-    break;
-  case SVE::Type::ACCOUNT_IDL_INCOMPATIBLE_ADD:
-    msg = "The account may break the ABI of the deployed on-chain program as "
-          "it does not exist in the IDL "
-          "available on Anchor:";
-    break;
-  case SVE::Type::ACCOUNT_IDL_INCOMPATIBLE_MUT:
-    msg = "The mutable account may break the ABI of the deployed on-chain "
-          "program as it is immutable according "
-          "to the IDL available on Anchor:";
-    break;
-  case SVE::Type::REENTRANCY_ETHER:
-    msg = "The function may suffer from reentrancy attacks due to the use of "
-          "call.value, which can invoke an "
-          "external contract's fallback function:";
-    break;
-  case SVE::Type::ARBITRARY_SEND_ERC20:
-    msg = "The function may allow an attacker to send from an arbitrary "
-          "address, instead of from the msg.sender:";
-    break;
-  case SVE::Type::SUISIDE_SELFDESTRUCT:
-    msg = "The function may allow an attacker to destruct the contract:";
-    break;
-  case SVE::Type::MISS_INIT_UNIQUE_ADMIN_CHECK:
-    msg = "The init function misses checking admin uniqueness and may allow an "
-          "attacker to call the init "
-          "function more than once:";
-    break;
-  case SVE::Type::BIT_SHIFT_OVERFLOW:
-    msg = "The bit shift operation may result in overflows:";
-    break;
-  case SVE::Type::DIV_PRECISION_LOSS:
-    msg = "The division operation here may lose precision:\n";
-    break;
-  case SVE::Type::VULNERABLE_SIGNED_INTEGER_I128:
-    msg = "The I128 signed integer implementation in Move may be vulnerable "
-          "and is not recommended:\n";
-    break;
-  case SVE::Type::INCORRECT_TOKEN_CALCULATION:
-    msg = "The token amount calculation may be incorrect. Consider using the "
-          "reserves instead of the balances:\n";
-    break;
 
   default:
     assert(false && "Unhandled UnsafeOperation");
@@ -155,8 +99,9 @@ extern bool hasOverFlowChecks;
 void xray::UnsafeOperation::collect(
     const Event *e, std::map<TID, std::vector<CallEvent *>> &callEventTraces,
     SVE::Type type, int P) {
-  if (hasOverFlowChecks && type != SVE::Type::CAST_TRUNCATE)
+  if (hasOverFlowChecks) {
     return;
+  }
 
   SourceInfo srcInfo = getSourceLoc(e->getInst());
   if (filter(srcInfo))
@@ -167,15 +112,6 @@ void xray::UnsafeOperation::collect(
   if (SVE::isCheckerDisabled(type))
     isHidden = true;
 
-  if (type == SVE::Type::CRITICAL_REDUNDANT_CODE) {
-    bool isRedundantIgnored =
-        customizedFilterSoteriaIgnoreSymbol(e, "redundant");
-    if (isRedundantIgnored)
-      isIgnored = true;
-  }
-
-  // std::vector<std::string> st = getStackTrace(e, callEventTraces,
-  // srcInfo.isCpp());
   std::vector<std::string> st;
   TID tid = e->getTID();
   EventID id = e->getID();
@@ -192,7 +128,6 @@ void xray::UnsafeOperation::collect(
       last_str = call_str;
     }
   }
-  // st.erase(st.begin(), st.begin() + 2);
 #pragma omp critical(budget)
   {
     if (nolimit || budget > 0) {
@@ -202,8 +137,6 @@ void xray::UnsafeOperation::collect(
       --budget;
       if (PRINT_IMMEDIATELY)
         unsafeOperations.back().print();
-      // intentionally commented out since unsafeOperations needs improvement
-      // if (TERMINATE_IMMEDIATELY) exit(1);
     }
   }
 }
