@@ -102,9 +102,6 @@ private:
   bool isAnchorValidatedAccount(llvm::StringRef accountName) const;
   bool isAnchorDataAccount(llvm::StringRef accountName) const;
 
-  std::map<llvm::StringRef, const Event *> accessControlMap;
-  bool isAccessControlInstruction(llvm::StringRef sig) const;
-
   std::map<llvm::StringRef, std::vector<llvm::StringRef>> accountsPDASeedsMap;
   bool isCompatibleSeeds(llvm::StringRef seed, llvm::StringRef seed2) const;
 

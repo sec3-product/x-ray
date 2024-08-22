@@ -1969,7 +1969,6 @@ void SolanaAnalysisPass::handleRustModelAPI(
     }
 
   } else if (calledFuncName.equals("sol.model.access_control")) {
-    // find
     auto value = CS.getArgOperand(0);
     auto calleeName = LangModel::findGlobalString(value);
     auto found = calleeName.find("(");
@@ -1987,24 +1986,12 @@ void SolanaAnalysisPass::handleRustModelAPI(
       func_struct_name = "::" + struct_name.str() + func_struct_name;
     }
     auto func_struct = getFunctionFromPartialName(func_struct_name);
-    if (DEBUG_RUST_API)
+    if (DEBUG_RUST_API) {
       llvm::outs() << "access_control func_struct_name: " << func_struct_name
                    << "\n";
+    }
     if (func_struct) {
-      // llvm::outs() << "func_struct: " << func_struct->getName()
-      // << "\n";
-      auto e = graph->createReadEvent(ctx, inst, tid);
-      accessControlMap[func_struct_name] = e;
-      auto threadStartFuncName =
-          StaticThread::getThreadByTID(tid)->getStartFunction()->getName();
-      if (DEBUG_RUST_API)
-        llvm::outs() << "access_control threadStartFuncName: "
-                     << threadStartFuncName << "\n";
-      accessControlMap[threadStartFuncName] = e;
       traverseFunctionWrapper(ctx, thread, callStack, inst, func_struct);
-    } else {
-      if (DEBUG_RUST_API)
-        llvm::outs() << "func_struct: NULL\n";
     }
   } else {
     traverseFunctionWrapper(ctx, thread, callStack, inst,
@@ -3668,14 +3655,6 @@ void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
     }
   }
 
-  // check unstake access control
-  if (funcName.contains("unstake") && isAccessControlInstruction("stake") &&
-      !isAccessControlInstruction(funcName)) {
-    auto e = callEventTraces[tid].front();
-    UntrustfulAccount::collect(funcName, e, callEventTraces,
-                               SVE::Type::MISS_ACCESS_CONTROL_UNSTAKE, 9);
-  }
-
   bool isInit = funcName.contains("sol.init");
   if (!isInit && !hasThreadStartInitFunction("sol.init")) {
     isInit = funcName.contains("init");
@@ -3687,9 +3666,6 @@ void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
       }
     }
   }
-  bool isPotentiallyOwnerOnly =
-      funcName.contains("create_") || funcName.contains("new_");
-
   if (isInit) {
     auto size = funcArgTypesMap[curThread->startFunc].size();
     for (auto ArgNo = 0; ArgNo < size; ArgNo++) {
@@ -3709,16 +3685,22 @@ void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
       }
     }
   }
+
+  bool isPotentiallyOwnerOnly =
+      funcName.contains("create_") || funcName.contains("new_");
   bool isOwnerOnly = curThread->isOnceOnlyOwnerOnlyInstruction ||
                      curThread->isAccountSignerMultiSigPDA() ||
                      curThread->isAccountSignerVerifiedByPDAContains() ||
                      curThread->isPotentiallyOwnerOnlyInstruction(
                          potentialOwnerAccounts, isInit);
-  llvm::outs() << "isOwnerOnly: " << isOwnerOnly << "\n";
+  if (DEBUG_RUST_API) {
+    llvm::outs() << "isOwnerOnly: " << isOwnerOnly << "\n";
+  }
 
   for (auto [accountName, e] : curThread->accountsMap) {
-    llvm::outs() << "account: " << accountName << "\n";
-    // llvm::outs() << "inst: " << *e->getInst() << "\n";
+    if (DEBUG_RUST_API) {
+      llvm::outs() << "account: " << accountName << "\n";
+    }
     if (isInit) {
       // check for program re-initialization issues
       // idea: make sure a certain account can only be updated once
@@ -4458,20 +4440,6 @@ bool SolanaAnalysisPass::isAnchorDataAccount(
         return true;
     }
   }
-  return false;
-}
-
-bool SolanaAnalysisPass::isAccessControlInstruction(llvm::StringRef sig) const {
-  for (auto [name, e] : accessControlMap) {
-    if (name.contains(sig)) {
-      if (DEBUG_RUST_API)
-        llvm::outs() << "isAccessControlInstruction: " << sig << "\n";
-      return true;
-    }
-  }
-  if (DEBUG_RUST_API)
-    llvm::outs() << "isAccessControlInstruction false: " << sig << "\n";
-
   return false;
 }
 
