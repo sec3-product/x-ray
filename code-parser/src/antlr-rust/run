@@ -1,2 +1,0 @@
-# Generated via the following command.
-java -jar /path/to/antlr/antlr-4.9-complete.jar -visitor -Dlanguage=Cpp Rust*er.g4
