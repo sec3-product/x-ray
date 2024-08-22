@@ -24,10 +24,9 @@ The supported bug pattern list for Solana contract is saved in
 
 ```
 "10001": {
-      "name": "ReentrancyEtherVulnerability",
-      "description": "The function may suffer from reentrancy attacks due to the use of call.value ...",
-      "url": "https://consensys.github.io/smart-contract-best-practices/attacks/reentrancy/",
-      "free": true
+    "name": "ReentrancyEtherVulnerability",
+    "description": "The function may suffer from reentrancy attacks due to the use of call.value ...",
+    "url": "https://consensys.github.io/smart-contract-best-practices/attacks/reentrancy/"
 }
 ```
 
@@ -44,7 +43,7 @@ TBA
 ### Building From Source
 
 For developers who wish to build X-Ray from source, please refer to
-[Manual Installation](./README.md#manual-installation) for detailed
+[Building from Source](docs/developer.md#building-from-source) for detailed
 instructions.
 
 ## Usage
@@ -134,7 +133,8 @@ TBA
 
 ### Building from Source
 
-Please refer to [Building from Source](docs/building.md) for detailed steps.
+Please refer to [Building from Source](docs/developer.md#building-from-source)
+for detailed steps.
 
 ## Contributing
 
