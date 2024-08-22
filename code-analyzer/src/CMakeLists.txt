@@ -1,12 +1,20 @@
 include(FetchContent)
 
 FetchContent_Declare(
-  jsoncons
-  GIT_REPOSITORY https://github.com/danielaparker/jsoncons.git
-  GIT_TAG v0.141.0
+    jsoncons
+    GIT_REPOSITORY https://github.com/danielaparker/jsoncons.git
+    GIT_TAG v0.141.0
 )
-
 FetchContent_MakeAvailable(jsoncons)
+
+FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.9.1
+)
+# Skip building its test (which doesn't compile).
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+FetchContent_MakeAvailable(nlohmann_json)
 
 add_subdirectory(conflib)
 add_subdirectory(PointerAnalysis)

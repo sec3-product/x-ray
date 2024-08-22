@@ -53,6 +53,8 @@ target_link_libraries(SolanaAnalyzer
     PointerAnalysis
     Util
     jsoncons
+    nlohmann_json
+
     ${LLVM_LIBS}
 )
 
