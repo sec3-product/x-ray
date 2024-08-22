@@ -76,9 +76,6 @@ std::string xray::UntrustfulAccount::getErrorMsg(SVE::Type type) {
   case SVE::Type::MISS_SIGNER:
     msg = "The account info is missing signer check:";
     break;
-  case SVE::Type::INSECURE_SPL_TOKEN_CPI:
-    msg = "The spl_token account may be arbitrary:";
-    break;
   case SVE::Type::INSECURE_ACCOUNT_REALLOC:
     msg = "The account realloc in solana_program prior to v1.10.29 may cause "
           "programs to malfunction:";

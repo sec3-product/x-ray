@@ -111,11 +111,6 @@
         "description": "The PDA account may be incorrectly used as shared authority and may allow any account to transfer or burn tokens",
         "url": "https://twitter.com/CharlieYouAI/status/1508842093514567687"
       },
-      "1034": {
-        "name": "InsecureSPLTokenCPI",
-        "description": "The spl_token account may be arbitrary prior to version v3.1.1",
-        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/5-arbitrary-cpi"
-      },
       "1035": {
         "name": "InsecureAssociatedTokenAccount",
         "description": "The associated token account is missing PDA key check and may be faked",

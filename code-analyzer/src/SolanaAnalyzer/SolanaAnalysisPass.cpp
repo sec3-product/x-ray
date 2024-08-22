@@ -2288,40 +2288,10 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
                targetFuncName.startswith("sol.spl_token::instruction::burn") ||
                targetFuncName.startswith(
                    "sol.spl_token::instruction::mint_to")) {
-      if (DEBUG_RUST_API)
+      if (DEBUG_RUST_API) {
         llvm::outs() << "spl_token::instruction:: " << *inst << "\n";
-
-      auto value = CS.getArgOperand(0);
-      auto valueName = LangModel::findGlobalString(value);
-      auto e = graph->createReadEvent(ctx, inst, tid);
-      if (!valueName.contains("spl_token::")) {
-        if (auto arg = dyn_cast<Argument>(value))
-          valueName = funcArgTypesMap[func][arg->getArgNo()].first;
-
-        auto accountName = valueName;
-        auto found = valueName.find_last_of(".");
-        if (found != std::string::npos)
-          accountName = valueName.substr(0, found);
-        accountName = stripCtxAccountsName(accountName);
-        // for anchor Program<'info, Token>
-        if (!thread->isAccountKeyValidated(accountName)) {
-          if (!thread->isInAccountsMap(accountName)) {
-            accountName = findCallStackAccountAliasName(func, e, valueName);
-          }
-          // llvm::outs() << "spl_token account: " << accountName <<
-          // "\n";
-          if (!valueName.empty() && !valueName.contains("spl_token::") &&
-              !thread->isAccountKeyValidated(accountName) &&
-              !isAnchorTokenProgram(accountName)) {
-            // llvm::errs()<< "==============VULNERABLE: arbitrary
-            // spl_token account!============\n"; turn this off for
-            // newer versions spl 3.1.1
-            if (splVersionTooOld)
-              UntrustfulAccount::collect(accountName, e, callEventTraces,
-                                         SVE::Type::INSECURE_SPL_TOKEN_CPI, 7);
-          }
-        }
       }
+      auto e = graph->createReadEvent(ctx, inst, tid);
       if (CS.getNumArgOperands() > 3) {
         std::vector<llvm::StringRef> accountNames;
         for (int i = 1; i < 4; i++) {
