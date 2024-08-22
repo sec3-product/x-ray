@@ -76,13 +76,8 @@ private:
 
 ### Built-in Rules
 
-To help you get started, we provide several built-in rules as examples. These
-built-in rules demonstrate how to leverage the Rule Engine to create powerful
-static analysis patterns. You can use these examples as templates for defining
-your own custom rules, ensuring that the analysis is tailored to your specific
-requirements.
-
-*TBA*
+Please refer to [Built-in Rules for Solana Smart
+Contracts](#built-in-rules-for-solana-smart-contracts) for details.
 
 ## Building from Source
 
