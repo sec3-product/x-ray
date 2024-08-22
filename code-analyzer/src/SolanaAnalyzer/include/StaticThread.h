@@ -114,7 +114,6 @@ public:
   std::map<llvm::StringRef, std::set<llvm::StringRef>>
       assertAccountConstraintsMap;
 
-  std::map<llvm::StringRef, const Event *> accountsReloadedInInstructionMap;
   std::map<llvm::StringRef, const Event *> accountsPDAInInstructionMap;
   std::map<llvm::StringRef, const Event *> accountsPDAInitInInstructionMap;
   std::map<llvm::StringRef, const Event *> accountsPDAMutMap;
@@ -838,19 +837,6 @@ public:
     }
     if (DEBUG_RUST_API)
       llvm::outs() << "accountsPDAMutMap false: " << accountName << "\n";
-    return false;
-  }
-
-  bool isAccountReloaded(llvm::StringRef accountName) {
-    for (auto [account, inst] : accountsReloadedInInstructionMap) {
-      if (account == accountName) {
-        if (DEBUG_RUST_API)
-          llvm::outs() << "isAccountReloaded: " << accountName << "\n";
-        return true;
-      }
-    }
-    if (DEBUG_RUST_API)
-      llvm::outs() << "isAccountReloaded false: " << accountName << "\n";
     return false;
   }
 

@@ -1203,20 +1203,6 @@ void SolanaAnalysisPass::handleRustModelAPI(
         }
       } else if (valueName1.contains(".accounts.")) {
         valueName1 = stripCtxAccountsName(valueName1);
-        if (valueName1.endswith(".amount")) {
-          auto account = stripAll(valueName1);
-          account = account.substr(0, account.find("."));
-          if (thread->isTokenTransferFromToAccount(account) &&
-              !thread->isAccountReloaded(account)) {
-            auto e = graph->createReadEvent(ctx, inst, tid);
-            auto e0 = thread->getTokenTransferFromToAccountEvent(account);
-            if (!mayBeExclusive(e, e0))
-              UntrustfulAccount::collect(account, e, callEventTraces,
-                                         SVE::Type::MISS_CPI_RELOAD, 6);
-          }
-        }
-
-        // let lp_token_supply = ctx.accounts.lp_token_mint.supply;
         auto foundDot = valueName1.find(".");
         if (foundDot != std::string::npos)
           valueName1 = valueName1.substr(0, foundDot);
@@ -2996,38 +2982,11 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
           }
         }
       }
-    } else if (targetFuncName.startswith("sol.reload.1")) {
-      auto value1 = CS.getArgOperand(0);
-      auto valueName1 = LangModel::findGlobalString(value1);
-      if (valueName1.contains("ctx.")) {
-        auto account = stripCtxAccountsName(valueName1);
-        auto e = graph->createReadEvent(ctx, inst, tid);
-        thread->accountsReloadedInInstructionMap[account] = e;
-      }
-    } else if (targetFuncName.equals("sol.>") ||
-               targetFuncName.equals("sol.<")) {
-      if (DEBUG_RUST_API)
-        llvm::outs() << "sol.>: " << *inst << "\n";
-      if (CS.getNumArgOperands() > 1) {
-        auto value1 = CS.getArgOperand(0);
-        auto value2 = CS.getArgOperand(1);
-        auto valueName1 = LangModel::findGlobalString(value1);
-        auto valueName2 = LangModel::findGlobalString(value2);
-        if (valueName1.startswith("ctx.") && valueName1.endswith(".amount")) {
-          auto account = stripAll(valueName1);
-          account = account.substr(0, account.find("."));
-          if (thread->isTokenTransferFromToAccount(account) &&
-              !thread->isAccountReloaded(account)) {
-            auto e = graph->createReadEvent(ctx, inst, tid);
-            UntrustfulAccount::collect(account, e, callEventTraces,
-                                       SVE::Type::MISS_CPI_RELOAD, 6);
-          }
-        }
-      }
     } else if (targetFuncName.startswith("sol.>=") ||
                targetFuncName.startswith("sol.<=")) {
-      if (DEBUG_RUST_API)
+      if (DEBUG_RUST_API) {
         llvm::outs() << "sol.>=: " << *inst << "\n";
+      }
       auto value1 = CS.getArgOperand(0);
       auto value2 = CS.getArgOperand(1);
       auto valueName1 = LangModel::findGlobalString(value1);

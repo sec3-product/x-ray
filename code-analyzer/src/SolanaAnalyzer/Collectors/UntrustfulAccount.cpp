@@ -80,9 +80,6 @@ std::string xray::UntrustfulAccount::getErrorMsg(SVE::Type type) {
   case SVE::Type::MISS_SIGNER:
     msg = "The account info is missing signer check:";
     break;
-  case SVE::Type::MISS_CPI_RELOAD:
-    msg = "The token account is missing reload after CPI:";
-    break;
   case SVE::Type::ARBITRARY_CPI:
     msg = "The CPI may invoke an arbitrary program:";
     break;

@@ -87,7 +87,7 @@ void SVE::init(Database sves) {
   addTypeID("1037", Type::PDA_SEEDS_COLLISIONS);
 
   // addTypeID("3002", Type::CRITICAL_REDUNDANT_CODE);
-  addTypeID("3005", Type::MISS_CPI_RELOAD);
+  // addTypeID("3005", Type::MISS_CPI_RELOAD);
   // addTypeID("3006", Type::MISS_ACCESS_CONTROL_UNSTAKE);
   // addTypeID("3007", Type::ORDER_RACE_CONDITION);
   // addTypeID("3008", Type::ACCOUNT_IDL_INCOMPATIBLE_ADD);

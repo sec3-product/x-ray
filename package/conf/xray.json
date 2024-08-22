@@ -176,11 +176,6 @@
         "description": "The token amount calculation may be incorrect. Consider using the reserves instead of the balances.",
         "url": "https://medium.com/certora/exploiting-an-invariant-break-how-we-found-a-pool-draining-bug-in-sushiswaps-trident-585bd98a4d4f"
       },
-      "3005": {
-        "name": "MissingCPIAccountReload",
-        "description": "The token account's amount may be incorrect without calling reload after CPI",
-        "url": "https://book.anchor-lang.com/anchor_in_depth/CPIs.html#reloading-an-account"
-      },
       "20003": {
         "name": "DivisionPrecisionLoss",
         "description": "The division operation here may lose precision",
