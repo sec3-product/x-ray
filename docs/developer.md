@@ -4,21 +4,33 @@
 
 ### Components and Repo Layout
 
-The X-Ray static code anaylsis toolchain consists of three major components:
+The X-Ray static code analysis toolchain consists of three major components:
 
-* code-parser
-* code-analyzer
-* CLI
+*  *code-parser*: This component is responsible for parsing the target code and
+   converting it into LLVM IR (Intermediate Representation) code. The input is
+   typically Solana smart contracts. The code parser identifies relevant code
+   sections, parses them via [ANTLR](https://www.antlr.org/) into MLIR, and
+   generate LLVM IR.
+
+*  *code-analyzer*: This component traverses the generated LLVM IR to locate
+   suspect patterns and collect potential vulnerabilities. It applies a set of
+   static analysis rules to the LLVM IR to identify security issues or other
+   types of vulnerabilities within the code.
+
+*  *CLI*: The command-line interface (CLI) handles user interactions. It
+   processes user inputs, triggers the code parser and code detector, and
+   generates reports. The output is available in JSON and text formats, which
+   can be used for further inspection or integrated into other tools.
 
 ### Workflow
 
-<img src="./docs/images/workflow.jpg" width="1100px">
+<img src="./images/workflow.jpg" width="1100px">
 
 #### Rule Engine
 
 TBA
 
-#### Build-in Rules
+#### Built-in Rules
 
 TBA
 
