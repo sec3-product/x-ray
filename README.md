@@ -2,12 +2,12 @@
 
 ## Introduction
 
-The X-Ray Toolchain is an open-source, cross-platform command-line interface
-(CLI) tool designed for static analysis of Solana programs and smart contracts
-written in Rust. The tool parses Rust programs, generates an Abstract Syntax
-Tree (AST), converts the AST to an LLVM Intermediate Representation (LLVM-IR)
-format, and applies static analysis over the LLVM-IR to capture potential
-issues.
+The X-Ray Toolchain, developed by [sec3.dev](https://sec3.dev), is an
+open-source, cross-platform command-line interface (CLI) tool designed for
+static analysis of Solana programs and smart contracts written in Rust. The
+tool parses Rust programs, generates an Abstract Syntax Tree (AST), converts
+the AST to an LLVM Intermediate Representation (LLVM-IR) format, and applies
+static analysis over the LLVM-IR to capture potential issues.
 
 One of the primary goals of this project is to provide a general and extensible
 platform for Solana smart contracts code parsing and analysis. During the
@@ -20,9 +20,10 @@ common rules as examples. These rules are ready to use in analyzing your
 programs and serve as references for extending your own custom rules. You can
 define additional bug/security-related rules to suit your specific needs.
 
-Additionally, we offer a production version of the tool, which includes a more
-comprehensive set of rules for scanning and analysis. We invite you to try it
-out for even deeper insights and broader coverage.
+Additionally, we offer [a production version of the
+tool](https://www.sec3.dev/x-ray), which includes a more comprehensive set of
+rules for scanning and analysis. We invite you to try it out for even deeper
+insights and broader coverage.
 
 ### Built-in Rules for Solana Smart Contracts
 
