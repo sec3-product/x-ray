@@ -54,11 +54,11 @@ A full list of the supported bug patterns for Solana contracts is saved in
 
 ### Using Prebuilt Binaries
 
-TBA
+*TODO*: Add link.
 
 ### Using Prebuilt Container Images
 
-TBA
+*TODO*: Add link.
 
 ### Building From Source
 
@@ -86,8 +86,10 @@ git clone https://github.com/solana-labs/example-helloworld.git workspace/exampl
 ### Start a scan
 
 ```sh
-docker run --rm -v $(pwd)/workspace:/workspace /workspace/example-helloworld
+docker run --rm -v $(pwd)/workspace:/workspace [IMAGE_NAME] /workspace/example-helloworld
 ```
+
+*TODO*: Replace the image URL with the public image name.
 
 Alternatively you can use the installed native binary:
 

@@ -113,7 +113,7 @@ to skip the LLVM building process.
 docker pull registry.digitalocean.com/soteria/llvm-prebuilt-14.0.6:latest
 ```
 
-TODO: Update the image URL once a public image is available.
+*TODO*: Replace the image URL with the public image name.
 
 Alternatively, you can run the following command to build LLVM from its source
 code. The [`Dockerfile.llvm`](../Dockerfile.llvm) sets up the environment with
@@ -138,8 +138,10 @@ to the [Usage](../README.md#usage) section in the main README file.
 
 ```sh
 mkdir -p workspace
-docker run --rm -v $(pwd)/demo:/workspace/demo /workspace/demo/jet-v1
+docker run --rm -v $(pwd)/demo:/workspace/demo [IMAGE_NAME] /workspace/demo/jet-v1
 ```
+
+*TODO*: Replace `[IMAGE_NAME]` with the public image name.
 
 ### Option 2: Build Native Binaries
 
