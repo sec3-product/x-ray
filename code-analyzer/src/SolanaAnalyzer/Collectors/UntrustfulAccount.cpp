@@ -96,9 +96,6 @@ std::string xray::UntrustfulAccount::getErrorMsg(SVE::Type type) {
   case SVE::Type::MALICIOUS_SIMULATION:
     msg = "The program may be malicious:";
     break;
-  case SVE::Type::UNSAFE_SYSVAR_API:
-    msg = "The sysvar::instructions API is unsafe and deprecated:";
-    break;
   case SVE::Type::DIV_BY_ZERO:
     msg = "The arithmetic operation may result in a div-by-zero error:";
     break;

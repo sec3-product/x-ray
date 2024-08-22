@@ -2404,15 +2404,6 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
         auto pair = std::make_pair(valueName, valueName);
         thread->assertKeyEqualMap[pair] = e;
       }
-    } else if (targetFuncName.contains("sysvar::instructions::")) {
-      auto targetName = targetFuncName;
-      if (!targetName.contains("_checked.")) {
-        auto e = graph->createReadEvent(ctx, inst, tid);
-        UntrustfulAccount::collect(targetName, e, callEventTraces,
-                                   SVE::Type::UNSAFE_SYSVAR_API, 10);
-      }
-      // sol.solana_program::sysvar::instructions::load_current_index_checked
-      // https://twitter.com/samczsun/status/1489044984296792064
     } else if (targetFuncName.contains("program::invoke")) {
       auto value = CS.getArgOperand(0);
       if (auto callValue = dyn_cast<CallBase>(value)) {
