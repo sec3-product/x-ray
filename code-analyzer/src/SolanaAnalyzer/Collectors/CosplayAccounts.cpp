@@ -50,9 +50,6 @@ std::string xray::CosplayAccounts::getErrorMsg(SVE::Type type) {
   case SVE::Type::COSPLAY_PARTIAL:
     msg = "These two data types are partially compatible:\n";
     break;
-  case SVE::Type::ACCOUNT_DUPLICATE:
-    msg = "The data type may contain duplicated mutable accounts:";
-    break;
 
   default:
     assert(false && "unhandled CosplayAccounts");

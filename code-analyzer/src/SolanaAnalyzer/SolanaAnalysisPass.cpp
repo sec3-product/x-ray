@@ -2316,17 +2316,12 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
         if (targetFuncName.startswith("sol.spl_token::instruction::transfer")) {
           auto from = accountNames[0];
           auto to = accountNames[1];
-          // TODO check from and to have equality constraints
-          // llvm::outs() << "TODO from: " << from << " to: " << to
-          // <<
-          // "\n";
+          // TODO: check from and to have equality constraints
+          // llvm::outs() << "TODO from: " << from << " to: " << to << "\n";
           auto pair = std::make_pair(from, to);
           thread->tokenTransferFromToMap[pair] = e;
-          // UntrustfulAccount::collect(e, callEventTraces,
-          // SVE::Type::ACCOUNT_DUPLICATE, 9);
         }
       }
-
     } else if (targetFuncName.startswith(
                    "sol.spl_token::instruction::mint_to")) {
       // Not handled.
@@ -3841,66 +3836,6 @@ void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
         UntrustfulAccount::collect(bumpName, e, callEventTraces,
                                    SVE::Type::BUMP_SEED, 9);
       }
-    }
-  }
-
-  if (DEBUG_RUST_API) {
-    llvm::outs() << "checking duplicate mutable accounts\n";
-  }
-  // now checking duplicate mutable accounts
-  for (auto [func, accountTypeMap] : curThread->structAccountTypeMaps) {
-    std::vector<std::pair<llvm::StringRef, llvm::StringRef>> accountTypeVec;
-    for (auto [pair, e] : accountTypeMap) {
-      accountTypeVec.push_back(pair);
-      auto size = accountTypeVec.size();
-      for (size_t i = 0; i < size; i++)
-        for (size_t j = i + 1; j < size; j++) {
-          auto type1 = accountTypeVec[i].second;
-          auto type2 = accountTypeVec[j].second;
-          if (type1 == type2) {
-            if (type1.contains("Account") &&
-                !isAccountKeyNotEqual(accountTypeVec[i].first,
-                                      accountTypeVec[j].first)) {
-              // do not consider common types
-              if (!type1.contains("Pubkey") && !type1.contains("AccountInfo") &&
-                  !type1.contains("Rent") && !type1.contains("Token") &&
-                  !type1.contains("Mint") &&
-                  !type1.contains("UncheckedAccount")) {
-                auto account1 = accountTypeVec[i].first;
-                auto account2 = accountTypeVec[j].first;
-                if (!curThread->isAccountsPDAInit(account1) &&
-                    !curThread->isAccountsPDAInit(account2) &&
-                    !isAccountPDA(account1) && !isAccountPDA(account1)) {
-                  if (DEBUG_RUST_API)
-                    llvm::errs()
-                        << "==============account1: " << account1
-                        << " account2: " << account2 << " type1: " << type1
-                        << " type2: " << type2 << "============\n";
-                  auto pair1 = std::make_pair(account1, type1);
-                  auto pair2 = std::make_pair(account2, type2);
-                  auto e1 = accountTypeMap[pair1];
-                  auto e2 = accountTypeMap[pair2];
-
-                  // llvm::errs() << "==============VULNERABLE: Duplicate
-                  // Mutable Account!============\n";
-                  bool isDifferent = false;
-                  if (curThread->isAccountDiscriminator(account1) &&
-                          curThread->isAccountHasOneContraint(account2) ||
-                      curThread->isAccountDiscriminator(account2) &&
-                          curThread->isAccountHasOneContraint(account1))
-                    isDifferent = true;
-                  else if (curThread->isDuplicateAccountChecked(account1,
-                                                                account2)) {
-                    isDifferent = true;
-                  }
-                  if (!isDifferent)
-                    CosplayAccounts::collect(e1, e2, callEventTraces,
-                                             SVE::Type::ACCOUNT_DUPLICATE, 9);
-                }
-              }
-            }
-          }
-        }
     }
   }
 }

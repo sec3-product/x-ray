@@ -51,11 +51,6 @@
         "description": "The account is not validated before parsing its data",
         "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/1-account-data-matching"
       },
-      "1008": {
-        "name": "DuplicateMutableAccount",
-        "description": "These two accounts are both mutable and may be the same account",
-        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/6-duplicate-mutable-accounts"
-      },
       "1010": {
         "name": "TypeFullCosplay",
         "description": "These two account data types are fully compatible and can be used to launch type confusion attacks",
