@@ -96,11 +96,6 @@
         "description": "The program may contain malicious simulation",
         "url": "https://opcodes.fr/en/publications/2022-01/detecting-transaction-simulation/"
       },
-      "1018": {
-        "name": "UnsafeSysVarAPI",
-        "description": "The sysvar instructions API is unsafe and deprecated (wormhole exploit)",
-        "url": "https://twitter.com/samczsun/status/1489044984296792064"
-      },
       "1019": {
         "name": "UnvalidatedAccount",
         "description": "The account may not be properly validated and may be untrustful",
