@@ -4431,6 +4431,8 @@ bool SolanaAnalysisPass::runOnModule(llvm::Module &module) {
   return false;
 }
 
+// Thread Management.
+
 // add inter-thread HB edges (fork) for SHB Graph
 TID SolanaAnalysisPass::addNewThread(ForkEvent *forkEvent) {
   auto t = forkNewThread(forkEvent);
@@ -4442,6 +4444,204 @@ TID SolanaAnalysisPass::addNewThread(ForkEvent *forkEvent) {
     return t->getTID();
   } else
     return 0;
+}
+
+bool SolanaAnalysisPass::addThreadStartFunction(const llvm::Function *func) {
+  if (threadStartFunctions.find(func) != threadStartFunctions.end()) {
+    if (DEBUG_RUST_API)
+      llvm::outs() << "addThreadStartFunction false: " << func->getName()
+                   << "\n";
+    return false;
+  } else {
+    if (DEBUG_RUST_API)
+      llvm::outs() << "addThreadStartFunction: " << func->getName() << "\n";
+    threadStartFunctions.insert(func);
+    return true;
+  }
+}
+
+bool SolanaAnalysisPass::hasThreadStartInitFunction(std::string symbol) {
+  for (auto func : threadStartFunctions) {
+    if (func->getName().contains(symbol)) {
+      if (DEBUG_RUST_API)
+        llvm::outs() << "hasThreadStartInitFunction: " << func->getName() << " "
+                     << symbol << "\n";
+      return true;
+    }
+  }
+  if (DEBUG_RUST_API)
+    llvm::outs() << "hasThreadStartInitFunction false: " << symbol << "\n";
+  return false;
+}
+
+// Accounts.
+
+bool SolanaAnalysisPass::accountTypeContainsMoreThanOneMint(
+    llvm::StringRef struct_name) const {
+  auto num_mints = 0;
+  std::string func_struct_name = "sol.model.struct.anchor." + struct_name.str();
+  auto func_struct = thisModule->getFunction(func_struct_name);
+  if (func_struct) {
+    const auto &fieldTypes = anchorStructFunctionFieldsMap.at(func_struct);
+    for (const auto &pair : fieldTypes) {
+      if (pair.first.contains("mint") && pair.second.equals("Pubkey")) {
+        num_mints++;
+      }
+    }
+  }
+  return num_mints > 1;
+}
+
+bool SolanaAnalysisPass::isAnchorStructFunction(
+    const llvm::Function *func) const {
+  return anchorStructFunctionFieldsMap.find(func) !=
+         anchorStructFunctionFieldsMap.end();
+}
+
+bool SolanaAnalysisPass::isAnchorTokenProgram(
+    llvm::StringRef accountName) const {
+  for (auto [func, fieldTypes] : anchorStructFunctionFieldsMap) {
+    for (auto pair : fieldTypes) {
+      if (pair.first.equals(accountName) &&
+          pair.second.equals("Program<'info, Token>"))
+        return true;
+    }
+  }
+  return false;
+}
+
+bool SolanaAnalysisPass::isAnchorTokenAccount(
+    llvm::StringRef accountName) const {
+  for (auto [func, fieldTypes] : anchorStructFunctionFieldsMap) {
+    for (auto pair : fieldTypes) {
+      if (pair.first.equals(accountName) &&
+          pair.second.contains("TokenAccount>"))
+        return true;
+    }
+  }
+  return false;
+}
+
+bool SolanaAnalysisPass::isAnchorValidatedAccount(
+    llvm::StringRef accountName) const {
+  for (auto [func, fieldTypes] : anchorStructFunctionFieldsMap) {
+    for (auto pair : fieldTypes) {
+      if (pair.first.equals(accountName) &&
+          (pair.second.contains("Program<") || pair.second.contains("Sysvar<")))
+        return true;
+    }
+  }
+  return false;
+}
+
+bool SolanaAnalysisPass::isAnchorDataAccount(
+    llvm::StringRef accountName) const {
+  for (auto [func, fieldTypes] : anchorStructFunctionFieldsMap) {
+    for (auto pair : fieldTypes) {
+      if (pair.first.equals(accountName) &&
+          (pair.second.startswith("Box<Account<'info") ||
+           pair.second.startswith("Account<'info")))
+        return true;
+    }
+  }
+  return false;
+}
+
+bool SolanaAnalysisPass::isAccessControlInstruction(llvm::StringRef sig) const {
+  for (auto [name, e] : accessControlMap) {
+    if (name.contains(sig)) {
+      if (DEBUG_RUST_API)
+        llvm::outs() << "isAccessControlInstruction: " << sig << "\n";
+      return true;
+    }
+  }
+  if (DEBUG_RUST_API)
+    llvm::outs() << "isAccessControlInstruction false: " << sig << "\n";
+
+  return false;
+}
+
+bool SolanaAnalysisPass::isCompatibleSeeds(llvm::StringRef seed,
+                                           llvm::StringRef seed2) const {
+  // llvm::outs() << "isCompatibleSeeds seed: " << seed << " seed2: " << seed2
+  // << "\n";
+
+  if (seed == seed2)
+    return false; // skip identical seeds
+  if (seed.startswith("b\"") && seed2.startswith("b\"")) {
+    seed = seed.substr(0, seed.find_last_of("\""));
+    seed2 = seed2.substr(0, seed2.find_last_of("\""));
+    if (!seed.contains(seed2) && !seed2.contains(seed))
+      return false;
+  } else if (seed.contains("as_ref()") && seed2.contains("as_ref()")) {
+    seed = seed.substr(0, seed.find_last_of("."));
+    seed2 = seed2.substr(0, seed2.find_last_of("."));
+    // llvm::outs() << "isCompatibleSeeds2 seed: " << seed << " seed2: " <<
+    // seed2 << "\n";
+
+    if (!seed.contains(seed2) && !seed2.contains(seed))
+      return false;
+  } else if (seed.contains("as_bytes()") && seed2.contains("as_bytes()")) {
+    // TODO: check string constants
+    // pub const CREATOR_SEED: &str = "creator";
+    seed = seed.substr(0, seed.find_last_of("."));
+    seed2 = seed2.substr(0, seed2.find_last_of("."));
+    if (!seed.contains(seed2) && !seed2.contains(seed))
+      return false;
+  }
+
+  return true;
+}
+
+bool SolanaAnalysisPass::isAccountPDA(llvm::StringRef accountName) const {
+  for (auto [accountPda, inst] : accountsPDAMap) {
+    if (accountPda.contains(accountName)) {
+      if (DEBUG_RUST_API)
+        llvm::outs() << "isAccountPDA: " << accountName << "\n";
+      return true;
+    }
+  }
+  if (DEBUG_RUST_API)
+    llvm::outs() << "isAccountPDA false: " << accountName << "\n";
+
+  return false;
+}
+
+bool SolanaAnalysisPass::isAccountUsedInSeedsProgramAddress(
+    llvm::StringRef accountName) const {
+  if (accountsSeedProgramAddressMap.find(accountName) !=
+      accountsSeedProgramAddressMap.end()) {
+    if (DEBUG_RUST_API)
+      llvm::outs() << "isAccountUsedInSeedsProgramAddress: " << accountName
+                   << "\n";
+    return true;
+  }
+  if (DEBUG_RUST_API)
+    llvm::outs() << "isAccountUsedInSeedsProgramAddress false: " << accountName
+                 << "\n";
+
+  return false;
+}
+
+bool SolanaAnalysisPass::isAccountKeyNotEqual(
+    llvm::StringRef accountName1, llvm::StringRef accountName2) const {
+  for (auto [pair, inst] : assertKeyNotEqualMap) {
+    if ((pair.first.contains(accountName1.str() + ".key") &&
+         pair.second.contains(accountName2.str() + ".key")) ||
+        (pair.first.contains(accountName2.str() + ".key") &&
+         pair.second.contains(accountName1.str() + ".key"))) {
+      if (DEBUG_RUST_API)
+        llvm::outs() << "isAccountKeyNotEqual: " << accountName1 << " "
+                     << accountName2 << "\n";
+      return true;
+    }
+  }
+
+  if (DEBUG_RUST_API)
+    llvm::outs() << "isAccountKeyNotEqual false: " << accountName1 << " "
+                 << accountName2 << "\n";
+
+  return false;
 }
 
 char SolanaAnalysisPass::ID = 0;
