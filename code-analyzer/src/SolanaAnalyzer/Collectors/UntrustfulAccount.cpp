@@ -56,7 +56,6 @@ std::string xray::UntrustfulAccount::getErrorMsg(SVE::Type type) {
     break;
   case SVE::Type::ACCOUNT_UNVALIDATED_OTHER:
     msg = "The account is not properly validated and may be untrustful:";
-    // msg = "The account info is not trustful:\n";
     break;
   case SVE::Type::ACCOUNT_UNVALIDATED_PDA:
     msg = "The PDA account is not properly validated and may be untrustful:";
@@ -83,10 +82,6 @@ std::string xray::UntrustfulAccount::getErrorMsg(SVE::Type type) {
     break;
   case SVE::Type::MISS_CPI_RELOAD:
     msg = "The token account is missing reload after CPI:";
-    break;
-  case SVE::Type::MISS_ACCESS_CONTROL_UNSTAKE:
-    msg = "The unstake instruction may be missing an access_control account "
-          "validation:";
     break;
   case SVE::Type::ARBITRARY_CPI:
     msg = "The CPI may invoke an arbitrary program:";

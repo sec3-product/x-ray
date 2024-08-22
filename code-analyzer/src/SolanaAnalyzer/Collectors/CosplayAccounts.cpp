@@ -57,11 +57,7 @@ std::string xray::CosplayAccounts::getErrorMsg(SVE::Type type) {
     msg = "These two PDA accounts may have the same seeds, which may lead to "
           "PDA collisions:";
     break;
-  case SVE::Type::ACCOUNT_IDL_INCOMPATIBLE_ORDER:
-    msg = "These two accounts are reordered in the instruction and may break "
-          "the ABI of the deployed on-chain "
-          "program, according to the IDL available on Anchor:";
-    break;
+
   default:
     assert(false && "unhandled CosplayAccounts");
     break;
@@ -191,10 +187,9 @@ void xray::CosplayAccounts::print() {
   llvm::errs() << "==============VULNERABLE: " << name << "!============\n";
   outs() << description << ":\n";
   auto desc_type = "Data type";
-  if (type == SVE::Type::PDA_SEEDS_COLLISIONS)
+  if (type == SVE::Type::PDA_SEEDS_COLLISIONS) {
     desc_type = "PDA account";
-  else if (type == SVE::Type::ACCOUNT_IDL_INCOMPATIBLE_ORDER)
-    desc_type = "Account";
+  }
   outs() << " " << desc_type << "1 defined at line " << apiInst1.getLine()
          << ", column " << apiInst1.getCol() << " in " << apiInst1.getFilename()
          << "\n";
