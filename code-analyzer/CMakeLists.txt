@@ -74,9 +74,5 @@ else()
     set(IN_SOURCE_BUILD 1)
 endif()
 
-include_directories(
-    external
-)
-
 add_subdirectory(src)
 add_subdirectory(test)

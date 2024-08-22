@@ -1,6 +1,8 @@
 #include "Util/Log.h"
 
-#include "indicators/indicators.hpp"
+#include "indicators/color.hpp"
+#include "indicators/progress_spinner.hpp"
+#include "indicators/setting.hpp"
 #include "spdlog/async.h"
 #include "spdlog/fmt/ostr.h" // must be included
 #include "spdlog/sinks/basic_file_sink.h"
@@ -52,9 +54,8 @@ void init(LoggingConfig config) {
             config.enableTerminal, config.enableFile);
 }
 
-using namespace indicators;
 class Spinner {
-  ProgressSpinner spinner;
+  indicators::ProgressSpinner spinner;
   const std::chrono::milliseconds interval;
   std::atomic<bool> done;
   std::thread *ticker;
@@ -73,16 +74,18 @@ public:
 
 Spinner::Spinner(std::string beginMsg, std::string endMsg, int tickIntervalms)
     : interval(tickIntervalms), ticker(nullptr), done(false), endMsg(endMsg),
-      spinner(option::PrefixText{" - "}, option::PostfixText{beginMsg},
-              option::ForegroundColor{indicators::Color::white},
-              option::ShowPercentage{false},
+      spinner(indicators::option::PrefixText{" - "},
+              indicators::option::PostfixText{beginMsg},
+              indicators::option::ForegroundColor{indicators::Color::white},
+              indicators::option::ShowPercentage{false},
 #ifdef __MINGW32__
-              option::SpinnerStates{std::vector<std::string>{"/", "\\"}},
-              option::ShowElapsedTime{true}
+              indicators::option::SpinnerStates{
+                  std::vector<std::string>{"/", "\\"}},
+              indicators::option::ShowElapsedTime{true}
 #else
-              option::SpinnerStates{
+              indicators::option::SpinnerStates{
                   std::vector<std::string>{"▖", "▘", "▝", "▗"}},
-              option::ShowElapsedTime{true}
+              indicators::option::ShowElapsedTime{true}
 #endif
       ) {
 }
@@ -116,14 +119,15 @@ void Spinner::end() {
     ticker = nullptr;
   }
   spinner.set_progress(1);
-  spinner.set_option(option::ForegroundColor{indicators::Color::green});
+  spinner.set_option(
+      indicators::option::ForegroundColor{indicators::Color::green});
 #ifdef __MINGW32__
-  spinner.set_option(option::PrefixText{" - *"});
+  spinner.set_option(indicators::option::PrefixText{" - *"});
 #else
-  spinner.set_option(option::PrefixText{" - ✔"});
+  spinner.set_option(indicators::option::PrefixText{" - ✔"});
 #endif
-  spinner.set_option(option::PostfixText{endMsg});
-  spinner.set_option(option::ShowSpinner{false});
+  spinner.set_option(indicators::option::PostfixText{endMsg});
+  spinner.set_option(indicators::option::ShowSpinner{false});
   spinner.tick();
   std::cout << std::endl;
 }
