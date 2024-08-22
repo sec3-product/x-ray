@@ -1,5 +1,27 @@
 # Developer Guide
 
+## Major Components and Workflow
+
+### Components and Repo Layout
+
+The X-Ray static code anaylsis toolchain consists of three major components:
+
+* code-parser
+* code-analyzer
+* CLI
+
+### Workflow
+
+<img src="./docs/images/workflow.jpg" width="1100px">
+
+#### Rule Engine
+
+TBA
+
+#### Build-in Rules
+
+TBA
+
 ## Building from Source
 
 X-Ray supports two building and deployment options. You can choose either one

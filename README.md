@@ -103,39 +103,8 @@ For more info, see https://www.sec3.dev/blog/understanding-arithmetic-overflow-u
 --------The summary of potential vulnerabilities in workspace_program-rust.ll--------
 
          1 unsafe operation issues
-
 ```
 
 ## Developer Guide
 
-### Major Components and Workflow
-
-#### Components and Repo Layout
-
-The X-Ray static code anaylsis toolchain consists of three major components:
-
-* code-parser
-* code-analyzer
-* CLI
-
-#### Workflow
-
-<img src="./docs/images/workflow.jpg" width="1100px">
-
-
-### Rule Engine
-
-TBA
-
-#### Build-in Rules
-
-TBA
-
-### Building from Source
-
-Please refer to [Building from Source](docs/developer.md#building-from-source)
-for detailed steps.
-
-## Contributing
-
-TBA
+Please refer to [Developer Guide](docs/developer.md) for detailed instructions.
