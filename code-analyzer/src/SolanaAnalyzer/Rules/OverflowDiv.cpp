@@ -39,11 +39,6 @@ void handleDiv(const RuleContext &ruleContext, const CallSite &callSite) {
           ruleContext.collectUnsafeOperation(
               SVE::Type::INCORRECT_TOKEN_CALCULATION, 9);
         }
-      } else if (!isConstant(valueName2.str())) {
-        SourceInfo srcInfo = getSourceLoc(ruleContext.getInst());
-        if (srcInfo.getSourceLine().find(" as u") == std::string::npos) {
-          ruleContext.collectUnsafeOperation(SVE::Type::DIV_PRECISION_LOSS, 8);
-        }
       }
     }
   }

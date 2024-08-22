@@ -98,7 +98,7 @@ void SVE::init(Database sves) {
   // addTypeID("10003", Type::SUISIDE_SELFDESTRUCT);
   // addTypeID("20001", Type::MISS_INIT_UNIQUE_ADMIN_CHECK);
   // addTypeID("20002", Type::BIT_SHIFT_OVERFLOW);
-  addTypeID("20003", Type::DIV_PRECISION_LOSS);
+  // addTypeID("20003", Type::DIV_PRECISION_LOSS);
   // addTypeID("20004", Type::VULNERABLE_SIGNED_INTEGER_I128);
 
   // Set disabled checkers.

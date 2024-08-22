@@ -135,11 +135,6 @@
         "name": "IncorrectTokenCalculation",
         "description": "The token amount calculation may be incorrect. Consider using the reserves instead of the balances.",
         "url": "https://medium.com/certora/exploiting-an-invariant-break-how-we-found-a-pool-draining-bug-in-sushiswaps-trident-585bd98a4d4f"
-      },
-      "20003": {
-        "name": "DivisionPrecisionLoss",
-        "description": "The division operation here may lose precision",
-        "url": "https://www.zellic.io/blog/move-fast-and-break-things-pt-1"
       }
     }
   },
