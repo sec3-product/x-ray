@@ -3822,18 +3822,6 @@ void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
           }
         }
       }
-
-      if (curThread->startFunc->getName().contains("close")) {
-        // check close account
-        if (curThread->isAccountClosed(accountName) &&
-            !curThread->isAccountInvoked(accountName) &&
-            !curThread->isAccountMemsetData(accountName)) {
-          // llvm::errs() << "==============VULNERABLE: Insecure Account
-          // Close!============\n";
-          UntrustfulAccount::collect(accountName, e, callEventTraces,
-                                     SVE::Type::ACCOUNT_CLOSE, 5);
-        }
-      }
     }
   }
 

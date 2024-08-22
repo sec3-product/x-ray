@@ -59,7 +59,7 @@ void SVE::init(Database sves) {
   addTypeID("1002", Type::MISS_OWNER);
 
   addTypeID("1008", Type::ACCOUNT_DUPLICATE);
-  addTypeID("1009", Type::ACCOUNT_CLOSE);
+  // addTypeID("1009", Type::ACCOUNT_CLOSE);
 
   // addTypeID("1012", Type::DIV_BY_ZERO);
   // addTypeID("1013", Type::REINIT);
