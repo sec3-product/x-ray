@@ -51,7 +51,7 @@ var (
   {
    "Name": "e2e-app_instruments.ll",
    "ReportJSON": "PREFIX/.xray/build/raw_e2e-app_instruments.ll.json",
-   "IssueCount": 4
+   "IssueCount": 3
   },
   {
    "Name": "risk_alpha-risk-engine.ll",

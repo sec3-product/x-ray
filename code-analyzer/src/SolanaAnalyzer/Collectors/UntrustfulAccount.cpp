@@ -89,9 +89,6 @@ std::string xray::UntrustfulAccount::getErrorMsg(SVE::Type type) {
   case SVE::Type::INSECURE_PDA_SHARING:
     msg = "The PDA sharing with these seeds is insecure:";
     break;
-  case SVE::Type::ACCOUNT_CLOSE:
-    msg = "The account closing is insecure:";
-    break;
   default:
     assert(false && "unhandled untrustful account:");
     break;
@@ -99,29 +96,17 @@ std::string xray::UntrustfulAccount::getErrorMsg(SVE::Type type) {
   return msg;
 }
 
-// we report at most 1 UntrustfulAccount bug for each function call
 bool xray::UntrustfulAccount::filter(SVE::Type type, SourceInfo &srcInfo) {
-  // for CPI
-  if (SVE::Type::ACCOUNT_CLOSE == type) {
-    auto sig = srcInfo.sig();
-    if (cpiSigs.find(sig) != cpiSigs.end()) {
-      // llvm::outs() << "filter true:" << srcInfo.sig() << "\n";
-      return true;
-    } else {
-      cpiSigs.insert(sig);
-      // llvm::outs() << "filter false:" << srcInfo.sig() << "\n";
-      return false;
-    }
-  }
   const llvm::Value *v = srcInfo.getValue();
+  // we report at most 1 UntrustfulAccount bug for each function call
   if (apiSigs.find(v) != apiSigs.end()) {
     // llvm::outs() << "filter true:" << srcInfo.sig() << "\n";
     return true;
-  } else {
-    apiSigs.insert(v);
-    // llvm::outs() << "filter false:" << srcInfo.sig() << "\n";
-    return false;
   }
+
+  apiSigs.insert(v);
+  // llvm::outs() << "filter false:" << srcInfo.sig() << "\n";
+  return false;
 }
 
 // we report at most 1 UntrustfulAccount bug for each call stack

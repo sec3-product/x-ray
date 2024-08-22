@@ -56,11 +56,6 @@
         "description": "These two accounts are both mutable and may be the same account",
         "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/6-duplicate-mutable-accounts"
       },
-      "1009": {
-        "name": "InsecureAccountClosing",
-        "description": "The account may not be closed securely",
-        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/9-closing-accounts"
-      },
       "1010": {
         "name": "TypeFullCosplay",
         "description": "These two account data types are fully compatible and can be used to launch type confusion attacks",
