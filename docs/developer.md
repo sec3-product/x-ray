@@ -26,13 +26,63 @@ The X-Ray static code analysis toolchain consists of three major components:
 
 <img src="./images/workflow.jpg" width="1100px">
 
-#### Rule Engine
+### Rule Engine
 
-TBA
+The X-Ray toolchain includes a flexible Rule Engine designed to allow you to
+define custom static analysis rules. This capability is essential for tailoring
+the analysis to specific patterns and behaviors within Solana smart contracts
+or other targeted codebases.
 
-#### Built-in Rules
+At the core of our implementation is an LLVM-based pass called
+`SolanaAnalysisPass`, invoked as part of the `code-analyzer`. This pass
+operates on LLVM IR and performs a traversal of the code, focusing on the
+semantic analysis of key instructions such as function calls and account access
+patterns. The `SolanaAnalysisPass` captures detailed information about code
+logic, which can then be evaluated against pre-defined and custom rules.
 
-TBA
+#### Rule Definition
+
+Within the `SolanaAnalysisPass`, we introduced a `Rule` class that facilitates
+the creation and management of custom analysis rules.
+
+Here’s the header definition for the `Rule` class:
+
+```cpp
+class Rule {
+public:
+  using Matcher = std::function<bool(const CallSite &)>;
+  using Handler = std::function<void(const RuleContext &, const CallSite &)>;
+
+  Rule(Matcher matcher, Handler handler)
+      : MatcherFunc(matcher), HandlerFunc(handler) {}
+
+  bool match(const CallSite &CS) const { return MatcherFunc(CS); }
+  void handle(const RuleContext &RC, const CallSite &CS) const {
+    HandlerFunc(RC, CS);
+  }
+
+private:
+  Matcher MatcherFunc;
+  Handler HandlerFunc;
+};
+```
+
+*  `Matcher`: A function that evaluates whether a specific `CallSite` meets the
+   defined criteria. If the criteria are met, the rule is considered "matched".
+
+*  `Handler`: A function that is executed when a rule is matched. It takes a
+   `RuleContext` and a `CallSite` as input parameters, allowing for detailed
+   processing based on the context in which the rule was triggered.
+
+### Built-in Rules
+
+To help you get started, we provide several built-in rules as examples. These
+built-in rules demonstrate how to leverage the Rule Engine to create powerful
+static analysis patterns. You can use these examples as templates for defining
+your own custom rules, ensuring that the analysis is tailored to your specific
+requirements.
+
+*TBA*
 
 ## Building from Source
 
