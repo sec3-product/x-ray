@@ -3652,19 +3652,6 @@ void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
           }
         }
       }
-      // for associated token account
-      if (accountName.contains("_ata") ||
-          accountName.contains("_associated_token_account")) {
-        if (isAnchorTokenAccount(accountName) &&
-            !curThread->isAccountKeyValidated(accountName) &&
-            !curThread->isAccountOwnedBySigner(accountName)) {
-          if (!isOwnerOnly) {
-            UntrustfulAccount::collect(accountName, e, callEventTraces,
-                                       SVE::Type::INSECURE_ASSOCIATED_TOKEN, 9);
-            isUnvalidate = true;
-          }
-        }
-      }
       // TODO: define pattern for missing check for p_asset_mint
       // there are some hidden semantc-level invariants between accounts
 

@@ -111,11 +111,6 @@
         "description": "The PDA account may be incorrectly used as shared authority and may allow any account to transfer or burn tokens",
         "url": "https://twitter.com/CharlieYouAI/status/1508842093514567687"
       },
-      "1035": {
-        "name": "InsecureAssociatedTokenAccount",
-        "description": "The associated token account is missing PDA key check and may be faked",
-        "url": "https://www.sec3.dev/blog/pda-bump-seeds"
-      },
       "1037": {
         "name": "PDASeedCollisions",
         "description": "These two PDA accounts may have the same seeds, which may lead to PDA collisions",

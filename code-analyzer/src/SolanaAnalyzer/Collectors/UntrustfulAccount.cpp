@@ -76,9 +76,6 @@ std::string xray::UntrustfulAccount::getErrorMsg(SVE::Type type) {
   case SVE::Type::MISS_SIGNER:
     msg = "The account info is missing signer check:";
     break;
-  case SVE::Type::INSECURE_ASSOCIATED_TOKEN:
-    msg = "The associated token account may be faked:";
-    break;
   case SVE::Type::MALICIOUS_SIMULATION:
     msg = "The program may be malicious:";
     break;
