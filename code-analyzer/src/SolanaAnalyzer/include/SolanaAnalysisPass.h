@@ -66,8 +66,6 @@ private:
                              StaticThread *thread, CallSite CS);
 
   void detectUntrustfulAccounts(TID tid);
-  void detectRaceCondition(const xray::ctx *ctx, TID tid);
-  void detectDeadCode(const xray::ctx *ctx, TID tid);
   void detectAccountsCosplay(const xray::ctx *ctx, TID tid);
 
   StaticThread *forkNewThread(ForkEvent *forkEvent);
@@ -106,13 +104,6 @@ private:
 
   std::map<llvm::StringRef, const Event *> accessControlMap;
   bool isAccessControlInstruction(llvm::StringRef sig) const;
-
-  std::map<const llvm::Function *, std::set<llvm::StringRef>>
-      potentialInitOrderRelatedAccountsMap;
-  std::map<const llvm::Function *, std::set<llvm::StringRef>>
-      potentialCancelOrderRelatedAccountsMap;
-  std::map<const llvm::Function *, std::set<llvm::StringRef>>
-      potentialExchangeOrderRelatedAccountsMap;
 
   std::map<llvm::StringRef, std::vector<llvm::StringRef>> accountsPDASeedsMap;
   bool isCompatibleSeeds(llvm::StringRef seed, llvm::StringRef seed2) const;

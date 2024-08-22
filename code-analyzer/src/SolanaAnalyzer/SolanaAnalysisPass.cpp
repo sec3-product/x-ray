@@ -3996,22 +3996,6 @@ void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
                                      SVE::Type::ACCOUNT_CLOSE, 5);
         }
       }
-
-      // for checking order race conditions
-      if (!isOwnerOnly && accountName.contains("order")) {
-        if (curThread->startFunc->getName().contains("init") ||
-            curThread->startFunc->getName().contains("create") ||
-            curThread->startFunc->getName().contains("new_")) {
-          potentialInitOrderRelatedAccountsMap[curThread->startFunc].insert(
-              accountName);
-        } else if (curThread->startFunc->getName().contains("cancel")) {
-          potentialCancelOrderRelatedAccountsMap[curThread->startFunc].insert(
-              accountName);
-        } else {
-          potentialExchangeOrderRelatedAccountsMap[curThread->startFunc].insert(
-              accountName);
-        }
-      }
     }
   }
 
@@ -4189,74 +4173,6 @@ void SolanaAnalysisPass::detectAccountsCosplay(const xray::ctx *ctx, TID tid) {
   }
 }
 
-void SolanaAnalysisPass::detectRaceCondition(const xray::ctx *ctx, TID tid) {
-  for (auto [funcCancel, cancelAccounts] :
-       potentialCancelOrderRelatedAccountsMap) {
-    if (DEBUG_RUST_API)
-      llvm::errs() << "==============funcCancel: " << funcCancel->getName()
-                   << "!============\n";
-    for (auto [funcInit, initAccounts] : potentialInitOrderRelatedAccountsMap) {
-      if (DEBUG_RUST_API)
-        llvm::errs() << "==============funcInit: " << funcInit->getName()
-                     << "!============\n";
-
-      std::set<llvm::StringRef> overlappingAccounts;
-      for (auto accountName : cancelAccounts) {
-        if (initAccounts.find(accountName) != initAccounts.end()) {
-          overlappingAccounts.insert(accountName);
-        }
-      }
-      if (overlappingAccounts.size() > 0) {
-        bool potentialPriceRaceCondition = false;
-        for (auto pair : funcArgTypesMap[funcInit]) {
-          if (pair.first.contains("price")) {
-            potentialPriceRaceCondition = true;
-            break;
-          }
-        }
-        if (potentialPriceRaceCondition) {
-          // check all other instructions
-          for (auto &[funcX, exchangeAccounts] :
-               potentialExchangeOrderRelatedAccountsMap) {
-            bool potentialRaceFunc = true;
-            for (auto acct : overlappingAccounts) {
-              if (exchangeAccounts.find(acct) == exchangeAccounts.end()) {
-                potentialRaceFunc = false;
-                break;
-              }
-            }
-            if (potentialRaceFunc) {
-              if (DEBUG_RUST_API)
-                llvm::errs() << "==============funcX: " << funcX->getName()
-                             << "!============\n";
-              bool hasPrice = false;
-              for (auto pairX : funcArgTypesMap[funcX]) {
-                if (pairX.first.contains("price")) {
-                  hasPrice = true;
-                  break;
-                }
-              }
-              if (!hasPrice) {
-                auto inst1 = funcX->getEntryBlock().getFirstNonPHI();
-                if (auto callValue = dyn_cast<CallBase>(inst1)) {
-                  CallSite CS(callValue);
-                  inst1 =
-                      CS.getTargetFunction()->getEntryBlock().getFirstNonPHI();
-                }
-                // llvm::errs() << "==============inst1: " << *inst1 <<
-                // "!============\n";
-                auto e1 = graph->createApiReadEvent(ctx, inst1, tid);
-                UnsafeOperation::collect(e1, callEventTraces,
-                                         SVE::Type::ORDER_RACE_CONDITION, 9);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
 StaticThread *SolanaAnalysisPass::forkNewThread(ForkEvent *forkEvent) {
   xray::CallSite forkSite(forkEvent->getInst());
   assert(forkSite.isCallOrInvoke());
@@ -4407,13 +4323,11 @@ bool SolanaAnalysisPass::runOnModule(llvm::Module &module) {
   LOG_DEBUG("Finish Building SHB. time={}s", shb_elapsed.count());
   LOG_DEBUG("Number of threads: {} ", StaticThread::getThreadNum());
 
-  auto race_start = std::chrono::steady_clock::now();
-
+  auto detectStarted = std::chrono::steady_clock::now();
   detectAccountsCosplay(entryNode->getContext(), 0);
-  detectRaceCondition(entryNode->getContext(), 0);
-  auto race_end = std::chrono::steady_clock::now();
-  std::chrono::duration<double> race_elapsed = race_end - race_start;
-  LOG_DEBUG("Finished Analysis. time={}s", race_elapsed.count());
+  auto detectDone = std::chrono::steady_clock::now();
+  std::chrono::duration<double> elapsed = detectDone - detectStarted;
+  LOG_DEBUG("Finished Analysis. time={}s", elapsed.count());
 
   logger::endPhase();
 
