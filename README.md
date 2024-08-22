@@ -69,30 +69,34 @@ instructions.
 
 ## Usage
 
-### Start a scan
+### Prepare a Target Repository
 
-To scan a target repository, simply clone it and run `xray` from the
-project's root directory -- there's no need to locate the specific source code
-files.
+To scan a target repository, simply clone it and run the container or binary
+CLI, providing the path to the project's root directory -- there's no need to
+locate the specific source code files.
 
-We use
+For example, we will use
 [Solana Labs' Helloworld](https://github.com/solana-labs/example-helloworld.git)
-repository as an example:
-
-* Clone the repository
+repository. First, clone the repository to your local workspace.
 
 ```sh
 mkdir -p workspace
 git clone https://github.com/solana-labs/example-helloworld.git workspace/example-helloworld
 ```
 
-* Run the analysis with `xray`:
+### Start a scan
 
 ```sh
-xray workspace/example-helloworld
+docker run --rm -v $(pwd)/workspace:/workspace /workspace/example-helloworld
 ```
 
-* Example Output
+Alternatively you can use the installed native binary:
+
+```sh
+/path/to/extracted/xray workspace/example-helloworld
+```
+
+### Example Output
 
 X-Ray will report each detected potential issues along with its code snippet.
 At the end of the output, X-Ray will provide a summary.
@@ -125,6 +129,9 @@ For more info, see https://www.sec3.dev/blog/understanding-arithmetic-overflow-u
 
          1 unsafe operation issues
 ```
+
+You can also find the JSON report in the `.xray` directory (or
+`workspace/.xray` if using container version).
 
 ## Developer Guide
 
