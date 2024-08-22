@@ -83,7 +83,7 @@ void SVE::init(Database sves) {
   // addTypeID("1033", Type::INSECURE_INIT_IF_NEEDED);
   // addTypeID("1034", Type::INSECURE_SPL_TOKEN_CPI);
   addTypeID("1035", Type::INSECURE_ASSOCIATED_TOKEN);
-  addTypeID("1036", Type::INSECURE_ACCOUNT_REALLOC);
+  // addTypeID("1036", Type::INSECURE_ACCOUNT_REALLOC);
   addTypeID("1037", Type::PDA_SEEDS_COLLISIONS);
 
   // addTypeID("3002", Type::CRITICAL_REDUNDANT_CODE);

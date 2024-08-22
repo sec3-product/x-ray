@@ -116,11 +116,6 @@
         "description": "The associated token account is missing PDA key check and may be faked",
         "url": "https://www.sec3.dev/blog/pda-bump-seeds"
       },
-      "1036": {
-        "name": "InsecureAccountRealloc",
-        "description": "The account realloc in solana_program prior to v1.10.29 may cause programs to malfunction",
-        "url": "https://twitter.com/jacobvcreech/status/1543968742606077952"
-      },
       "1037": {
         "name": "PDASeedCollisions",
         "description": "These two PDA accounts may have the same seeds, which may lead to PDA collisions",

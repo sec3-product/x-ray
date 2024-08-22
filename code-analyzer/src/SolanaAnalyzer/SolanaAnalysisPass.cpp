@@ -2271,18 +2271,6 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
           }
         }
       }
-    } else if (targetFuncName.startswith("sol.realloc.3")) {
-      if (DEBUG_RUST_API)
-        llvm::outs() << "sol.realloc: " << *inst << "\n";
-      auto value = CS.getArgOperand(0);
-      auto valueName = LangModel::findGlobalString(value);
-      auto accountName = stripAll(valueName);
-      if (solanaVersionTooOld) {
-        auto e = graph->createReadEvent(ctx, inst, tid);
-        UntrustfulAccount::collect(accountName, e, callEventTraces,
-                                   SVE::Type::INSECURE_ACCOUNT_REALLOC, 7);
-      }
-
     } else if (targetFuncName.startswith(
                    "sol.spl_token::instruction::transfer") ||
                targetFuncName.startswith("sol.spl_token::instruction::burn") ||
