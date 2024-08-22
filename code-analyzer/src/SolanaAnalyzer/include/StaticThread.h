@@ -2,11 +2,13 @@
 
 #include <map>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Instructions.h>
+#include <llvm/IR/Value.h>
 
 #include "DebugFlags.h"
 #include "PTAModels/GraphBLASModel.h"
@@ -19,6 +21,74 @@ class ForkEvent;
 
 class StaticThread {
 public:
+  explicit StaticThread(const CallGraphNodeTy *entry)
+      : id(curID++), entryNode(entry), threadHandle(nullptr) {
+    auto result = tidToThread.emplace(id, this);
+    assert(result.second);
+    if (entryNode)
+      startFunc = entryNode->getTargetFun()->getFunction();
+  }
+
+  StaticThread(const CallGraphNodeTy *entry, const llvm::Value *handle,
+               const ForkEvent *P)
+      : id(curID++), entryNode(entry), threadHandle(handle), parent(P) {
+    auto result = tidToThread.emplace(id, this);
+    assert(result.second);
+    if (entryNode) {
+      startFunc = entryNode->getTargetFun()->getFunction();
+      initIDLInstructionName();
+    }
+  }
+  StaticThread(const CallGraphNodeTy *entry, const llvm::Value *handle,
+               const ForkEvent *P, const llvm::Function *f)
+      : id(curID++), entryNode(entry), threadHandle(handle), parent(P),
+        startFunc(f) {
+    auto result = tidToThread.emplace(id, this);
+    assert(result.second);
+  }
+
+  ~StaticThread() { tidToThread.erase(this->id); }
+
+  static int getThreadNum() { return tidToThread.size(); }
+
+  static void setThreadArg(TID tid,
+                           std::map<uint8_t, const llvm::Constant *> &argMap);
+
+  static std::map<uint8_t, const llvm::Constant *> *getThreadArg(TID tid);
+
+  const CallGraphNodeTy *getEntryNode() { return this->entryNode; }
+
+  const llvm::Value *getThreadHandle() { return threadHandle; }
+
+  const TID getTID() const { return this->id; }
+
+  const ForkEvent *getParentEvent() { return this->parent; }
+
+  const llvm::Function *getStartFunction() { return startFunc; }
+
+  inline const std::vector<ForkEvent *> &getForkSites() const {
+    return forkSites;
+  }
+
+  void addForkSite(ForkEvent *e) { forkSites.push_back(e); }
+
+  static StaticThread *getThreadByTID(TID tid) {
+    assert(tidToThread.find(tid) != tidToThread.end());
+    return tidToThread.at(tid);
+  }
+
+  static bool isSignatureUsedInAccountConstraint(TID tid, llvm::StringRef sig) {
+    auto thread = getThreadByTID(tid);
+    for (auto [account, hasConstraints] : thread->assertAccountConstraintsMap) {
+      for (auto constraint : hasConstraints) {
+        if (constraint.contains(sig)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   // extensions for sol
   // e.g., wallet_info -> next_account_info(account_info_iter)?;
   llvm::Function *anchor_struct_function;
@@ -27,6 +97,7 @@ public:
 
   bool isOnceOnlyOwnerOnlyInstruction = false;
   bool hasInitializedCheck = false;
+
   std::map<llvm::StringRef, const Event *> accountsMap;
   std::map<llvm::StringRef, bool> accountsMutMap;
   std::map<llvm::StringRef, const Event *> accountsDataWrittenMap;
@@ -71,22 +142,6 @@ public:
       checkDuplicateAccountKeyEqualMap;
   std::map<std::pair<llvm::StringRef, llvm::StringRef>, const Event *>
       accountContainsVerifiedMap;
-  bool isDuplicateAccountChecked(llvm::StringRef accountName1,
-                                 llvm::StringRef accountName2) {
-    for (auto [pair, inst] : checkDuplicateAccountKeyEqualMap) {
-      if (pair.first.equals(accountName1) && pair.second.equals(accountName2) ||
-          pair.first.equals(accountName2) && pair.second.equals(accountName1)) {
-        if (DEBUG_RUST_API)
-          llvm::outs() << "isDuplicateAccountChecked: " << accountName1 << " "
-                       << accountName2 << "\n";
-        return true;
-      }
-    }
-    if (DEBUG_RUST_API)
-      llvm::outs() << "isDuplicateAccountChecked false: " << accountName1 << " "
-                   << accountName2 << "\n";
-    return false;
-  }
 
   std::map<std::pair<llvm::StringRef, llvm::StringRef>, const Event *>
       assertMintEqualMap;
@@ -111,23 +166,14 @@ public:
   std::map<const llvm::Function *, llvm::StringRef> mostRecentFuncReturnMap;
 
   std::set<llvm::StringRef> userProvidedInputStrings;
-  bool isUserProvidedString(llvm::StringRef &cons_seeds) {
-    for (auto input_str : userProvidedInputStrings) {
-      if (cons_seeds.contains(input_str)) {
-        return true;
-        break;
-      }
-    }
-    return false;
-  }
+
+  bool isDuplicateAccountChecked(llvm::StringRef accountName1,
+                                 llvm::StringRef accountName2) const;
+
+  bool isUserProvidedString(llvm::StringRef &cons_seeds) const;
 
   void updateMostRecentFuncReturn(const llvm::Function *func,
-                                  llvm::StringRef valueName) {
-    if (DEBUG_RUST_API)
-      llvm::outs() << "updateMostRecentFuncReturn func: " << func->getName()
-                   << " value: " << valueName << "\n";
-    mostRecentFuncReturnMap[func] = valueName;
-  }
+                                  llvm::StringRef valueName);
 
   llvm::StringRef findReturnAliasAccount(const llvm::Function *func) {
     if (mostRecentFuncReturnMap.find(func) != mostRecentFuncReturnMap.end()) {
@@ -166,6 +212,7 @@ public:
     }
     return "";
   }
+
   // e.g., **vault_info.lamports.borrow_mut() -= amount;
   std::map<llvm::StringRef, const Event *> accountLamportsUpdateMap;
 
@@ -194,9 +241,11 @@ public:
     }
     return false;
   }
+
   bool isInAccountOrStructAccountMap(llvm::StringRef accountName) {
     return isInAccountsMap(accountName) || isInStructAccountsMap(accountName);
   }
+
   bool isTokenTransferDestination(llvm::StringRef accountName) {
     for (auto [pair, inst] : tokenTransferFromToMap) {
       if (pair.second.equals(accountName)) {
@@ -210,6 +259,7 @@ public:
                    << "\n";
     return false;
   }
+
   bool isTokenTransferFromToAccount(llvm::StringRef accountName) {
     for (auto [pair, inst] : tokenTransferFromToMap) {
       if (pair.first.equals(accountName) || pair.second.equals(accountName)) {
@@ -224,6 +274,7 @@ public:
                    << "\n";
     return false;
   }
+
   const Event *getTokenTransferFromToAccountEvent(llvm::StringRef accountName) {
     for (auto [pair, e] : tokenTransferFromToMap) {
       if (pair.first.equals(accountName) || pair.second.equals(accountName)) {
@@ -238,6 +289,7 @@ public:
                    << "\n";
     return nullptr;
   }
+
   llvm::StringRef getTokenTransferSourceAccount(llvm::StringRef accountName) {
     for (auto [pair, inst] : tokenTransferFromToMap) {
       if (pair.second.equals(accountName)) {
@@ -246,6 +298,7 @@ public:
     }
     return "";
   }
+
   bool isAccountDataWritten(llvm::StringRef accountName) {
     if (accountsDataWrittenMap.find(accountName) !=
         accountsDataWrittenMap.end()) {
@@ -258,6 +311,7 @@ public:
     }
     return false;
   }
+
   bool isAccountBorrowLamportsMut(llvm::StringRef accountName) {
     if (borrowLamportsMutMap.find(accountName) != borrowLamportsMutMap.end()) {
       if (DEBUG_RUST_API)
@@ -270,6 +324,7 @@ public:
     }
     return false;
   }
+
   bool isAccountBorrowDataMut(llvm::StringRef accountName) {
     if (borrowDataMutMap.find(accountName) != borrowDataMutMap.end()) {
       if (DEBUG_RUST_API)
@@ -281,6 +336,7 @@ public:
     }
     return false;
   }
+
   bool isAccountBorrowData(llvm::StringRef accountName) {
     if (borrowDataMap.find(accountName) != borrowDataMap.end()) {
       if (DEBUG_RUST_API)
@@ -293,6 +349,7 @@ public:
     }
     return false;
   }
+
   bool isAccountMemsetData(llvm::StringRef accountName) {
     if (memsetDataMap.find(accountName) != memsetDataMap.end()) {
       if (DEBUG_RUST_API)
@@ -304,6 +361,7 @@ public:
     }
     return false;
   }
+
   bool isAccountsUnpackedData(llvm::StringRef accountName) {
     if (accountsUnpackedDataMap.find(accountName) !=
         accountsUnpackedDataMap.end()) {
@@ -317,6 +375,7 @@ public:
     }
     return false;
   }
+
   bool isAccountLamportsUpdated(llvm::StringRef accountName) {
     if (accountLamportsUpdateMap.find(accountName) !=
         accountLamportsUpdateMap.end()) {
@@ -330,6 +389,7 @@ public:
     }
     return false;
   }
+
   bool isAccountInvoked(llvm::StringRef accountName) {
     if (accountsInvokedMap.find(accountName) != accountsInvokedMap.end()) {
       if (DEBUG_RUST_API)
@@ -405,6 +465,7 @@ public:
                    << accountName << "\n";
     return false;
   }
+
   bool isAccountInvokedAsAuthority(llvm::StringRef accountName) {
     for (auto [pair, e] : accountsInvokeAuthorityMap) {
       if (pair.first.equals(accountName)) {
@@ -420,6 +481,7 @@ public:
                    << "\n";
     return false;
   }
+
   bool isAccountInvokedAsBurnAuthority(llvm::StringRef accountName) {
     for (auto [pair, e] : accountsBurnAuthorityMap) {
       if (pair.first.equals(accountName)) {
@@ -449,6 +511,7 @@ public:
 
     return false;
   }
+
   bool isAccountUsedInSeed(llvm::StringRef accountName) {
     for (auto [accountSeed, inst] : accountsSeedsMap) {
       if (accountSeed.contains(accountName)) {
@@ -462,6 +525,7 @@ public:
 
     return false;
   }
+
   bool isAccountUsesAnotherAccountInSeed(llvm::StringRef accountName) {
     if (accountsSeedsMap.find(accountName) != accountsSeedsMap.end()) {
       for (auto accountSeed : accountsSeedsMap.at(accountName)) {
@@ -479,6 +543,7 @@ public:
 
     return false;
   }
+
   bool
   isAccountReferencedByAnyOtherAccountInSeeds(llvm::StringRef accountName) {
     for (auto [account, seeds] : accountsSeedsMap) {
@@ -496,6 +561,7 @@ public:
                    << accountName << "\n";
     return false;
   }
+
   bool isAccountHasOneContraint(llvm::StringRef accountName) {
     if (assertHasOneFieldMap.find(accountName) != assertHasOneFieldMap.end()) {
       if (DEBUG_RUST_API)
@@ -510,6 +576,7 @@ public:
       return false;
     }
   }
+
   bool
   isAccountReferencedByAnyOtherAccountInHasOne(llvm::StringRef accountName) {
     // TODO: Or hasOneField
@@ -530,6 +597,7 @@ public:
 
     return false;
   }
+
   bool
   isAccountValidatedBySignerAccountInConstraint(llvm::StringRef accountName) {
     for (auto [pair, inst] : assertKeyEqualMap) {
@@ -546,6 +614,7 @@ public:
 
     return false;
   }
+
   bool
   isAccountReferencedBySignerAccountInConstraint(llvm::StringRef accountName) {
     for (auto [account, hasConstraints] : assertAccountConstraintsMap) {
@@ -566,6 +635,7 @@ public:
 
     return false;
   }
+
   bool isAccountReferencedByAnyOtherAccountInConstraint(
       llvm::StringRef accountName) {
     for (auto [account, hasConstraints] : assertAccountConstraintsMap) {
@@ -587,6 +657,7 @@ public:
 
     return false;
   }
+
   bool isSignerAccountUsedSeedsOfAccount0(llvm::StringRef account0) {
     if (accountsSeedsMap.find(account0) != accountsSeedsMap.end()) {
       for (auto accountSeed : accountsSeedsMap[account0]) {
@@ -605,6 +676,7 @@ public:
 
     return false;
   }
+
   bool isAccountUsedInSeedsOfAccount0(llvm::StringRef account0,
                                       llvm::StringRef accountName) {
     if (accountsSeedsMap.find(account0) != accountsSeedsMap.end()) {
@@ -623,6 +695,7 @@ public:
 
     return false;
   }
+
   bool isPotentiallyOwnerOnlyInstruction(
       std::set<llvm::StringRef> &potentialOwnerAccounts, bool isInit = false) {
     if (isOwnerOnlyComputed)
@@ -681,6 +754,7 @@ public:
     isOwnerOnlyComputed = true;
     return isOwnerOnly;
   }
+
   bool isAccountSignerMultiSigPDA() {
     for (auto [accountSigner, inst] : asssertSignerMap) {
       if (accountSigner.contains("multisig_pda")) {
@@ -695,6 +769,7 @@ public:
                    << "\n";
     return false;
   }
+
   bool isAccountSignerVerifiedByPDAContains() {
     for (auto [accountSigner, inst] : asssertSignerMap) {
       for (auto [pair, inst2] : accountContainsVerifiedMap) {
@@ -712,6 +787,7 @@ public:
                    << "\n";
     return false;
   }
+
   bool isAccountSigner(llvm::StringRef accountName) {
     for (auto [accountSigner, inst] : asssertSignerMap) {
       if (accountSigner.equals(accountName)) {
@@ -725,6 +801,7 @@ public:
 
     return false;
   }
+
   bool isAccountAnchorClosed(llvm::StringRef accountName) {
     for (auto [accountClose, inst] : accountsAnchorCloseMap) {
       if (accountClose.contains(accountName)) {
@@ -737,6 +814,7 @@ public:
       llvm::outs() << "isAccountAnchorClosed false: " << accountName << "\n";
     return false;
   }
+
   bool isAccountClosed(llvm::StringRef accountName) {
     for (auto [accountClose, inst] : accountsCloseMap) {
       if (accountClose.contains(accountName)) {
@@ -749,6 +827,7 @@ public:
       llvm::outs() << "isAccountClosed false: " << accountName << "\n";
     return false;
   }
+
   bool accountsPDAMutable(llvm::StringRef accountName) {
     for (auto [accountPda, inst] : accountsPDAMutMap) {
       if (accountPda.contains(accountName)) {
@@ -761,6 +840,7 @@ public:
       llvm::outs() << "accountsPDAMutMap false: " << accountName << "\n";
     return false;
   }
+
   bool isAccountReloaded(llvm::StringRef accountName) {
     for (auto [account, inst] : accountsReloadedInInstructionMap) {
       if (account == accountName) {
@@ -800,6 +880,7 @@ public:
     }
     return false;
   }
+
   bool isAliasAccountDiscriminator(llvm::StringRef accountName) {
     if (accountAliasesMap.find(accountName) != accountAliasesMap.end()) {
       auto aliasAccounts = accountAliasesMap.at(accountName);
@@ -817,6 +898,7 @@ public:
                    << "\n";
     return false;
   }
+
   bool isAccountBumpValidated(llvm::StringRef bumpName) {
     for (auto [pair, inst] : assertBumpEqualMap) {
       if (pair.first.contains(bumpName) || pair.second.contains(bumpName)) {
@@ -829,6 +911,7 @@ public:
       llvm::outs() << "isAccountBumpValidated false: " << bumpName << "\n";
     return false;
   }
+
   bool isMintAccountValidated(llvm::StringRef accountName) {
     for (auto [pair, inst] : assertMintEqualMap) {
       if (pair.second.equals(accountName)) {
@@ -841,6 +924,7 @@ public:
       llvm::outs() << "isMintAccountValidated false: " << accountName << "\n";
     return false;
   }
+
   bool isAccountMintValidated(llvm::StringRef accountName) {
     for (auto [pair, inst] : assertMintEqualMap) {
       if (pair.first.equals(accountName)) {
@@ -859,6 +943,7 @@ public:
       llvm::outs() << "isAccountMintValidated false: " << accountName << "\n";
     return false;
   }
+
   bool isAccountProgramAddressKeyValidated(llvm::StringRef accountName) {
     for (auto [pair, inst] : assertKeyEqualMap) {
       if (pair.first.contains(accountName)) {
@@ -905,6 +990,7 @@ public:
                    << accountName << "\n";
     return false;
   }
+
   bool isAccountKeyValidated(llvm::StringRef accountName) {
     for (auto [pair, inst] : assertKeyEqualMap) {
       if (pair.first.equals(accountName)) {
@@ -957,6 +1043,7 @@ public:
       llvm::outs() << "isAccountKeyValidated false: " << accountName << "\n";
     return false;
   }
+
   bool isAccountKeyValidatedSafe(llvm::StringRef accountName) {
     for (auto [pair, inst] : assertKeyEqualMap) {
       if (pair.first.contains(accountName) && pair.second.contains("address") ||
@@ -983,6 +1070,7 @@ public:
 
     return false;
   }
+
   bool isAccountOwnedBySigner(llvm::StringRef accountName) {
     for (auto [pair, inst] : assertOwnerEqualMap) {
       if (pair.first.contains(accountName) && isAccountSigner(pair.second)) {
@@ -1057,96 +1145,13 @@ public:
     return res;
   }
 
-  bool initIDLInstructionName() {
-    if (startFunc) {
-      llvm::SmallVector<StringRef, 3> sol_name_vec;
-      startFunc->getName().split(sol_name_vec, '.', -1, false);
-      if (sol_name_vec.size() == 3) {
-        auto idl_instruction_name = sol_name_vec[1];
-        // init_market => initMarket
-        anchor_idl_instruction_name =
-            convertToAnchorString(idl_instruction_name);
-        if (DEBUG_RUST_API)
-          llvm::outs() << "anchor_idl_instruction_name: "
-                       << anchor_idl_instruction_name << "\n";
-        return true;
-      }
-    }
-    return false;
-  }
-
-  static StaticThread *getThreadByTID(TID tid) {
-    assert(tidToThread.find(tid) != tidToThread.end());
-    return tidToThread.at(tid);
-  }
-
-  static bool isSignatureUsedInAccountConstraint(TID tid, llvm::StringRef sig) {
-    auto thread = getThreadByTID(tid);
-    for (auto [account, hasConstraints] : thread->assertAccountConstraintsMap) {
-      for (auto constraint : hasConstraints) {
-        if (constraint.contains(sig)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  explicit StaticThread(const CallGraphNodeTy *entry)
-      : id(curID++), entryNode(entry), threadHandle(nullptr) {
-    auto result = tidToThread.emplace(id, this);
-    assert(result.second);
-    if (entryNode)
-      startFunc = entryNode->getTargetFun()->getFunction();
-  }
-
-  StaticThread(const CallGraphNodeTy *entry, const llvm::Value *handle,
-               const ForkEvent *P)
-      : id(curID++), entryNode(entry), threadHandle(handle), parent(P) {
-    auto result = tidToThread.emplace(id, this);
-    assert(result.second);
-    if (entryNode) {
-      startFunc = entryNode->getTargetFun()->getFunction();
-      initIDLInstructionName();
-    }
-  }
-  StaticThread(const CallGraphNodeTy *entry, const llvm::Value *handle,
-               const ForkEvent *P, const llvm::Function *f)
-      : id(curID++), entryNode(entry), threadHandle(handle), parent(P),
-        startFunc(f) {
-    auto result = tidToThread.emplace(id, this);
-    assert(result.second);
-  }
-
-  ~StaticThread() { tidToThread.erase(this->id); }
-
-  static int getThreadNum() { return tidToThread.size(); }
-
-  static void setThreadArg(TID tid,
-                           std::map<uint8_t, const llvm::Constant *> &argMap);
-
-  static std::map<uint8_t, const llvm::Constant *> *getThreadArg(TID tid);
-
-  const CallGraphNodeTy *getEntryNode() { return this->entryNode; }
-
-  const llvm::Value *getThreadHandle() { return threadHandle; }
-
-  const TID getTID() const { return this->id; }
-
-  const ForkEvent *getParentEvent() { return this->parent; }
-
-  const llvm::Function *getStartFunction() { return startFunc; }
-
-  inline const std::vector<ForkEvent *> &getForkSites() const {
-    return forkSites;
-  }
-
-  void addForkSite(ForkEvent *e) { forkSites.push_back(e); }
-
 private:
+  bool initIDLInstructionName();
+
   static TID curID;
   static std::map<TID, StaticThread *> tidToThread;
   static std::map<TID, std::map<uint8_t, const llvm::Constant *>> threadArgs;
+
   const CallGraphNodeTy *entryNode;
   const ForkEvent *parent = nullptr;
   const llvm::Value *threadHandle;
