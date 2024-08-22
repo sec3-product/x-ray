@@ -1487,11 +1487,6 @@ void SolanaAnalysisPass::handleRustModelAPI(
     auto foundInitIfNeeded =
         cons_all.find("init_if_needed,") != std::string::npos;
     if (foundInit || foundInitIfNeeded) {
-      if (foundInitIfNeeded && anchorVersionTooOld) {
-        // anchor security issue
-        UntrustfulAccount::collect(valueName, e, callEventTraces,
-                                   SVE::Type::INSECURE_INIT_IF_NEEDED, 9);
-      }
       accountsPDAMap[valueName] = e2;
       lastThread->accountsPDAInitInInstructionMap[valueName] = e2;
       if (DEBUG_RUST_API)

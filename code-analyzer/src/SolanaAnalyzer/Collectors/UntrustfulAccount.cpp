@@ -70,10 +70,6 @@ std::string xray::UntrustfulAccount::getErrorMsg(SVE::Type type) {
           "may allow any account to transfer "
           "or burn tokens:";
     break;
-  case SVE::Type::INSECURE_INIT_IF_NEEDED:
-    msg = "The `init_if_needed` keyword in anchor-lang prior to v0.24.x has a "
-          "critical security bug:";
-    break;
   case SVE::Type::MISS_OWNER:
     msg = "The account info is missing owner check:";
     break;

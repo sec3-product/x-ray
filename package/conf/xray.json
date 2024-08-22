@@ -111,11 +111,6 @@
         "description": "The PDA account may be incorrectly used as shared authority and may allow any account to transfer or burn tokens",
         "url": "https://twitter.com/CharlieYouAI/status/1508842093514567687"
       },
-      "1033": {
-        "name": "InsecureAnchorInitIfNeeded",
-        "description": "The `init_if_needed` keyword in anchor-lang prior to v0.24.x has a critical security bug",
-        "url": "https://twitter.com/armaniferrante/status/1516425854183690257"
-      },
       "1034": {
         "name": "InsecureSPLTokenCPI",
         "description": "The spl_token account may be arbitrary prior to version v3.1.1",
