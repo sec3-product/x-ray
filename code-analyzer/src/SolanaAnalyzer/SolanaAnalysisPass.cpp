@@ -3918,92 +3918,65 @@ void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
 }
 
 void SolanaAnalysisPass::detectAccountsCosplay(const xray::ctx *ctx, TID tid) {
-  // find one with user-provided seeds
-  for (auto account : userProvidedInputStringPDAAccounts) {
-    if (DEBUG_RUST_API)
-      llvm::errs()
-          << "==============userProvidedInputStringPDAAccounts account: "
-          << account << "\n";
-    auto seeds = accountsPDASeedsMap[account];
-    if (DEBUG_RUST_API)
-      for (auto seed : seeds)
-        llvm::errs() << "==============accountsPDASeedsMap seed: " << seed
-                     << "\n";
-    for (auto &[account2, seeds2] : accountsPDASeedsMap) {
-      if (account != account2) {
-        auto first_seed = seeds.front();
-        auto first_seed2 = seeds2.front();
-        auto last_seed = seeds.back();
-        auto last_seed2 = seeds2.back();
-        if (isCompatibleSeeds(first_seed, first_seed2) &&
-            isCompatibleSeeds(last_seed, last_seed2)) {
-          // report bug
-          // llvm::errs() << "==============userProvidedInputStringPDAAccounts
-          // account2: " << account2
-          //              << "\n";
-          // llvm::errs() << "==============accountsPDASeedsMap seed: " << seed
-          // << " seed2: " << seed2
-          //              << "\n";
-          auto e1 = accountsPDAMap[account];
-          auto e2 = accountsPDAMap[account2];
-          CosplayAccounts::collect(e1, e2, callEventTraces,
-                                   SVE::Type::PDA_SEEDS_COLLISIONS, 7);
-        }
-      }
-    }
+  if (anchorStructFunctionFieldsMap.size() != 0) {
+    return;
   }
 
-  if (anchorStructFunctionFieldsMap.size() == 0) {
-    // now checking cosplay for non-Anchor program only
-    // for each pair of structs, do they overlap?
-    for (auto &[func1, fieldTypes1] : normalStructFunctionFieldsMap) {
-      for (auto &[func2, fieldTypes2] : normalStructFunctionFieldsMap) {
-        if (func1 != func2) {
-          auto size = fieldTypes1.size();
-          auto size2 = fieldTypes2.size();
-          if (size <= size2) {
-            bool mayCosplay = true;
-            bool hasPubkey = false;
-            for (size_t i = 0; i < size; i++) {
-              // does not need exact match: e.g., u64 vs f64
-              auto type1 = fieldTypes1[i].second;
-              auto type2 = fieldTypes2[i].second;
-              type1 = type1.substr(1);
-              type2 = type2.substr(1);
-              if (!type1.equals(type2) ||
-                  (fieldTypes1[i].first.contains("crimi") ||
-                   fieldTypes2[i].first.contains("crimi"))) {
-                mayCosplay = false;
-                break;
-              }
-              // llvm::errs() << "==============type1: " << type1 <<
-              // "============\n"; llvm::errs() << "==============type2: " <<
-              // type2 << "============\n"; must have a Pubkey field
-              if (type1.contains("ubkey"))
-                hasPubkey = true;
-            }
-            if (mayCosplay && hasPubkey) {
-              // report
-              auto inst1 = func1->getEntryBlock().getFirstNonPHI();
-              auto inst2 = func2->getEntryBlock().getFirstNonPHI();
-              auto e1 = graph->createApiReadEvent(ctx, inst1, tid);
-              auto e2 = graph->createApiReadEvent(ctx, inst2, tid);
-              auto file1 = getSourceLoc(e1->getInst()).getFilename();
-              auto file2 = getSourceLoc(e2->getInst()).getFilename();
-              if (DEBUG_RUST_API)
-                llvm::errs() << "==============file1: " << file1
-                             << " file2: " << file2 << "============\n";
-              if (file1 == file2) {
-                // llvm::errs() << "==============VULNERABLE: Type
-                // Cosplay!============\n";
-                if (size == size2)
-                  CosplayAccounts::collect(e1, e2, callEventTraces,
-                                           SVE::Type::COSPLAY_FULL, 6);
-                else
-                  CosplayAccounts::collect(e1, e2, callEventTraces,
-                                           SVE::Type::COSPLAY_PARTIAL, 5);
-              }
-            }
+  // now checking cosplay for non-Anchor program only
+  // for each pair of structs, do they overlap?
+  for (auto &[func1, fieldTypes1] : normalStructFunctionFieldsMap) {
+    for (auto &[func2, fieldTypes2] : normalStructFunctionFieldsMap) {
+      if (func1 == func2) {
+        continue;
+      }
+
+      auto size = fieldTypes1.size();
+      auto size2 = fieldTypes2.size();
+      if (size > size2) {
+        continue;
+      }
+
+      bool mayCosplay = true;
+      bool hasPubkey = false;
+      for (size_t i = 0; i < size; i++) {
+        // does not need exact match: e.g., u64 vs f64
+        auto type1 = fieldTypes1[i].second;
+        auto type2 = fieldTypes2[i].second;
+        type1 = type1.substr(1);
+        type2 = type2.substr(1);
+        if (!type1.equals(type2) || (fieldTypes1[i].first.contains("crimi") ||
+                                     fieldTypes2[i].first.contains("crimi"))) {
+          mayCosplay = false;
+          break;
+        }
+        // llvm::errs() << "==============type1: " << type1 <<
+        // "============\n"; llvm::errs() << "==============type2: " <<
+        // type2 << "============\n"; must have a Pubkey field
+        if (type1.contains("ubkey")) {
+          hasPubkey = true;
+        }
+      }
+      if (mayCosplay && hasPubkey) {
+        // report
+        auto inst1 = func1->getEntryBlock().getFirstNonPHI();
+        auto inst2 = func2->getEntryBlock().getFirstNonPHI();
+        auto e1 = graph->createApiReadEvent(ctx, inst1, tid);
+        auto e2 = graph->createApiReadEvent(ctx, inst2, tid);
+        auto file1 = getSourceLoc(e1->getInst()).getFilename();
+        auto file2 = getSourceLoc(e2->getInst()).getFilename();
+        if (DEBUG_RUST_API) {
+          llvm::errs() << "==============file1: " << file1
+                       << " file2: " << file2 << "============\n";
+        }
+        if (file1 == file2) {
+          // llvm::errs() << "==============VULNERABLE: Type
+          // Cosplay!============\n";
+          if (size == size2) {
+            CosplayAccounts::collect(e1, e2, callEventTraces,
+                                     SVE::Type::COSPLAY_FULL, 6);
+          } else {
+            CosplayAccounts::collect(e1, e2, callEventTraces,
+                                     SVE::Type::COSPLAY_PARTIAL, 5);
           }
         }
       }

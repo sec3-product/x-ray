@@ -53,10 +53,6 @@ std::string xray::CosplayAccounts::getErrorMsg(SVE::Type type) {
   case SVE::Type::ACCOUNT_DUPLICATE:
     msg = "The data type may contain duplicated mutable accounts:";
     break;
-  case SVE::Type::PDA_SEEDS_COLLISIONS:
-    msg = "These two PDA accounts may have the same seeds, which may lead to "
-          "PDA collisions:";
-    break;
 
   default:
     assert(false && "unhandled CosplayAccounts");
@@ -187,9 +183,6 @@ void xray::CosplayAccounts::print() {
   llvm::errs() << "==============VULNERABLE: " << name << "!============\n";
   outs() << description << ":\n";
   auto desc_type = "Data type";
-  if (type == SVE::Type::PDA_SEEDS_COLLISIONS) {
-    desc_type = "PDA account";
-  }
   outs() << " " << desc_type << "1 defined at line " << apiInst1.getLine()
          << ", column " << apiInst1.getCol() << " in " << apiInst1.getFilename()
          << "\n";

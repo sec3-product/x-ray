@@ -111,11 +111,6 @@
         "description": "The PDA account may be incorrectly used as shared authority and may allow any account to transfer or burn tokens",
         "url": "https://twitter.com/CharlieYouAI/status/1508842093514567687"
       },
-      "1037": {
-        "name": "PDASeedCollisions",
-        "description": "These two PDA accounts may have the same seeds, which may lead to PDA collisions",
-        "url": "https://docs.rs/anchor-lang/latest/anchor_lang/prelude/struct.Pubkey.html"
-      },
       "2001": {
         "name": "IncorrectLoopBreakLogic",
         "description": "Loop break instead of continue (jet-v1 exploit)",
