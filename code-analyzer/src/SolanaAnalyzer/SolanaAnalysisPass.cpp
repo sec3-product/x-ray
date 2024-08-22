@@ -3651,32 +3651,7 @@ void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
     if (DEBUG_RUST_API) {
       llvm::outs() << "account: " << accountName << "\n";
     }
-    if (isInit) {
-      // check for program re-initialization issues
-      // idea: make sure a certain account can only be updated once
-      if (!curThread->hasInitializedCheck)
-        if (curThread->isAccountBorrowDataMut(accountName) ||
-            curThread->isAccountLamportsUpdated(accountName)) {
-          if (!curThread->isAccountDiscriminator(accountName) &&
-              !curThread->isAliasAccountDiscriminator(accountName)) {
-            // llvm::errs() << "==============VULNERABLE: Program
-            // Re-initialization!============\n";
-            auto e2 = curThread->borrowDataMutMap[accountName];
-            // if account key validated and function contains
-            // find_program_address
-            bool isPDAValidated = false;
-            if (curThread->isAccountKeyValidated(accountName)) {
-              if (curThread->isAccountProgramAddressKeyValidated(accountName)) {
-                isPDAValidated = true;
-              }
-            }
-            if (!isPDAValidated) {
-              UntrustfulAccount::collect(accountName, e2, callEventTraces,
-                                         SVE::Type::REINIT, 5);
-            }
-          }
-        }
-    } else {
+    if (!isInit) {
       // checker for untrustful accounts
       // skip initialization func
       bool isUnvalidate =

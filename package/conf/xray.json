@@ -76,11 +76,6 @@
         "description": "The arithmetic operation may result in a divide-by-zero error",
         "url": "https://github.com/rust-lang/rust/issues/944"
       },
-      "1013": {
-        "name": "AccountReInitialization",
-        "description": "The account may be vulnerable to program re-initialization",
-        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/4-initialization"
-      },
       "1014": {
         "name": "BumpSeedNotValidated",
         "description": "The account's bump seed is not validated and may be vulnerable to seed canonicalization attacks",

@@ -99,9 +99,6 @@ std::string xray::UntrustfulAccount::getErrorMsg(SVE::Type type) {
   case SVE::Type::DIV_BY_ZERO:
     msg = "The arithmetic operation may result in a div-by-zero error:";
     break;
-  case SVE::Type::REINIT:
-    msg = "The account is vulnerable to program re-initialization:";
-    break;
   case SVE::Type::BUMP_SEED:
     msg = "The account's bump seed is not validated and may be vulnerable to "
           "seed canonicalization attacks:";
