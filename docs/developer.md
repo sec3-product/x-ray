@@ -25,7 +25,7 @@ The X-Ray static code analysis toolchain consists of three major components:
 
 ### Workflow
 
-<img src="./images/workflow.jpg" width="1100px">
+<img src="./images/workflow.jpg" width="900px">
 
 ### Rule Engine
 
