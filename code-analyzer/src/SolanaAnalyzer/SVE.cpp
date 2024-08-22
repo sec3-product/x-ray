@@ -63,7 +63,7 @@ void SVE::init(Database sves) {
 
   // addTypeID("1012", Type::DIV_BY_ZERO);
   // addTypeID("1013", Type::REINIT);
-  addTypeID("1016", Type::ARBITRARY_CPI);
+  // addTypeID("1016", Type::ARBITRARY_CPI);
 
   // addTypeID("1018", Type::UNSAFE_SYSVAR_API);
   addTypeID("1019", Type::ACCOUNT_UNVALIDATED_OTHER);

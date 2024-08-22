@@ -80,9 +80,6 @@ std::string xray::UntrustfulAccount::getErrorMsg(SVE::Type type) {
   case SVE::Type::MISS_SIGNER:
     msg = "The account info is missing signer check:";
     break;
-  case SVE::Type::ARBITRARY_CPI:
-    msg = "The CPI may invoke an arbitrary program:";
-    break;
   case SVE::Type::INSECURE_SPL_TOKEN_CPI:
     msg = "The spl_token account may be arbitrary:";
     break;
@@ -119,7 +116,7 @@ std::string xray::UntrustfulAccount::getErrorMsg(SVE::Type type) {
 // we report at most 1 UntrustfulAccount bug for each function call
 bool xray::UntrustfulAccount::filter(SVE::Type type, SourceInfo &srcInfo) {
   // for CPI
-  if (SVE::Type::ARBITRARY_CPI == type || SVE::Type::ACCOUNT_CLOSE == type) {
+  if (SVE::Type::ACCOUNT_CLOSE == type) {
     auto sig = srcInfo.sig();
     if (cpiSigs.find(sig) != cpiSigs.end()) {
       // llvm::outs() << "filter true:" << srcInfo.sig() << "\n";

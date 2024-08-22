@@ -3203,18 +3203,9 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
           }
         }
       } else {
-        if (DEBUG_RUST_API)
+        if (DEBUG_RUST_API) {
           llvm::outs() << "sol.invoke: failed to find invoked accounts: "
                        << *value << "\n";
-      }
-
-      // find program_id for sol.invoke_signed.
-      if (targetFuncName.startswith("sol.invoke_signed.")) {
-        auto pair = getProgramIdAccountName(inst);
-        if (!pair.first.empty() && !thread->isAccountKeyValidated(pair.first)) {
-          auto e2 = graph->createReadEvent(ctx, pair.second, tid);
-          UntrustfulAccount::collect(pair.first, e2, callEventTraces,
-                                     SVE::Type::ARBITRARY_CPI, 9);
         }
       }
     } else if (targetFuncName.contains("//initialized")) {

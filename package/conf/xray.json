@@ -86,11 +86,6 @@
         "description": "The PDA sharing with these seeds may be insecure",
         "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/8-pda-sharing"
       },
-      "1016": {
-        "name": "ArbitraryCPI",
-        "description": "The CPI may be vulnerable and invoke an arbitrary program",
-        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/5-arbitrary-cpi"
-      },
       "1017": {
         "name": "MaliciousSimulation",
         "description": "The program may contain malicious simulation",
