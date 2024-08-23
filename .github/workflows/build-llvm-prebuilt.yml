@@ -11,17 +11,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-
       - name: Build llvm-prebuilt image
         run: |
           make build-llvm-prebuilt-image
-
-      - name: Log into DigitalOcean container registry
-        run: doctl registry login --expiry-seconds 600
 
       - name: Push llvm-prebuilt image
         run: |

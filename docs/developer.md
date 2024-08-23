@@ -111,10 +111,8 @@ We provide a prebuilt LLVM Docker image for convenience. You can use this image
 to skip the LLVM building process.
 
 ```sh
-docker pull registry.digitalocean.com/soteria/llvm-prebuilt-14.0.6:latest
+docker pull ghcr.io/sec3-product/llvm-prebuilt-14.0.6:latest
 ```
-
-*TODO*: Replace the image URL with the public image name.
 
 Alternatively, you can run the following command to build LLVM from its source
 code. The [`Dockerfile.llvm`](../Dockerfile.llvm) sets up the environment with
@@ -172,7 +170,7 @@ pull the Docker image and extract the LLVM build artifacts into the build/llvm
 directory:
 
 ```sh
-docker pull registry.digitalocean.com/soteria/llvm-prebuilt-14.0.6:latest
+docker pull ghcr.io/sec3-product/llvm-prebuilt-14.0.6:latest
 make extract-llvm
 ```
 
