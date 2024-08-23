@@ -1,0 +1,123 @@
+{
+  "logger": {
+    "level": "debug",
+    "logFolder": "logs",
+    "maximumLogFileCount": 8,
+    "maximumLogFileSize": 128,
+    "toStderr": false
+  },
+  "report": {
+    "enableTerminal": true,
+    "//ouputDir": "please remove // and set the right path here"
+  },
+  "solana": {
+    "on": true,
+    "account": {
+      "UncheckedAccount": true
+    },
+    "sve": {
+      "1001": {
+        "name": "MissingSignerCheck",
+        "description": "The account is missing signer check",
+        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/0-signer-authorization"
+      },
+      "1002": {
+        "name": "MissingOwnerCheck",
+        "description": "The account is missing owner check",
+        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/2-owner-checks"
+      },
+      "1003": {
+        "name": "IntegerAddOverflow",
+        "description": "The add operation may result in overflows",
+        "url": "https://www.sec3.dev/blog/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts"
+      },
+      "1004": {
+        "name": "IntegerUnderflow",
+        "description": "The sub operation may result in underflows",
+        "url": "https://www.sec3.dev/blog/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts"
+      },
+      "1005": {
+        "name": "IntegerMulOverflow",
+        "description": "The mul operation may result in overflows",
+        "url": "https://www.sec3.dev/blog/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts"
+      },
+      "1006": {
+        "name": "IntegerDivOverflow",
+        "description": "The div operation may result in overflows",
+        "url": "https://www.sec3.dev/blog/understanding-arithmetic-overflow-underflows-in-rust-and-solana-smart-contracts"
+      },
+      "1007": {
+        "name": "UnverifiedParsedAccount",
+        "description": "The account is not validated before parsing its data",
+        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/1-account-data-matching"
+      },
+      "1010": {
+        "name": "TypeFullCosplay",
+        "description": "These two account data types are fully compatible and can be used to launch type confusion attacks",
+        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/3-type-cosplay"
+      },
+      "1011": {
+        "name": "TypePartialCosplay",
+        "description": "These two account data types are partially compatible and may be exploited by type confusion attacks",
+        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/3-type-cosplay"
+      },
+      "1014": {
+        "name": "BumpSeedNotValidated",
+        "description": "The account's bump seed is not validated and may be vulnerable to seed canonicalization attacks",
+        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/7-bump-seed-canonicalization"
+      },
+      "1015": {
+        "name": "InsecurePDASharing",
+        "description": "The PDA sharing with these seeds may be insecure",
+        "url": "https://github.com/project-serum/sealevel-attacks/tree/master/programs/8-pda-sharing"
+      },
+      "1017": {
+        "name": "MaliciousSimulation",
+        "description": "The program may contain malicious simulation",
+        "url": "https://opcodes.fr/en/publications/2022-01/detecting-transaction-simulation/"
+      },
+      "1019": {
+        "name": "UnvalidatedAccount",
+        "description": "The account may not be properly validated and may be untrustful",
+        "url": "https://medium.com/coinmonks/the-wormhole-hack-how-soteria-detects-the-vulnerability-automatically-eb0f433e8071"
+      },
+      "2001": {
+        "name": "IncorrectLoopBreakLogic",
+        "description": "Loop break instead of continue (jet-v1 exploit)",
+        "url": "https://twitter.com/JetProtocol/status/1476244740601524234"
+      },
+      "2002": {
+        "name": "IncorrectConditionCheck",
+        "description": "Liquidation condition >= should be >",
+        "url": "https://www.sec3.dev/blog/how-to-audit-solana-smart-contracts-part-1-a-systematic-approach"
+      },
+      "2003": {
+        "name": "ExponentialCalculation",
+        "description": "The calculation has exponential complexity",
+        "url": "https://www.sec3.dev/blog/how-to-audit-solana-smart-contracts-part-1-a-systematic-approach"
+      },
+      "2004": {
+        "name": "IncorrectDivisionLogic",
+        "description": "Incorrect checked_div instead of checked_ceil_div (spl-token-swap vulnerability: stable curve division)",
+        "url": "https://github.com/solana-labs/solana-program-library/pull/2942"
+      },
+      "2005": {
+        "name": "IncorrectTokenCalculation",
+        "description": "The token amount calculation may be incorrect. Consider using the reserves instead of the balances.",
+        "url": "https://medium.com/certora/exploiting-an-invariant-break-how-we-found-a-pool-draining-bug-in-sushiswaps-trident-585bd98a4d4f"
+      }
+    }
+  },
+  "heapAllocFunctions": [
+    "je_malloc",
+    "je_calloc",
+    "je_mallocx",
+    "u_malloc",
+    "u_calloc",
+    "rm_malloc",
+    "rm_calloc"
+  ],
+  "lockUnlockFunctions": {
+    "malloc_mutex_lock": "malloc_mutex_unlock"
+  }
+}

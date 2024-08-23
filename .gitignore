@@ -1,0 +1,53 @@
+!.gitignore
+*~
+*.o
+*.out
+*.ll
+*.bc
+*.opt
+*.log
+*.status
+*.bc
+*.dot
+**/.DS_Store
+
+# Build artifacts.
+build/
+
+# Local workspace.
+workspace/
+
+# VSCode.
+**/.vscode/
+
+#####################################
+##          code-analyzer          ##
+#####################################
+code-analyzer/TestCases/
+code-analyzer/Release*/
+code-analyzer/Debug*/
+code-analyzer/build/
+code-analyzer/build*/
+code-analyzer/html/
+code-analyzer/cmake-build*/
+code-analyzer/Release+Asserts/
+code-analyzer/Debug+Asserts/
+code-analyzer/autoconf/
+code-analyzer/tests/result/
+code-analyzer/doxygen/
+code-analyzer/.vscode/*
+code-analyzer/.*
+code-analyzer/log.current
+code-analyzer/races.json
+
+####################################
+##         code-parser            ##
+####################################
+
+code-parser/CLionProjects/
+code-parser/.vscode/
+code-parser/eclipse-workspace/
+code-parser/utils/antlr/antlr4cpp/src/antlr4cpp-build/
+code-parser/utils/antlr/antlr4cpp/build/
+code-parser/utils/antlr/antlr4cpp-4.*/
+code-parser/build/

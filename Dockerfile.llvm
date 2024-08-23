@@ -1,0 +1,58 @@
+# Builder.
+FROM ubuntu:22.04 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install build tools.
+RUN apt-get update && \
+    apt-get install -y \
+        build-essential \
+        clang-14 \
+        git \
+        software-properties-common \
+        wget \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Use prebuilt CMake binary release.
+ARG CMAKE_VERSION=3.30.1
+RUN wget --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.sh \
+    && mkdir /opt/cmake \
+    && sh cmake-${CMAKE_VERSION}-linux-x86_64.sh --prefix=/opt/cmake --skip-license \
+    && ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake \
+    && rm cmake-${CMAKE_VERSION}-linux-x86_64.sh
+
+# Caller can optionally specify # of threads.
+ARG MAKE_THREADS=
+
+# Build LLVM from source code.
+ARG LLVM_VERSION=14.0.6
+RUN git clone --branch=llvmorg-${LLVM_VERSION} --single-branch --depth=1 https://github.com/llvm/llvm-project.git
+
+WORKDIR /llvm-project/build
+# LLVM_ENABLE_TERMINFO=OFF due to
+# https://github.com/llvm/llvm-project/issues/53950, and the feature isn't
+# needed for x-ray.
+RUN cmake \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_C_COMPILER=clang-14 \
+    -DCMAKE_CXX_COMPILER=clang++-14 \
+    -DCMAKE_INSTALL_PREFIX=/usr/local/llvm \
+    -DLLVM_ENABLE_PROJECTS="clang;openmp;compiler-rt;mlir" \
+    -DLLVM_ENABLE_RTTI=ON \
+    -DLLVM_ENABLE_TERMINFO=OFF \
+    -DLLVM_INCLUDE_BENCHMARKS=OFF \
+    -DLLVM_INCLUDE_EXAMPLES=OFF \
+    -DLLVM_INCLUDE_TESTS=OFF \
+    -DLLVM_TARGETS_TO_BUILD=X86 \
+    ../llvm \
+    && make -j${MAKE_THREADS} \
+    && make install
+
+
+# Runner.
+FROM ubuntu:22.04
+COPY --from=builder /usr/local/llvm /usr/local/llvm
+ENV PATH=/usr/local/llvm/bin:${PATH}
+WORKDIR /workspace
+ENTRYPOINT ["clang"]

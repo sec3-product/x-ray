@@ -1,0 +1,79 @@
+# Use prebuilt LLVM binaries. Note that not using the package from LLVM release
+# as x-ray (in particular `code-parser`) requires RTTI support which is not
+# enabled in LLVM release build.
+ARG LLVM_PREBUILT_IMAGE=llvm-prebuilt
+ARG LLVM_VERSION=14.0.6
+
+FROM ${LLVM_PREBUILT_IMAGE} AS llvm-prebuilt
+
+# Builder.
+FROM ubuntu:22.04 AS builder
+COPY --from=llvm-prebuilt /usr/local/llvm /usr/local/llvm
+ENV PATH=/usr/local/llvm/bin:${PATH}
+ENV LLVM_PREBUILT_PATH=/usr/local/llvm
+
+# Assert that LLVM binaries are available.
+RUN clang --version
+RUN llvm-config --version
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Build tools and dependencies.
+# Go: Pick up the latest stable (1.22 as of July 2024) via
+# https://go.dev/wiki/Ubuntu#using-ppa.
+RUN apt-get update \
+    && apt-get install -y software-properties-common \
+    && add-apt-repository ppa:longsleep/golang-backports \
+    && apt-get update \
+    && apt-get install -y \
+        build-essential \
+        golang-go \
+        wget \
+        git \
+        zlib1g-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Use prebuilt CMake binary release.
+ARG CMAKE_VERSION=3.30.1
+RUN wget --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-x86_64.sh \
+    && mkdir /opt/cmake \
+    && sh cmake-${CMAKE_VERSION}-linux-x86_64.sh --prefix=/opt/cmake --skip-license \
+    && ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake \
+    && rm cmake-${CMAKE_VERSION}-linux-x86_64.sh
+
+WORKDIR /x-ray-toolchain
+COPY Makefile .
+
+# Build x-ray analyzer.
+COPY code-analyzer code-analyzer
+RUN make -j build-analyzer
+
+# Build x-ray parser.
+COPY code-parser code-parser
+RUN make -j build-parser
+
+# Build x-ray CLI. Note that it avoids putting `COPY . .` too early to avoid
+# invalidating the cache for building `code-analyzer` and `code-parser`.
+COPY . .
+RUN make -j build-cli
+
+# Install the built artifacts.
+RUN make -j install
+
+
+FROM ubuntu:22.04
+COPY --from=builder /x-ray-toolchain/build/dist /usr/local/sec3
+# `libomp.so` is wanted by `sol-code-analyzer` (via LD_PRELOAD).
+COPY --from=builder /usr/local/llvm/lib/libomp.so /usr/local/sec3/bin/libomp.so
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \
+    && apt-get install -y \
+        libgomp1 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+ENV PATH=/usr/local/sec3/bin:$PATH
+ENTRYPOINT ["xray"]
