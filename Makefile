@@ -4,9 +4,9 @@ INSTALL_DIR ?= $(BUILD_DIR)/dist
 # The LLVM version to use.
 LLVM_VERSION ?= 14.0.6
 
-# The default prebuilt image, which is hosted on DigitalOcean (private)
-# registry. Use `doctl registry login` to ensure the access.
-LLVM_PREBUILT_IMAGE ?= registry.digitalocean.com/soteria/llvm-prebuilt-$(LLVM_VERSION):latest
+# The default LLVM prebuilt image, which is hosted on GitHub Container
+# Registry (ghcr.io).
+LLVM_PREBUILT_IMAGE ?= ghcr.io/sec3-product/llvm-prebuilt-$(LLVM_VERSION):latest
 
 # The path to prebuilt LLVM files. It expects `clang++` to be available under
 # `$(LLVM_PREBUILT_PATH)/bin`. One can use `make extract-llvm` to extract the

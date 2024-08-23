@@ -24,14 +24,6 @@ jobs:
         with:
           go-version: 1.22
 
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-
-      - name: Log into DigitalOcean container registry
-        run: doctl registry login --expiry-seconds 600
-
       - name: Build container image
         run: |
           make build-container-image
@@ -53,14 +45,6 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: 1.22
-
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-
-      - name: Log into DigitalOcean container registry
-        run: doctl registry login --expiry-seconds 600
 
       - name: Extract LLVM prebuilt binaries
         run: |
