@@ -11,3 +11,8 @@ target_link_libraries(conflib
     PUBLIC
         jsoncons
 )
+
+target_compile_options(conflib
+    PRIVATE
+        -Wno-covered-switch-default  # Silence warnings from jsoncons.hpp
+)

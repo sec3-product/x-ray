@@ -63,7 +63,11 @@ add_library(SolCodeParser STATIC ${SOURCE_FILES})
 
 # Enable exceptions for SolCodeParser target, introduced via
 # external/antlr/antlr4cpp.
-target_compile_options(SolCodeParser PRIVATE -fexceptions)
+target_compile_options(SolCodeParser
+    PRIVATE
+        -fexceptions
+        -Wno-covered-switch-default  # Silence warnings from jsoncons.hpp
+)
 
 target_include_directories(SolCodeParser
     PUBLIC
@@ -88,6 +92,11 @@ target_link_libraries(SolCodeParser
 add_executable(SolCodeParserExe
     Main.cpp
     ${antlr4cpp_src_files_antlrcpp}
+)
+
+target_compile_options(SolCodeParserExe
+    PRIVATE
+        -Wno-covered-switch-default  # Silence warnings from jsoncons.hpp
 )
 
 target_link_libraries(SolCodeParserExe
