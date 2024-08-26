@@ -3999,7 +3999,7 @@ bool SolanaAnalysisPass::runOnModule(llvm::Module &module) {
   auto shb_end = std::chrono::steady_clock::now();
   std::chrono::duration<double> shb_elapsed = shb_end - shb_start;
   LOG_DEBUG("Finish Building SHB. time={}s", shb_elapsed.count());
-  LOG_DEBUG("Number of threads: {} ", StaticThread::getThreadNum());
+  LOG_DEBUG("Number of threads: {}", StaticThread::getThreadNum());
 
   auto detectStarted = std::chrono::steady_clock::now();
   detectAccountsCosplay(entryNode->getContext(), 0);

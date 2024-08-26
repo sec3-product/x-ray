@@ -22,25 +22,6 @@ static const std::string DEFAULT_CONFIGURATION_NAME_ = "xray.json";
 static const std::string HOME_CONFIGURATION_PATH_ = "~/.xray.json";
 static const std::string ENV_INSTALLATION_DIRECTORY_ = "CODERRECT_HOME";
 
-//
-// struct ConfLibException : public std::exception {
-// public:
-//    static const int UNKNOWN = 1;
-//    static const int INVALID_PARAMETER = 2;
-//    static const int INVALID_DATA_TYPE = 3;
-//
-// public:
-//    ConfLibException(int code) : code_(code) {}
-//    ~ConfLibException() = default;
-//
-//    int code() {
-//        return code_;
-//    }
-//
-// private:
-//    int code_;
-//};
-
 std::vector<jsoncons::json> confs_;
 std::set<std::string> merge_keys_;
 

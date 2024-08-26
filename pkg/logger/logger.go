@@ -70,8 +70,13 @@ func (f *CoderrectFormatter) Format(entry *log.Entry) ([]byte, error) {
 		source = fmt.Sprintf("%s:%v:%s", path.Base(file), line, path.Base(funcName))
 	}
 
-	return []byte(fmt.Sprintf("%s [%s] [%s] [%s] %s    %s\n", time, entry.Level,
-		entry.Data["component"], source, entry.Message, fields)), nil
+	formatted := fmt.Sprintf("%s [%s] [%s] [%s] %s", time, entry.Level,
+		entry.Data["component"], source, entry.Message)
+	if fields != "" {
+		formatted += " " + fields
+	}
+
+	return []byte(formatted + "\n"), nil
 }
 
 type CoderrectLogWritter struct {

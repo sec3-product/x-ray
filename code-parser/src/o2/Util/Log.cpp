@@ -1,5 +1,7 @@
 #include "o2/Util/Log.h"
 
+#include <filesystem>
+
 #include "spdlog/async.h"
 #include "spdlog/fmt/ostr.h" // must be included
 #include "spdlog/sinks/basic_file_sink.h"
@@ -18,12 +20,10 @@ void init(LoggingConfig config) {
   console_sink->set_level(config.terminalLevel);
   console_sink->set_pattern("%H:%M:%S [%^%=7l%$] [%n] [%@] %v");
 
-  // File sink will log messages to a file
-  auto log_file =
-      config.logFolder + "/" +
-      config.logFile; // TODO: make sure the path is formed correctly
-  auto file_sink =
-      std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_file, false);
+  // File sink will log messages to a file.
+  auto log_path = std::filesystem::path(config.logFolder) / config.logFile;
+  auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
+      log_path.string(), false);
   file_sink->set_level(config.fileLevel);
   file_sink->set_pattern("%H:%M:%S [%l] [%n] [%@] %v");
 
@@ -35,8 +35,7 @@ void init(LoggingConfig config) {
     sinks.push_back(file_sink);
   }
 
-  logger = std::make_shared<spdlog::logger>("racedetect", sinks.begin(),
-                                            sinks.end());
+  logger = std::make_shared<spdlog::logger>("xray", sinks.begin(), sinks.end());
   logger->set_level(config.level);
 
   progressEnabled = config.enableProgress;
