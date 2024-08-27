@@ -63,7 +63,7 @@ void init(LoggingConfig cfg);
 
 // Example usage
 namespace {
-void example() {
+[[maybe_unused]] void example() {
   LOG_DEBUG("Parsing the source code. file={}", "somefile.c");
   LOG_ERROR("Unexpected file type. file={}", "program.exe");
 }

@@ -19,53 +19,9 @@
 namespace xray {
 namespace logger {
 
-class Spinner;
-static Spinner *currentSpinner = nullptr;
-static bool progressEnabled;
-
-void init(LoggingConfig config) {
-  std::vector<spdlog::sink_ptr> sinks;
-
-  // Console sink prints messages to the console.
-  if (config.enableTerminal) {
-    auto console_sink = std::make_shared<spdlog::sinks::stderr_color_sink_mt>();
-    console_sink->set_level(config.terminalLevel);
-    // https://github.com/gabime/spdlog/wiki/3.-Custom-formatting#pattern-flags
-    console_sink->set_pattern("%H:%M:%S [%^%=7l%$] [%n] [%s:%#] %v");
-    sinks.push_back(console_sink);
-  }
-
-  // File sink logs to a file.
-  if (config.enableFile) {
-    auto log_path = std::filesystem::path(config.logFolder) / config.logFile;
-    auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
-        log_path.string(), false);
-    file_sink->set_level(config.fileLevel);
-    file_sink->set_pattern("%H:%M:%S [%l] [%n] [%s:%#] %v");
-    sinks.push_back(file_sink);
-  }
-
-  auto logger =
-      std::make_shared<spdlog::logger>("xray", sinks.begin(), sinks.end());
-  logger->set_level(config.level);
-  spdlog::set_default_logger(logger);
-
-  // Used by the progress spinner.
-  progressEnabled = config.enableProgress;
-
-  LOG_DEBUG("Set logging configs: level={}, logFolder={}, logFile={}, "
-            "enableTerminal={}, enableFile={}",
-            config.level, config.logFolder, config.logFile,
-            config.enableTerminal, config.enableFile);
-}
+static bool progressEnabled = false;
 
 class Spinner {
-  indicators::ProgressSpinner spinner;
-  const std::chrono::milliseconds interval;
-  std::atomic<bool> done;
-  std::thread *ticker;
-  std::string endMsg;
-
 public:
   Spinner(std::string beginMsg, std::string endMsg, int tickIntervalms = 200);
   Spinner(std::string msg, int tickIntervalms = 200)
@@ -75,11 +31,17 @@ public:
   void begin();
   void end();
   void set_progress(float) {}
+
+private:
+  indicators::ProgressSpinner spinner;
+  const std::chrono::milliseconds interval;
+  std::thread *ticker;
+  std::atomic<bool> done;
+  std::string endMsg;
 };
 
 Spinner::Spinner(std::string beginMsg, std::string endMsg, int tickIntervalms)
-    : interval(tickIntervalms), ticker(nullptr), done(false), endMsg(endMsg),
-      spinner(indicators::option::PrefixText{" - "},
+    : spinner(indicators::option::PrefixText{" - "},
               indicators::option::PostfixText{beginMsg},
               indicators::option::ForegroundColor{indicators::Color::white},
               indicators::option::ShowPercentage{false},
@@ -92,7 +54,8 @@ Spinner::Spinner(std::string beginMsg, std::string endMsg, int tickIntervalms)
                   std::vector<std::string>{"▖", "▘", "▝", "▗"}},
               indicators::option::ShowElapsedTime{true}
 #endif
-      ) {
+              ),
+      interval(tickIntervalms), ticker(nullptr), done(false), endMsg(endMsg) {
 }
 
 Spinner::~Spinner() {
@@ -137,6 +100,8 @@ void Spinner::end() {
   std::cout << std::endl;
 }
 
+static Spinner *currentSpinner = nullptr;
+
 void newPhaseSpinner(std::string beginMsg, std::string endMsg,
                      int tickIntervalms) {
   if (!progressEnabled)
@@ -160,6 +125,42 @@ void endPhase() {
     delete currentSpinner;
     currentSpinner = nullptr;
   }
+}
+
+void init(LoggingConfig config) {
+  std::vector<spdlog::sink_ptr> sinks;
+
+  // Console sink prints messages to the console.
+  if (config.enableTerminal) {
+    auto console_sink = std::make_shared<spdlog::sinks::stderr_color_sink_mt>();
+    console_sink->set_level(config.terminalLevel);
+    // https://github.com/gabime/spdlog/wiki/3.-Custom-formatting#pattern-flags
+    console_sink->set_pattern("%H:%M:%S [%^%=7l%$] [%n] [%s:%#] %v");
+    sinks.push_back(console_sink);
+  }
+
+  // File sink logs to a file.
+  if (config.enableFile) {
+    auto log_path = std::filesystem::path(config.logFolder) / config.logFile;
+    auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
+        log_path.string(), false);
+    file_sink->set_level(config.fileLevel);
+    file_sink->set_pattern("%H:%M:%S [%l] [%n] [%s:%#] %v");
+    sinks.push_back(file_sink);
+  }
+
+  auto logger =
+      std::make_shared<spdlog::logger>("xray", sinks.begin(), sinks.end());
+  logger->set_level(config.level);
+  spdlog::set_default_logger(logger);
+
+  // Used by the progress spinner.
+  progressEnabled = config.enableProgress;
+
+  LOG_DEBUG("Set logging configs: level={}, logFolder={}, logFile={}, "
+            "enableTerminal={}, enableFile={}",
+            config.level, config.logFolder, config.logFile,
+            config.enableTerminal, config.enableFile);
 }
 
 } // namespace logger
