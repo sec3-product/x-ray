@@ -44,6 +44,7 @@ RUN wget --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER
 
 WORKDIR /x-ray-toolchain
 COPY Makefile .
+COPY common common
 
 # Build x-ray analyzer.
 COPY code-analyzer code-analyzer
