@@ -90,7 +90,7 @@ void endPhase();
 
 // Define the formatter for LLVM types.
 namespace fmt {
-inline namespace v6 {
+inline namespace v9 {
 
 template <typename T> struct llvm_formatter {
   constexpr auto parse(format_parse_context &ctx) -> decltype(ctx.begin()) {
@@ -123,5 +123,16 @@ DEFINE_LLVM_FORMATTER(llvm::GlobalVariable)
 DEFINE_LLVM_FORMATTER(llvm::StoreInst)
 DEFINE_LLVM_FORMATTER(llvm::BitCastInst)
 
-} // namespace v6
+} // namespace v9
 } // namespace fmt
+
+// Define a custom formatter for spdlog::level::level_enum.
+template <>
+struct fmt::formatter<spdlog::level::level_enum> : fmt::formatter<std::string> {
+  template <typename FormatContext>
+  auto format(spdlog::level::level_enum level, FormatContext &ctx) {
+    // Convert the level_enum to string and format it.
+    std::string level_str = spdlog::level::to_string_view(level).data();
+    return fmt::formatter<std::string>::format(level_str, ctx);
+  }
+};
