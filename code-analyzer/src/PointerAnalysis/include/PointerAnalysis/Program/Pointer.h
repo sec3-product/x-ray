@@ -1,13 +1,8 @@
-//
-// Created by peiming on 11/1/19.
-//
-#ifndef ASER_PTA_POINTER_H
-#define ASER_PTA_POINTER_H
+#pragma once
 
-#include "Util/Util.h"
-
-// represent pointers in programs
 #include <llvm/ADT/Hashing.h>
+
+#include "PointerAnalysis/Util/Util.h"
 
 namespace xray {
 
@@ -69,5 +64,3 @@ template <typename ctx> struct hash<xray::Pointer<ctx>> {
 };
 
 } // namespace std
-
-#endif

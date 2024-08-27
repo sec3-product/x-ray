@@ -9,7 +9,7 @@
 #include "PointerAnalysis/Models/MemoryModel/FieldInsensitive/FICanonicalizer.h"
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/FSCanonicalizer.h"
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/Layout/ArrayLayout.h"
-#include "Util/Util.h"
+#include "PointerAnalysis/Util/Util.h"
 
 using namespace xray;
 using namespace llvm;

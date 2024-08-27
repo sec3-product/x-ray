@@ -1,12 +1,7 @@
-//
-// Created by peiming on 1/16/20.
-//
-
-#ifndef ASER_PTA_LANGMODELBASE_H
-#define ASER_PTA_LANGMODELBASE_H
+#pragma once
 
 #include "ConsGraphBuilder.h"
-#include "Util/Util.h"
+#include "PointerAnalysis/Util/Util.h"
 
 namespace xray {
 
@@ -319,4 +314,3 @@ struct LangModelTrait<LangModelBase<ctx, MemModel, PtsTy, SubClass>> {
 };
 
 } // namespace xray
-#endif // ASER_PTA_LANGMODELBASE_H

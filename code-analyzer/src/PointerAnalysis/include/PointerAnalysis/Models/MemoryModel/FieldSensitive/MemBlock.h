@@ -1,9 +1,4 @@
-//
-// Created by peiming on 12/18/19.
-//
-
-#ifndef ASER_PTA_MEMBLOCK_H
-#define ASER_PTA_MEMBLOCK_H
+#pragma once
 
 #include <llvm/ADT/IndexedMap.h>
 #include <llvm/IR/DataLayout.h>
@@ -13,7 +8,7 @@
 #include "PointerAnalysis/Models/MemoryModel/AllocSite.h"
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/FSObject.h"
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/Layout/MemLayout.h"
-#include "Util/Util.h"
+#include "PointerAnalysis/Util/Util.h"
 
 extern cl::opt<bool> USE_MEMLAYOUT_FILTERING;
 
@@ -419,5 +414,3 @@ public:
 };
 
 } // namespace xray
-
-#endif // ASER_PTA_MEMBLOCK_H

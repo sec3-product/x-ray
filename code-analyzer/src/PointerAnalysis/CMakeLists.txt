@@ -10,14 +10,15 @@ set(SOURCES
     Model/MemModels.cpp
     Program/Program.cpp
     Solver/PointsToSet.cpp
+    Util/TypeMetaData.cpp
+    Util/Util.cpp
 )
-
 
 add_library(PointerAnalysis STATIC ${SOURCES})
 
 target_link_libraries(PointerAnalysis
+    Logger
     PreProcessing
-    Util
     pthread
 )
 

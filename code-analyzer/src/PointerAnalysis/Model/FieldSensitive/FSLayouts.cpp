@@ -9,7 +9,7 @@
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/Layout/ArrayLayout.h"
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/Layout/MemLayout.h"
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/MemBlock.h"
-#include "Util/TypeMetaData.h"
+#include "PointerAnalysis/Util/TypeMetaData.h"
 
 using namespace llvm;
 using namespace std;

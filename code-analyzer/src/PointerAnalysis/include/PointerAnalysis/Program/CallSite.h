@@ -1,12 +1,8 @@
-//
-// Created by peiming on 11/5/19.
-//
-#ifndef ASER_PTA_CALLSITE_H
-#define ASER_PTA_CALLSITE_H
+#pragma once
 
 #include <llvm/IR/Instructions.h>
 
-#include "Util/Util.h"
+#include "PointerAnalysis/Util/Util.h"
 
 namespace xray {
 
@@ -93,5 +89,3 @@ public:
 };
 
 } // namespace xray
-
-#endif

@@ -1,9 +1,4 @@
-//
-// Created by peiming on 7/21/20.
-//
-
-#ifndef ASER_PTA_VECTOR_H
-#define ASER_PTA_VECTOR_H
+#pragma once
 
 #include <llvm/IR/Type.h>
 
@@ -13,7 +8,7 @@
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/FSObject.h"
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/MemBlock.h"
 #include "PointerAnalysis/Program/CtxFunction.h"
-#include "Util/Demangler.h"
+#include "PointerAnalysis/Util/Demangler.h"
 
 // we use a new namespace in case in the future we want to extend the PTA on
 // other language which has the same type of containers
@@ -187,5 +182,3 @@ public:
 
 } // namespace cpp
 } // namespace xray
-
-#endif // ASER_PTA_VECTOR_H

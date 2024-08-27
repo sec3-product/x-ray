@@ -1,14 +1,10 @@
-//
-// Created by peiming on 7/23/20.
-//
+#pragma once
 
-#ifndef ASER_PTA_PTRNODEMANAGER_H
-#define ASER_PTA_PTRNODEMANAGER_H
 #include <unordered_map>
 
 #include "PointerAnalysis/Program/CtxFunction.h"
 #include "PointerAnalysis/Program/Pointer.h"
-#include "Util/SingleInstanceOwner.h"
+#include "PointerAnalysis/Util/SingleInstanceOwner.h"
 
 extern bool DEBUG_PTA;
 extern bool DEBUG_PTA_VERBOSE;
@@ -213,4 +209,3 @@ public:
 };
 
 } // namespace xray
-#endif // ASER_PTA_PTRNODEMANAGER_H

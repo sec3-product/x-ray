@@ -1,16 +1,12 @@
-//
-// Created by peiming on 11/19/19.
-//
-#ifndef ASER_PTA_KCALLSITE_H
-#define ASER_PTA_KCALLSITE_H
+#pragma once
 
 #include <llvm/ADT/Hashing.h>
 
 #include "CtxTrait.h"
 
-#include "PtrRingBuffer.h"
 #include "PointerAnalysis/Program/CallSite.h"
-#include "Util/SingleInstanceOwner.h"
+#include "PointerAnalysis/Util/SingleInstanceOwner.h"
+#include "PtrRingBuffer.h"
 
 namespace xray {
 
@@ -140,5 +136,3 @@ template <uint32_t K> struct hash<xray::KCallSite<K>> {
 };
 
 } // namespace std
-
-#endif // ASER_PTA_KCALLSITE_H

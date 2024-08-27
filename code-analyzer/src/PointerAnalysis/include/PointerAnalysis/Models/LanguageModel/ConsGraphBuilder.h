@@ -16,9 +16,9 @@
 #include "PointerAnalysis/Program/CallSite.h"
 #include "PointerAnalysis/Program/CtxModule.h"
 #include "PointerAnalysis/Program/Pointer.h"
-#include "Util/CtxInstVisitor.h"
-#include "Util/GraphWriter.h"
-#include "Util/SingleInstanceOwner.h"
+#include "PointerAnalysis/Util/CtxInstVisitor.h"
+#include "PointerAnalysis/Util/GraphWriter.h"
+#include "PointerAnalysis/Util/SingleInstanceOwner.h"
 
 extern bool DEBUG_PTA;
 extern bool DEBUG_PTA_VERBOSE;

@@ -2,11 +2,12 @@
 
 #include <map>
 
+#include <llvm/Support/DOTGraphTraits.h>
+
 #include "CGObjNode.h"
 #include "CGPtrNode.h"
 #include "PointerAnalysis/Graph/GraphBase/GraphBase.h"
-#include "Util/Statistics.h"
-#include "llvm/Support/DOTGraphTraits.h"
+#include "PointerAnalysis/Util/Statistics.h"
 
 #define DEBUG_TYPE "pta-cons-graph"
 extern bool DEBUG_PTA;

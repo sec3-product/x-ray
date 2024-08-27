@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Logger/Logger.h>
+#include <PreProcessing/Passes/CanonicalizeGEPPass.h>
+#include <PreProcessing/Passes/LoweringMemCpyPass.h>
 #include <llvm/Support/Allocator.h>
 
 #include "PointerAnalysis/Models/LanguageModel/PtrNodeManager.h"
@@ -11,10 +13,8 @@
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/MemBlock.h"
 #include "PointerAnalysis/Models/MemoryModel/SpecialObjects/MapObject.h"
 #include "PointerAnalysis/Program/InterceptResult.h"
-#include "PreProcessing/Passes/CanonicalizeGEPPass.h"
-#include "PreProcessing/Passes/LoweringMemCpyPass.h"
-#include "Util/ConstExprVisitor.h"
-#include "Util/Util.h"
+#include "PointerAnalysis/Util/ConstExprVisitor.h"
+#include "PointerAnalysis/Util/Util.h"
 
 extern bool DEBUG_PTA;
 extern bool DEBUG_PTA_VERBOSE;

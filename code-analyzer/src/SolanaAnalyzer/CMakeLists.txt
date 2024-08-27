@@ -63,7 +63,6 @@ llvm_map_components_to_libnames(LLVM_LIBS
 target_link_libraries(SolanaAnalyzer
     PointerAnalysis
     Logger
-    Util
     jsoncons
     nlohmann_json
 
@@ -84,7 +83,6 @@ target_link_libraries(SolanaAnalyzerExe
     SolanaAnalyzer
     PointerAnalysis
     conflib
-    Util
 )
 
 if (CMAKE_BUILD_TYPE MATCHES "Release")

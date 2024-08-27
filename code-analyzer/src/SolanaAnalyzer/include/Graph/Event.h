@@ -1,18 +1,17 @@
-#ifndef RACEDETECTOR_EVENT_H
-#define RACEDETECTOR_EVENT_H
+#pragma once
 
 #include <stdint.h>
 
 #include <string>
 #include <vector>
 
+#include <PointerAnalysis/Program/CallSite.h>
+#include <PointerAnalysis/Util/Demangler.h>
 #include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/IR/Instruction.h>
 
 #include "LocksetManager.h"
 #include "StaticThread.h"
-#include "PointerAnalysis/Program/CallSite.h"
-#include "Util/Demangler.h"
 
 namespace xray {
 using EventID = uint64_t;
@@ -350,4 +349,3 @@ public:
 };
 
 } // namespace xray
-#endif

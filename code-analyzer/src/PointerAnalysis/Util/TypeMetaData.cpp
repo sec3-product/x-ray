@@ -11,9 +11,9 @@
 #include <llvm/IR/Type.h>
 #include <llvm/Transforms/Utils/Local.h>
 
-#include "Util/Demangler.h"
-#include "Util/TypeMetaData.h"
-#include "Util/Util.h"
+#include "PointerAnalysis/Util/Demangler.h"
+#include "PointerAnalysis/Util/TypeMetaData.h"
+#include "PointerAnalysis/Util/Util.h"
 
 using namespace xray;
 using namespace llvm;

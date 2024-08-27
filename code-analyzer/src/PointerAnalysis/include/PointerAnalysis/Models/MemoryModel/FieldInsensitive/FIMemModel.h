@@ -1,6 +1,14 @@
-//
-// Created by peiming on 10/22/19.
-//
+#pragma once
+
+#include <PreProcessing/Passes/CanonicalizeGEPPass.h>
+#include <llvm/IR/LegacyPassManager.h>
+
+#include "FICanonicalizer.h"
+#include "FIObject.h"
+#include "PointerAnalysis/Graph/ConstraintGraph/ConstraintGraph.h"
+#include "PointerAnalysis/Models/MemoryModel/MemModelTrait.h"
+#include "PointerAnalysis/Program/Pointer.h"
+#include "PointerAnalysis/Util/SingleInstanceOwner.h"
 
 // memory langModel build the connection between memory block and static object
 
@@ -9,19 +17,6 @@
 
 // for field-sensitive memory langModel
 // one memory block -> multiple static objects
-
-#ifndef ASER_PTA_FIMEMMODEL_H
-#define ASER_PTA_FIMEMMODEL_H
-
-#include <llvm/IR/LegacyPassManager.h>
-
-#include "FICanonicalizer.h"
-#include "FIObject.h"
-#include "PointerAnalysis/Graph/ConstraintGraph/ConstraintGraph.h"
-#include "PointerAnalysis/Models/MemoryModel/MemModelTrait.h"
-#include "PointerAnalysis/Program/Pointer.h"
-#include "PreProcessing/Passes/CanonicalizeGEPPass.h"
-#include "Util/SingleInstanceOwner.h"
 
 namespace xray {
 

@@ -1,11 +1,9 @@
-//
-// Created by peiming on 1/16/20.
-//
 #include "PointerAnalysis/Models/DefaultHeapModel.h"
-#include "Util/Util.h"
 
-#include <PointerAnalysis/Program/CallSite.h>
 #include <llvm/IR/Instructions.h>
+
+#include "PointerAnalysis/Program/CallSite.h"
+#include "PointerAnalysis/Util/Util.h"
 
 #define MORE_COMPLETE_TYPE_INFO
 

@@ -1,14 +1,4 @@
-//
-// Created by peiming on 7/13/20.
-//
-
-#ifndef ASER_PTA_CPPMEMMODEL_H
-#define ASER_PTA_CPPMEMMODEL_H
-
-// TODO: there are a lot of things to do to model C++'s memory model accurately
-// besides vtable e.g., runtime type information + class hirachy, so we put it
-// into a CppMemModel this will make it easier for future extension when we need
-// to handle more languages such as Rust/Fortran
+#pragma once
 
 #include "PointerAnalysis/Models/MemoryModel/CppMemModel/RewriteModeledAPIPass.h"
 #include "PointerAnalysis/Models/MemoryModel/CppMemModel/SpecialObject/VTablePtr.h"
@@ -16,8 +6,13 @@
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/FSCanonicalizer.h"
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/FSMemModel.h"
 #include "PointerAnalysis/Program/InterceptResult.h"
-#include "Util/Demangler.h"
-#include "Util/TypeMetaData.h"
+#include "PointerAnalysis/Util/Demangler.h"
+#include "PointerAnalysis/Util/TypeMetaData.h"
+
+// TODO: there are a lot of things to do to model C++'s memory model accurately
+// besides vtable e.g., runtime type information + class hirachy, so we put it
+// into a CppMemModel this will make it easier for future extension when we need
+// to handle more languages such as Rust/Fortran
 
 extern cl::opt<bool> CONFIG_VTABLE_MODE;
 
@@ -309,5 +304,3 @@ struct MemModelTrait<cpp::CppMemModel<ctx>>
 #undef super
 
 } // namespace xray
-
-#endif // ASER_PTA_CPPMEMMODEL_H

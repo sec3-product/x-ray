@@ -1,13 +1,9 @@
-//
-// Created by peiming on 10/23/19.
-//
-
-// the pts data structure that also stores pointed by information
-#ifndef ASER_PTA_POINTEDBYPTS_H
-#define ASER_PTA_POINTEDBYPTS_H
+#pragma once
 
 #include "PTSTrait.h"
-#include "Util/Util.h"
+#include "PointerAnalysis/Util/Util.h"
+
+// the pts data structure that also stores pointed by information
 
 namespace xray {
 
@@ -142,5 +138,3 @@ class PointedByPts {
 } // namespace xray
 
 DEFINE_PTS_TRAIT(xray::PointedByPts)
-
-#endif

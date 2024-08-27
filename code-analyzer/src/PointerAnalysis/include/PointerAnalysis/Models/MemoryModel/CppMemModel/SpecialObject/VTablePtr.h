@@ -4,7 +4,7 @@
 
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/FSObject.h"
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/MemBlock.h"
-#include "Util/TypeMetaData.h"
+#include "PointerAnalysis/Util/TypeMetaData.h"
 
 // The class represent the vtable pointer stored at the first byte of the object
 // it can only points to one specific vtable pointer.

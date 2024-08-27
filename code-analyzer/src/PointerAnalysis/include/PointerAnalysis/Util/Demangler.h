@@ -1,14 +1,9 @@
-//
-// Created by peiming on 7/21/20.
-//
-
-#ifndef ASER_PTA_DEMANGLER_H
-#define ASER_PTA_DEMANGLER_H
+#pragma once
 
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Demangle/Demangle.h>
 
-#include "Util/Util.h"
+#include "PointerAnalysis/Util/Util.h"
 
 namespace xray {
 
@@ -49,5 +44,3 @@ public:
 };
 
 } // namespace xray
-
-#endif // ASER_PTA_DEMANGLER_H

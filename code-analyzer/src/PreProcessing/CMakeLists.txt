@@ -6,7 +6,7 @@ set(SOURCES
 add_library(PreProcessing STATIC ${SOURCES})
 
 target_link_libraries(PreProcessing
-    Util
+    Logger
 )
 
 target_include_directories(PreProcessing

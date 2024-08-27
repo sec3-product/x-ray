@@ -1,8 +1,4 @@
-//
-// Created by peiming on 8/14/19.
-//
-#ifndef ASER_PTA_GRAPHBASE_H
-#define ASER_PTA_GRAPHBASE_H
+#pragma once
 
 #include <llvm/ADT/GraphTraits.h>
 
@@ -13,7 +9,7 @@
 #include <vector>
 
 #include "PointerAnalysis/Graph/NodeID.def"
-#include "Util/Iterators.h"
+#include "PointerAnalysis/Util/Iterators.h"
 
 namespace xray {
 
@@ -366,5 +362,3 @@ struct GraphTraits<Inverse<xray::GraphBase<NodeType, EdgeType>>> {
 };
 
 } // namespace llvm
-
-#endif

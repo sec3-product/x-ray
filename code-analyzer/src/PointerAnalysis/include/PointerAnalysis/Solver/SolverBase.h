@@ -8,7 +8,7 @@
 #include "PointerAnalysis/Graph/ConstraintGraph/ConstraintGraph.h"
 #include "PointerAnalysis/Models/MemoryModel/MemModelTrait.h"
 #include "PointerAnalysis/Solver/PointsTo/BitVectorPTS.h"
-#include "Util/Statistics.h"
+#include "PointerAnalysis/Util/Statistics.h"
 
 // the basic framework for andersen-based algorithm, including common routines
 // override neccessary ones, and the call will be STATICALLY redirected to it

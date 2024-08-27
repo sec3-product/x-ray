@@ -4,9 +4,9 @@
 #include <llvm/ADT/StringRef.h>
 #include <llvm/IR/PatternMatch.h>
 
-#include "PointerAnalysis/Models/DefaultHeapModel.h"
-#include "PointerAnalysis/Program/CallSite.h"
-#include "Util/Util.h"
+#include <PointerAnalysis/Models/DefaultHeapModel.h>
+#include <PointerAnalysis/Program/CallSite.h>
+#include <PointerAnalysis/Util/Util.h>
 
 namespace xray {
 
