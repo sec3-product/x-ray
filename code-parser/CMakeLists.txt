@@ -25,25 +25,19 @@ if (ENABLE_SPACE_OPT)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_NODE_ID_FOR_CONSTRAINTS -DNO_ADDR_OF_FOR_OFFSET")  # log level = debug
 endif()
 
-if(CMAKE_BUILD_TYPE MATCHES "Debug")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSPDLOG_ACTIVE_LEVEL=2 -DRACE_DETECT_DEBUG")  # log level = debug
-else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSPDLOG_ACTIVE_LEVEL=6")  # log level = warn
-endif()
-
-set(COMMON_CXX_FLAG "-DSPDLOG_NO_EXCEPTIONS")
+# Set spdlog logger flags. Use the overall minimum level as SPDLOG_ACTIVE_LEVEL
+# so that debug logs are written to file logs.
+set(SPDLOG_FLAGS "-DSPDLOG_NO_EXCEPTIONS -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG")
 
 # To support both in- and out-of-source builds,
 # we check for the presence of the add_llvm_loadable_module command.
 # - if this command is not present, we are building out-of-source
 if(NOT COMMAND add_llvm_loadable_module)
     if (DEFINED LLVM_DIR)
-        # We need to match the build environment for LLVM:
-        # In particular, we need C++11 and the -fno-rtti flag
         if(CMAKE_BUILD_TYPE MATCHES "Debug")
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 ${COMMON_CXX_FLAG}")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 ${SPDLOG_FLAGS}")
         else()
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 ${COMMON_CXX_FLAG}")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 ${SPDLOG_FLAGS}")
         endif()
 
         find_package(LLVM ${LLVM_VERSION} REQUIRED CONFIG NO_DEFAULT_PATH)

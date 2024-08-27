@@ -963,12 +963,3 @@ void xray::printCallEventStackTrace(std::vector<CallEvent *> &st) {
     count++;
   }
 }
-
-void xray::printSrcInfo(SourceInfo &srcInfo, TID tid) {
-  highlight("Thread " + std::to_string(tid) + ": ");
-#ifdef RACE_DETECT_DEBUG
-  llvm::outs() << "Instruction:" << *srcInfo.getValue() << "\n";
-#endif
-  llvm::outs() << srcInfo.str();
-  llvm::outs() << ">>>Stack Trace:\n";
-}

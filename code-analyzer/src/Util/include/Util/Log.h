@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <ostream>
+#include <string>
 
 #include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/IR/GlobalAlias.h>
@@ -17,27 +18,6 @@
 
 namespace xray {
 namespace logger {
-
-#ifndef USE_DEFAULT_SPDLOG
-
-// Globally shared logger
-// Do not use directly
-// Use the Macros below instead
-extern std::shared_ptr<spdlog::logger> logger;
-
-template <typename... Args>
-inline void trimmed_log(spdlog::source_loc source,
-                        spdlog::level::level_enum lvl,
-                        spdlog::string_view_t fmt, const Args &...args) {
-  // Only print the filename, not the full path
-  source.filename += std::string(source.filename).rfind("/") + 1;
-  logger->log(source, lvl, fmt, args...);
-}
-
-#define LOG_INTERNAL(level, ...)                                               \
-  xray::logger::trimmed_log(                                                   \
-      spdlog::source_loc{__FILE__, __LINE__, SPDLOG_FUNCTION}, level,          \
-      __VA_ARGS__)
 
 struct LoggingConfig {
   // Enable Progress Spinners
@@ -72,15 +52,14 @@ struct LoggingConfig {
         fileLevel(level), terminalLevel(spdlog::level::info) {}
 };
 
-// Must call this before using logging
+// Must call this before using logging.
 void init(LoggingConfig cfg);
 
-// Use macros to log at different levels. Same API as SPDLOG macros
-#define LOG_TRACE(...) LOG_INTERNAL(spdlog::level::trace, __VA_ARGS__)
-#define LOG_DEBUG(...) LOG_INTERNAL(spdlog::level::debug, __VA_ARGS__)
-#define LOG_INFO(...) LOG_INTERNAL(spdlog::level::info, __VA_ARGS__)
-#define LOG_WARN(...) LOG_INTERNAL(spdlog::level::warn, __VA_ARGS__)
-#define LOG_ERROR(...) LOG_INTERNAL(spdlog::level::err, __VA_ARGS__)
+#define LOG_TRACE(...) SPDLOG_TRACE(__VA_ARGS__);
+#define LOG_DEBUG(...) SPDLOG_DEBUG(__VA_ARGS__);
+#define LOG_INFO(...) SPDLOG_INFO(__VA_ARGS__);
+#define LOG_WARN(...) SPDLOG_WARN(__VA_ARGS__);
+#define LOG_ERROR(...) SPDLOG_ERROR(__VA_ARGS__);
 
 // Example usage
 namespace {
@@ -90,16 +69,6 @@ void example() {
 }
 
 } // namespace
-
-#else
-
-#define LOG_TRACE(...) SPDLOG_TRACE(__VA_ARGS__);
-#define LOG_DEBUG(...) SPDLOG_DEBUG(__VA_ARGS__);
-#define LOG_INFO(...) SPDLOG_INFO(__VA_ARGS__);
-#define LOG_WARN(...) SPDLOG_WARN(__VA_ARGS__);
-#define LOG_ERROR(...) SPDLOG_ERROR(__VA_ARGS__);
-
-#endif
 
 // Call newPhaseSpinner to start a new Progress Spinner.
 // newPhaseSpinner automatically completes a previous spinner if one exists
@@ -119,9 +88,7 @@ void endPhase();
 } // namespace logger
 } // namespace xray
 
-#ifndef USE_DEFAULT_SPDLOG
-
-// Define the formatter for llvm types.
+// Define the formatter for LLVM types.
 namespace fmt {
 inline namespace v6 {
 
@@ -158,5 +125,3 @@ DEFINE_LLVM_FORMATTER(llvm::BitCastInst)
 
 } // namespace v6
 } // namespace fmt
-
-#endif // ifndef USE_DEFAULT_SPDLOG
