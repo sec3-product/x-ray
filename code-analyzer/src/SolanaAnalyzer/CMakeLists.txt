@@ -28,6 +28,17 @@ include_directories(
 
 add_library(SolanaAnalyzer ${SOLANA_ANALYZER_SOURCES})
 
+include(FetchContent)
+
+FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.9.1
+)
+# Skip building its test (which doesn't compile).
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+FetchContent_MakeAvailable(nlohmann_json)
+
 llvm_map_components_to_libnames(LLVM_LIBS
     bitwriter
     core

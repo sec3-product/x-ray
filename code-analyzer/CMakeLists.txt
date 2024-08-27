@@ -68,5 +68,6 @@ else()
     set(IN_SOURCE_BUILD 1)
 endif()
 
+add_subdirectory(${CMAKE_SOURCE_DIR}/../common ${CMAKE_BINARY_DIR}/common-build)
 add_subdirectory(src)
 add_subdirectory(test)

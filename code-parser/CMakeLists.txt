@@ -89,5 +89,6 @@ include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}/include
 )
 
+add_subdirectory(${CMAKE_SOURCE_DIR}/../common ${CMAKE_BINARY_DIR}/common-build)
 add_subdirectory(src)
 add_subdirectory(test)

@@ -1,6 +1,6 @@
 #include "conflib/conflib.h"
 
-#include "stdlib.h"
+#include <stdlib.h>
 
 #include <set>
 #include <unistd.h>
@@ -112,8 +112,9 @@ static inline void AssignValues_(jsoncons::json &j, const std::string &key,
   j[key] = value;
 }
 
-static inline void ReplaceValue_(jsoncons::json &j, const std::string &jpath,
-                                 const std::string &value) {
+[[maybe_unused]] static inline void ReplaceValue_(jsoncons::json &j,
+                                                  const std::string &jpath,
+                                                  const std::string &value) {
   if (value == "true") {
     jsoncons::jsonpath::json_replace(j, jpath, true);
   } else if (value == "false") {
@@ -147,7 +148,7 @@ static inline void InsertConfiguration_(jsoncons::json &j,
   std::vector<std::string> values;
   if (is_array) {
     int b = 0;
-    for (int e = 0; e < value.length(); e++) {
+    for (size_t e = 0; e < value.length(); e++) {
       char ch = value[e];
       if (ch == ',') {
         std::string subs = value.substr(b, e - b);
@@ -403,8 +404,6 @@ static inline std::vector<std::string> ParseArray_(jsoncons::json &j) {
   return r;
 }
 
-// inline avoid multiple definition errors when conflib.h is included in
-// multiple files
 void Get(const std::string &key, std::vector<std::string> &rs) {
   std::string jpath = "$." + key;
 
