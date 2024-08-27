@@ -103,16 +103,6 @@ target_link_libraries(SolCodeParserExe
     SolCodeParser
 )
 
-if (ENABLE_HEAP_PROFILE)
-    message("Heap Profiling using tcmalloc enabled")
-    target_link_libraries(SolCodeParserExe tcmalloc)
-endif()
-
-if (ENABLE_CPU_PROFILE)
-    message("CPU Profiling using profiler enabled")
-    target_link_libraries(SolCodeParserExe profiler)
-endif()
-
 if(CMAKE_BUILD_TYPE MATCHES "Release")
     target_link_libraries(SolCodeParserExe -static-libstdc++)
 endif()

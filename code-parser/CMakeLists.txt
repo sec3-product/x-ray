@@ -1,9 +1,13 @@
 cmake_minimum_required(VERSION 3.24.0)
 project(SolanaParser)
 
-option(ENABLE_HEAP_PROFILE "Turn on heap profiling feature by linking to tcmalloc" OFF)
+set(LLVM_VERSION "14.0.6" CACHE STRING "The LLVM version")
 
-# Do not override manually set LLVM_DIR
+# The default path to LLVM and MLIR, to match the ones in Dockerfile.
+set(LLVM_DIR "/usr/local/llvm/lib/cmake/llvm" CACHE STRING "Path to LLVM")
+set(MLIR_DIR "/usr/local/llvm/lib/cmake/mlir" CACHE STRING "Path to MLIR")
+
+# Do not override manually set LLVM_DIR.
 if(NOT DEFINED LLVM_DIR)
     message(STATUS "Searching for LLVM_DIR in default directories")
     if (EXISTS /llvm-project/build/lib/cmake/llvm/)
@@ -11,19 +15,9 @@ if(NOT DEFINED LLVM_DIR)
     endif()
 endif()
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to conform to")
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
-
-set(LLVM_VERSION "14.0.6" CACHE STRING "The LLVM version")
-set(LLVM_DIR "/usr/local/llvm/lib/cmake/llvm" CACHE STRING "Path to LLVM")
-set(MLIR_DIR "/usr/local/llvm/lib/cmake/mlir" CACHE STRING "Path to MLIR")
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DRESOLVE_FUNPTR_IMMEDIATELY")
-
-if (ENABLE_SPACE_OPT)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_NODE_ID_FOR_CONSTRAINTS -DNO_ADDR_OF_FOR_OFFSET")  # log level = debug
-endif()
 
 # Set spdlog logger flags. Use the overall minimum level as SPDLOG_ACTIVE_LEVEL
 # so that debug logs are written to file logs.
@@ -57,9 +51,10 @@ WARNING: The LLVM_DIR var was not set (required for an out-of-source build)!\n\
 Please set this to environment variable to point to the LLVM build directory\
 (e.g. on linux: export LLVM_DIR=/path/to/llvm/build/dir)")
     endif()
-    if (DEFINED MLIR_DIR)
-    find_package(MLIR REQUIRED CONFIG NO_DEFAULT_PATH)
-        message("FIND MLIR IN ${MLIR_CMAKE_DIR}")
+
+    if(DEFINED MLIR_DIR)
+        find_package(MLIR REQUIRED CONFIG NO_DEFAULT_PATH)
+         message("FOUND MLIR IN ${MLIR_CMAKE_DIR}")
 
         list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}")
         include(AddMLIR)
@@ -77,17 +72,12 @@ endif()
 
 # ANTLR 4.13.1
 set(ANTLR4CPP_LOCAL_DIR ${CMAKE_SOURCE_DIR}/external/antlr/antlr4cpp)
-    list(APPEND ANTLR4CPP_INCLUDE_DIRS ${ANTLR4CPP_LOCAL_DIR}/src)
-    foreach(src_path misc atn dfa internal tree support)
-        list(APPEND ANTLR4CPP_INCLUDE_DIRS ${ANTLR4CPP_LOCAL_DIR}/src/${src_path})
-    endforeach(src_path)
-    include_directories( ${ANTLR4CPP_INCLUDE_DIRS} )
-    message(STATUS "Found antlr4cpp includes: ${ANTLR4CPP_INCLUDE_DIRS} ")
-
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_BINARY_DIR}/include
-)
+list(APPEND ANTLR4CPP_INCLUDE_DIRS ${ANTLR4CPP_LOCAL_DIR}/src)
+foreach(src_path misc atn dfa internal tree support)
+    list(APPEND ANTLR4CPP_INCLUDE_DIRS ${ANTLR4CPP_LOCAL_DIR}/src/${src_path})
+endforeach(src_path)
+include_directories( ${ANTLR4CPP_INCLUDE_DIRS} )
+message(STATUS "Found antlr4cpp includes: ${ANTLR4CPP_INCLUDE_DIRS} ")
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/../common ${CMAKE_BINARY_DIR}/common-build)
 add_subdirectory(src)
