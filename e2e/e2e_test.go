@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	cp "github.com/otiai10/copy"
 )
 
@@ -192,13 +193,15 @@ func verifyResultJSON(t *testing.T, pathOnHost, pathInTest string) {
 }
 
 func compareJSONs(gotJSON, wantJSON []byte) (string, error) {
-	var got any
+	var got map[string]any
 	if err := json.Unmarshal(gotJSON, &got); err != nil {
 		return "", fmt.Errorf("failed to unmarshal got JSON: %v", err)
 	}
-	var want any
+	var want map[string]any
 	if err := json.Unmarshal(wantJSON, &want); err != nil {
 		return "", fmt.Errorf("failed to unmarshal want JSON: %v", err)
 	}
-	return cmp.Diff(want, got), nil
+	return cmp.Diff(want, got, cmpopts.IgnoreMapEntries(func(key string, value any) bool {
+		return key == "CoderrectVer"
+	})), nil
 }

@@ -15,6 +15,18 @@ LLVM_PREBUILT_PATH ?= $(realpath $(BUILD_DIR)/llvm)
 
 X_RAY_IMAGE ?= x-ray:latest
 
+# The version of X-Ray. The VERSION var is set on first invocation of make;
+# subsequent invocations (in particular from Dockerfile) will use the cached
+# value.
+ifndef VERSION
+  ifdef IS_RELEASE_BUILD
+    VERSION := $(shell cat VERSION)
+  else
+    COMMIT_ID := $(shell git rev-parse --short HEAD)
+    VERSION := $(shell cat VERSION)-dev-$(COMMIT_ID)
+  endif
+endif
+
 .PHONY: all build-x-ray build-cli install extract-llvm check-llvm \
   build-analyzer build-parser build-container-image \
   build-llvm-prebuilt-image push-llvm-prebuilt-image \
@@ -68,7 +80,9 @@ build-parser: check-llvm
 build-cli:
 	@echo "Building X-Ray CLI..."
 	@mkdir -p $(BUILD_DIR)/cli/bin
-	@go build -o $(BUILD_DIR)/cli/bin/xray cmd/cli/main.go
+	@go build -ldflags "-X main.version=$(VERSION)" \
+	  -o $(BUILD_DIR)/cli/bin/xray \
+	  cmd/cli/main.go
 	@echo
 
 install:
@@ -125,6 +139,7 @@ build-container-image:
 	@docker build -t $(X_RAY_IMAGE) \
 	  --build-arg LLVM_PREBUILT_IMAGE=$(LLVM_PREBUILT_IMAGE) \
 	  --build-arg LLVM_VERSION=$(LLVM_VERSION) \
+	  --build-arg VERSION=$(VERSION) \
 	  -f Dockerfile.x-ray .
 
 run-unit-tests:

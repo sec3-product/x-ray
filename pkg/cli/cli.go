@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -74,17 +73,6 @@ func addOrReplaceCommandline(jsonOptStr, key, value string) string {
 		return jsonOptStr
 	}
 	return string(b)
-}
-
-func getPackageVersion(home string) string {
-	path := path.Join(home, "VERSION")
-	buf, err := os.ReadFile(path)
-	if err != nil {
-		logger.Warnf("Unable to read the version file: %v", err)
-		return "Unknown"
-	}
-	versionStr := string(buf)
-	return versionStr[len("Package "):]
 }
 
 func findAllXargoTomlDirectory(rootPath string) []string {
@@ -227,8 +215,7 @@ func generateSolanaIR(args []string, homeDir, srcFile, tmpDir string) (string, e
 	return irFilePath, nil
 }
 
-func Start(coderrectHome string, args []string) error {
-	version := getPackageVersion(coderrectHome)
+func Start(coderrectHome, version string, args []string) error {
 	logger.Infof("Start a new session. version=%s, args=%v", version, args)
 	fmt.Printf("X-Ray %s\n", version)
 

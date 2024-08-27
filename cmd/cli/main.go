@@ -3,14 +3,14 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/sec3-product/x-ray/pkg/cli"
 	"github.com/sec3-product/x-ray/pkg/conflib"
 	"github.com/sec3-product/x-ray/pkg/logger"
 )
 
-var usage = `
+var (
+	usage = `
 usage: xray [option]... <your build command line>
 
 Options:
@@ -34,6 +34,10 @@ $ cd path/to/examples/helloworld && xray .
 2. Detect vulnerabilities in all solana-program-library projects
 $ xray path/to/solana-program-library
 `
+
+	// version is set via build flag.
+	version = "unknown"
+)
 
 func main() {
 	if len(os.Args) == 1 {
@@ -63,13 +67,8 @@ func main() {
 
 	// show versions of all components
 	if conflib.GetBool("version", false) || conflib.GetBool("-version", false) {
-		version, err := os.ReadFile(filepath.Join(coderrectHome, "VERSION"))
-		if err != nil {
-			logger.Fatalf("Unable to read %s/VERSION - %v\n", coderrectHome, err)
-		} else {
-			fmt.Printf("%s\n", version)
-			os.Exit(0)
-		}
+		fmt.Println(version)
+		return
 	}
 
 	// show usage info
@@ -84,7 +83,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if err := cli.Start(coderrectHome, remainingArgs); err != nil {
+	if err := cli.Start(coderrectHome, version, remainingArgs); err != nil {
 		logger.Fatalf("Failed to run xray: %v", err)
 	}
 }

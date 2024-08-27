@@ -1,16 +1,16 @@
 #include "conflib/conflib.h"
 
-#include <stdlib.h>
-
-#include <set>
 #include <unistd.h>
+
+#include <cstdlib>
+#include <map>
+#include <set>
+#include <string>
 #include <vector>
 
 #include <jsoncons_ext/jsonpath/json_query.hpp>
 
 namespace conflib {
-
-static const std::string VERSION_ = "0.0.1";
 
 #ifdef _WIN32
 static const std::string OS_PATHSEP_("\\");

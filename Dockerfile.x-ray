@@ -3,6 +3,7 @@
 # enabled in LLVM release build.
 ARG LLVM_PREBUILT_IMAGE=llvm-prebuilt
 ARG LLVM_VERSION=14.0.6
+ARG VERSION=unknown
 
 FROM ${LLVM_PREBUILT_IMAGE} AS llvm-prebuilt
 
@@ -43,6 +44,7 @@ RUN wget --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER
     && rm cmake-${CMAKE_VERSION}-linux-x86_64.sh
 
 WORKDIR /x-ray-toolchain
+ENV VERSION=${VERSION}
 COPY Makefile .
 COPY common common
 
