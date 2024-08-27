@@ -4009,16 +4009,6 @@ bool SolanaAnalysisPass::runOnModule(llvm::Module &module) {
 
   logger::endPhase();
 
-  if (CONFIG_SHOW_DETAIL && !PRINT_IMMEDIATELY) {
-    UntrustfulAccount::printAll();
-    UnsafeOperation::printAll();
-    CosplayAccounts::printAll();
-  }
-  if (CONFIG_SHOW_SUMMARY) {
-    UntrustfulAccount::printSummary();
-    UnsafeOperation::printSummary();
-    CosplayAccounts::printSummary();
-  }
   outputJSON(CONFIG_OUTPUT_PATH);
   return false;
 }

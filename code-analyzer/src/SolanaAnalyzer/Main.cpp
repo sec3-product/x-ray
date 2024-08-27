@@ -45,13 +45,6 @@ cl::opt<bool>
 cl::opt<bool> ConfigTerminateImmediately(
     "one-race", cl::desc("Print a race and terminate immediately"));
 
-cl::opt<bool> ConfigShowSummary("Xshow-race-summary",
-                                cl::desc("show race summary"));
-cl::opt<bool> ConfigShowDetail("Xshow-race-detail",
-                               cl::desc("show race details"));
-cl::opt<bool> ConfigShowAllTerminal(
-    "t", cl::desc("show race detail and summary on the terminal"));
-
 cl::opt<bool> ConfigDebugRustAPI("debug-sol",
                                  cl::desc("Turn on debug sol api"));
 
@@ -209,10 +202,6 @@ int main(int argc, char **argv) {
 
   auto enableImmediatePrint =
       conflib::Get<bool>("report.enableTerminal", false);
-  auto enableShowRaceSummary =
-      conflib::Get<bool>("enablePrintRaceSummary", false);
-  auto enableShowRaceDetail =
-      conflib::Get<bool>("enablePrintRaceDetail", false);
 
   FUNC_COUNT_BUDGET = conflib::Get<int>("functionCountBudget", 20000);
   CONFIG_CHECK_UncheckedAccount =
@@ -223,13 +212,8 @@ int main(int argc, char **argv) {
 
   DEBUG_RUST_API = ConfigDebugRustAPI;
 
-  PRINT_IMMEDIATELY =
-      ConfigPrintImmediately | enableImmediatePrint | ConfigShowAllTerminal;
+  PRINT_IMMEDIATELY = ConfigPrintImmediately | enableImmediatePrint;
   TERMINATE_IMMEDIATELY = ConfigTerminateImmediately;
-  CONFIG_SHOW_SUMMARY = ConfigShowSummary | enableShowRaceSummary |
-                        ConfigShowAllTerminal; // show race summary
-  CONFIG_SHOW_DETAIL = ConfigShowDetail | enableShowRaceDetail |
-                       ConfigShowAllTerminal; // show race details
 
   PTSTrait<PtsTy>::setPTSSizeLimit(9);
 

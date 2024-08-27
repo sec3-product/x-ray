@@ -20,12 +20,6 @@ extern bool TERMINATE_IMMEDIATELY;
 static bool nolimit = false;
 constexpr unsigned int DEFAULT_BUDGET = 25;
 
-/* --------------------------------
-
-           CosplayAccounts
-
------------------------------------ */
-
 // static fields
 uint xray::CosplayAccounts::budget = DEFAULT_BUDGET;
 std::vector<xray::CosplayAccounts> xray::CosplayAccounts::cosplayAccounts;
@@ -161,34 +155,15 @@ json xray::CosplayAccounts::to_json() {
 }
 
 void xray::CosplayAccounts::print() {
-  // llvm::errs() << "==============VULNERABLE: Possible Accounts Cosplay
-  // Attacks!============\n"; outs() << errorMsg; outs() << " Data Type1 defined
-  // at line " << apiInst1.getLine() << ", column " << apiInst1.getCol() << " in
-  // "
-  //        << apiInst1.getFilename() << "\n";
-  // outs() << apiInst1.getSnippet();
-  // outs() << ">>>Stack Trace:\n";
-  // printStackTrace(apiInst1.getStackTrace());
-  // outs() << " Data Type2 defined at line " << apiInst2.getLine() << ", column
-  // " << apiInst2.getCol() << " in "
-  //        << apiInst2.getFilename() << "\n";
-  // outs() << apiInst2.getSnippet();
-  // outs() << ">>>Stack Trace:\n";
-  // printStackTrace(apiInst2.getStackTrace());
-  // outs() << "\n";
-  outs() << "ignored: " << ignore << "\n";
   llvm::errs() << "==============VULNERABLE: " << name << "!============\n";
   outs() << description << ":\n";
-  auto desc_type = "Data type";
-  outs() << " " << desc_type << "1 defined at line " << apiInst1.getLine()
-         << ", column " << apiInst1.getCol() << " in " << apiInst1.getFilename()
-         << "\n";
+  outs() << " Data type 1 defined at line " << apiInst1.getLine() << ", column "
+         << apiInst1.getCol() << " in " << apiInst1.getFilename() << "\n";
   outs() << apiInst1.getSnippet();
   outs() << ">>>Stack Trace:\n";
   printStackTrace(apiInst1.getStackTrace());
-  outs() << " " << desc_type << "2 defined at line " << apiInst2.getLine()
-         << ", column " << apiInst2.getCol() << " in " << apiInst2.getFilename()
-         << "\n";
+  outs() << " Data type 2 defined at line " << apiInst2.getLine() << ", column "
+         << apiInst2.getCol() << " in " << apiInst2.getFilename() << "\n";
   outs() << apiInst2.getSnippet();
   outs() << ">>>Stack Trace:\n";
   printStackTrace(apiInst2.getStackTrace());

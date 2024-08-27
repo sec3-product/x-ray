@@ -26,14 +26,7 @@ extern bool TERMINATE_IMMEDIATELY;
 static bool nolimit = false;
 constexpr unsigned int DEFAULT_BUDGET = 25;
 
-/* --------------------------------
-
-           UntrustfulAccount
-
------------------------------------ */
-
-// static fields
-uint xray::UntrustfulAccount::budget = DEFAULT_BUDGET;
+unsigned int xray::UntrustfulAccount::budget = DEFAULT_BUDGET;
 std::vector<UntrustfulAccount> xray::UntrustfulAccount::untrustfulAccounts;
 std::set<const llvm::Value *> xray::UntrustfulAccount::apiSigs;
 std::set<std::string> xray::UntrustfulAccount::cpiSigs;
@@ -203,14 +196,12 @@ json xray::UntrustfulAccount::to_json() {
 }
 
 void xray::UntrustfulAccount::print() {
-  outs() << "ignored: " << ignore << "\n";
   // llvm::outs() << "=============This account may be
   // UNTRUSTFUL!================\n";
   llvm::errs() << "==============VULNERABLE: " << name << "!============\n";
   outs() << "Found a potential vulnerability at line " << apiInst.getLine()
          << ", column " << apiInst.getCol() << " in " << apiInst.getFilename()
          << "\n";
-  // outs() << errorMsg << "\n";
   outs() << description << ":\n";
   outs() << apiInst.getSnippet();
   outs() << ">>>Stack Trace:\n";

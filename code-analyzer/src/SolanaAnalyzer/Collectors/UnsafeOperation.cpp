@@ -21,12 +21,6 @@ static bool nolimit = false;
 
 constexpr unsigned int DEFAULT_BUDGET = 25;
 
-/* --------------------------------
-
-           UnsafeOperation
-
------------------------------------ */
-
 // static fields
 uint xray::UnsafeOperation::budget = DEFAULT_BUDGET;
 std::vector<xray::UnsafeOperation> xray::UnsafeOperation::unsafeOperations;
@@ -165,21 +159,10 @@ json xray::UnsafeOperation::to_json() {
 }
 
 void xray::UnsafeOperation::print() {
-  // llvm::outs() << "=============This arithmetic operation may be
-  // UNSAFE!================\n"; outs() << "Found a potential vulnerability at
-  // line " << apiInst.getLine() << ", column " << apiInst.getCol()
-  //        << " in " << apiInst.getFilename() << "\n";
-  // outs() << errorMsg << "\n";
-  // outs() << apiInst.getSnippet();
-  // outs() << ">>>Stack Trace:\n";
-  // printStackTrace(apiInst.getStackTrace());
-  // outs() << "\n";
-  outs() << "ignored: " << ignore << "\n";
   llvm::errs() << "==============VULNERABLE: " << name << "!============\n";
   outs() << "Found a potential vulnerability at line " << apiInst.getLine()
          << ", column " << apiInst.getCol() << " in " << apiInst.getFilename()
          << "\n";
-  // outs() << errorMsg << "\n";
   outs() << description << ":\n";
   outs() << apiInst.getSnippet();
   outs() << ">>>Stack Trace:\n";
