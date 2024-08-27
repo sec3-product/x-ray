@@ -87,7 +87,7 @@ install:
 	@echo
 
 clean:
-	@rm -rf build/analyzer build/parser build/cli build/dist
+	@rm -rf $(BUILD_DIR)/analyzer $(BUILD_DIR)/parser $(BUILD_DIR)/cli $(BUILD_DIR)/dist
 
 build-llvm-prebuilt-image:
 	@docker build -t $(LLVM_PREBUILT_IMAGE) \
@@ -128,8 +128,8 @@ build-container-image:
 	  -f Dockerfile.x-ray .
 
 run-unit-tests:
-	@ctest --test-dir build/analyzer/test
-	@ctest --test-dir build/parser/test
+	@ctest --test-dir $(BUILD_DIR)/analyzer/test
+	@ctest --test-dir $(BUILD_DIR)/parser/test
 
 prepare-e2e-test:
 	@if [ ! -d "workspace/dexterity" ]; then \
