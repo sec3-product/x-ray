@@ -1,11 +1,8 @@
-//
-// Created by peiming on 11/19/19.
-//
+#pragma once
 
-#ifndef ASER_PTA_KORIGIN_H
-#define ASER_PTA_KORIGIN_H
+#include <functional>
 
-#include <Util/Log.h>
+#include <Logger/Logger.h>
 #include <llvm/ADT/StringSet.h>
 
 #include "CtxTrait.h"
@@ -114,5 +111,3 @@ template <uint32_t K, uint32_t L> struct hash<xray::KOrigin<K, L>> {
 };
 
 } // namespace std
-
-#endif // ASER_PTA_KORIGIN_H

@@ -1,20 +1,19 @@
-// the basic framework for andersen-based algorithm, including common routines
-// override neccessary ones, and the call will be STATICALLY redirected to it
-#ifndef ASER_PTA_SOLVERBASE_H
-#define ASER_PTA_SOLVERBASE_H
+#pragma once
 
-#define DEBUG_TYPE "pta"
-
+#include <Logger/Logger.h>
 #include <llvm/IR/Module.h>
 #include <llvm/Pass.h>
 
-//#include "RDUtil.h"
 #include "PointerAnalysis/Graph/CallGraph.h"
 #include "PointerAnalysis/Graph/ConstraintGraph/ConstraintGraph.h"
 #include "PointerAnalysis/Models/MemoryModel/MemModelTrait.h"
 #include "PointerAnalysis/Solver/PointsTo/BitVectorPTS.h"
-#include "Util/Log.h"
 #include "Util/Statistics.h"
+
+// the basic framework for andersen-based algorithm, including common routines
+// override neccessary ones, and the call will be STATICALLY redirected to it
+
+#define DEBUG_TYPE "pta"
 
 extern llvm::cl::opt<bool> ConfigPrintConstraintGraph;
 extern llvm::cl::opt<bool> ConfigPrintCallGraph;
@@ -683,5 +682,3 @@ bool SolverBase<LangModel, SubClass>::processCopy(CGNodeTy *src,
 } // namespace xray
 
 #undef DEBUG_TYPE
-
-#endif

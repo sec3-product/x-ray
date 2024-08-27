@@ -1,13 +1,8 @@
-//
-// Created by peiming on 1/9/20.
-//
-#ifndef ASER_PTA_CONSTEXPRVISITOR_H
-#define ASER_PTA_CONSTEXPRVISITOR_H
+#pragma once
 
+#include <Logger/Logger.h>
 #include <llvm/IR/Constant.h>
 #include <llvm/IR/Instructions.h>
-
-#include "Util/Log.h"
 
 namespace xray {
 
@@ -34,5 +29,3 @@ template <typename SC, typename RetVal = void> struct ConstExprVisitor {
 };
 
 } // namespace xray
-
-#endif // ASER_PTA_CONSTEXPRVISITOR_H

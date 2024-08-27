@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
+#include <Logger/Logger.h>
 #include <PointerAnalysis/PointerAnalysisPass.h>
-#include <Util/Log.h>
 #include <conflib/conflib.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/IRPrintingPasses.h>

@@ -1,16 +1,11 @@
-//
-// Created by peiming on 1/17/20.
-//
+#pragma once
 
-#ifndef ASER_PTA_GRAPHBLASHEAPMODEL_H
-#define ASER_PTA_GRAPHBLASHEAPMODEL_H
-
+#include <Logger/Logger.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/IR/PatternMatch.h>
 
 #include "PointerAnalysis/Models/DefaultHeapModel.h"
 #include "PointerAnalysis/Program/CallSite.h"
-#include "Util/Log.h"
 #include "Util/Util.h"
 
 namespace xray {
@@ -69,5 +64,3 @@ public:
 }; // namespace xray
 
 } // namespace xray
-
-#endif // ASER_PTA_GRAPHBLASHEAPMODEL_H

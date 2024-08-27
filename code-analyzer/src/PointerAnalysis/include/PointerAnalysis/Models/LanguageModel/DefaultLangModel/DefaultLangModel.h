@@ -1,8 +1,6 @@
-//
-// Created by peiming on 10/22/19.
-//
-#ifndef ASER_PTA_DEFAULTLANGMODEL_H
-#define ASER_PTA_DEFAULTLANGMODEL_H
+#pragma once
+
+#include <Logger/Log.h>
 
 #include "DefaultExtFunctions.h"
 #include "PointerAnalysis/Models/DefaultHeapModel.h"
@@ -10,7 +8,6 @@
 #include "PointerAnalysis/Models/MemoryModel/FieldInsensitive/FIMemModel.h"
 #include "PointerAnalysis/Program/CtxModule.h"
 #include "PointerAnalysis/Solver/PointsTo/BitVectorPTS.h"
-#include "Util/Log.h"
 
 namespace xray {
 
@@ -168,5 +165,3 @@ class LangModelTrait<DefaultLangModel<ctx, MemModel, PtsTy>>
           ctx, MemModel, PtsTy, DefaultLangModel<ctx, MemModel, PtsTy>>> {};
 
 } // namespace xray
-
-#endif

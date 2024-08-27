@@ -1,7 +1,8 @@
 #include <set>
 
+#include <Logger/Logger.h>
+
 #include "PointerAnalysis/Program/CallSite.h"
-#include "Util/Log.h"
 
 using namespace xray;
 using namespace llvm;

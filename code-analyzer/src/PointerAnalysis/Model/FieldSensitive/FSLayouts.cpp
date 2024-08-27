@@ -1,18 +1,15 @@
-//
-// Created by peiming on 1/3/20.
-//
-#include "PointerAnalysis/Models/MemoryModel/FieldSensitive/Layout/ArrayLayout.h"
-#include "PointerAnalysis/Models/MemoryModel/FieldSensitive/Layout/MemLayout.h"
-#include "PointerAnalysis/Models/MemoryModel/FieldSensitive/MemBlock.h"
-#include "Util/Log.h"
-#include "Util/TypeMetaData.h"
-
+#include <Logger/Logger.h>
 #include <llvm/BinaryFormat/Dwarf.h>
 #include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Metadata.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Type.h>
+
+#include "PointerAnalysis/Models/MemoryModel/FieldSensitive/Layout/ArrayLayout.h"
+#include "PointerAnalysis/Models/MemoryModel/FieldSensitive/Layout/MemLayout.h"
+#include "PointerAnalysis/Models/MemoryModel/FieldSensitive/MemBlock.h"
+#include "Util/TypeMetaData.h"
 
 using namespace llvm;
 using namespace std;

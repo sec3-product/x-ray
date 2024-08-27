@@ -1,3 +1,6 @@
+#pragma once
+
+#include <Logger/Logger.h>
 #include <llvm/Support/Allocator.h>
 
 #include "PointerAnalysis/Models/LanguageModel/PtrNodeManager.h"
@@ -11,7 +14,6 @@
 #include "PreProcessing/Passes/CanonicalizeGEPPass.h"
 #include "PreProcessing/Passes/LoweringMemCpyPass.h"
 #include "Util/ConstExprVisitor.h"
-#include "Util/Log.h"
 #include "Util/Util.h"
 
 extern bool DEBUG_PTA;

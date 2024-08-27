@@ -62,6 +62,7 @@ llvm_map_components_to_libnames(LLVM_LIBS
 
 target_link_libraries(SolanaAnalyzer
     PointerAnalysis
+    Logger
     Util
     jsoncons
     nlohmann_json

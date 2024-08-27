@@ -1,6 +1,4 @@
-//
-// Created by peiming on 8/26/20.
-//
+#include <Logger/Logger.h>
 #include <llvm/ADT/DenseMap.h>
 #include <llvm/BinaryFormat/Dwarf.h>
 #include <llvm/IR/DebugInfo.h>
@@ -14,7 +12,6 @@
 #include <llvm/Transforms/Utils/Local.h>
 
 #include "Util/Demangler.h"
-#include "Util/Log.h"
 #include "Util/TypeMetaData.h"
 #include "Util/Util.h"
 

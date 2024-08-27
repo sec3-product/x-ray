@@ -1,19 +1,14 @@
-//
-// Created by peiming on 12/18/19.
-//
+#pragma once
 
-#ifndef ASER_PTA_MEMLAYOUTMANAGER_H
-#define ASER_PTA_MEMLAYOUTMANAGER_H
+#include <unordered_map>
 
+#include <Logger/Logger.h>
 #include <llvm/ADT/BitVector.h>
 #include <llvm/IR/Type.h>
 #include <llvm/Support/Allocator.h>
 
-#include <unordered_map>
-
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/Layout/ArrayLayout.h"
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/Layout/MemLayout.h"
-#include "Util/Log.h"
 
 namespace xray {
 
@@ -275,5 +270,3 @@ public:
 };
 
 } // namespace xray
-
-#endif // ASER_PTA_MEMLAYOUTMANAGER_H

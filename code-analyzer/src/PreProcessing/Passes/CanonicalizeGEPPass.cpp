@@ -1,17 +1,12 @@
-//
-// Created by peiming on 1/6/20.
-//
 #include "PreProcessing/Passes/CanonicalizeGEPPass.h"
 
-//#include <llvm/IR/CallSite.h>
+#include <Logger/Logger.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/GetElementPtrTypeIterator.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/NoFolder.h>
 #include <llvm/IR/Operator.h>
-
-#include "Util/Log.h"
 
 using namespace llvm;
 using namespace xray;

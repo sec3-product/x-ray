@@ -3,6 +3,7 @@
 #include <chrono>
 #include <queue>
 
+#include <Logger/Logger.h>
 #include <PointerAnalysis/Program/CallSite.h>
 #include <llvm/ADT/IndexedMap.h>
 #include <llvm/ADT/SCCIterator.h>
@@ -22,7 +23,6 @@
 #include "Rules/Ruleset.h"
 #include "SVE.h"
 #include "StaticThread.h"
-#include "Util/Log.h"
 
 using namespace llvm;
 using namespace xray;

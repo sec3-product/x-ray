@@ -1,17 +1,13 @@
-//
-// Created by peiming on 8/26/20.
-//
+#pragma once
 
-// The class represent the vtable pointer stored at the first byte of the object
-// it can only points to one specific vtable pointer.
-#include <Util/Log.h>
+#include <Logger/Logger.h>
 
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/FSObject.h"
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/MemBlock.h"
 #include "Util/TypeMetaData.h"
 
-#ifndef ASER_PTA_VTABLEPTR_H
-#define ASER_PTA_VTABLEPTR_H
+// The class represent the vtable pointer stored at the first byte of the object
+// it can only points to one specific vtable pointer.
 
 namespace xray {
 
@@ -134,4 +130,3 @@ public:
 };
 
 } // namespace xray
-#endif // ASER_PTA_VTABLEPTR_H

@@ -1,3 +1,4 @@
+#include <Logger/Logger.h>
 #include <llvm/IR/DataLayout.h>
 #include <llvm/IR/GetElementPtrTypeIterator.h>
 #include <llvm/IR/GlobalAlias.h>
@@ -8,7 +9,6 @@
 #include "PointerAnalysis/Models/MemoryModel/FieldInsensitive/FICanonicalizer.h"
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/FSCanonicalizer.h"
 #include "PointerAnalysis/Models/MemoryModel/FieldSensitive/Layout/ArrayLayout.h"
-#include "Util/Log.h"
 #include "Util/Util.h"
 
 using namespace xray;

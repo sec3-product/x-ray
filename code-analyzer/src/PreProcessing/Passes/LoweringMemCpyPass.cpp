@@ -1,17 +1,13 @@
-//
-// Created by peiming on 1/22/20.
-//
+#include "PreProcessing/Passes/LoweringMemCpyPass.h"
 
+#include <array>
+
+#include <Logger/Logger.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/NoFolder.h>
 #include <llvm/Support/CommandLine.h>
-
-#include <array>
-
-#include "PreProcessing/Passes/LoweringMemCpyPass.h"
-#include "Util/Log.h"
 
 using namespace std;
 using namespace xray;

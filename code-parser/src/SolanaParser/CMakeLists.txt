@@ -81,7 +81,7 @@ get_property(CONVERSION_LIBS GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
 target_link_libraries(SolCodeParser
     AntlrRust
     conflib
-    o2
+    Logger
     ${LLVM_LIBS}
     ${DIALECT_LIBS}
     ${CONVERSION_LIBS}

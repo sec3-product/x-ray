@@ -1,15 +1,12 @@
-//
-// Created by peiming on 10/22/19.
-//
-#ifndef ASER_PTA_CONSGRAPHBUILDER_H
-#define ASER_PTA_CONSGRAPHBUILDER_H
+#pragma once
 
+#include <unordered_map>
+
+#include <Logger/Logger.h>
 #include <llvm/ADT/SparseBitVector.h>
 #include <llvm/Demangle/Demangle.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Module.h>
-
-#include <unordered_map>
 
 #include "PointerAnalysis/Graph/ConstraintGraph/ConstraintGraph.h"
 #include "PointerAnalysis/Models/LanguageModel/PtrNodeManager.h"
@@ -21,7 +18,6 @@
 #include "PointerAnalysis/Program/Pointer.h"
 #include "Util/CtxInstVisitor.h"
 #include "Util/GraphWriter.h"
-#include "Util/Log.h"
 #include "Util/SingleInstanceOwner.h"
 
 extern bool DEBUG_PTA;
@@ -787,5 +783,3 @@ template <typename T1, typename T2> struct hash<pair<T1 *, T2 *>> {
 
 #undef MODEL
 #undef ALLOCATE
-
-#endif

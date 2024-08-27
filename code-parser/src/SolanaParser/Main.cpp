@@ -1,12 +1,12 @@
 #include <string>
 
+#include <Logger/Logger.h>
 #include <conflib/conflib.h>
-#include <o2/Util/Log.h>
 #include <spdlog/spdlog.h>
 
 #include "sol/SolLLVMIRGenerator.h"
 
-using namespace o2;
+using namespace xray;
 
 static logger::LoggingConfig initLoggingConf() {
   logger::LoggingConfig config;
