@@ -138,7 +138,6 @@ build-container-image:
 	fi
 	@docker build -t $(X_RAY_IMAGE) \
 	  --build-arg LLVM_PREBUILT_IMAGE=$(LLVM_PREBUILT_IMAGE) \
-	  --build-arg LLVM_VERSION=$(LLVM_VERSION) \
 	  --build-arg VERSION=$(VERSION) \
 	  -f Dockerfile.x-ray .
 

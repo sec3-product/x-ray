@@ -2,16 +2,13 @@
 # as x-ray (in particular `code-parser`) requires RTTI support which is not
 # enabled in LLVM release build.
 ARG LLVM_PREBUILT_IMAGE=llvm-prebuilt
-ARG LLVM_VERSION=14.0.6
-ARG VERSION=unknown
-
 FROM ${LLVM_PREBUILT_IMAGE} AS llvm-prebuilt
 
 # Builder.
 FROM ubuntu:22.04 AS builder
 COPY --from=llvm-prebuilt /usr/local/llvm /usr/local/llvm
+ARG LLVM_PREBUILT_PATH=/usr/local/llvm
 ENV PATH=/usr/local/llvm/bin:${PATH}
-ENV LLVM_PREBUILT_PATH=/usr/local/llvm
 
 # Assert that LLVM binaries are available.
 RUN clang --version
@@ -44,7 +41,7 @@ RUN wget --quiet https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER
     && rm cmake-${CMAKE_VERSION}-linux-x86_64.sh
 
 WORKDIR /x-ray-toolchain
-ENV VERSION=${VERSION}
+ARG VERSION=unknown
 COPY Makefile .
 COPY common common
 
