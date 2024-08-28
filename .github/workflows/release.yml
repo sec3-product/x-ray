@@ -14,6 +14,7 @@ jobs:
       LLVM_PREBUILT_PATH: ${{ github.workspace }}/build/llvm
       VERSION: ${{ github.ref_name }}
       X_RAY_IMAGE: ghcr.io/sec3-product/x-ray:${{ github.ref_name }}
+      DIST_TARBALL: ${{ github.workspace }}/build/x-ray-${{ github.ref_name }}-linux-amd64.tar.gz
 
     steps:
       - name: Checkout repository
@@ -28,7 +29,7 @@ jobs:
         run: |
           make extract-llvm
 
-      - name: Build
+      - name: Build and package
         run: |
           make -j build-container-image build-x-ray dist
 
@@ -44,7 +45,7 @@ jobs:
           body: |
             Release notes for version ${{ github.ref_name }}
           files: |
-            build/dist/x-ray-${{ github.ref_name }}-linux-amd64.tar.gz
+            build/x-ray-${{ github.ref_name }}-linux-amd64.tar.gz
 
       - name: Push container image to registry
         run: |

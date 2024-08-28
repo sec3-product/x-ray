@@ -1,5 +1,6 @@
 BUILD_DIR ?= build
 INSTALL_DIR ?= $(BUILD_DIR)/dist
+DIST_TARBALL ?= $(BUILD_DIR)/x-ray-$(VERSION).tar.gz
 
 # The LLVM version to use.
 LLVM_VERSION ?= 14.0.6
@@ -82,7 +83,7 @@ build-cli:
 	  cmd/cli/main.go
 	@echo
 
-install:
+install: build-x-ray
 	@echo "Installing X-Ray to $(INSTALL_DIR)..."
 	@rm -rf $(INSTALL_DIR)
 	@for dir in bin conf; do \
@@ -97,12 +98,13 @@ install:
 	@echo "Done. X-Ray has been installed to $(INSTALL_DIR)."
 	@echo
 
-dist: DIST_TARBALL = $(BUILD_DIR)/x-ray-$(VERSION)-linux-amd64.tar.gz
-dist: build-x-ray install
+$(DIST_TARBALL): build-x-ray install
 	@echo "Creating X-Ray distribution package..."
-	@tar -zcvf $(DIST_TARBALL) -C $(INSTALL_DIR) .
-	@echo "Done. Package created: $(DIST_TARBALL)"
+	@tar -zcvf $@ -C $(INSTALL_DIR) .
+	@echo "Done. Package created: $@"
 	@echo
+
+dist: $(DIST_TARBALL)
 
 clean:
 	@rm -rf $(BUILD_DIR)/analyzer $(BUILD_DIR)/parser $(BUILD_DIR)/cli $(BUILD_DIR)/dist
