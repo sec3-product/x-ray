@@ -132,15 +132,16 @@ make build-container-image
 ```
 
 Once having the built `x-ray` image, you can run it with the following commands
-to scan a given target repo (e.g. `./demo`). For complete usage, please refer
-to the [Usage](../README.md#usage) section in the main README file.
+to scan a given target repo (e.g. `./workspace/example-helloworld`). For
+complete usage, please refer to the [Usage](../README.md#usage) section in the
+main README file.
 
 ```sh
 mkdir -p workspace
-docker run --rm -v $(pwd)/demo:/workspace/demo [IMAGE_NAME] /workspace/demo/jet-v1
+docker run --rm -v $(pwd)/workspace:/workspace \
+  ghcr.io/sec3-product/x-ray:latest \
+  /workspace/example-helloworld
 ```
-
-*TODO*: Replace `[IMAGE_NAME]` with the public image name.
 
 ### Option 2: Build Native Binaries
 

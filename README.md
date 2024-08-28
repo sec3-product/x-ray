@@ -50,11 +50,14 @@ A full list of the supported bug patterns for Solana contracts is saved in
 
 ### Using Prebuilt Binaries
 
-*TODO*: Add link.
+Download binaries from the
+[releases page](https://github.com/sec3-product/x-ray/releases). Unzip the
+tarball and add `/path/to/extracted/bin` to your `PATH`.
 
 ### Using Prebuilt Container Images
 
-*TODO*: Add link.
+Find the available container images on [GitHub packages
+page](https://github.com/sec3-product/x-ray/pkgs/container/x-ray).
 
 ### Building From Source
 
@@ -82,15 +85,15 @@ git clone https://github.com/solana-labs/example-helloworld.git workspace/exampl
 ### Start a scan
 
 ```sh
-docker run --rm -v $(pwd)/workspace:/workspace [IMAGE_NAME] /workspace/example-helloworld
+docker run --rm -v $(pwd)/workspace:/workspace \
+  ghcr.io/sec3-product/x-ray:latest \
+  /workspace/example-helloworld
 ```
-
-*TODO*: Replace the image URL with the public image name.
 
 Alternatively you can use the installed native binary:
 
 ```sh
-/path/to/extracted/xray workspace/example-helloworld
+/path/to/extracted/bin/xray workspace/example-helloworld
 ```
 
 ### Example Output
