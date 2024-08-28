@@ -47,6 +47,10 @@ jobs:
           files: |
             build/x-ray-${{ github.ref_name }}-linux-amd64.tar.gz
 
+      - name: Login to registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
       - name: Push container image to registry
         run: |
           make push-container-image
