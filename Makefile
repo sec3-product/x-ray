@@ -20,8 +20,7 @@ X_RAY_IMAGE ?= x-ray:latest
 # Otherwise it's set on the first invocation of make; subsequent invocations
 # (in particular from Dockerfile) will use the cached value.
 ifndef VERSION
-  COMMIT_ID := $(shell git rev-parse --short HEAD)
-  VERSION := $(shell cat VERSION)-dev-$(COMMIT_ID)
+  VERSION := $(shell git describe --tags --always)
 endif
 
 .PHONY: all build-x-ray build-cli install extract-llvm check-llvm \
@@ -84,7 +83,7 @@ build-cli:
 	@echo
 
 install: build-x-ray
-	@echo "Installing X-Ray to $(INSTALL_DIR)..."
+	@echo "Installing X-Ray $(VERSION) to $(INSTALL_DIR)..."
 	@rm -rf $(INSTALL_DIR)
 	@for dir in bin conf; do \
 	  echo "Creating directory $(INSTALL_DIR)/$${dir}..."; \
