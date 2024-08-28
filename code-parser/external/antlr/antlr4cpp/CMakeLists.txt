@@ -8,28 +8,28 @@ if (NOT ANTLR_BUILD_SHARED AND NOT ANTLR_BUILD_STATIC)
 endif()
 
 include_directories(
-  ${PROJECT_SOURCE_DIR}/src
-  ${PROJECT_SOURCE_DIR}/src/atn
-  ${PROJECT_SOURCE_DIR}/src/dfa
-  ${PROJECT_SOURCE_DIR}/src/internal
-  ${PROJECT_SOURCE_DIR}/src/misc
-  ${PROJECT_SOURCE_DIR}/src/support
-  ${PROJECT_SOURCE_DIR}/src/tree
-  ${PROJECT_SOURCE_DIR}/src/tree/pattern
-  ${PROJECT_SOURCE_DIR}/src/tree/xpath
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/atn
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/dfa
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/internal
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/misc
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/support
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/tree
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/tree/pattern
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/tree/xpath
 )
 
 
 file(GLOB libantlrcpp_SRC
-  "${PROJECT_SOURCE_DIR}/src/*.cpp"
-  "${PROJECT_SOURCE_DIR}/src/atn/*.cpp"
-  "${PROJECT_SOURCE_DIR}/src/dfa/*.cpp"
-  "${PROJECT_SOURCE_DIR}/src/internal/*.cpp"
-  "${PROJECT_SOURCE_DIR}/src/misc/*.cpp"
-  "${PROJECT_SOURCE_DIR}/src/support/*.cpp"
-  "${PROJECT_SOURCE_DIR}/src/tree/*.cpp"
-  "${PROJECT_SOURCE_DIR}/src/tree/pattern/*.cpp"
-  "${PROJECT_SOURCE_DIR}/src/tree/xpath/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/atn/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/dfa/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/internal/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/misc/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/support/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/tree/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/tree/pattern/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/tree/xpath/*.cpp"
 )
 
 if (ANTLR_BUILD_SHARED)
@@ -72,7 +72,7 @@ if (ANTLR_BUILD_CPP_TESTS)
   FetchContent_MakeAvailable(googletest)
 
   file(GLOB libantlrcpp_TESTS
-    "${PROJECT_SOURCE_DIR}/tests/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp"
   )
 
   add_executable(
@@ -158,7 +158,7 @@ if (ANTLR_BUILD_CPP_TESTS)
       COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:antlr4_shared> ${CMAKE_HOME_DIRECTORY}/dist
       COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_LINKER_FILE:antlr4_shared> ${CMAKE_HOME_DIRECTORY}/dist)
   endif()
-  
+
   if (TARGET antlr4_static)
     add_custom_command(
       TARGET antlr4_static
@@ -184,7 +184,7 @@ if (TARGET antlr4_static)
           RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 
-install(DIRECTORY "${PROJECT_SOURCE_DIR}/src/"
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/src/"
         DESTINATION "include/antlr4-runtime"
         COMPONENT dev
         FILES_MATCHING PATTERN "*.h"

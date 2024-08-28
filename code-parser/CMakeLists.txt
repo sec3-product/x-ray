@@ -70,14 +70,12 @@ else()
     set(IN_SOURCE_BUILD 1)
 endif()
 
-# ANTLR 4.13.1
+# Set up antlr4cpp.
 set(ANTLR4CPP_LOCAL_DIR ${CMAKE_SOURCE_DIR}/external/antlr/antlr4cpp)
-list(APPEND ANTLR4CPP_INCLUDE_DIRS ${ANTLR4CPP_LOCAL_DIR}/src)
-foreach(src_path misc atn dfa internal tree support)
-    list(APPEND ANTLR4CPP_INCLUDE_DIRS ${ANTLR4CPP_LOCAL_DIR}/src/${src_path})
-endforeach(src_path)
-include_directories( ${ANTLR4CPP_INCLUDE_DIRS} )
-message(STATUS "Found antlr4cpp includes: ${ANTLR4CPP_INCLUDE_DIRS} ")
+set(ANTLR_BUILD_CPP_TESTS OFF)
+set(ANTLR_BUILD_STATIC ON)
+set(ANTLR_BUILD_SHARED OFF)
+add_subdirectory(external/antlr/antlr4cpp)
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/../common ${CMAKE_BINARY_DIR}/common-build)
 add_subdirectory(src)
