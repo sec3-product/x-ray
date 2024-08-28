@@ -15,20 +15,17 @@ LLVM_PREBUILT_PATH ?= $(realpath $(BUILD_DIR)/llvm)
 
 X_RAY_IMAGE ?= x-ray:latest
 
-# The version of X-Ray. The VERSION var is set on first invocation of make;
-# subsequent invocations (in particular from Dockerfile) will use the cached
-# value.
+# The version of X-Ray. The value is set by workflow for release builds.
+# Otherwise it's set on the first invocation of make; subsequent invocations
+# (in particular from Dockerfile) will use the cached value.
 ifndef VERSION
-  ifdef IS_RELEASE_BUILD
-    VERSION := $(shell cat VERSION)
-  else
-    COMMIT_ID := $(shell git rev-parse --short HEAD)
-    VERSION := $(shell cat VERSION)-dev-$(COMMIT_ID)
-  endif
+  COMMIT_ID := $(shell git rev-parse --short HEAD)
+  VERSION := $(shell cat VERSION)-dev-$(COMMIT_ID)
 endif
 
 .PHONY: all build-x-ray build-cli install extract-llvm check-llvm \
-  build-analyzer build-parser build-container-image \
+  build-analyzer build-parser \
+  build-container-image push-container-image \
   build-llvm-prebuilt-image push-llvm-prebuilt-image \
   run-unit-tests \
   prepare-e2e-test run-container-e2e run-native-e2e \
@@ -100,6 +97,13 @@ install:
 	@echo "Done. X-Ray has been installed to $(INSTALL_DIR)."
 	@echo
 
+dist: DIST_TARBALL = $(BUILD_DIR)/x-ray-$(VERSION)-linux-amd64.tar.gz
+dist: build-x-ray install
+	@echo "Creating X-Ray distribution package..."
+	@tar -zcvf $(DIST_TARBALL) -C $(INSTALL_DIR) .
+	@echo "Done. Package created: $(DIST_TARBALL)"
+	@echo
+
 clean:
 	@rm -rf $(BUILD_DIR)/analyzer $(BUILD_DIR)/parser $(BUILD_DIR)/cli $(BUILD_DIR)/dist
 
@@ -141,6 +145,9 @@ build-container-image:
 	  --build-arg VERSION=$(VERSION) \
 	  -f Dockerfile.x-ray .
 
+push-container-image: build-container-image
+	@docker push $(X_RAY_IMAGE)
+
 run-unit-tests:
 	@ctest --test-dir $(BUILD_DIR)/analyzer/test
 	@ctest --test-dir $(BUILD_DIR)/parser/test
@@ -161,4 +168,3 @@ run-container-e2e: prepare-e2e-test
 	  X_RAY_IMAGE=$(X_RAY_IMAGE) \
 	  E2E_TEST_APP=$$(realpath workspace/dexterity/programs) \
 	  go test -v -run=TestContainerE2E -count=1 ./e2e/...
-

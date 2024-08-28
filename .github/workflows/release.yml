@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  release:
+    runs-on: self-hosted
+
+    env:
+      BUILD_DIR: ${{ github.workspace }}/build
+      LLVM_PREBUILT_PATH: ${{ github.workspace }}/build/llvm
+      VERSION: ${{ github.ref_name }}
+      X_RAY_IMAGE: ghcr.io/sec3-product/x-ray:${{ github.ref_name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.22
+
+      - name: Extract LLVM prebuilt binaries
+        run: |
+          make extract-llvm
+
+      - name: Build
+        run: |
+          make -j build-container-image build-x-ray dist
+
+      - name: Run E2E tests
+        run: |
+          make -j run-container-e2e run-native-e2e
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: sec3-product/x-ray
+          token: ${{ secrets.GITHUB_TOKEN }}
+          body: |
+            Release notes for version ${{ github.ref_name }}
+          files: |
+            build/dist/x-ray-${{ github.ref_name }}-linux-amd64.tar.gz
+
+      - name: Push container image to registry
+        run: |
+          make push-container-image
