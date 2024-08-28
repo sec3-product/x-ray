@@ -1,26 +1,3 @@
-if(ENABLE_BUILD_ANTLR)
-    set(ANTLR4CPP_JAR_LOCATION ${CMAKE_SOURCE_DIR}/external/antlr/antlr-4.13.1-complete.jar)
-    LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-    # add external build for antlrcpp
-    include(ExternalAntlr4Cpp)
-    # Include the runtime to compile against
-    include_directories(${ANTLR4CPP_INCLUDE_DIRS})
-    link_directories(${ANTLR4CPP_LIBS})
-    message(STATUS "Found antlr4cpp libs: ${ANTLR4CPP_LIBS} and includes: ${ANTLR4CPP_INCLUDE_DIRS} ")
-
-    # Call macro to add lexer and grammar to your build dependencies.
-    # NOTE: Here, we define "antlrcpp" as our project's namespace
-    antlr4cpp_process_grammar(demo antlrcpp
-        ${CMAKE_SOURCE_DIR}/src/antlr-rust/RustLexer.g4
-        ${CMAKE_SOURCE_DIR}/src/antlr-rust/RustParser.g4)
-    # include generated files in project environment
-    include_directories(${antlr4cpp_include_dirs_antlrcpp})
-else()
-    message(STATUS "antlr4cpp built already")
-    set(ANTLR4CPP_PARSER_DIR ${CMAKE_SOURCE_DIR}/src/antlr-rust)
-    include_directories(${ANTLR4CPP_PARSER_DIR})
-endif()
-
 include(FetchContent)
 
 FetchContent_Declare(
@@ -61,12 +38,10 @@ set(SOURCE_FILES
 
 add_library(SolCodeParser STATIC ${SOURCE_FILES})
 
-# Enable exceptions for SolCodeParser target, introduced via
-# external/antlr/antlr4cpp.
 target_compile_options(SolCodeParser
     PRIVATE
-        -fexceptions
-        -Wno-covered-switch-default  # Silence warnings from jsoncons.hpp
+        -fexceptions                 # Required by external/antlr/antlr4cpp
+        -Wno-covered-switch-default  # Silence the warnings from jsoncons.hpp
 )
 
 target_include_directories(SolCodeParser
@@ -91,7 +66,6 @@ target_link_libraries(SolCodeParser
 # Executable.
 add_executable(SolCodeParserExe
     Main.cpp
-    ${antlr4cpp_src_files_antlrcpp}
 )
 
 target_compile_options(SolCodeParserExe
