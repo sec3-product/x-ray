@@ -20,6 +20,10 @@ jobs:
         with:
           go-version: 1.22
 
+      - name: Remove existing GitHub registry login
+        run: |
+          docker logout ghcr.io
+
       - name: Build container image
         run: |
           make build-container-image
@@ -41,6 +45,10 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: 1.22
+
+      - name: Remove existing GitHub registry login
+        run: |
+          docker logout ghcr.io
 
       - name: Extract LLVM prebuilt binaries
         run: |
