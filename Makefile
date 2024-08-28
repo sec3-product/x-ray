@@ -26,7 +26,7 @@ endif
 
 .PHONY: all build-x-ray build-cli install extract-llvm check-llvm \
   build-analyzer build-parser \
-  build-container-image push-container-image \
+  build-container-image \
   build-llvm-prebuilt-image push-llvm-prebuilt-image \
   run-unit-tests \
   prepare-e2e-test run-container-e2e run-native-e2e \
@@ -146,9 +146,6 @@ build-container-image:
 	  --build-arg LLVM_PREBUILT_IMAGE=$(LLVM_PREBUILT_IMAGE) \
 	  --build-arg VERSION=$(VERSION) \
 	  -f Dockerfile.x-ray .
-
-push-container-image: build-container-image
-	@docker push $(X_RAY_IMAGE)
 
 run-unit-tests:
 	@ctest --test-dir $(BUILD_DIR)/analyzer/test

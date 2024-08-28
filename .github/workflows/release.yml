@@ -14,6 +14,7 @@ jobs:
       LLVM_PREBUILT_PATH: ${{ github.workspace }}/build/llvm
       VERSION: ${{ github.ref_name }}
       X_RAY_IMAGE: ghcr.io/sec3-product/x-ray:${{ github.ref_name }}
+      X_RAY_IMAGE_LATEST: ghcr.io/sec3-product/x-ray:latest
       DIST_TARBALL: ${{ github.workspace }}/build/x-ray-${{ github.ref_name }}-linux-amd64.tar.gz
 
     steps:
@@ -53,4 +54,6 @@ jobs:
 
       - name: Push container image to registry
         run: |
-          make push-container-image
+          docker push ${{ env.X_RAY_IMAGE }}
+          docker tag ${{ env.X_RAY_IMAGE }} ${{ env.X_RAY_IMAGE_LATEST }}
+          docker push ${{ env.X_RAY_IMAGE_LATEST }}
