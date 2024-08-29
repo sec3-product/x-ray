@@ -6,24 +6,18 @@
 #include <string>
 #include <vector>
 
+#include <llvm/Support/ErrorHandling.h>
 #include <nlohmann/json.hpp>
 
+#include "DebugFlags.h"
 #include "LogColor.h"
+#include "SolanaAnalysisPass.h"
 
-using json = nlohmann::json;
-
-extern bool PRINT_IMMEDIATELY;
-extern bool TERMINATE_IMMEDIATELY;
-
-// Not to limit the number of bugs we collected
-// by default we only collect at most 25 cases for each type of bug
-static bool nolimit = false;
-
-constexpr unsigned int DEFAULT_BUDGET = 25;
-
-// static fields
-uint xray::UnsafeOperation::budget = DEFAULT_BUDGET;
+// Not to limit the number of bugs we collected by default we only collect at
+// most 25 cases for each type of bug.
+unsigned int xray::UnsafeOperation::budget = 25;
 std::vector<xray::UnsafeOperation> xray::UnsafeOperation::unsafeOperations;
+static bool nolimit = false;
 
 // used for filtering
 std::set<std::string> xray::UnsafeOperation::apiSigs;
@@ -58,7 +52,8 @@ std::string xray::UnsafeOperation::getErrorMsg(SVE::Type type) {
     break;
 
   default:
-    assert(false && "Unhandled UnsafeOperation");
+    llvm::errs() << "Unhandled type: " << static_cast<int>(type) << "\n";
+    llvm_unreachable("Unhandled UnsafeOperation");
     break;
   }
   return msg;
@@ -89,11 +84,10 @@ bool xray::UnsafeOperation::filterByCallStack(std::vector<std::string> &st0) {
   return false;
 }
 
-extern bool hasOverFlowChecks;
 void xray::UnsafeOperation::collect(
     const Event *e, std::map<TID, std::vector<CallEvent *>> &callEventTraces,
     SVE::Type type, int P) {
-  if (hasOverFlowChecks) {
+  if (xray::hasOverFlowChecks) {
     return;
   }
 
@@ -146,19 +140,19 @@ xray::UnsafeOperation::UnsafeOperation(SourceInfo &srcInfo, std::string msg,
   url = SVE::database[id]["url"];
 }
 
-json xray::UnsafeOperation::to_json() {
-  json j({{"priority", p},
-          {"inst", apiInst},
-          {"errorMsg", errorMsg},
-          {"id", id},
-          {"hide", hide},
-          {"ignore", ignore},
-          {"description", description},
-          {"url", url}});
+nlohmann::json xray::UnsafeOperation::to_json() const {
+  nlohmann::json j({{"priority", p},
+                    {"inst", apiInst},
+                    {"errorMsg", errorMsg},
+                    {"id", id},
+                    {"hide", hide},
+                    {"ignore", ignore},
+                    {"description", description},
+                    {"url", url}});
   return j;
 }
 
-void xray::UnsafeOperation::print() {
+void xray::UnsafeOperation::print() const {
   llvm::errs() << "==============VULNERABLE: " << name << "!============\n";
   outs() << "Found a potential vulnerability at line " << apiInst.getLine()
          << ", column " << apiInst.getCol() << " in " << apiInst.getFilename()

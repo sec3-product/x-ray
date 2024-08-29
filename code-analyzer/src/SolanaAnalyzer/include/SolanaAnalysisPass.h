@@ -190,4 +190,10 @@ extern unsigned int NUM_OF_ATTACK_VECTORS;
 extern unsigned int NUM_OF_IR_LINES;
 extern int FUNC_COUNT_BUDGET;
 
+extern bool ConfigCheckUncheckedAccount;
+extern bool hasOverFlowChecks;
+extern bool anchorVersionTooOld;
+extern bool splVersionTooOld;
+extern bool solanaVersionTooOld;
+
 } // namespace xray

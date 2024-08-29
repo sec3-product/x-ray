@@ -27,11 +27,21 @@
 using namespace llvm;
 using namespace xray;
 
-std::string xray::CONFIG_OUTPUT_PATH;
-std::string xray::TARGET_MODULE_PATH;
-unsigned int xray::NUM_OF_IR_LINES;
-unsigned int xray::NUM_OF_ATTACK_VECTORS;
-int xray::FUNC_COUNT_BUDGET;
+namespace xray {
+
+std::string CONFIG_OUTPUT_PATH;
+std::string TARGET_MODULE_PATH;
+unsigned int NUM_OF_IR_LINES;
+unsigned int NUM_OF_ATTACK_VECTORS;
+int FUNC_COUNT_BUDGET;
+
+bool ConfigCheckUncheckedAccount;
+bool hasOverFlowChecks;
+bool anchorVersionTooOld;
+bool splVersionTooOld;
+bool solanaVersionTooOld;
+
+} // namespace xray
 
 EventID Event::ID_counter = 0;
 llvm::StringRef stripSelfAccountName(llvm::StringRef account_name) {
@@ -55,9 +65,6 @@ llvm::StringRef stripCtxAccountsName(llvm::StringRef account_name) {
 llvm::StringRef stripToAccountInfo(llvm::StringRef account_name) {
   auto found = account_name.find(".to_account_info()");
   if (found != std::string::npos) {
-    // auto account_name1 = account_name.substr(0, found);
-    // auto account_name2 = account_name.substr(found+1);
-    // account_name = (account_name1+account_name2).getSingleStringRef();
     account_name = account_name.substr(0, found);
   }
   return account_name;
@@ -1431,7 +1438,7 @@ void SolanaAnalysisPass::handleRustModelAPI(
     lastThread->anchorStructFunctionFields.push_back(
         std::make_pair(field, type));
     // skip UncheckedAccount
-    if (type.contains("UncheckedAccount") && !CONFIG_CHECK_UncheckedAccount) {
+    if (type.contains("UncheckedAccount") && !ConfigCheckUncheckedAccount) {
       return;
     }
 

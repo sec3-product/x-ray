@@ -11,6 +11,4 @@ void info(std::string msg, bool newline);
 
 void error(std::string msg);
 
-std::string getCurrentTimeStr();
-
 } // namespace xray

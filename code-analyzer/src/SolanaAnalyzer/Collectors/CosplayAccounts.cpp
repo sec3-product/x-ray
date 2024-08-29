@@ -6,23 +6,19 @@
 #include <string>
 #include <vector>
 
+#include <llvm/Support/ErrorHandling.h>
+#include <nlohmann/json.hpp>
+
+#include "DebugFlags.h"
 #include "LogColor.h"
 #include "SVE.h"
 #include "SourceInfo.h"
 
-using json = nlohmann::json;
-
-extern bool PRINT_IMMEDIATELY;
-extern bool TERMINATE_IMMEDIATELY;
-
 // Not to limit the number of bugs we collected
 // by default we only collect at most 25 cases for each type of bug
-static bool nolimit = false;
-constexpr unsigned int DEFAULT_BUDGET = 25;
-
-// static fields
-uint xray::CosplayAccounts::budget = DEFAULT_BUDGET;
+unsigned int xray::CosplayAccounts::budget = 25;
 std::vector<xray::CosplayAccounts> xray::CosplayAccounts::cosplayAccounts;
+static bool nolimit = false;
 
 // used for filtering
 std::set<std::string> xray::CosplayAccounts::apiSigs;
@@ -46,7 +42,8 @@ std::string xray::CosplayAccounts::getErrorMsg(SVE::Type type) {
     break;
 
   default:
-    assert(false && "unhandled CosplayAccounts");
+    llvm::errs() << "Unhandled type: " << static_cast<int>(type) << "\n";
+    llvm_unreachable("unhandled CosplayAccounts");
     break;
   }
   return msg;
@@ -141,20 +138,20 @@ xray::CosplayAccounts::CosplayAccounts(SourceInfo &srcInfo1,
   url = SVE::database[id]["url"];
 }
 
-json xray::CosplayAccounts::to_json() {
-  json j({{"priority", p},
-          {"inst1", apiInst1},
-          {"inst2", apiInst2},
-          {"errorMsg", errorMsg},
-          {"id", id},
-          {"hide", hide},
-          {"ignore", ignore},
-          {"description", description},
-          {"url", url}});
+nlohmann::json xray::CosplayAccounts::to_json() const {
+  nlohmann::json j({{"priority", p},
+                    {"inst1", apiInst1},
+                    {"inst2", apiInst2},
+                    {"errorMsg", errorMsg},
+                    {"id", id},
+                    {"hide", hide},
+                    {"ignore", ignore},
+                    {"description", description},
+                    {"url", url}});
   return j;
 }
 
-void xray::CosplayAccounts::print() {
+void xray::CosplayAccounts::print() const {
   llvm::errs() << "==============VULNERABLE: " << name << "!============\n";
   outs() << description << ":\n";
   outs() << " Data type 1 defined at line " << apiInst1.getLine() << ", column "

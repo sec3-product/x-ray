@@ -39,9 +39,8 @@ cl::opt<std::string> ConfigOutputPath("o", cl::desc("JSON output path"),
                                       cl::value_desc("path"));
 cl::opt<bool> ConfigDebugLog("v", cl::desc("Turn off log to file"));
 
-cl::opt<bool>
-    ConfigPrintImmediately("Xprint-fast",
-                           cl::desc("Print races immediately on terminal"));
+cl::opt<bool> ConfigPrintImmediately(
+    "Xprint-fast", cl::desc("Print detected issues immediately on terminal"));
 cl::opt<bool> ConfigTerminateImmediately(
     "one-race", cl::desc("Print a race and terminate immediately"));
 
@@ -204,7 +203,7 @@ int main(int argc, char **argv) {
       conflib::Get<bool>("report.enableTerminal", false);
 
   FUNC_COUNT_BUDGET = conflib::Get<int>("functionCountBudget", 20000);
-  CONFIG_CHECK_UncheckedAccount =
+  ConfigCheckUncheckedAccount =
       conflib::Get<bool>("solana.account.UncheckedAccount", true);
 
   CONFIG_OUTPUT_PATH = ConfigOutputPath;

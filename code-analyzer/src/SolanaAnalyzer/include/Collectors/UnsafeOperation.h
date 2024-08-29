@@ -13,10 +13,38 @@
 
 namespace xray {
 
-using json = nlohmann::json;
-
 class UnsafeOperation {
+public:
+  UnsafeOperation(SourceInfo &srcInfo, std::string msg, SVE::Type type, int P,
+                  bool isIgnored, bool isHidden);
+
+  static void init(int configReportLimit, bool configNoReportLimit);
+  static void collect(const Event *e,
+                      std::map<TID, std::vector<CallEvent *>> &callEventTraces,
+                      SVE::Type type, int P);
+
+  static void printAll();
+  static void printSummary();
+
+  int getPriority() const { return this->p; }
+  nlohmann::json to_json() const;
+  void print() const;
+
+  bool operator<(UnsafeOperation &mapi) const {
+    // the race with higher priority should be placed at an earlier place
+    if (this->p > mapi.getPriority()) {
+      return true;
+    }
+    return false;
+  }
+
+  static std::vector<UnsafeOperation> unsafeOperations;
+
 private:
+  static bool filter(SourceInfo &srcInfo);
+  static bool filterByCallStack(std::vector<std::string> &st);
+  static std::string getErrorMsg(SVE::Type type);
+
   int p;
   // The potentially buggy API call
   SourceInfo apiInst;
@@ -31,44 +59,7 @@ private:
   static unsigned int budget;
 
   static std::set<std::string> apiSigs;
-
-  static bool filter(SourceInfo &srcInfo);
-
   static std::set<std::vector<std::string>> callStackSigs;
-
-  static bool filterByCallStack(std::vector<std::string> &st);
-
-  static std::string getErrorMsg(SVE::Type type);
-
-public:
-  static std::vector<UnsafeOperation> unsafeOperations;
-
-  static void init(int configReportLimit, bool configNoReportLimit);
-
-  static void collect(const Event *e,
-                      std::map<TID, std::vector<CallEvent *>> &callEventTraces,
-                      SVE::Type type, int P);
-
-  // print the text report for all the collected races
-  static void printAll();
-  // print summary for all the collect races
-  // this should be the default terminal behavior for racedetect
-  static void printSummary();
-
-  UnsafeOperation(SourceInfo &srcInfo, std::string msg, SVE::Type type, int P,
-                  bool isIgnored, bool isHidden);
-
-  inline int getPriority() { return this->p; }
-
-  json to_json();
-  void print();
-  inline bool operator<(UnsafeOperation &mapi) const {
-    // the race with higher priority should be placed at an earlier place
-    if (this->p > mapi.getPriority()) {
-      return true;
-    }
-    return false;
-  }
 };
 
 } // namespace xray

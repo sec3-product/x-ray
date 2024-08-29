@@ -1,11 +1,17 @@
 #include "Collectors/Output.h"
 
 #include <algorithm>
+#include <chrono>
+#include <ctime>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <set>
+#include <sstream>
 #include <string>
 #include <vector>
+
+#include <nlohmann/json.hpp>
 
 #include "AccountIDL.h"
 #include "Collectors/CosplayAccounts.h"
@@ -15,12 +21,24 @@
 #include "LogColor.h"
 #include "SolanaAnalysisPass.h"
 
-/* --------------------------------
+using json = nlohmann::json;
 
-            Output Utils
+namespace xray {
 
------------------------------------ */
-void xray::outputJSON(std::string OutputPath) {
+std::string getCurrentTimeStr() {
+  auto t = std::time(nullptr);
+  auto local = *std::localtime(&t);
+
+  std::ostringstream tzoss;
+  auto offset = std::localtime(&t)->tm_gmtoff / 3600;
+  tzoss << "GMT" << (offset >= 0 ? "+" : "") << offset;
+
+  std::ostringstream oss;
+  oss << std::put_time(&local, "%a %d %b %Y %T %p") << " " << tzoss.str();
+  return oss.str();
+}
+
+void outputJSON(std::string OutputPath) {
   std::string path;
   if (!OutputPath.empty()) {
     path = OutputPath;
@@ -32,21 +50,21 @@ void xray::outputJSON(std::string OutputPath) {
   std::vector<json> uaccountsJsons;
   std::sort(UntrustfulAccount::untrustfulAccounts.begin(),
             UntrustfulAccount::untrustfulAccounts.end());
-  for (auto &r : UntrustfulAccount::untrustfulAccounts) {
+  for (const auto &r : UntrustfulAccount::untrustfulAccounts) {
     uaccountsJsons.emplace_back(r.to_json());
   }
 
   std::vector<json> usafeOperationsJsons;
   std::sort(UnsafeOperation::unsafeOperations.begin(),
             UnsafeOperation::unsafeOperations.end());
-  for (auto &r : UnsafeOperation::unsafeOperations) {
+  for (const auto &r : UnsafeOperation::unsafeOperations) {
     usafeOperationsJsons.emplace_back(r.to_json());
   }
 
   std::vector<json> cosplayAccountsJsons;
   std::sort(CosplayAccounts::cosplayAccounts.begin(),
             CosplayAccounts::cosplayAccounts.end());
-  for (auto &r : CosplayAccounts::cosplayAccounts) {
+  for (const auto &r : CosplayAccounts::cosplayAccounts) {
     cosplayAccountsJsons.emplace_back(r.to_json());
   }
 
@@ -64,3 +82,5 @@ void xray::outputJSON(std::string OutputPath) {
   output << rs;
   output.close();
 }
+
+} // namespace xray

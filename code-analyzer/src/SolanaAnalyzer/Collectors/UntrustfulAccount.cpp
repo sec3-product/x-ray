@@ -7,8 +7,10 @@
 #include <vector>
 
 #include <llvm/IR/Value.h>
+#include <llvm/Support/ErrorHandling.h>
 #include <nlohmann/json.hpp>
 
+#include "DebugFlags.h"
 #include "LogColor.h" // info
 #include "SVE.h"
 #include "SourceInfo.h"
@@ -16,21 +18,13 @@
 using namespace xray;
 using namespace llvm;
 
-using json = nlohmann::json;
-
-extern bool PRINT_IMMEDIATELY;
-extern bool TERMINATE_IMMEDIATELY;
-
 // Not to limit the number of bugs we collected
 // by default we only collect at most 25 cases for each type of bug
-static bool nolimit = false;
-constexpr unsigned int DEFAULT_BUDGET = 25;
-
-unsigned int xray::UntrustfulAccount::budget = DEFAULT_BUDGET;
+unsigned int xray::UntrustfulAccount::budget = 25;
 std::vector<UntrustfulAccount> xray::UntrustfulAccount::untrustfulAccounts;
-std::set<const llvm::Value *> xray::UntrustfulAccount::apiSigs;
-std::set<std::string> xray::UntrustfulAccount::cpiSigs;
+static bool nolimit = false;
 
+std::set<const llvm::Value *> xray::UntrustfulAccount::apiSigs;
 std::set<std::vector<std::string>> xray::UntrustfulAccount::callStackSigs;
 
 void xray::UntrustfulAccount::init(int configReportLimit,
@@ -67,7 +61,8 @@ std::string xray::UntrustfulAccount::getErrorMsg(SVE::Type type) {
     msg = "The PDA sharing with these seeds is insecure:";
     break;
   default:
-    assert(false && "unhandled untrustful account:");
+    llvm::errs() << "Unhandled type: " << static_cast<int>(type) << "\n";
+    llvm_unreachable("unhandled untrustful account");
     break;
   }
   return msg;
@@ -182,20 +177,20 @@ xray::UntrustfulAccount::UntrustfulAccount(std::string account,
   url = SVE::database[id]["url"];
 }
 
-json xray::UntrustfulAccount::to_json() {
-  json j({{"priority", p},
-          {"account", accountName},
-          {"inst", apiInst},
-          {"errorMsg", errorMsg},
-          {"id", id},
-          {"hide", hide},
-          {"ignore", ignore},
-          {"description", description},
-          {"url", url}});
+nlohmann::json xray::UntrustfulAccount::to_json() const {
+  nlohmann::json j({{"priority", p},
+                    {"account", accountName},
+                    {"inst", apiInst},
+                    {"errorMsg", errorMsg},
+                    {"id", id},
+                    {"hide", hide},
+                    {"ignore", ignore},
+                    {"description", description},
+                    {"url", url}});
   return j;
 }
 
-void xray::UntrustfulAccount::print() {
+void xray::UntrustfulAccount::print() const {
   // llvm::outs() << "=============This account may be
   // UNTRUSTFUL!================\n";
   llvm::errs() << "==============VULNERABLE: " << name << "!============\n";

@@ -25,14 +25,13 @@ public:
   static void collect(llvm::StringRef accountName, const Event *e,
                       std::map<TID, std::vector<CallEvent *>> &callEventTraces,
                       SVE::Type type, int P);
-  // print the text report for all the collected races
+
   static void printAll();
-  // print summary for all the collect races
-  // this should be the default terminal behavior for racedetect
   static void printSummary();
-  inline int getPriority() { return this->p; }
-  json to_json();
-  void print();
+
+  int getPriority() const { return this->p; }
+  json to_json() const;
+  void print() const;
 
   bool operator<(UntrustfulAccount &mapi) const {
     // the race with higher priority should be placed at an earlier place
@@ -43,8 +42,11 @@ public:
   }
 
 private:
+  static bool filter(SVE::Type type, SourceInfo &srcInfo);
+  static bool filterByCallStack(std::vector<std::string> &st);
+  static std::string getErrorMsg(SVE::Type type);
+
   int p;
-  // The potentially buggy API call
   SourceInfo apiInst;
   std::string errorMsg;
   SVE::Type type;
@@ -57,12 +59,8 @@ private:
   bool hide;
   static unsigned int budget;
   static std::map<SVE::Type, std::set<const llvm::Value *>> apiSigsMap;
-  static std::set<std::string> cpiSigs;
   static std::set<const llvm::Value *> apiSigs;
-  static bool filter(SVE::Type type, SourceInfo &srcInfo);
   static std::set<std::vector<std::string>> callStackSigs;
-  static bool filterByCallStack(std::vector<std::string> &st);
-  static std::string getErrorMsg(SVE::Type type);
 };
 
 } // namespace xray
