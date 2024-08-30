@@ -51,8 +51,6 @@ public:
   PTA *pta;
 
 private:
-  void initStructFunctions();
-
   void traverseFunctionWrapper(
       const xray::ctx *ctx, StaticThread *thread,
       std::vector<const llvm::Function *> &callStack,
@@ -66,8 +64,7 @@ private:
                              llvm::Function *func, const Instruction *inst,
                              StaticThread *thread, CallSite CS);
 
-  void updateAccountStates(StaticThread *curThread);
-  void detectUntrustfulAccounts(TID tid);
+  void detectUntrustfulAccounts();
   void detectAccountsCosplay(const xray::ctx *ctx, TID tid);
 
   std::set<const llvm::Function *> threadStartFunctions;
@@ -77,27 +74,17 @@ private:
   bool hasThreadStartInitFunction(std::string symbol) const;
   bool isInitFunction(llvm::StringRef funcName) const;
 
+  void initStructFunctions();
+  void updateAccountStates(StaticThread *curThread);
+
   // Global state accounts.
   std::set<llvm::StringRef> globalStateAccounts;
-  bool isGlobalStateAccount(llvm::StringRef accountName) const {
-    if (globalStateAccounts.find(accountName) != globalStateAccounts.end()) {
-      if (DEBUG_RUST_API)
-        llvm::outs() << "isGlobalStateAccount: " << accountName << "\n";
-
-      return true;
-    } else {
-      if (DEBUG_RUST_API)
-        llvm::outs() << "isGlobalStateAccount false: " << accountName << "\n";
-    }
-    return false;
-  }
 
   // FunctionFieldsMap is defined in Rules/CosplayDetector.h.
   FunctionFieldsMap anchorStructFunctionFieldsMap;
   FunctionFieldsMap normalStructFunctionFieldsMap;
 
   bool accountTypeContainsMoreThanOneMint(llvm::StringRef structName) const;
-  bool isAnchorValidatedAccount(llvm::StringRef accountName) const;
   bool isAnchorDataAccount(llvm::StringRef accountName) const;
 
   std::map<llvm::StringRef, std::vector<llvm::StringRef>> accountsPDASeedsMap;

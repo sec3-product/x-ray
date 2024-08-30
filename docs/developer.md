@@ -41,12 +41,24 @@ semantic analysis of key instructions such as function calls and account access
 patterns. The `SolanaAnalysisPass` captures detailed information about code
 logic, which can then be evaluated against pre-defined and custom rules.
 
-#### Rule Definition
+The detection rules are organized within the Rules directory and can be
+categorized into two main types: Instruction-Specific Rules and Contextual
+Analysis Rules.
 
-Within the `SolanaAnalysisPass`, we introduced a `Rule` class that facilitates
-the creation and management of custom analysis rules.
+#### Instruction-Specific Rules
 
-Here’s the header definition for the `Rule` class:
+These rules, such as the ones in `OverflowAdd.cpp`, are designed to match
+specific instructions directly.  These instructions are critical to identifying
+potential issues, making them the primary entry point for detection. For
+example, `OverflowAdd.cpp`, `OverflowDiv.cpp`, `OverflowMul.cpp`, and
+`OverflowSub.cpp` focus on detecting overflow issues related to addition,
+division, multiplication, and subtraction instructions, respectively.
+
+To facilitate the creation and management of these instruction-specific
+analysis rules, we have introduced a Rule class within the
+SolanaAnalysisPass.
+
+Here’s the header definition for the Rule class:
 
 ```cpp
 class Rule {
@@ -74,6 +86,16 @@ private:
 *  `Handler`: A function that is executed when a rule is matched. It takes a
    `RuleContext` and a `CallSite` as input parameters, allowing for detailed
    processing based on the context in which the rule was triggered.
+
+
+#### Contextual Analysis Rules
+
+These rules, such as `CosplayDetector.cpp` and `UntrustfulAccountDetector.cpp`,
+gather and analyze information about instructions and associated accounts
+throughout the execution process. These rules then combine all the collected
+data to detect potential issues. For instance, `UntrustfulAccountDetector.cpp`
+monitors account validation issues, using the accumulated information to
+identify untrustworthy account usage.
 
 ### Built-in Rules
 

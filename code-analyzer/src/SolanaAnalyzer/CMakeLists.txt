@@ -16,6 +16,7 @@ set(SOLANA_ANALYZER_SOURCES
     Rules/OverflowSub.cpp
     Rules/Rule.cpp
     Rules/Ruleset.cpp
+    Rules/UntrustfulAccountDetector.cpp
     RustAPIRewriter.cpp
     SolanaAnalysisPass.cpp
     SourceInfo.cpp

@@ -22,6 +22,7 @@
 #include "PTAModels/GraphBLASModel.h"
 #include "Rules/CosplayDetector.h"
 #include "Rules/Ruleset.h"
+#include "Rules/UntrustfulAccountDetector.h"
 #include "SVE.h"
 #include "StaticThread.h"
 
@@ -3369,246 +3370,35 @@ void SolanaAnalysisPass::updateAccountStates(StaticThread *curThread) {
   }
 }
 
-void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
-  auto curThread = StaticThread::getThreadByTID(tid);
-  // TODO now, detect vulnerabilities in each thread
-  auto funcName = curThread->startFunc->getName();
-  llvm::outs() << "\n**************** attack surface #" << curThread->getTID()
-               << ": " << funcName.substr(0, funcName.find_last_of("."))
-               << " **************** \n";
-  if (DEBUG_RUST_API) {
-    for (auto [accountName, e] : curThread->accountsMap) {
-      llvm::outs() << "account_x: " << accountName << "\n";
-    }
-    for (auto [pair, e] : curThread->assertKeyEqualMap) {
-      llvm::outs() << "assertKeyEqualMap: " << pair.first
-                   << " == " << pair.second << "\n";
-    }
-    for (auto [account, aliasAccounts] : curThread->accountAliasesMap) {
-      llvm::outs() << "account: " << account << " aliases: "
-                   << "\n";
-      for (auto aliasAccount : aliasAccounts) {
-        llvm::outs() << "         " << aliasAccount << "\n";
-      }
-    }
-    for (auto [pair, e] : curThread->assertOwnerEqualMap) {
-      llvm::outs() << "assertOwnerEqualMap: " << pair.first
-                   << " == " << pair.second << "\n";
-    }
-    for (auto [pair, e] : curThread->assertOtherEqualMap) {
-      llvm::outs() << "assertOtherEqualMap: " << pair.first
-                   << " == " << pair.second << "\n";
-    }
-    for (auto [account, e] : curThread->accountsInvokedMap) {
-      llvm::outs() << "accountsInvokedMap: " << account << "\n";
-    }
-  }
+void SolanaAnalysisPass::detectUntrustfulAccounts() {
+  // Detect untrustful accounts.
+  auto collector = std::bind(&UntrustfulAccount::collect, std::placeholders::_1,
+                             std::placeholders::_2, callEventTraces,
+                             std::placeholders::_3, std::placeholders::_4);
+  UntrustfulAccountDetector detector(
+      funcArgTypesMap, threadStartFunctions, potentialOwnerAccounts,
+      globalStateAccounts, anchorStructFunctionFieldsMap, accountsPDAMap,
+      accountsSeedProgramAddressMap,
+      [this](llvm::StringRef struct_name) {
+        return this->accountTypeContainsMoreThanOneMint(struct_name);
+      },
+      [this](llvm::StringRef accountName) {
+        return this->isInitFunction(accountName);
+      },
+      collector);
 
-  bool isInit = isInitFunction(funcName);
-  bool isPotentiallyOwnerOnly =
-      funcName.contains("create_") || funcName.contains("new_");
-  bool isOwnerOnly = curThread->isOnceOnlyOwnerOnlyInstruction ||
-                     curThread->isAccountSignerMultiSigPDA() ||
-                     curThread->isAccountSignerVerifiedByPDAContains() ||
-                     curThread->isOwnerOnly();
-  if (DEBUG_RUST_API) {
-    llvm::outs() << "isOwnerOnly: " << isOwnerOnly << "\n";
-  }
-
-  for (auto [accountName, e] : curThread->accountsMap) {
-    if (DEBUG_RUST_API) {
-      llvm::outs() << "account: " << accountName << "\n";
+  if (threadSet.size() == 1) {
+    updateAccountStates(threadSet[0]);
+    detector.detect(threadSet[0]);
+  } else {
+    // Find all potential owner accounts.
+    for (auto tid = 1; tid < threadSet.size(); tid++) {
+      auto curThread = threadSet[tid];
+      updateAccountStates(curThread);
     }
-    if (isInit) {
-      // skip initialization func
-      continue;
-    }
-
-    // checker for untrustful accounts
-    bool isUnvalidate = false;
-    // missing owner check
-    // ctx.accounts.authority.key != &token.owner
-    if (!isUnvalidate &&
-        (curThread->isAccountBorrowData(accountName) &&
-         !curThread->isAccountBorrowDataMut(accountName)) &&
-        !curThread->isAccountBorrowLamportsMut(accountName) &&
-        !isAnchorDataAccount(accountName) && !isAccountPDA(accountName) &&
-        !curThread->isAccountKeyValidated(accountName) &&
-        !curThread->isAccountInvoked(accountName) &&
-        !curThread->isAccountOwnerValidated(accountName) &&
-        !curThread->isAccountUsedInSeed(accountName)) {
-      // llvm::errs() << "==============VULNERABLE:
-      // MissingOwnerCheck!============\n";
-      UntrustfulAccount::collect(accountName, e, callEventTraces,
-                                 SVE::Type::MISS_OWNER, 10);
-      isUnvalidate = true;
-    }
-    if (!isUnvalidate && curThread->isAccountBorrowData(accountName) &&
-        !curThread->isAccountBorrowDataMut(accountName)) {
-      if (!curThread->isAccountLamportsUpdated(accountName) &&
-          !curThread->isAccountKeyValidated(accountName) &&
-          (!curThread->isAccountOwnerValidated(accountName))) {
-        // llvm::errs() << "==============VULNERABLE: Account
-        // Unvalidated!============\n";
-        if (!isOwnerOnly) {
-          auto e1 = curThread->borrowDataMap[accountName];
-          UntrustfulAccount::collect(accountName, e1, callEventTraces,
-                                     SVE::Type::ACCOUNT_UNVALIDATED_BORROWED,
-                                     9);
-          isUnvalidate = true;
-        }
-      }
-    }
-    // TODO: define pattern for missing check for p_asset_mint
-    // there are some hidden semantc-level invariants between accounts
-
-    if (LangModel::isAuthorityAccount(accountName)) {
-      // checker for missing signer accounts
-      if (!isUnvalidate && !curThread->isAccountSigner(accountName) &&
-          !curThread->isAccountValidatedBySignerAccountInConstraint(
-              accountName) &&
-          !isAccountPDA(accountName) &&
-          !curThread->isAccountInvokedAsAuthority(accountName) &&
-          !curThread->isAccountInvoked(accountName) &&
-          !curThread->isAccountBorrowDataMut(accountName)) {
-        if (!curThread->isAccountReferencedByAnyOtherAccountInHasOne(
-                accountName) &&
-            !curThread->isAccountReferencedByAnyOtherAccountInConstraint(
-                accountName) &&
-            !curThread->isAccountKeyValidatedSafe(accountName) &&
-            !isAnchorDataAccount(accountName)) {
-          bool isValidatedBySigner = false;
-          if (accountName.endswith("_info")) {
-            auto accountName_x =
-                accountName.substr(0, accountName.find("_info"));
-            if (curThread->isAccountValidatedBySignerAccountInConstraint(
-                    accountName_x)) {
-              isValidatedBySigner = true;
-            }
-          }
-          // heuristic: skip checking signer on "manager_fee"
-          if (!isOwnerOnly && !isValidatedBySigner &&
-              !accountName.contains("pda") && !accountName.contains("mint") &&
-              !accountName.contains("new_") && !accountName.contains("from_") &&
-              !accountName.contains("to_") && !accountName.contains("_fee")) {
-            UntrustfulAccount::collect(accountName, e, callEventTraces,
-                                       SVE::Type::MISS_SIGNER, 10);
-            isUnvalidate = true;
-          }
-
-          // habitat_owner_token_account.owner is signer
-        }
-      }
-    } else {
-      // TODO: define pattern for mut declared but not updated account
-      //&& !isAccountPDA(accountName) - this condition removed, because PDA
-      // can still be faked...
-      if (!isUnvalidate && !isAnchorValidatedAccount(accountName) &&
-          !curThread->isAccountLamportsUpdated(accountName) &&
-          !curThread->isAccountKeyValidated(accountName) &&
-          (!curThread->isAccountOwnerValidated(accountName) &&
-           !curThread->isAccountSigner(accountName))) {
-        // llvm::errs() << "==============VULNERABLE: Account
-        // Unvalidated!============\n";
-        if (!isOwnerOnly) {
-          if (!curThread->isAccountPDAInInstruction(accountName) &&
-              !isGlobalStateAccount(accountName) &&
-              !curThread->isAccountInvoked(accountName) &&
-              !curThread->isAccountBorrowDataMut(accountName) &&
-              !curThread->isAccountDiscriminator(accountName) &&
-              !curThread->isAccountDataWritten(accountName) &&
-              !curThread->isAccountAnchorClosed(accountName)) {
-            // bool skipCreateInstruction = funcName.startswith("Create");
-            bool skipOrderAccount = false;
-            bool skipCloseAccount = false;
-            bool skipMintAccount = false;
-            bool skipUserAccount = false;
-            if (accountName.contains("order")) {
-              // TODO: order_account, skip if contains two mints
-              // get anchor account type
-              auto type = curThread->getStructAccountType(accountName);
-              if (accountTypeContainsMoreThanOneMint(type))
-                skipOrderAccount = true;
-            } else if (accountName.contains("close")) {
-              if (curThread->startFunc->getName().contains("close"))
-                skipCloseAccount = true;
-            } else // if (accountName.contains("mint"))
-            {
-              auto type = curThread->getStructAccountType(accountName);
-              // && curThread->isMintAccountValidated(accountName)
-              if (type.contains("Mint"))
-                skipMintAccount = true;
-              if (type.contains("TokenAccount") &&
-                  accountName.contains("user_"))
-                skipUserAccount = true;
-              else if ((accountName.contains("user_") ||
-                        accountName.contains("multisig_") ||
-                        accountName.contains("market_")) &&
-                       curThread->isAccountHasOneContraint(accountName)) {
-                skipUserAccount = true;
-              }
-
-              // for non-Anchor account
-              // habitat_mint
-              if (accountName.endswith("_account_info")) {
-                auto accountName_x =
-                    accountName.substr(0, accountName.find("_account_info"));
-                if (curThread->isAccountKeyValidated(accountName_x)) {
-                  skipMintAccount = true;
-                }
-              }
-            }
-            if (!isPotentiallyOwnerOnly && !skipOrderAccount &&
-                !skipCloseAccount && !skipMintAccount &&
-                !skipUserAccount && //! isPotentiallyOwnerOnly &&
-                !accountName.contains("new_") &&
-                !accountName.contains("payer") &&
-                !accountName.contains("delegat") &&
-                !accountName.contains("dest") &&
-                !accountName.contains("receiver") &&
-                !accountName.equals("to")) {
-              if (!curThread->isAccountReferencedBySignerAccountInConstraint(
-                      accountName) &&
-                  !curThread->isAccountValidatedBySignerAccountInConstraint(
-                      accountName) &&
-                  !curThread->isAccountReferencedByAnyOtherAccountInSeeds(
-                      accountName) &&
-                  !isAccountUsedInSeedsProgramAddress(accountName)) {
-                UntrustfulAccount::collect(accountName, e, callEventTraces,
-                                           SVE::Type::ACCOUNT_UNVALIDATED_OTHER,
-                                           8);
-                isUnvalidate = true;
-              }
-            }
-          } else if (curThread->isAccountInvoked(accountName)) {
-            // TODO: check if account is isolated.
-            // llvm::errs()
-            //     << "==============VULNERABLE: Invoke Account Potentially
-            //     Unvalidated!============\n";
-            // UntrustfulAccount::collect(e, callEventTraces,
-            // SVE::Type::ACCOUNT_UNVALIDATED_OTHER, 5); isUnvalidate = true;
-          }
-        }
-      }
-    }
-  }
-
-  // check bump_seed_canonicalization_insecure
-  if (DEBUG_RUST_API) {
-    llvm::outs() << "checking bump_seed_canonicalization_insecure\n";
-  }
-  for (auto [pair, e] : curThread->accountsBumpMap) {
-    auto bumpName = pair.first;
-    auto account = pair.second;
-    // llvm::outs() << "bumpName: " << bumpName << "\n";
-    if (!curThread->isAccountBumpValidated(bumpName) &&
-        !curThread->isSignerAccountUsedSeedsOfAccount0(account)) {
-      // llvm::errs() << "==============VULNERABLE: bump seed
-      // canonicalization!============\n";
-      if (!isOwnerOnly) {
-        UntrustfulAccount::collect(bumpName, e, callEventTraces,
-                                   SVE::Type::BUMP_SEED, 9);
-      }
+    for (auto tid = 1; tid < threadSet.size(); tid++) {
+      auto curThread = StaticThread::getThreadByTID(tid);
+      detector.detect(curThread);
     }
   }
 }
@@ -3744,24 +3534,12 @@ bool SolanaAnalysisPass::runOnModule(llvm::Module &module) {
       ptCreate->setEndID(Event::getLargestEventID());
     }
   }
-
   NUM_OF_ATTACK_VECTORS = threadSet.size();
 
   // Detect untrustful accounts.
-  if (NUM_OF_ATTACK_VECTORS == 1) {
-    updateAccountStates(threadSet[0]);
-    detectUntrustfulAccounts(0);
-  } else {
-    // Find all potential owner accounts.
-    for (auto tid = 1; tid < threadSet.size(); tid++) {
-      auto curThread = threadSet[tid];
-      updateAccountStates(curThread);
-    }
-    for (auto tid = 1; tid < threadSet.size(); tid++) {
-      detectUntrustfulAccounts(tid);
-    }
-  }
+  detectUntrustfulAccounts();
 
+  // Detect cosplay accounts.
   auto shb_end = std::chrono::steady_clock::now();
   std::chrono::duration<double> shb_elapsed = shb_end - shb_start;
   LOG_DEBUG("Finish Building SHB. time={}s", shb_elapsed.count());
@@ -3862,19 +3640,6 @@ bool SolanaAnalysisPass::accountTypeContainsMoreThanOneMint(
     }
   }
   return num_mints > 1;
-}
-
-bool SolanaAnalysisPass::isAnchorValidatedAccount(
-    llvm::StringRef accountName) const {
-  for (const auto &[func, fieldTypes] : anchorStructFunctionFieldsMap) {
-    for (const auto &[name, fields] : fieldTypes) {
-      if (name.equals(accountName) &&
-          (fields.contains("Program<") || fields.contains("Sysvar<"))) {
-        return true;
-      }
-    }
-  }
-  return false;
 }
 
 bool SolanaAnalysisPass::isAnchorDataAccount(
