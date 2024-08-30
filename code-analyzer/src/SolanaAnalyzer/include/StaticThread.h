@@ -695,25 +695,22 @@ public:
     return false;
   }
 
-  bool isPotentiallyOwnerOnlyInstruction(
-      std::set<llvm::StringRef> &potentialOwnerAccounts, bool isInit = false) {
-    if (isOwnerOnlyComputed)
-      return isOwnerOnly;
+  void computeIsOwnerOnly(std::set<llvm::StringRef> &potentialOwnerAccounts,
+                          bool isInit = false) {
+    if (isOwnerOnlyComputed) {
+      return;
+    }
 
     if (isInit) {
       for (auto [accountName, e] : accountsMap) {
         if (LangModel::isPreviledgeAccount(accountName)) {
-          // if (isAccountSigner(accountName))
-          {
-            potentialOwnerAccounts.insert(accountName);
-            if (DEBUG_RUST_API)
-              llvm::outs() << "potentialOwnerAccounts: " << accountName
-                           << " isInit: " << isInit << "\n";
-            // break;
-          }
+          potentialOwnerAccounts.insert(accountName);
+          if (DEBUG_RUST_API)
+            llvm::outs() << "potentialOwnerAccounts: " << accountName
+                         << " isInit: " << isInit << "\n";
         }
       }
-      isOwnerOnly = true;
+      isOwnerOnly_ = true;
     } else {
       for (auto [accountName, e] : accountsMap) {
         if (isAccountSigner(accountName)) {
@@ -725,10 +722,10 @@ public:
             if (DEBUG_RUST_API)
               llvm::outs() << "potentialOwnerAccounts: " << accountName
                            << " isInit: " << isInit << "\n";
-            isOwnerOnly = true;
+            isOwnerOnly_ = true;
             break;
           } else if (LangModel::isAuthorityAccount(accountName)) {
-            isOwnerOnly = true;
+            isOwnerOnly_ = true;
             break;
           } else if (assertAccountConstraintsMap.find(accountName) !=
                      assertAccountConstraintsMap.end()) {
@@ -739,7 +736,7 @@ public:
                   llvm::outs()
                       << "isAuthorityReferencedBySignerAccountInConstraint: "
                       << accountName << "\n";
-                isOwnerOnly = true;
+                isOwnerOnly_ = true;
                 break;
               }
             }
@@ -747,12 +744,13 @@ public:
         }
       }
     }
-    if (DEBUG_RUST_API)
-      llvm::outs() << "isPotentiallyOwnerOnlyInstruction: " << isOwnerOnly
-                   << "\n";
+    if (DEBUG_RUST_API) {
+      llvm::outs() << "computeIsOwnerOnly: " << isOwnerOnly_ << "\n";
+    }
     isOwnerOnlyComputed = true;
-    return isOwnerOnly;
   }
+
+  bool isOwnerOnly() const { return isOwnerOnly_; }
 
   bool isAccountSignerMultiSigPDA() {
     for (auto [accountSigner, inst] : asssertSignerMap) {
@@ -1142,7 +1140,7 @@ private:
   const ForkEvent *parent = nullptr;
   const llvm::Value *threadHandle;
   const TID id;
-  bool isOwnerOnly = false;
+  bool isOwnerOnly_ = false;
   bool isOwnerOnlyComputed = false;
 
   std::vector<ForkEvent *> forkSites;

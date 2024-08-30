@@ -66,17 +66,19 @@ private:
                              llvm::Function *func, const Instruction *inst,
                              StaticThread *thread, CallSite CS);
 
+  void updateAccountStates(StaticThread *curThread);
   void detectUntrustfulAccounts(TID tid);
   void detectAccountsCosplay(const xray::ctx *ctx, TID tid);
 
   StaticThread *forkNewThread(ForkEvent *forkEvent);
   TID addNewThread(ForkEvent *fork);
   bool addThreadStartFunction(const llvm::Function *func);
-  bool hasThreadStartInitFunction(std::string symbol);
+  bool hasThreadStartInitFunction(std::string symbol) const;
+  bool isInitFunction(llvm::StringRef funcName) const;
 
   // Global state accounts.
   std::set<llvm::StringRef> globalStateAccounts;
-  bool isGlobalStateAccount(llvm::StringRef accountName) {
+  bool isGlobalStateAccount(llvm::StringRef accountName) const {
     if (globalStateAccounts.find(accountName) != globalStateAccounts.end()) {
       if (DEBUG_RUST_API)
         llvm::outs() << "isGlobalStateAccount: " << accountName << "\n";
