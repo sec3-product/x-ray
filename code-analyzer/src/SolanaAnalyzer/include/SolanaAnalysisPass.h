@@ -19,6 +19,7 @@
 #include "Graph/Event.h"
 #include "PTAModels/GraphBLASModel.h"
 #include "PointerAnalysis/PointerAnalysisPass.h"
+#include "Rules/CosplayDetector.h"
 #include "Rules/Ruleset.h"
 #include "SVE.h"
 #include "StaticThread.h"
@@ -88,12 +89,9 @@ private:
     return false;
   }
 
-  std::map<const llvm::Function *,
-           std::vector<std::pair<llvm::StringRef, llvm::StringRef>>>
-      normalStructFunctionFieldsMap;
-  std::map<const llvm::Function *,
-           std::vector<std::pair<llvm::StringRef, llvm::StringRef>>>
-      anchorStructFunctionFieldsMap;
+  // FunctionFieldsMap is defined in Rules/CosplayDetector.h.
+  FunctionFieldsMap anchorStructFunctionFieldsMap;
+  FunctionFieldsMap normalStructFunctionFieldsMap;
 
   bool accountTypeContainsMoreThanOneMint(llvm::StringRef struct_name) const;
   bool isAnchorStructFunction(const llvm::Function *func) const;

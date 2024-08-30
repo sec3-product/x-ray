@@ -20,6 +20,7 @@
 #include "Graph/ReachGraph.h"
 #include "Graph/Trie.h"
 #include "PTAModels/GraphBLASModel.h"
+#include "Rules/CosplayDetector.h"
 #include "Rules/Ruleset.h"
 #include "SVE.h"
 #include "StaticThread.h"
@@ -3796,66 +3797,11 @@ void SolanaAnalysisPass::detectAccountsCosplay(const xray::ctx *ctx, TID tid) {
     return;
   }
 
-  // now checking cosplay for non-Anchor program only
-  // for each pair of structs, do they overlap?
-  for (auto &[func1, fieldTypes1] : normalStructFunctionFieldsMap) {
-    for (auto &[func2, fieldTypes2] : normalStructFunctionFieldsMap) {
-      if (func1 == func2) {
-        continue;
-      }
-
-      auto size = fieldTypes1.size();
-      auto size2 = fieldTypes2.size();
-      if (size > size2) {
-        continue;
-      }
-
-      bool mayCosplay = true;
-      bool hasPubkey = false;
-      for (size_t i = 0; i < size; i++) {
-        // does not need exact match: e.g., u64 vs f64
-        auto type1 = fieldTypes1[i].second;
-        auto type2 = fieldTypes2[i].second;
-        type1 = type1.substr(1);
-        type2 = type2.substr(1);
-        if (!type1.equals(type2) || (fieldTypes1[i].first.contains("crimi") ||
-                                     fieldTypes2[i].first.contains("crimi"))) {
-          mayCosplay = false;
-          break;
-        }
-        // llvm::errs() << "==============type1: " << type1 <<
-        // "============\n"; llvm::errs() << "==============type2: " <<
-        // type2 << "============\n"; must have a Pubkey field
-        if (type1.contains("ubkey")) {
-          hasPubkey = true;
-        }
-      }
-      if (mayCosplay && hasPubkey) {
-        // report
-        auto inst1 = func1->getEntryBlock().getFirstNonPHI();
-        auto inst2 = func2->getEntryBlock().getFirstNonPHI();
-        auto e1 = graph->createApiReadEvent(ctx, inst1, tid);
-        auto e2 = graph->createApiReadEvent(ctx, inst2, tid);
-        auto file1 = getSourceLoc(e1->getInst()).getFilename();
-        auto file2 = getSourceLoc(e2->getInst()).getFilename();
-        if (DEBUG_RUST_API) {
-          llvm::errs() << "==============file1: " << file1
-                       << " file2: " << file2 << "============\n";
-        }
-        if (file1 == file2) {
-          // llvm::errs() << "==============VULNERABLE: Type
-          // Cosplay!============\n";
-          if (size == size2) {
-            CosplayAccounts::collect(e1, e2, callEventTraces,
-                                     SVE::Type::COSPLAY_FULL, 6);
-          } else {
-            CosplayAccounts::collect(e1, e2, callEventTraces,
-                                     SVE::Type::COSPLAY_PARTIAL, 5);
-          }
-        }
-      }
-    }
-  }
+  // Check cosplay for non-Anchor program only.
+  // For each pair of structs, do they overlap?
+  CosplayDetector detector(normalStructFunctionFieldsMap, graph,
+                           callEventTraces);
+  detector.detectCosplay(ctx, tid);
 }
 
 StaticThread *SolanaAnalysisPass::forkNewThread(ForkEvent *forkEvent) {

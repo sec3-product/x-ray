@@ -9,6 +9,7 @@ set(SOLANA_ANALYZER_SOURCES
     LocksetManager.cpp
     LogColor.cpp
     PTAModels/GraphBLASModel.cpp
+    Rules/CosplayDetector.cpp
     Rules/OverflowAdd.cpp
     Rules/OverflowDiv.cpp
     Rules/OverflowMul.cpp
