@@ -7,100 +7,100 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 
-#include "Rules/CosplayDetector.h"
-#include "Collectors/CosplayAccounts.h"
+#include "Collectors/CosplayAccount.h"
+#include "Rules/CosplayAccountDetector.h"
 
 #include "Graph/ReachGraph.h"
-#include "SolanaAnalysisPass.h"
 #include "Rules/Rule.h"
 #include "Rules/Ruleset.h"
-
+#include "SolanaAnalysisPass.h"
 
 using namespace xray;
 
-class CosplayDetectorTest : public ::testing::Test {
+class CosplayAccountDetectorTest : public ::testing::Test {
 protected:
-    llvm::LLVMContext context;
-    llvm::Module module;
-    CosplayDetectorTest() : module("testModule", context) {}
+  llvm::LLVMContext context;
+  llvm::Module module;
+  CosplayAccountDetectorTest() : module("testModule", context) {}
 
-    // Helper function to create a mock function
-    llvm::Function* createMockFunction(const std::string& name) {
-        llvm::FunctionType* funcType =
-            llvm::FunctionType::get(llvm::Type::getInt32Ty(context), false);
-        return llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, name, &module);
-    }
+  // Helper function to create a mock function
+  llvm::Function *createMockFunction(const std::string &name) {
+    llvm::FunctionType *funcType =
+        llvm::FunctionType::get(llvm::Type::getInt32Ty(context), false);
+    return llvm::Function::Create(funcType, llvm::Function::ExternalLinkage,
+                                  name, &module);
+  }
 };
 
 // test case 1: cosplayFull not Triggered
-TEST_F(CosplayDetectorTest, NoCollectTriggered) {
-    // Create two mock functions
-    llvm::Function* func1 = createMockFunction("func1");
-    llvm::Function* func2 = createMockFunction("func2");
+TEST_F(CosplayAccountDetectorTest, NoCollectTriggered) {
+  // Create two mock functions
+  llvm::Function *func1 = createMockFunction("func1");
+  llvm::Function *func2 = createMockFunction("func2");
 
-    // Create basic blocks for these functions
-    llvm::BasicBlock* block1 = llvm::BasicBlock::Create(context, "entry", func1);
-    llvm::BasicBlock* block2 = llvm::BasicBlock::Create(context, "entry", func2);
+  // Create basic blocks for these functions
+  llvm::BasicBlock *block1 = llvm::BasicBlock::Create(context, "entry", func1);
+  llvm::BasicBlock *block2 = llvm::BasicBlock::Create(context, "entry", func2);
 
-    // Mock data for the function fields
-    FunctionFieldsMap normalStructFunctionFieldsMap;
-    normalStructFunctionFieldsMap[func1] = {{"abcd", "1234"}};
-    normalStructFunctionFieldsMap[func2] = {{"efgh", "5678"}};
+  // Mock data for the function fields
+  FunctionFieldsMap normalStructFunctionFieldsMap;
+  normalStructFunctionFieldsMap[func1] = {{"abcd", "1234"}};
+  normalStructFunctionFieldsMap[func2] = {{"efgh", "5678"}};
 
-    SolanaAnalysisPass pass; 
-    ReachGraph graph(pass);
+  SolanaAnalysisPass pass;
+  ReachGraph graph(pass);
 
-    std::map<TID, std::vector<CallEvent *>> callEventTraces;
+  std::map<TID, std::vector<CallEvent *>> callEventTraces;
 
-    // Create the CosplayDetector object
-    CosplayDetector detector(normalStructFunctionFieldsMap, &graph, callEventTraces);
+  // Create the CosplayAccountDetector object
+  CosplayAccountDetector detector(normalStructFunctionFieldsMap, &graph,
+                                  callEventTraces);
 
-    const xray::ctx* ctx = nullptr;  // Replace with actual ctx object
-    TID tid = 0;  // Replace with actual TID value
+  const xray::ctx *ctx = nullptr; // Replace with actual ctx object
+  TID tid = 0;                    // Replace with actual TID value
 
-    xray::CosplayAccounts::cosplayFullCount = 0;
-    xray::CosplayAccounts::cosplayPartialCount = 0;
+  xray::CosplayAccount::cosplayFullCount = 0;
+  xray::CosplayAccount::cosplayPartialCount = 0;
 
-    detector.detectCosplay(ctx, tid);
+  detector.detect(ctx, tid);
 
-    // Expect counters to be 0, since no collection should be triggered
-    EXPECT_EQ(xray::CosplayAccounts::cosplayFullCount, 0);
+  // Expect counters to be 0, since no collection should be triggered
+  EXPECT_EQ(xray::CosplayAccount::cosplayFullCount, 0);
 }
-
 
 // test case 2: cosplayFull Triggered
-TEST_F(CosplayDetectorTest, TriggerCollectFullCosplay) {
-    // Create two mock functions
-    llvm::Function* func1 = createMockFunction("func1");
-    llvm::Function* func2 = createMockFunction("func2");
+TEST_F(CosplayAccountDetectorTest, TriggerCollectFullCosplay) {
+  // Create two mock functions
+  llvm::Function *func1 = createMockFunction("func1");
+  llvm::Function *func2 = createMockFunction("func2");
 
-    // Create basic blocks for these functions
-    llvm::BasicBlock* block1 = llvm::BasicBlock::Create(context, "entry", func1);
-    llvm::BasicBlock* block2 = llvm::BasicBlock::Create(context, "entry", func2);
+  // Create basic blocks for these functions
+  llvm::BasicBlock *block1 = llvm::BasicBlock::Create(context, "entry", func1);
+  llvm::BasicBlock *block2 = llvm::BasicBlock::Create(context, "entry", func2);
 
-    // Mock data for the function fields (matching field types with "pubkey")
-    FunctionFieldsMap normalStructFunctionFieldsMap;
-    normalStructFunctionFieldsMap[func1] = {{"field1", "pubkey"}};
-    normalStructFunctionFieldsMap[func2] = {{"field1", "pubkey"}};
+  // Mock data for the function fields (matching field types with "pubkey")
+  FunctionFieldsMap normalStructFunctionFieldsMap;
+  normalStructFunctionFieldsMap[func1] = {{"field1", "pubkey"}};
+  normalStructFunctionFieldsMap[func2] = {{"field1", "pubkey"}};
 
-    SolanaAnalysisPass pass;
-    ReachGraph graph(pass);
+  SolanaAnalysisPass pass;
+  ReachGraph graph(pass);
 
-    std::map<TID, std::vector<CallEvent *>> callEventTraces;
+  std::map<TID, std::vector<CallEvent *>> callEventTraces;
 
-    // Create the CosplayDetector object
-    CosplayDetector detector(normalStructFunctionFieldsMap, &graph, callEventTraces);
+  // Create the CosplayAccountDetector object
+  CosplayAccountDetector detector(normalStructFunctionFieldsMap, &graph,
+                                  callEventTraces);
 
-    const xray::ctx* ctx = nullptr;  // Replace with actual ctx object
-    TID tid = 0;  // Replace with actual TID value
+  const xray::ctx *ctx = nullptr; // Replace with actual ctx object
+  TID tid = 0;                    // Replace with actual TID value
 
-    xray::CosplayAccounts::cosplayFullCount = 0;
-    xray::CosplayAccounts::cosplayPartialCount = 0;
+  xray::CosplayAccount::cosplayFullCount = 0;
+  xray::CosplayAccount::cosplayPartialCount = 0;
 
-    detector.detectCosplay(ctx, tid);
+  detector.detect(ctx, tid);
 
-    // expect the vector collected 1 cosplayFullCount
-    EXPECT_EQ(xray::CosplayAccounts::cosplayFullCount, 1);   
+  // expect the vector collected 1 cosplayFullCount
+  EXPECT_EQ(xray::CosplayAccount::cosplayFullCount, 1);
 }
-
 

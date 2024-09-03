@@ -9,7 +9,6 @@
 #include <llvm/ADT/StringRef.h>
 #include <llvm/IR/Function.h>
 
-#include "Rules/CosplayDetector.h"
 #include "Rules/Rule.h"
 
 namespace xray {

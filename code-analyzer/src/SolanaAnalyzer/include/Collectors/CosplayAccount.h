@@ -15,10 +15,10 @@ namespace xray {
 
 using json = nlohmann::json;
 
-class CosplayAccounts {
+class CosplayAccount {
 public:
-  CosplayAccounts(SourceInfo &srcInfo1, SourceInfo &srcInfo2, std::string msg,
-                  SVE::Type type, int P, bool isIgnored, bool isHidden);
+  CosplayAccount(SourceInfo &srcInfo1, SourceInfo &srcInfo2, std::string msg,
+                 SVE::Type type, int P, bool isIgnored, bool isHidden);
 
   static void init(int configReportLimit, bool configNoReportLimit);
   static void collect(const Event *e1, const Event *e2,
@@ -30,15 +30,16 @@ public:
   int getPriority() const { return this->p; }
   json to_json() const;
   void print() const;
-  bool operator<(CosplayAccounts &mapi) const {
+  bool operator<(CosplayAccount &mapi) const {
     // the race with higher priority should be placed at an earlier place
     return (this->p > mapi.getPriority());
   }
 
-  static std::vector<CosplayAccounts> cosplayAccounts;
+  static std::vector<CosplayAccount> cosplayAccounts;
 
   static int cosplayFullCount;
   static int cosplayPartialCount;
+
 private:
   static bool filter(SourceInfo &srcInfo);
   static std::string getErrorMsg(SVE::Type type);

@@ -14,7 +14,7 @@
 #include <nlohmann/json.hpp>
 
 #include "AccountIDL.h"
-#include "Collectors/CosplayAccounts.h"
+#include "Collectors/CosplayAccount.h"
 #include "Collectors/UnsafeOperation.h"
 #include "Collectors/UntrustfulAccount.h"
 #include "DebugFlags.h"
@@ -62,9 +62,9 @@ void outputJSON(std::string OutputPath) {
   }
 
   std::vector<json> cosplayAccountsJsons;
-  std::sort(CosplayAccounts::cosplayAccounts.begin(),
-            CosplayAccounts::cosplayAccounts.end());
-  for (const auto &r : CosplayAccounts::cosplayAccounts) {
+  std::sort(CosplayAccount::cosplayAccounts.begin(),
+            CosplayAccount::cosplayAccounts.end());
+  for (const auto &r : CosplayAccount::cosplayAccounts) {
     cosplayAccountsJsons.emplace_back(r.to_json());
   }
 

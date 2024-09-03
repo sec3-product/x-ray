@@ -1,4 +1,4 @@
-#include "Collectors/CosplayAccounts.h"
+#include "Collectors/CosplayAccount.h"
 
 #include <algorithm>
 #include <cassert>
@@ -16,24 +16,24 @@
 
 // Not to limit the number of bugs we collected
 // by default we only collect at most 25 cases for each type of bug
-unsigned int xray::CosplayAccounts::budget = 25;
-std::vector<xray::CosplayAccounts> xray::CosplayAccounts::cosplayAccounts;
+unsigned int xray::CosplayAccount::budget = 25;
+std::vector<xray::CosplayAccount> xray::CosplayAccount::cosplayAccounts;
 static bool nolimit = false;
-int xray::CosplayAccounts::cosplayFullCount = 0;
-int xray::CosplayAccounts::cosplayPartialCount = 0;
+int xray::CosplayAccount::cosplayFullCount = 0;
+int xray::CosplayAccount::cosplayPartialCount = 0;
 
 // used for filtering
-std::set<std::string> xray::CosplayAccounts::apiSigs;
+std::set<std::string> xray::CosplayAccount::apiSigs;
 
-void xray::CosplayAccounts::init(int configReportLimit,
-                                 bool configNoReportLimit) {
+void xray::CosplayAccount::init(int configReportLimit,
+                                bool configNoReportLimit) {
   if (configReportLimit != -1) {
     budget = configReportLimit;
   }
   nolimit = configNoReportLimit;
 }
 
-std::string xray::CosplayAccounts::getErrorMsg(SVE::Type type) {
+std::string xray::CosplayAccount::getErrorMsg(SVE::Type type) {
   std::string msg;
   switch (type) {
   case SVE::Type::COSPLAY_FULL:
@@ -45,14 +45,14 @@ std::string xray::CosplayAccounts::getErrorMsg(SVE::Type type) {
 
   default:
     llvm::errs() << "Unhandled type: " << static_cast<int>(type) << "\n";
-    llvm_unreachable("unhandled CosplayAccounts");
+    llvm_unreachable("unhandled CosplayAccount");
     break;
   }
   return msg;
 }
 
 // we report at most 1 UntrustfulAccount bug for each function call
-bool xray::CosplayAccounts::filter(SourceInfo &srcInfo) {
+bool xray::CosplayAccount::filter(SourceInfo &srcInfo) {
   if (apiSigs.find(srcInfo.sig()) != apiSigs.end()) {
     return true;
   }
@@ -61,7 +61,7 @@ bool xray::CosplayAccounts::filter(SourceInfo &srcInfo) {
   return false;
 }
 
-void xray::CosplayAccounts::collect(
+void xray::CosplayAccount::collect(
     const Event *e1, const Event *e2,
     std::map<TID, std::vector<CallEvent *>> &callEventTraces, SVE::Type type,
     int P) {
@@ -120,10 +120,10 @@ void xray::CosplayAccounts::collect(
         cosplayAccounts.emplace_back(srcInfo2, srcInfo1, msg, type, P,
                                      isIgnored, isHidden);
       --budget;
-      if (type == SVE::Type::COSPLAY_FULL) 
-            cosplayFullCount++;
-      else if (type == SVE::Type::COSPLAY_PARTIAL) 
-            cosplayPartialCount++;
+      if (type == SVE::Type::COSPLAY_FULL)
+        cosplayFullCount++;
+      else if (type == SVE::Type::COSPLAY_PARTIAL)
+        cosplayPartialCount++;
       if (PRINT_IMMEDIATELY)
         cosplayAccounts.back().print();
       // intentionally commented out since UntrustfulAccount needs improvement
@@ -132,10 +132,9 @@ void xray::CosplayAccounts::collect(
   }
 }
 
-xray::CosplayAccounts::CosplayAccounts(SourceInfo &srcInfo1,
-                                       SourceInfo &srcInfo2, std::string msg,
-                                       SVE::Type t, int P, bool isIgnored,
-                                       bool isHidden)
+xray::CosplayAccount::CosplayAccount(SourceInfo &srcInfo1, SourceInfo &srcInfo2,
+                                     std::string msg, SVE::Type t, int P,
+                                     bool isIgnored, bool isHidden)
     : apiInst1(srcInfo1), apiInst2(srcInfo2), errorMsg(msg), type(t), p(P),
       ignore(isIgnored), hide(isHidden) {
   id = SVE::getTypeID(t);
@@ -144,7 +143,7 @@ xray::CosplayAccounts::CosplayAccounts(SourceInfo &srcInfo1,
   url = SVE::database[id]["url"];
 }
 
-nlohmann::json xray::CosplayAccounts::to_json() const {
+nlohmann::json xray::CosplayAccount::to_json() const {
   nlohmann::json j({{"priority", p},
                     {"inst1", apiInst1},
                     {"inst2", apiInst2},
@@ -157,7 +156,7 @@ nlohmann::json xray::CosplayAccounts::to_json() const {
   return j;
 }
 
-void xray::CosplayAccounts::print() const {
+void xray::CosplayAccount::print() const {
   llvm::errs() << "==============VULNERABLE: " << name << "!============\n";
   outs() << description << ":\n";
   outs() << " Data type 1 defined at line " << apiInst1.getLine() << ", column "
@@ -174,14 +173,14 @@ void xray::CosplayAccounts::print() const {
   outs() << "For more info, see " << url << "\n\n\n";
 }
 
-void xray::CosplayAccounts::printAll() {
+void xray::CosplayAccount::printAll() {
   std::sort(cosplayAccounts.begin(), cosplayAccounts.end());
   for (auto r : cosplayAccounts) {
     r.print();
   }
 }
 
-void xray::CosplayAccounts::printSummary() {
+void xray::CosplayAccount::printSummary() {
   info("detected " + std::to_string(cosplayAccounts.size()) +
        " accounts cosplay issues in total.");
 }

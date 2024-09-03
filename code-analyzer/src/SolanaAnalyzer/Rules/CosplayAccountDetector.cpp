@@ -1,15 +1,15 @@
-#include "Rules/CosplayDetector.h"
+#include "Rules/CosplayAccountDetector.h"
 
 #include <llvm/Support/raw_ostream.h>
 
-#include "Collectors/CosplayAccounts.h"
+#include "Collectors/CosplayAccount.h"
 #include "DebugFlags.h"
 #include "Graph/ReachGraph.h"
 #include "SourceInfo.h"
 
 namespace xray {
 
-void CosplayDetector::detectCosplay(const xray::ctx *ctx, TID tid) {
+void CosplayAccountDetector::detect(const xray::ctx *ctx, TID tid) {
   for (auto &[func1, fieldTypes1] : normalStructFunctionFieldsMap) {
     for (auto &[func2, fieldTypes2] : normalStructFunctionFieldsMap) {
       if (func1 == func2) {
@@ -52,11 +52,11 @@ void CosplayDetector::detectCosplay(const xray::ctx *ctx, TID tid) {
       }
       if (file1 == file2) {
         if (size == size2) {
-          CosplayAccounts::collect(e1, e2, callEventTraces,
-                                   SVE::Type::COSPLAY_FULL, 6);
+          CosplayAccount::collect(e1, e2, callEventTraces,
+                                  SVE::Type::COSPLAY_FULL, 6);
         } else {
-          CosplayAccounts::collect(e1, e2, callEventTraces,
-                                   SVE::Type::COSPLAY_PARTIAL, 5);
+          CosplayAccount::collect(e1, e2, callEventTraces,
+                                  SVE::Type::COSPLAY_PARTIAL, 5);
         }
       }
     }

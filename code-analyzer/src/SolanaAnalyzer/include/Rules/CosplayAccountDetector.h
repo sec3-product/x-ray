@@ -8,24 +8,21 @@
 #include <llvm/IR/Function.h>
 
 #include "Graph/Event.h"
+#include "Rules/Rule.h"
 
 namespace xray {
 
-using FunctionFieldsMap =
-    std::map<const llvm::Function *,
-             std::vector<std::pair<llvm::StringRef, llvm::StringRef>>>;
-
 class ReachGraph;
 
-class CosplayDetector {
+class CosplayAccountDetector {
 public:
-  CosplayDetector(const FunctionFieldsMap &normalStructFunctionFieldsMap,
-                  ReachGraph *graph,
-                  std::map<TID, std::vector<CallEvent *>> &callEventTraces)
+  CosplayAccountDetector(
+      const FunctionFieldsMap &normalStructFunctionFieldsMap, ReachGraph *graph,
+      std::map<TID, std::vector<CallEvent *>> &callEventTraces)
       : normalStructFunctionFieldsMap(normalStructFunctionFieldsMap),
         graph(graph), callEventTraces(callEventTraces) {}
 
-  void detectCosplay(const xray::ctx *ctx, TID tid);
+  void detect(const xray::ctx *ctx, TID tid);
 
 private:
   const FunctionFieldsMap &normalStructFunctionFieldsMap;

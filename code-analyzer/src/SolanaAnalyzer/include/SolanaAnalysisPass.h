@@ -19,7 +19,6 @@
 #include "Graph/Event.h"
 #include "PTAModels/GraphBLASModel.h"
 #include "PointerAnalysis/PointerAnalysisPass.h"
-#include "Rules/CosplayDetector.h"
 #include "Rules/Ruleset.h"
 #include "SVE.h"
 #include "StaticThread.h"
@@ -65,7 +64,7 @@ private:
                              StaticThread *thread, CallSite CS);
 
   void detectUntrustfulAccounts();
-  void detectAccountsCosplay(const xray::ctx *ctx, TID tid);
+  void detectCosplayAccounts(const xray::ctx *ctx, TID tid);
 
   std::set<const llvm::Function *> threadStartFunctions;
   StaticThread *forkNewThread(ForkEvent *forkEvent);

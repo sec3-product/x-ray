@@ -1,7 +1,7 @@
 # Analyzer library.
 set(SOLANA_ANALYZER_SOURCES
     AccountIDL.cpp
-    Collectors/CosplayAccounts.cpp
+    Collectors/CosplayAccount.cpp
     Collectors/Output.cpp
     Collectors/UnsafeOperation.cpp
     Collectors/UntrustfulAccount.cpp
@@ -9,7 +9,7 @@ set(SOLANA_ANALYZER_SOURCES
     LocksetManager.cpp
     LogColor.cpp
     PTAModels/GraphBLASModel.cpp
-    Rules/CosplayDetector.cpp
+    Rules/CosplayAccountDetector.cpp
     Rules/OverflowAdd.cpp
     Rules/OverflowDiv.cpp
     Rules/OverflowMul.cpp

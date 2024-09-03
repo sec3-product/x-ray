@@ -11,7 +11,7 @@
 #include <llvm/Analysis/MemoryLocation.h>
 #include <llvm/Analysis/TypeBasedAliasAnalysis.h>
 
-#include "Collectors/CosplayAccounts.h"
+#include "Collectors/CosplayAccount.h"
 #include "Collectors/Output.h"
 #include "Collectors/UnsafeOperation.h"
 #include "Collectors/UntrustfulAccount.h"
@@ -20,7 +20,7 @@
 #include "Graph/ReachGraph.h"
 #include "Graph/Trie.h"
 #include "PTAModels/GraphBLASModel.h"
-#include "Rules/CosplayDetector.h"
+#include "Rules/CosplayAccountDetector.h"
 #include "Rules/Ruleset.h"
 #include "Rules/UntrustfulAccountDetector.h"
 #include "SVE.h"
@@ -351,7 +351,7 @@ void SolanaAnalysisPass::initialize(SVE::Database sves, int limit) {
   auto unlimited = (limit == -1);
   UntrustfulAccount::init(limit, unlimited);
   UnsafeOperation::init(limit, unlimited);
-  CosplayAccounts::init(limit, unlimited);
+  CosplayAccount::init(limit, unlimited);
 }
 
 static bool isUpper(const std::string &s) {
@@ -3403,16 +3403,16 @@ void SolanaAnalysisPass::detectUntrustfulAccounts() {
   }
 }
 
-void SolanaAnalysisPass::detectAccountsCosplay(const xray::ctx *ctx, TID tid) {
+void SolanaAnalysisPass::detectCosplayAccounts(const xray::ctx *ctx, TID tid) {
   if (anchorStructFunctionFieldsMap.size() != 0) {
     return;
   }
 
   // Check cosplay for non-Anchor program only.
   // For each pair of structs, do they overlap?
-  CosplayDetector detector(normalStructFunctionFieldsMap, graph,
-                           callEventTraces);
-  detector.detectCosplay(ctx, tid);
+  CosplayAccountDetector detector(normalStructFunctionFieldsMap, graph,
+                                  callEventTraces);
+  detector.detect(ctx, tid);
 }
 
 StaticThread *SolanaAnalysisPass::forkNewThread(ForkEvent *forkEvent) {
@@ -3545,10 +3545,11 @@ bool SolanaAnalysisPass::runOnModule(llvm::Module &module) {
   LOG_DEBUG("Finish Building SHB. time={}s", shb_elapsed.count());
   LOG_DEBUG("Number of threads: {}", StaticThread::getThreadNum());
 
-  auto detectStarted = std::chrono::steady_clock::now();
-  detectAccountsCosplay(entryNode->getContext(), 0);
-  auto detectDone = std::chrono::steady_clock::now();
-  std::chrono::duration<double> elapsed = detectDone - detectStarted;
+  auto detectCosplayStarted = std::chrono::steady_clock::now();
+  detectCosplayAccounts(entryNode->getContext(), 0);
+  auto detectCosplayDone = std::chrono::steady_clock::now();
+  std::chrono::duration<double> elapsed =
+      detectCosplayDone - detectCosplayStarted;
   LOG_DEBUG("Finished Analysis. time={}s", elapsed.count());
 
   logger::endPhase();

@@ -13,10 +13,14 @@
 #include "Graph/Event.h"
 #include "SVE.h"
 #include "SourceInfo.h"
-#include "StaticThread.h"
 
 namespace xray {
 
+class StaticThread;
+
+using FunctionFieldsMap =
+    std::map<const llvm::Function *,
+             std::vector<std::pair<llvm::StringRef, llvm::StringRef>>>;
 using FuncArgTypesMap =
     std::map<const llvm::Function *,
              std::vector<std::pair<llvm::StringRef, llvm::StringRef>>>;
