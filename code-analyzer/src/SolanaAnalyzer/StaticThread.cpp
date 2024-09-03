@@ -39,33 +39,6 @@ bool StaticThread::initIDLInstructionName() {
   return false;
 }
 
-bool StaticThread::isDuplicateAccountChecked(
-    llvm::StringRef accountName1, llvm::StringRef accountName2) const {
-  for (auto [pair, inst] : checkDuplicateAccountKeyEqualMap) {
-    if (pair.first.equals(accountName1) && pair.second.equals(accountName2) ||
-        pair.first.equals(accountName2) && pair.second.equals(accountName1)) {
-      if (DEBUG_RUST_API)
-        llvm::outs() << "isDuplicateAccountChecked: " << accountName1 << " "
-                     << accountName2 << "\n";
-      return true;
-    }
-  }
-  if (DEBUG_RUST_API)
-    llvm::outs() << "isDuplicateAccountChecked false: " << accountName1 << " "
-                 << accountName2 << "\n";
-  return false;
-}
-
-bool StaticThread::isUserProvidedString(llvm::StringRef &cons_seeds) const {
-  for (auto input_str : userProvidedInputStrings) {
-    if (cons_seeds.contains(input_str)) {
-      return true;
-      break;
-    }
-  }
-  return false;
-}
-
 void StaticThread::updateMostRecentFuncReturn(const llvm::Function *func,
                                               llvm::StringRef valueName) {
   if (DEBUG_RUST_API)

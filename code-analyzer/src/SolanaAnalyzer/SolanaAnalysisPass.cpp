@@ -924,7 +924,7 @@ void SolanaAnalysisPass::handleConditionalCheck0(const xray::ctx *ctx, TID tid,
 }
 
 void SolanaAnalysisPass::updateKeyEqualMap(StaticThread *thread, const Event *e,
-                                           bool isEqual, bool isNotEqual,
+                                           bool isEqual,
                                            llvm::StringRef valueName1,
                                            llvm::StringRef valueName2) {
   valueName1 = stripAccountName(valueName1);
@@ -952,10 +952,6 @@ void SolanaAnalysisPass::updateKeyEqualMap(StaticThread *thread, const Event *e,
         auto pair = std::make_pair(valueName2, valueName1);
         thread->assertKeyEqualMap[pair] = e;
       }
-    } else if (isNotEqual) {
-      // global info
-      auto pair = std::make_pair(valueName1, valueName2);
-      assertKeyNotEqualMap[pair] = e;
     }
 
     // for owner_usdh_account.owner == payer.key()
@@ -974,128 +970,6 @@ void SolanaAnalysisPass::updateKeyEqualMap(StaticThread *thread, const Event *e,
 
 static std::map<TID, unsigned int> threadNFuncMap;
 static xray::trie::TrieNode *cur_trie;
-
-bool SolanaAnalysisPass::mayBeExclusive(const Event *const e1,
-                                        const Event *const e2) {
-  std::vector<CallEvent *> callStack1, callStack2;
-  getCallEventStackUntilMain(e1, callEventTraces, callStack1);
-  getCallEventStackUntilMain(e2, callEventTraces, callStack2);
-  if (DEBUG_RUST_API) {
-    printCallEventStackTrace(callStack1);
-    printCallEventStackTrace(callStack2);
-  }
-  // find the first divergent insts
-  // (invariant: the first divergent insts must be in the same method)
-  const Instruction *inst1, *inst2;
-  size_t size1 = callStack1.size();
-  size_t size2 = callStack2.size();
-  size_t i, size = std::min(size1, size2);
-  // i should start from 0
-  // the 0-th entry for API race detection is not "main" function
-  for (i = 0; i < size; i++) {
-    if (callStack1[i]->getInst() != callStack2[i]->getInst()) {
-      inst1 = callStack1[i]->getInst();
-      inst2 = callStack2[i]->getInst();
-      break;
-    }
-  }
-  // the two callEventStacks share the same prefix
-  if (i == size) {
-    inst1 = (i == size1) ? e1->getInst() : callStack1[i]->getInst();
-    inst2 = (i == size2) ? e2->getInst() : callStack2[i]->getInst();
-  }
-  // self race, why bother?
-  if (inst1 == inst2) {
-    return false;
-  }
-  if (DEBUG_RUST_API) {
-    llvm::outs() << "inst1: " << *inst1 << "\n";
-    llvm::outs() << "function1: " << inst1->getFunction()->getName() << "\n";
-    llvm::outs() << "inst2: " << *inst2 << "\n";
-    llvm::outs() << "function2: " << inst2->getFunction()->getName() << "\n";
-  }
-  if (inst1->getFunction() == inst2->getFunction()) {
-    auto func = inst1->getFunction();
-    if (auto target1 = llvm::dyn_cast<llvm::CallBase>(inst1))
-      if (auto target2 = llvm::dyn_cast<llvm::CallBase>(inst2)) {
-        // find the next sol.match
-
-        auto nextInst = inst1->getNextNonDebugInstruction();
-        while (nextInst) {
-          if (auto callValue = dyn_cast<CallBase>(nextInst)) {
-            CallSite CS(callValue);
-            if (CS.getTargetFunction()->getName().startswith("sol.match.")) {
-              if (CS.getNumArgOperands() > 1) {
-                if (auto funStart0 =
-                        llvm::dyn_cast<llvm::CallBase>(CS.getArgOperand(0))) {
-                  if (funStart0->getCalledFunction()->getName().startswith(
-                          "sol.ifTrue.anon.") ||
-                      funStart0->getCalledFunction()->getName().startswith(
-                          "sol.ifFalse.anon.")) {
-                    funStart0 = llvm::dyn_cast<llvm::CallBase>(
-                        funStart0->getArgOperand(0));
-
-                    for (auto i = 1; i < CS.getNumArgOperands(); i++) {
-                      if (auto funStart_i = llvm::dyn_cast<llvm::CallBase>(
-                              CS.getArgOperand(i))) {
-                        if (funStart_i->getCalledFunction()
-                                ->getName()
-                                .startswith("sol.ifTrue.anon.") ||
-                            funStart_i->getCalledFunction()
-                                ->getName()
-                                .startswith("sol.ifFalse.anon.")) {
-                          funStart_i = llvm::dyn_cast<llvm::CallBase>(
-                              funStart_i->getArgOperand(0));
-
-                          if (i < 2) {
-                            if (DEBUG_RUST_API)
-                              llvm::outs()
-                                  << "sol.match in: " << func->getName()
-                                  << "\n";
-                            if (DEBUG_RUST_API)
-                              llvm::outs()
-                                  << "exclusive func: "
-                                  << funStart0->getCalledFunction()->getName()
-                                  << "\n";
-                            exclusiveFunctionsMap[func].insert(
-                                funStart0->getCalledFunction());
-                          }
-                          if (DEBUG_RUST_API)
-                            llvm::outs()
-                                << "exclusive func: "
-                                << funStart_i->getCalledFunction()->getName()
-                                << "\n";
-                          exclusiveFunctionsMap[func].insert(
-                              funStart_i->getCalledFunction());
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-
-              auto exclusiveFunctions =
-                  exclusiveFunctionsMap[inst1->getFunction()];
-              if (exclusiveFunctions.find(target1->getCalledFunction()) !=
-                      exclusiveFunctions.end() &&
-                  exclusiveFunctions.find(target2->getCalledFunction()) !=
-                      exclusiveFunctions.end()) {
-                if (DEBUG_RUST_API)
-                  llvm::outs()
-                      << "OKOKOK exclusive functions: "
-                      << target1->getCalledFunction()->getName() << " X "
-                      << target2->getCalledFunction()->getName() << "\n";
-                return true;
-              }
-              break;
-            }
-          }
-          nextInst = nextInst->getNextNonDebugInstruction();
-        }
-      }
-  }
-  return false;
-}
 
 void SolanaAnalysisPass::handleRustModelAPI(
     const xray::ctx *ctx, TID tid, llvm::Function *func,
@@ -1250,9 +1124,6 @@ void SolanaAnalysisPass::handleRustModelAPI(
                 if (foundDot != std::string::npos)
                   valueName = valueName.substr(0, foundDot);
                 thread->memsetDataMap[valueName] = e;
-                // llvm::outs() << "sol_memset valueName: " <<
-                // valueName <<
-                // "\n";
                 break;
               }
             }
@@ -1339,10 +1210,7 @@ void SolanaAnalysisPass::handleRustModelAPI(
         if (DEBUG_RUST_API)
           llvm::outs() << "Transfer accountsInvokedMap: from_name: "
                        << from_name << " to_name: " << to_name << "\n";
-
         thread->accountsInvokedMap[to_name] = e;
-        auto pair = std::make_pair(from_name, to_name);
-        thread->tokenTransferFromToMap[pair] = e;
       }
       if (!authority_name.empty()) {
         thread->accountsInvokedMap[authority_name] = e;
@@ -1363,11 +1231,6 @@ void SolanaAnalysisPass::handleRustModelAPI(
       // thread->accountsInvokedMap[mint_name] = e;
       if (!to_name.empty())
         thread->accountsInvokedMap[to_name] = e;
-      // if (foundMintType) {
-      //     llvm::outs() << "tid: " << thread->getTID()
-      //                  << " MintTo accountsInvokedMap:  to_name:
-      //                  " << to_name << "\n";
-      // }
       if (!from_name.empty()) {
         thread->accountsInvokedMap[from_name] = e;
 
@@ -1385,17 +1248,6 @@ void SolanaAnalysisPass::handleRustModelAPI(
         thread->accountsInvokedMap[authority_name] = e;
         auto pair1 = std::make_pair(authority_name, from_name);
         thread->accountsInvokeAuthorityMap[pair1] = e;
-        if (foundBurnType) {
-          if (DEBUG_RUST_API)
-            llvm::outs() << "Burn accountsInvokeAuthorityMap: "
-                            "authority_name: "
-                         << authority_name << " from_name: " << from_name
-                         << " to_name: " << to_name << "\n";
-
-          thread->accountsBurnAuthorityMap[pair1] = e;
-          auto pair2 = std::make_pair(authority_name, to_name);
-          thread->accountsBurnAuthorityMap[pair2] = e;
-        }
       }
     }
 
@@ -1520,8 +1372,6 @@ void SolanaAnalysisPass::handleRustModelAPI(
         bool isConstantOrSigner = true;
         bool isFreshPDA =
             accountsPDASeedsMap.find(account_pda) == accountsPDASeedsMap.end();
-        if (lastThread->isUserProvidedString(cons_seeds))
-          userProvidedInputStringPDAAccounts.insert(account_pda);
         for (auto cons : cons_vec) {
           if (DEBUG_RUST_API)
             llvm::outs() << "seeds: " << cons << "\n";
@@ -1631,9 +1481,9 @@ void SolanaAnalysisPass::handleRustModelAPI(
               op_len = 1;
             valueName1 = cons_.substr(0, found);
             valueName2 = cons_.substr(found + op_len);
-            if (isEqual || isNotEqual)
-              updateKeyEqualMap(lastThread, e, isEqual, isNotEqual, valueName1,
-                                valueName2);
+            if (isEqual) {
+              updateKeyEqualMap(lastThread, e, isEqual, valueName1, valueName2);
+            }
           }
 
           // add to constraint map
@@ -2036,10 +1886,6 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
                            << "\n";
             auto pair = std::make_pair(name, type);
             funcArgTypesMap[newThread->startFunc].push_back(pair);
-            // user-provided std::strings
-            if (type.contains("String")) {
-              newThread->userProvidedInputStrings.insert(name);
-            }
           }
         }
       }
@@ -2319,32 +2165,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
             llvm::outs() << "accountsInvokedMap accountName_i: "
                          << accountName_i << "\n";
         }
-        // now check if source_token_account.key ==
-        // destination_token_account.key
-        if (targetFuncName.startswith("sol.spl_token::instruction::transfer")) {
-          auto from = accountNames[0];
-          auto to = accountNames[1];
-          // TODO: check from and to have equality constraints
-          // llvm::outs() << "TODO from: " << from << " to: " << to << "\n";
-          auto pair = std::make_pair(from, to);
-          thread->tokenTransferFromToMap[pair] = e;
-        }
       }
-    } else if (targetFuncName.startswith(
-                   "sol.spl_token::instruction::mint_to")) {
-      // Not handled.
-    } else if (targetFuncName.startswith(
-                   "sol.spl_token::instruction::approve")) {
-      // Not handled.
-    } else if (targetFuncName.startswith("sol.spl_token::instruction::transfer_"
-                                         "checked")) {
-      // Not handled.
-    } else if (targetFuncName.startswith(
-                   "sol.spl_token::instruction::mint_to_checked")) {
-      // Not handled.
-    } else if (targetFuncName.startswith(
-                   "sol.spl_token::instruction::approve_checked")) {
-      // Not handled.
     } else if (targetFuncName.startswith("sol.Rent::from_account_info.") ||
                targetFuncName.startswith("sol.Clock::from_account_info.")) {
       auto value = CS.getArgOperand(0);
@@ -2905,9 +2726,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
         if (valueName1.contains(".ne(")) {
           auto x1 = valueName1.substr(0, valueName1.find(".ne("));
           auto x2 = valueName1.substr(valueName1.find(".ne(") + 4);
-          // llvm::outs() << "updateKeyEqualMap x1: " << x1
-          //       << " x2: " << x2 << "\n";
-          updateKeyEqualMap(thread, e, false, true, x1, x2);
+          updateKeyEqualMap(thread, e, false, x1, x2);
         }
       } else {
         addCheckKeyEqual(ctx, tid, inst, thread, CS);
@@ -3353,7 +3172,6 @@ void SolanaAnalysisPass::traverseFunction(
               // << "\n";
 
               traverseFunctionWrapper(ctx, thread, callStack, inst, fun);
-              exploredIndirectTarget.insert(fun);
             }
           }
         }
@@ -3583,10 +3401,6 @@ void SolanaAnalysisPass::detectUntrustfulAccounts(TID tid) {
     }
     for (auto [account, e] : curThread->accountsInvokedMap) {
       llvm::outs() << "accountsInvokedMap: " << account << "\n";
-    }
-    for (auto [pair, e] : assertKeyNotEqualMap) {
-      llvm::outs() << "assertKeyNotEqualMap: " << pair.first
-                   << " != " << pair.second << "\n";
     }
   }
 
@@ -4033,58 +3847,31 @@ bool SolanaAnalysisPass::isInitFunction(llvm::StringRef funcName) const {
 // Accounts.
 
 bool SolanaAnalysisPass::accountTypeContainsMoreThanOneMint(
-    llvm::StringRef struct_name) const {
+    llvm::StringRef structName) const {
+  auto funcStructName = "sol.model.struct.anchor." + structName.str();
+  auto func = thisModule->getFunction(funcStructName);
+  if (!func) {
+    return false;
+  }
+
   auto num_mints = 0;
-  std::string func_struct_name = "sol.model.struct.anchor." + struct_name.str();
-  auto func_struct = thisModule->getFunction(func_struct_name);
-  if (func_struct) {
-    const auto &fieldTypes = anchorStructFunctionFieldsMap.at(func_struct);
-    for (const auto &pair : fieldTypes) {
-      if (pair.first.contains("mint") && pair.second.equals("Pubkey")) {
-        num_mints++;
-      }
+  const auto &fieldTypes = anchorStructFunctionFieldsMap.at(func);
+  for (const auto &[name, fields] : fieldTypes) {
+    if (name.contains("mint") && fields.equals("Pubkey")) {
+      num_mints++;
     }
   }
   return num_mints > 1;
 }
 
-bool SolanaAnalysisPass::isAnchorStructFunction(
-    const llvm::Function *func) const {
-  return anchorStructFunctionFieldsMap.find(func) !=
-         anchorStructFunctionFieldsMap.end();
-}
-
-bool SolanaAnalysisPass::isAnchorTokenProgram(
-    llvm::StringRef accountName) const {
-  for (auto [func, fieldTypes] : anchorStructFunctionFieldsMap) {
-    for (auto pair : fieldTypes) {
-      if (pair.first.equals(accountName) &&
-          pair.second.equals("Program<'info, Token>"))
-        return true;
-    }
-  }
-  return false;
-}
-
-bool SolanaAnalysisPass::isAnchorTokenAccount(
-    llvm::StringRef accountName) const {
-  for (auto [func, fieldTypes] : anchorStructFunctionFieldsMap) {
-    for (auto pair : fieldTypes) {
-      if (pair.first.equals(accountName) &&
-          pair.second.contains("TokenAccount>"))
-        return true;
-    }
-  }
-  return false;
-}
-
 bool SolanaAnalysisPass::isAnchorValidatedAccount(
     llvm::StringRef accountName) const {
-  for (auto [func, fieldTypes] : anchorStructFunctionFieldsMap) {
-    for (auto pair : fieldTypes) {
-      if (pair.first.equals(accountName) &&
-          (pair.second.contains("Program<") || pair.second.contains("Sysvar<")))
+  for (const auto &[func, fieldTypes] : anchorStructFunctionFieldsMap) {
+    for (const auto &[name, fields] : fieldTypes) {
+      if (name.equals(accountName) &&
+          (fields.contains("Program<") || fields.contains("Sysvar<"))) {
         return true;
+      }
     }
   }
   return false;
@@ -4092,60 +3879,26 @@ bool SolanaAnalysisPass::isAnchorValidatedAccount(
 
 bool SolanaAnalysisPass::isAnchorDataAccount(
     llvm::StringRef accountName) const {
-  for (auto [func, fieldTypes] : anchorStructFunctionFieldsMap) {
-    for (auto pair : fieldTypes) {
-      if (pair.first.equals(accountName) &&
-          (pair.second.startswith("Box<Account<'info") ||
-           pair.second.startswith("Account<'info")))
+  for (const auto &[func, fieldTypes] : anchorStructFunctionFieldsMap) {
+    for (const auto &[name, fields] : fieldTypes) {
+      if (name.equals(accountName) && (fields.startswith("Box<Account<'info") ||
+                                       fields.startswith("Account<'info"))) {
         return true;
+      }
     }
   }
   return false;
 }
 
-bool SolanaAnalysisPass::isCompatibleSeeds(llvm::StringRef seed,
-                                           llvm::StringRef seed2) const {
-  // llvm::outs() << "isCompatibleSeeds seed: " << seed << " seed2: " << seed2
-  // << "\n";
-
-  if (seed == seed2)
-    return false; // skip identical seeds
-  if (seed.startswith("b\"") && seed2.startswith("b\"")) {
-    seed = seed.substr(0, seed.find_last_of("\""));
-    seed2 = seed2.substr(0, seed2.find_last_of("\""));
-    if (!seed.contains(seed2) && !seed2.contains(seed))
-      return false;
-  } else if (seed.contains("as_ref()") && seed2.contains("as_ref()")) {
-    seed = seed.substr(0, seed.find_last_of("."));
-    seed2 = seed2.substr(0, seed2.find_last_of("."));
-    // llvm::outs() << "isCompatibleSeeds2 seed: " << seed << " seed2: " <<
-    // seed2 << "\n";
-
-    if (!seed.contains(seed2) && !seed2.contains(seed))
-      return false;
-  } else if (seed.contains("as_bytes()") && seed2.contains("as_bytes()")) {
-    // TODO: check string constants
-    // pub const CREATOR_SEED: &str = "creator";
-    seed = seed.substr(0, seed.find_last_of("."));
-    seed2 = seed2.substr(0, seed2.find_last_of("."));
-    if (!seed.contains(seed2) && !seed2.contains(seed))
-      return false;
-  }
-
-  return true;
-}
-
 bool SolanaAnalysisPass::isAccountPDA(llvm::StringRef accountName) const {
-  for (auto [accountPda, inst] : accountsPDAMap) {
-    if (accountPda.contains(accountName)) {
-      if (DEBUG_RUST_API)
+  for (const auto &[pda, inst] : accountsPDAMap) {
+    if (pda.contains(accountName)) {
+      if (DEBUG_RUST_API) {
         llvm::outs() << "isAccountPDA: " << accountName << "\n";
+      }
       return true;
     }
   }
-  if (DEBUG_RUST_API)
-    llvm::outs() << "isAccountPDA false: " << accountName << "\n";
-
   return false;
 }
 
@@ -4161,27 +3914,6 @@ bool SolanaAnalysisPass::isAccountUsedInSeedsProgramAddress(
   if (DEBUG_RUST_API)
     llvm::outs() << "isAccountUsedInSeedsProgramAddress false: " << accountName
                  << "\n";
-
-  return false;
-}
-
-bool SolanaAnalysisPass::isAccountKeyNotEqual(
-    llvm::StringRef accountName1, llvm::StringRef accountName2) const {
-  for (auto [pair, inst] : assertKeyNotEqualMap) {
-    if ((pair.first.contains(accountName1.str() + ".key") &&
-         pair.second.contains(accountName2.str() + ".key")) ||
-        (pair.first.contains(accountName2.str() + ".key") &&
-         pair.second.contains(accountName1.str() + ".key"))) {
-      if (DEBUG_RUST_API)
-        llvm::outs() << "isAccountKeyNotEqual: " << accountName1 << " "
-                     << accountName2 << "\n";
-      return true;
-    }
-  }
-
-  if (DEBUG_RUST_API)
-    llvm::outs() << "isAccountKeyNotEqual false: " << accountName1 << " "
-                 << accountName2 << "\n";
 
   return false;
 }

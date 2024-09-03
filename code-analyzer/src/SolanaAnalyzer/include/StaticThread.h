@@ -132,6 +132,7 @@ public:
   std::map<llvm::StringRef, const Event *> asssertSignerMap;
   std::map<llvm::StringRef, const Event *> asssertDiscriminatorMap;
   std::map<llvm::StringRef, const Event *> asssertOtherMap;
+
   // e.g., assert_eq!(wallet.vault, *vault_info.key);
   std::map<std::pair<llvm::StringRef, llvm::StringRef>, const Event *>
       accountsBumpMap;
@@ -150,26 +151,15 @@ public:
       assertOwnerEqualMap;
   std::map<std::pair<llvm::StringRef, llvm::StringRef>, const Event *>
       assertOtherEqualMap;
-  std::map<std::pair<llvm::StringRef, llvm::StringRef>, const Event *>
-      tokenTransferFromToMap;
 
   std::map<std::pair<llvm::StringRef, llvm::StringRef>, const Event *>
       accountsInvokeAuthorityMap;
-  std::map<std::pair<llvm::StringRef, llvm::StringRef>, const Event *>
-      accountsBurnAuthorityMap;
 
   std::map<llvm::Function *,
            std::map<std::pair<llvm::StringRef, llvm::StringRef>, const Event *>>
       structAccountTypeMaps;
 
   std::map<const llvm::Function *, llvm::StringRef> mostRecentFuncReturnMap;
-
-  std::set<llvm::StringRef> userProvidedInputStrings;
-
-  bool isDuplicateAccountChecked(llvm::StringRef accountName1,
-                                 llvm::StringRef accountName2) const;
-
-  bool isUserProvidedString(llvm::StringRef &cons_seeds) const;
 
   void updateMostRecentFuncReturn(const llvm::Function *func,
                                   llvm::StringRef valueName);
@@ -245,59 +235,6 @@ public:
     return isInAccountsMap(accountName) || isInStructAccountsMap(accountName);
   }
 
-  bool isTokenTransferDestination(llvm::StringRef accountName) {
-    for (auto [pair, inst] : tokenTransferFromToMap) {
-      if (pair.second.equals(accountName)) {
-        if (DEBUG_RUST_API)
-          llvm::outs() << "isTokenTransferDestination: " << accountName << "\n";
-        return true;
-      }
-    }
-    if (DEBUG_RUST_API)
-      llvm::outs() << "isTokenTransferDestination false: " << accountName
-                   << "\n";
-    return false;
-  }
-
-  bool isTokenTransferFromToAccount(llvm::StringRef accountName) {
-    for (auto [pair, inst] : tokenTransferFromToMap) {
-      if (pair.first.equals(accountName) || pair.second.equals(accountName)) {
-        if (DEBUG_RUST_API)
-          llvm::outs() << "isTokenTransferFromToAccount: " << accountName
-                       << "\n";
-        return true;
-      }
-    }
-    if (DEBUG_RUST_API)
-      llvm::outs() << "isTokenTransferFromToAccount false: " << accountName
-                   << "\n";
-    return false;
-  }
-
-  const Event *getTokenTransferFromToAccountEvent(llvm::StringRef accountName) {
-    for (auto [pair, e] : tokenTransferFromToMap) {
-      if (pair.first.equals(accountName) || pair.second.equals(accountName)) {
-        if (DEBUG_RUST_API)
-          llvm::outs() << "isTokenTransferFromToAccount: " << accountName
-                       << "\n";
-        return e;
-      }
-    }
-    if (DEBUG_RUST_API)
-      llvm::outs() << "isTokenTransferFromToAccount false: " << accountName
-                   << "\n";
-    return nullptr;
-  }
-
-  llvm::StringRef getTokenTransferSourceAccount(llvm::StringRef accountName) {
-    for (auto [pair, inst] : tokenTransferFromToMap) {
-      if (pair.second.equals(accountName)) {
-        return pair.first;
-      }
-    }
-    return "";
-  }
-
   bool isAccountDataWritten(llvm::StringRef accountName) {
     if (accountsDataWrittenMap.find(accountName) !=
         accountsDataWrittenMap.end()) {
@@ -345,18 +282,6 @@ public:
     } else {
       if (DEBUG_RUST_API)
         llvm::outs() << "isAccountBorrowData false: " << accountName << "\n";
-    }
-    return false;
-  }
-
-  bool isAccountMemsetData(llvm::StringRef accountName) {
-    if (memsetDataMap.find(accountName) != memsetDataMap.end()) {
-      if (DEBUG_RUST_API)
-        llvm::outs() << "isAccountMemsetData: " << accountName << "\n";
-      return true;
-    } else {
-      if (DEBUG_RUST_API)
-        llvm::outs() << "isAccountMemsetData false: " << accountName << "\n";
     }
     return false;
   }
@@ -442,29 +367,6 @@ public:
     return false;
   }
 
-  bool isAuthorizedAccountPDAAndHasSignedSeeds(llvm::StringRef accountName) {
-    for (auto [pair, e] : accountsBurnAuthorityMap) {
-      if (pair.first.equals(accountName)) {
-        auto from_or_to_account = pair.second;
-        if (!from_or_to_account.empty()) {
-          for (auto [accountSigner, inst] : asssertSignerMap) {
-            if (isAccountUsedInSeedsOfAccount0(from_or_to_account,
-                                               accountSigner)) {
-              if (DEBUG_RUST_API)
-                llvm::outs() << "isAuthorizedAccountPDAAndHasSignedSeeds: "
-                             << accountName << "\n";
-              return true;
-            }
-          }
-        }
-      }
-    }
-    if (DEBUG_RUST_API)
-      llvm::outs() << "isAuthorizedAccountPDAAndHasSignedSeeds false: "
-                   << accountName << "\n";
-    return false;
-  }
-
   bool isAccountInvokedAsAuthority(llvm::StringRef accountName) {
     for (auto [pair, e] : accountsInvokeAuthorityMap) {
       if (pair.first.equals(accountName)) {
@@ -477,22 +379,6 @@ public:
     }
     if (DEBUG_RUST_API)
       llvm::outs() << "isAccountInvokedAsAuthority false: " << accountName
-                   << "\n";
-    return false;
-  }
-
-  bool isAccountInvokedAsBurnAuthority(llvm::StringRef accountName) {
-    for (auto [pair, e] : accountsBurnAuthorityMap) {
-      if (pair.first.equals(accountName)) {
-        if (DEBUG_RUST_API)
-          llvm::outs() << "isAccountInvokedAsBurnAuthority: " << accountName
-                       << "\n";
-
-        return true;
-      }
-    }
-    if (DEBUG_RUST_API)
-      llvm::outs() << "isAccountInvokedAsBurnAuthority false: " << accountName
                    << "\n";
     return false;
   }
@@ -929,7 +815,7 @@ public:
   }
 
   bool isAccountProgramAddressKeyValidated(llvm::StringRef accountName) {
-    for (auto [pair, inst] : assertKeyEqualMap) {
+    for (const auto &[pair, inst] : assertKeyEqualMap) {
       if (pair.first.contains(accountName)) {
         if (asssertProgramAddressMap.find(pair.second) !=
             asssertProgramAddressMap.end()) {
@@ -949,7 +835,7 @@ public:
         }
       }
     }
-    for (auto [pair, inst] : assertOtherEqualMap) {
+    for (const auto &[pair, inst] : assertOtherEqualMap) {
       if (pair.first.contains(accountName) && pair.first.contains(".key")) {
         if (asssertProgramAddressMap.find(pair.second) !=
             asssertProgramAddressMap.end()) {
