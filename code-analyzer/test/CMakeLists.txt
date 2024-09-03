@@ -13,6 +13,7 @@ FetchContent_MakeAvailable(googletest)
 add_executable(unit_tests
     OverflowAddTest.cpp
     OverflowMulTest.cpp    
+    OverflowSubTest.cpp    
     Main.cpp
 )
 
