@@ -70,6 +70,7 @@ private:
   void detectUntrustfulAccounts(TID tid);
   void detectAccountsCosplay(const xray::ctx *ctx, TID tid);
 
+  std::set<const llvm::Function *> threadStartFunctions;
   StaticThread *forkNewThread(ForkEvent *forkEvent);
   TID addNewThread(ForkEvent *fork);
   bool addThreadStartFunction(const llvm::Function *func);
@@ -95,17 +96,12 @@ private:
   FunctionFieldsMap anchorStructFunctionFieldsMap;
   FunctionFieldsMap normalStructFunctionFieldsMap;
 
-  bool accountTypeContainsMoreThanOneMint(llvm::StringRef struct_name) const;
-  bool isAnchorStructFunction(const llvm::Function *func) const;
-  bool isAnchorTokenProgram(llvm::StringRef accountName) const;
-  bool isAnchorTokenAccount(llvm::StringRef accountName) const;
+  bool accountTypeContainsMoreThanOneMint(llvm::StringRef structName) const;
   bool isAnchorValidatedAccount(llvm::StringRef accountName) const;
   bool isAnchorDataAccount(llvm::StringRef accountName) const;
 
   std::map<llvm::StringRef, std::vector<llvm::StringRef>> accountsPDASeedsMap;
-  bool isCompatibleSeeds(llvm::StringRef seed, llvm::StringRef seed2) const;
 
-  std::set<llvm::StringRef> userProvidedInputStringPDAAccounts;
   std::set<llvm::StringRef> potentialOwnerAccounts;
   std::map<llvm::StringRef, const Event *> accountsPDAMap;
   std::map<llvm::StringRef, const Event *> accountsSeedProgramAddressMap;
@@ -113,13 +109,8 @@ private:
   bool isAccountPDA(llvm::StringRef accountName) const;
   bool isAccountUsedInSeedsProgramAddress(llvm::StringRef accountName) const;
 
-  std::map<std::pair<llvm::StringRef, llvm::StringRef>, const Event *>
-      assertKeyNotEqualMap;
-  bool isAccountKeyNotEqual(llvm::StringRef accountName1,
-                            llvm::StringRef accountName2) const;
-
   void updateKeyEqualMap(StaticThread *thread, const Event *e, bool isEqual,
-                         bool isNotEqual, llvm::StringRef valueName1,
+                         llvm::StringRef valueName1,
                          llvm::StringRef valueName2);
 
   void addCheckKeyEqual(const xray::ctx *ctx, TID tid,
@@ -140,10 +131,6 @@ private:
                                            const llvm::Instruction *inst,
                                            const llvm::StringRef name);
 
-  std::map<const llvm::Function *, std::set<const llvm::Function *>>
-      exclusiveFunctionsMap;
-  bool mayBeExclusive(const Event *const e1, const Event *const e2);
-
   const llvm::Module *thisModule;
   // Type-based Alias Analysis
   llvm::TypeBasedAAResult *tbaa;
@@ -158,9 +145,6 @@ private:
 
   uint8_t for_loop_counter = 0;
   bool isInLoop() { return for_loop_counter > 0; }
-
-  std::set<const llvm::Function *> exploredIndirectTarget;
-  std::set<const llvm::Function *> threadStartFunctions;
 
   // A per-thread callEventTrace. Each callEvent has an endID. endID represents
   // the last EventID belongs to the current function. The call stack of an
