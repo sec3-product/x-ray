@@ -19,6 +19,8 @@
 unsigned int xray::CosplayAccounts::budget = 25;
 std::vector<xray::CosplayAccounts> xray::CosplayAccounts::cosplayAccounts;
 static bool nolimit = false;
+int xray::CosplayAccounts::cosplayFullCount = 0;
+int xray::CosplayAccounts::cosplayPartialCount = 0;
 
 // used for filtering
 std::set<std::string> xray::CosplayAccounts::apiSigs;
@@ -118,6 +120,10 @@ void xray::CosplayAccounts::collect(
         cosplayAccounts.emplace_back(srcInfo2, srcInfo1, msg, type, P,
                                      isIgnored, isHidden);
       --budget;
+      if (type == SVE::Type::COSPLAY_FULL) 
+            cosplayFullCount++;
+      else if (type == SVE::Type::COSPLAY_PARTIAL) 
+            cosplayPartialCount++;
       if (PRINT_IMMEDIATELY)
         cosplayAccounts.back().print();
       // intentionally commented out since UntrustfulAccount needs improvement

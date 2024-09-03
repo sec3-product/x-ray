@@ -14,6 +14,7 @@ add_executable(unit_tests
     OverflowAddTest.cpp
     OverflowMulTest.cpp    
     OverflowSubTest.cpp    
+    CosplayFullTest.cpp    
     Main.cpp
 )
 

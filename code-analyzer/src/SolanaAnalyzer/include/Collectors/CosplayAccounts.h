@@ -37,6 +37,8 @@ public:
 
   static std::vector<CosplayAccounts> cosplayAccounts;
 
+  static int cosplayFullCount;
+  static int cosplayPartialCount;
 private:
   static bool filter(SourceInfo &srcInfo);
   static std::string getErrorMsg(SVE::Type type);
