@@ -6,7 +6,6 @@
 
 namespace xray {
 
-bool matchComparisonEqual(const CallSite &);
-void handleComparisonEqual(const RuleContext &, const CallSite &);
+bool handleComparisonEqual(const RuleContext &, const CallSite &);
 
 }; // namespace xray

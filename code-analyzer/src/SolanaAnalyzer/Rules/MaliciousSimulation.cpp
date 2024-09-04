@@ -1,8 +1,5 @@
 #include "Rules/MaliciousSimulation.h"
 
-#include <map>
-#include <utility>
-
 #include <PointerAnalysis/Program/CallSite.h>
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/raw_ostream.h>
@@ -14,13 +11,13 @@
 
 namespace xray {
 
-bool matchComparisonEqual(const CallSite &CS) {
+bool handleComparisonEqual(const RuleContext &RC, const CallSite &CS) {
   auto targetFuncName = CS.getCalledFunction()->getName();
-  return (targetFuncName.startswith("sol.>=") ||
-          targetFuncName.startswith("sol.<="));
-}
+  if (!targetFuncName.startswith("sol.>=") &&
+      !targetFuncName.startswith("sol.<=")) {
+    return false;
+  }
 
-void handleComparisonEqual(const RuleContext &RC, const CallSite &CS) {
   if (DEBUG_RUST_API) {
     llvm::outs() << "sol.>=: " << *RC.getInst() << "\n";
   }
@@ -33,6 +30,7 @@ void handleComparisonEqual(const RuleContext &RC, const CallSite &CS) {
     RC.collectUntrustfulAccount(valueName1, SVE::Type::MALICIOUS_SIMULATION,
                                 11);
   }
+  return true;
 }
 
 } // namespace xray

@@ -6,10 +6,7 @@
 
 namespace xray {
 
-bool matchPlusEqual(const CallSite &);
-void handlePlusEqual(const RuleContext &, const CallSite &);
-
-bool matchPlus(const CallSite &);
-void handlePlus(const RuleContext &, const CallSite &);
+bool handlePlusEqual(const RuleContext &, const CallSite &);
+bool handlePlus(const RuleContext &, const CallSite &);
 
 }; // namespace xray

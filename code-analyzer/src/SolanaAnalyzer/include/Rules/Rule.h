@@ -85,19 +85,18 @@ private:
 
 class Rule {
 public:
-  using Matcher = std::function<bool(const CallSite &)>;
-  using Handler = std::function<void(const RuleContext &, const CallSite &)>;
+  using Handler = std::function<bool(const RuleContext &, const CallSite &)>;
 
-  Rule(Matcher matcher, Handler handler)
-      : MatcherFunc(matcher), HandlerFunc(handler) {}
+  Rule(Handler handler) : HandlerFunc(handler) {}
 
-  bool match(const CallSite &CS) const { return MatcherFunc(CS); }
-  void handle(const RuleContext &RC, const CallSite &CS) const {
-    HandlerFunc(RC, CS);
+  // Checks whether the given CallSite matches the rule entrypoint and
+  // processes the rule if it does. It returns true if the CallSite was fully
+  // handled and no further rules should be processed, false otherwise.
+  bool handle(const RuleContext &RC, const CallSite &CS) const {
+    return HandlerFunc(RC, CS);
   }
 
 private:
-  Matcher MatcherFunc;
   Handler HandlerFunc;
 };
 
