@@ -11,6 +11,7 @@ set(SOLANA_ANALYZER_SOURCES
     PTAModels/GraphBLASModel.cpp
     Rules/Break.cpp
     Rules/CosplayAccountDetector.cpp
+    Rules/InsecurePDA.cpp
     Rules/MaliciousSimulation.cpp
     Rules/OverflowAdd.cpp
     Rules/OverflowDiv.cpp

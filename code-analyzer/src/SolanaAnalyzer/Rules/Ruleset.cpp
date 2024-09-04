@@ -1,6 +1,7 @@
 #include "Rules/Ruleset.h"
 
 #include "Rules/Break.h"
+#include "Rules/InsecurePDA.h"
 #include "Rules/MaliciousSimulation.h"
 #include "Rules/OverflowAdd.h"
 #include "Rules/OverflowDiv.h"
@@ -46,6 +47,9 @@ Ruleset Ruleset::createRustModelRuleset() {
 
   // Break logic.
   RS.addRule(Rule(handleBreak));
+
+  // Insecure PDA sharing.
+  RS.addRule(Rule(handleOpaqueAssign));
 
   return Ruleset();
 }

@@ -1006,9 +1006,8 @@ void SolanaAnalysisPass::handleRustModelAPI(
   if (calledFuncName.startswith("sol.model.opaqueAssign")) {
     auto value = CS.getArgOperand(0);
     auto valueName = LangModel::findGlobalString(value);
-    // llvm::outs() << "data: " << valueName << "\n";
-    if (isa<CallBase>(CS.getArgOperand(1))) {
-      auto callInst = llvm::cast<CallBase>(CS.getArgOperand(1));
+    if (llvm::isa<llvm::CallBase>(CS.getArgOperand(1))) {
+      auto callInst = llvm::cast<llvm::CallBase>(CS.getArgOperand(1));
       if (callInst->getCalledFunction()->getName().startswith("sol.clone.1")) {
         // skip clone
         CallSite CS2(callInst);
@@ -1031,20 +1030,13 @@ void SolanaAnalysisPass::handleRustModelAPI(
             llvm::outs() << "account: " << account
                          << " aliasAccount: " << valueName << "\n";
         }
-
       } else if (callInst->getCalledFunction()->getName().startswith(
                      "sol.next_account_info.")) {
-        // llvm::outs() << "next_account_info: " << valueName <<
-        // "\n";
         auto e = graph->createReadEvent(ctx, inst, tid);
         if (!valueName.empty())
           thread->accountsMap[valueName] = e;
-
       } else if (callInst->getCalledFunction()->getName().contains(
                      "_account_info.")) {
-        // llvm::outs() << "calling: " <<
-        // callInst->getCalledFunction()->getName() <<
-        // "\n";
         auto aliasAccount =
             thread->findReturnAliasAccount(callInst->getCalledFunction());
         if (!aliasAccount.empty() && aliasAccount != valueName) {
@@ -1081,9 +1073,6 @@ void SolanaAnalysisPass::handleRustModelAPI(
             llvm::outs() << "account: " << account
                          << " aliasAccount: " << valueName << "\n";
         }
-      } else {
-        // llvm::outs() << valueName << " == " <<
-        // callInst->getCalledFunction()->getName() << "\n";
       }
     } else {
       auto valueName1 = LangModel::findGlobalString(CS.getArgOperand(1));
@@ -1101,14 +1090,6 @@ void SolanaAnalysisPass::handleRustModelAPI(
               thread->assertKeyEqualMap[pair] = e;
             }
           }
-        } else if (valueName1.contains("pool.") &&
-                   !valueName1.contains("fee_") &&
-                   !valueName1.contains("dest")) {
-          // pda_sharing_secure
-          // llvm::errs()<< "==============VULNERABLE: insecure PDA
-          // sharing!============\n";
-          UntrustfulAccount::collect(valueName1, e, callEventTraces,
-                                     SVE::Type::INSECURE_PDA_SHARING, 5);
         }
       } else if (valueName1.contains(".accounts.")) {
         valueName1 = stripCtxAccountsName(valueName1);
