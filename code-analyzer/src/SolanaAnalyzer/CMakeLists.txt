@@ -10,6 +10,7 @@ set(SOLANA_ANALYZER_SOURCES
     LogColor.cpp
     PTAModels/GraphBLASModel.cpp
     Rules/Break.cpp
+    Rules/CheckedDiv.cpp
     Rules/CosplayAccountDetector.cpp
     Rules/InsecurePDA.cpp
     Rules/MaliciousSimulation.cpp
