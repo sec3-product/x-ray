@@ -63,29 +63,25 @@ Here’s the header definition for the Rule class:
 ```cpp
 class Rule {
 public:
-  using Matcher = std::function<bool(const CallSite &)>;
-  using Handler = std::function<void(const RuleContext &, const CallSite &)>;
+  using Handler = std::function<bool(const RuleContext &, const CallSite &)>;
 
-  Rule(Matcher matcher, Handler handler)
-      : MatcherFunc(matcher), HandlerFunc(handler) {}
+  Rule(Handler handler) : HandlerFunc(handler) {}
 
-  bool match(const CallSite &CS) const { return MatcherFunc(CS); }
-  void handle(const RuleContext &RC, const CallSite &CS) const {
+  bool handle(const RuleContext &RC, const CallSite &CS) const {
     HandlerFunc(RC, CS);
   }
 
 private:
-  Matcher MatcherFunc;
   Handler HandlerFunc;
 };
 ```
 
-*  `Matcher`: A function that evaluates whether a specific `CallSite` meets the
-   defined criteria. If the criteria are met, the rule is considered "matched".
-
-*  `Handler`: A function that is executed when a rule is matched. It takes a
-   `RuleContext` and a `CallSite` as input parameters, allowing for detailed
-   processing based on the context in which the rule was triggered.
+*  `Handler`: A function that evaludates whether a specific `CallSite` meets
+   the defined criteria and triggers a rule. It takes a `RuleContext` and a
+   `CallSite` as input parameters, allowing for detailed processing based on
+   the context in which the rule was triggered. It returns `true` if the given
+   `CallSite` has been fully processed and no further rules need to be applied,
+   or false otherwise.
 
 
 #### Contextual Analysis Rules

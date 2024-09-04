@@ -100,7 +100,7 @@ loadFile(const std::string &FN, LLVMContext &Context, bool abortOnFail) {
   std::unique_ptr<Module> Result = parseIRFile(FN, Err, Context);
   if (!Result) {
     if (abortOnFail) {
-      Err.print("racedetect", llvm::errs());
+      Err.print("SolanaAnalyzer", llvm::errs());
       abort();
     }
 
