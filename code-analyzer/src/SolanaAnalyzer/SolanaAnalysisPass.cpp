@@ -3446,7 +3446,8 @@ bool SolanaAnalysisPass::runOnModule(llvm::Module &module) {
   threadList.push(mainThread);
 
   LOG_INFO("Start Analyzing");
-  logger::newPhaseSpinner("Detecting Vulnerabilities");
+  logger::newPhaseSpinner("Detecting Vulnerabilities",
+                          "Detecting Vulnerabilities - Done");
 
   LOG_INFO("Start Building SHB");
   auto shb_start = std::chrono::steady_clock::now();
@@ -3538,14 +3539,14 @@ bool SolanaAnalysisPass::runOnModule(llvm::Module &module) {
 // add inter-thread HB edges (fork) for SHB Graph
 TID SolanaAnalysisPass::addNewThread(ForkEvent *forkEvent) {
   auto t = forkNewThread(forkEvent);
-  if (t) {
-    threadList.push(t);
-    graph->addThreadForkEdge(forkEvent,
-                             forkEvent->getSpawnedThread()->getTID());
-    hasFoundThread = true;
-    return t->getTID();
-  } else
+  if (!t) {
     return 0;
+  }
+
+  threadList.push(t);
+  graph->addThreadForkEdge(forkEvent, forkEvent->getSpawnedThread()->getTID());
+  hasFoundThread = true;
+  return t->getTID();
 }
 
 bool SolanaAnalysisPass::addThreadStartFunction(const llvm::Function *func) {

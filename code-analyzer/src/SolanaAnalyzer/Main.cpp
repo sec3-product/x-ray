@@ -217,14 +217,16 @@ int main(int argc, char **argv) {
   PTSTrait<PtsTy>::setPTSSizeLimit(9);
 
   LOG_INFO("Loading IR From File: {}", TargetModulePath);
-  logger::newPhaseSpinner("Loading IR From File");
+  logger::newPhaseSpinner("Loading IR From File",
+                          "Loading IR From File - Done");
 
   LLVMContext Context;
   auto module = loadFile(TargetModulePath, Context, true);
   module->setModuleIdentifier("coderrect.stub.pid" + std::to_string(getpid()));
 
   LOG_INFO("Running Transformation Passes");
-  logger::newPhaseSpinner("Running Transformation Passes");
+  logger::newPhaseSpinner("Running Transformation Passes",
+                          "Running Transformation Passes - Done");
 
   // Initialize passes, which are required by later passes.
   PassRegistry &Registry = *PassRegistry::getPassRegistry();
@@ -253,7 +255,8 @@ int main(int argc, char **argv) {
     outfile.close();
   }
 
-  logger::newPhaseSpinner("Running Pointer Analysis");
+  logger::newPhaseSpinner("Running Pointer Analysis",
+                          "Running Pointer Analysis - Done");
 
   llvm::legacy::PassManager analysisPasses;
   registerPointerAnalysisPass<PTA>();
