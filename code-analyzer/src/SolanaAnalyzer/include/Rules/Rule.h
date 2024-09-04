@@ -25,11 +25,13 @@ using FuncArgTypesMap =
     std::map<const llvm::Function *,
              std::vector<std::pair<llvm::StringRef, llvm::StringRef>>>;
 
+using CollectUnsafeOperationFunc = std::function<void(Event *, SVE::Type, int)>;
+using CollectUntrustfulAccountFunc =
+    std::function<void(llvm::StringRef, const Event *, SVE::Type, int)>;
+
 // RuleContext encapsulates the context information when evaluating a rule.
 class RuleContext {
 public:
-  using CollectUnsafeOperationFunc =
-      std::function<void(Event *, SVE::Type, int)>;
   using CreateReadEventFunc = std::function<Event *(const llvm::Instruction *)>;
   using IsInLoopFunc = std::function<bool()>;
   using GetLastInstFunc = std::function<const llvm::Instruction *()>;
@@ -38,11 +40,13 @@ public:
               FuncArgTypesMap &funcArgTypesMap, StaticThread *thread,
               CreateReadEventFunc createReadEvent, IsInLoopFunc isInLoop,
               GetLastInstFunc getLastInst,
-              CollectUnsafeOperationFunc collectUnsafeOperation)
+              CollectUnsafeOperationFunc collectUnsafeOperation,
+              CollectUntrustfulAccountFunc collectUntrustfulAccount)
       : Func(func), Inst(inst), FuncArgTypesMap(funcArgTypesMap),
         Thread(thread), CreateReadEvent(createReadEvent), IsInLoop(isInLoop),
         GetLastInst(getLastInst),
-        CollectUnsafeOperation(collectUnsafeOperation) {}
+        CollectUnsafeOperation(collectUnsafeOperation),
+        CollectUntrustfulAccount(collectUntrustfulAccount) {}
 
   const llvm::Function *getFunc() const { return Func; }
   const llvm::Instruction *getInst() const { return Inst; }
@@ -61,6 +65,11 @@ public:
     auto e = createReadEvent();
     CollectUnsafeOperation(e, type, size);
   }
+  virtual void collectUntrustfulAccount(llvm::StringRef name, SVE::Type type,
+                                        int size) const {
+    auto e = createReadEvent();
+    CollectUntrustfulAccount(name, e, type, size);
+  }
 
 private:
   const llvm::Function *Func;
@@ -71,6 +80,7 @@ private:
   IsInLoopFunc IsInLoop;
   GetLastInstFunc GetLastInst;
   CollectUnsafeOperationFunc CollectUnsafeOperation;
+  CollectUntrustfulAccountFunc CollectUntrustfulAccount;
 };
 
 class Rule {

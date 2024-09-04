@@ -16,7 +16,7 @@ class TestableRuleContext : public RuleContext {
 public:
   TestableRuleContext(bool safeType, bool inLoop, bool safeVariable)
       : RuleContext(nullptr, nullptr, dummyFuncArgTypesMap, nullptr,
-                    createReadEvent, nullptr, nullptr, nullptr),
+                    createReadEvent, nullptr, nullptr, nullptr, nullptr),
         safeType(safeType), inLoop(inLoop), safeVariable(safeVariable),
         unsafeOps(0) {}
 
@@ -40,7 +40,6 @@ public:
   void collectUnsafeOperation(SVE::Type type, int size) const override {
     unsafeOps++;
   }
-
   size_t unsafeOperations() const { return unsafeOps; }
 
 private:

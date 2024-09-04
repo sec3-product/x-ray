@@ -983,6 +983,9 @@ void SolanaAnalysisPass::handleRustModelAPI(
   auto collectUnsafeOperationFunc =
       std::bind(&UnsafeOperation::collect, std::placeholders::_1,
                 callEventTraces, std::placeholders::_2, std::placeholders::_3);
+  auto collectUntrustfulAccountFunc = std::bind(
+      &UntrustfulAccount::collect, std::placeholders::_1, std::placeholders::_2,
+      callEventTraces, std::placeholders::_3, std::placeholders::_4);
   auto getLastInstFunc = [this, tid]() -> const llvm::Instruction * {
     auto it = this->callEventTraces.find(tid);
     if (it != this->callEventTraces.end() && !it->second.empty()) {
@@ -992,7 +995,8 @@ void SolanaAnalysisPass::handleRustModelAPI(
     return nullptr;
   };
   RuleContext RC(func, inst, funcArgTypesMap, thread, createReadEventFunc,
-                 isInLoop, getLastInstFunc, collectUnsafeOperationFunc);
+                 isInLoop, getLastInstFunc, collectUnsafeOperationFunc,
+                 collectUntrustfulAccountFunc);
   if (rustModelRuleset.evaluate(RC, CS)) {
     return;
   }
@@ -1847,8 +1851,12 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
   auto collectUnsafeOperationFunc =
       std::bind(&UnsafeOperation::collect, std::placeholders::_1,
                 callEventTraces, std::placeholders::_2, std::placeholders::_3);
+  auto collectUntrustfulAccountFunc = std::bind(
+      &UntrustfulAccount::collect, std::placeholders::_1, std::placeholders::_2,
+      callEventTraces, std::placeholders::_3, std::placeholders::_4);
   RuleContext RC(func, inst, funcArgTypesMap, thread, createReadEventFunc,
-                 isInLoop, nullptr, collectUnsafeOperationFunc);
+                 isInLoop, nullptr, collectUnsafeOperationFunc,
+                 collectUntrustfulAccountFunc);
   if (nonRustModelRuleset.evaluate(RC, CS)) {
     return;
   }
@@ -2731,23 +2739,6 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
         }
       }
     }
-  } else if (targetFuncName.startswith("sol.>=") ||
-             targetFuncName.startswith("sol.<=")) {
-    if (DEBUG_RUST_API) {
-      llvm::outs() << "sol.>=: " << *inst << "\n";
-    }
-    auto value1 = CS.getArgOperand(0);
-    auto value2 = CS.getArgOperand(1);
-    auto valueName1 = LangModel::findGlobalString(value1);
-    auto valueName2 = LangModel::findGlobalString(value2);
-
-    if (valueName1.contains("slot") && valueName2.contains("slot") &&
-        !valueName2.contains("price")) {
-      auto e = graph->createReadEvent(ctx, inst, tid);
-      UntrustfulAccount::collect(valueName1, e, callEventTraces,
-                                 SVE::Type::MALICIOUS_SIMULATION, 11);
-    }
-
   } else if (targetFuncName.equals("sol.==")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "sol.==: " << *inst << "\n";
@@ -2807,6 +2798,9 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
   } else if (targetFuncName.equals("sol.*")) {
     // No-op; this is handled by the rulset.
   } else if (targetFuncName.equals("sol./")) {
+    // No-op; this is handled by the rulset.
+  } else if (targetFuncName.startswith("sol.>=") ||
+             targetFuncName.startswith("sol.<=")) {
     // No-op; this is handled by the rulset.
   } else if (targetFuncName.startswith("sol.checked_div.")) {
     if (DEBUG_RUST_API)

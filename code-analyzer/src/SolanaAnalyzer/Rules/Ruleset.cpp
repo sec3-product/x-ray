@@ -1,6 +1,7 @@
 #include "Rules/Ruleset.h"
 
 #include "Rules/Break.h"
+#include "Rules/MaliciousSimulation.h"
 #include "Rules/OverflowAdd.h"
 #include "Rules/OverflowDiv.h"
 #include "Rules/OverflowMul.h"
@@ -24,6 +25,9 @@ Ruleset Ruleset::createNonRustModelRuleset() {
 
   // Overflow div rules.
   RS.addRule(Rule(matchDiv, handleDiv));
+
+  // Malicious simulation rules.
+  RS.addRule(Rule(matchComparisonEqual, handleComparisonEqual));
 
   return RS;
 }

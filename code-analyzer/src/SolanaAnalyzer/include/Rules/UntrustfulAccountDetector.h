@@ -18,9 +18,6 @@ class StaticThread;
 
 class UntrustfulAccountDetector {
 public:
-  using CollectUntrustfulAccountFunc =
-      std::function<void(llvm::StringRef, const Event *, SVE::Type, int)>;
-
   UntrustfulAccountDetector(
       const FuncArgTypesMap &funcArgTypesMap,
       const std::set<const llvm::Function *> &threadStartFunctions,

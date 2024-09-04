@@ -11,6 +11,7 @@
 #include "DebugFlags.h"
 #include "PTAModels/GraphBLASModel.h"
 #include "Rules/Rule.h"
+#include "SVE.h"
 
 namespace xray {
 

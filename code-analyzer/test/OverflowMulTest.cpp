@@ -18,14 +18,14 @@ class TestableRuleContext : public RuleContext {
 public:
   TestableRuleContext(bool safeType, bool inLoop, bool safeVariable)
       : RuleContext(nullptr, nullptr, dummyFuncArgTypesMap, nullptr,
-                    createReadEvent, nullptr, nullptr, nullptr),
+                    createReadEvent, nullptr, nullptr, nullptr, nullptr),
         safeType(safeType), inLoop(inLoop), safeVariable(safeVariable),
         unsafeOps(0) {}
 
   TestableRuleContext(::xray::FuncArgTypesMap &funcArgTypesMap, bool safeType,
                       bool inLoop, bool safeVariable)
       : RuleContext(nullptr, nullptr, funcArgTypesMap, nullptr, createReadEvent,
-                    nullptr, nullptr, nullptr),
+                    nullptr, nullptr, nullptr, nullptr),
         safeType(safeType), inLoop(inLoop), safeVariable(safeVariable),
         unsafeOps(0) {}
 
@@ -33,8 +33,7 @@ public:
 
   bool isSafeType(const llvm::Value *value) const override { return safeType; }
 
-  bool hasValueLessMoreThan(const llvm::Value *value,
-                            bool flag) const override {
+  bool hasValueLessMoreThan(const llvm::Value *, bool) const override {
     return false;
   }
 
@@ -47,14 +46,13 @@ public:
   void collectUnsafeOperation(SVE::Type type, int size) const override {
     unsafeOps++;
   }
-
   size_t unsafeOperations() const { return unsafeOps; }
 
 private:
   bool safeType;
   bool inLoop;
   bool safeVariable;
-  xray::FuncArgTypesMap dummyFuncArgTypesMap;
+  ::xray::FuncArgTypesMap dummyFuncArgTypesMap;
   mutable size_t unsafeOps;
 };
 
@@ -103,7 +101,7 @@ TEST(HandleMultiplyTest, BothUnsafeTypes) {
       new llvm::Argument(llvm::Type::getInt64Ty(context), "value2", function);
 
   // Create a map that simulates FuncArgTypesMap for RuleContext
-  ::xray::FuncArgTypesMap funcArgTypesMap;
+  FuncArgTypesMap funcArgTypesMap;
   //   funcArgTypesMap[function][0] = std::make_pair(value1->getName(),
   //   llvm::StringRef("i64")); funcArgTypesMap[function][1] =
   //   std::make_pair(value2->getName(), llvm::StringRef("i64"));
