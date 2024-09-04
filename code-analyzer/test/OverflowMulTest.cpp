@@ -63,7 +63,7 @@ TEST(handleMulTest, NoOverflowTriggered) {
   llvm::FunctionType *funcType =
       llvm::FunctionType::get(llvm::Type::getVoidTy(context), false);
   llvm::Function *function = llvm::Function::Create(
-      funcType, llvm::Function::ExternalLinkage, "testFunc", module);
+      funcType, llvm::Function::ExternalLinkage, "sol.*", module);
 
   llvm::BasicBlock *block =
       llvm::BasicBlock::Create(context, "entry", function);
@@ -74,7 +74,7 @@ TEST(handleMulTest, NoOverflowTriggered) {
                                   true,  // inLoop
                                   true); // safeVariable
 
-  handleMul(ruleContext, callSite);
+  EXPECT_TRUE(handleMul(ruleContext, callSite));
 
   // No unsafe operation was collected.
   EXPECT_EQ(0, ruleContext.unsafeOperations());
@@ -129,9 +129,10 @@ TEST(HandleMultiplyTest, BothUnsafeTypes) {
     EXPECT_TRUE(llvm::isa<llvm::Argument>(op1));
     EXPECT_TRUE(llvm::isa<llvm::Argument>(op2));
   }
-  handleMul(ruleContext, callSite);
+  EXPECT_TRUE(handleMul(ruleContext, callSite));
 
-  // Since both types are unsafe, ensure the context records 1 unsafe operation
+  // Since both types are unsafe, ensure the context records 1 unsafe
+  // operation.
   EXPECT_EQ(1, ruleContext.unsafeOperations());
 }
 

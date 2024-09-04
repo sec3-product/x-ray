@@ -13,11 +13,11 @@
 
 namespace xray {
 
-bool matchDiv(const CallSite &callSite) {
-  return callSite.getTargetFunction()->getName().equals("sol./");
-}
+bool handleDiv(const RuleContext &ruleContext, const CallSite &callSite) {
+  if (!callSite.getTargetFunction()->getName().equals("sol./")) {
+    return false;
+  }
 
-void handleDiv(const RuleContext &ruleContext, const CallSite &callSite) {
   if (DEBUG_RUST_API) {
     llvm::outs() << "sol./: " << *ruleContext.getInst() << "\n";
   }
@@ -42,6 +42,7 @@ void handleDiv(const RuleContext &ruleContext, const CallSite &callSite) {
       }
     }
   }
+  return true;
 }
 
 } // namespace xray

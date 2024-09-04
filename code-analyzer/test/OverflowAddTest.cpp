@@ -55,7 +55,7 @@ TEST(HandlePlusEqualTest, NoOverflowTriggered) {
   llvm::FunctionType *funcType =
       llvm::FunctionType::get(llvm::Type::getVoidTy(context), false);
   llvm::Function *function = llvm::Function::Create(
-      funcType, llvm::Function::ExternalLinkage, "testFunc", module);
+      funcType, llvm::Function::ExternalLinkage, "sol.+=", module);
 
   llvm::BasicBlock *block =
       llvm::BasicBlock::Create(context, "entry", function);
@@ -66,7 +66,7 @@ TEST(HandlePlusEqualTest, NoOverflowTriggered) {
                                   false, // inLoop
                                   true); // safeVariable
 
-  handlePlusEqual(ruleContext, callSite);
+  EXPECT_TRUE(handlePlusEqual(ruleContext, callSite));
 
   // No unsafe operation was collected.
   EXPECT_EQ(0, ruleContext.unsafeOperations());
@@ -131,7 +131,7 @@ TEST(HandlePlusEqualTest, OverflowTriggeredUnsafeTypes) {
   TestableRuleContext ruleContext(false,  // safeType
                                   false,  // inLoop
                                   false); // safeVariable
-  handlePlusEqual(ruleContext, callSite);
+  EXPECT_TRUE(handlePlusEqual(ruleContext, callSite));
 
   // Verify that an unsafe operation was collected.
   EXPECT_EQ(1, ruleContext.unsafeOperations());

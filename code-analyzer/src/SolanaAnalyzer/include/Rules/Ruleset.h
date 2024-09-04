@@ -12,16 +12,10 @@ namespace xray {
 class Ruleset {
 public:
   void addRule(Rule R) { Rules.push_back(std::move(R)); }
-
-  bool evaluate(const RuleContext &RC, const xray::CallSite &CS) const {
-    for (const auto &R : Rules) {
-      if (R.match(CS)) {
-        R.handle(RC, CS);
-        return true;
-      }
-    }
-    return false;
-  }
+  // Evaludates the ruleset against the given call site. It returns true if the
+  // call site has been fully processed and no further rules should be
+  // evaluated, false otherwise.
+  bool evaluate(const RuleContext &RC, const xray::CallSite &CS) const;
 
   static Ruleset createRustModelRuleset();
   static Ruleset createNonRustModelRuleset();

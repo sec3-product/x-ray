@@ -13,11 +13,11 @@
 
 namespace xray {
 
-bool matchMul(const CallSite &callSite) {
-  return callSite.getTargetFunction()->getName().equals("sol.*");
-}
+bool handleMul(const RuleContext &ruleContext, const CallSite &callSite) {
+  if (!callSite.getTargetFunction()->getName().equals("sol.*")) {
+    return false;
+  }
 
-void handleMul(const RuleContext &ruleContext, const CallSite &callSite) {
   if (DEBUG_RUST_API) {
     llvm::outs() << "sol.*: " << *ruleContext.getInst() << "\n";
   }
@@ -28,6 +28,7 @@ void handleMul(const RuleContext &ruleContext, const CallSite &callSite) {
       ruleContext.collectUnsafeOperation(SVE::Type::OVERFLOW_MUL, 6);
     }
   }
+  return true;
 }
 
 } // namespace xray

@@ -13,12 +13,12 @@
 
 namespace xray {
 
-bool matchMinusEqual(const CallSite &CS) {
-  return CS.getTargetFunction()->getName().equals("sol.-=");
-}
-
-void handleMinusEqual(const RuleContext &ruleContext,
+bool handleMinusEqual(const RuleContext &ruleContext,
                       const CallSite &callSite) {
+  if (!callSite.getTargetFunction()->getName().equals("sol.-=")) {
+    return false;
+  }
+
   if (DEBUG_RUST_API) {
     llvm::outs() << "sol.-=: " << *ruleContext.getInst() << "\n";
   }
@@ -61,13 +61,13 @@ void handleMinusEqual(const RuleContext &ruleContext,
       }
     }
   }
+  return true;
 }
 
-bool matchMinus(const CallSite &callSite) {
-  return callSite.getTargetFunction()->getName().equals("sol.-");
-}
-
-void handleMinus(const RuleContext &ruleContext, const CallSite &callSite) {
+bool handleMinus(const RuleContext &ruleContext, const CallSite &callSite) {
+  if (!callSite.getTargetFunction()->getName().equals("sol.-")) {
+    return false;
+  }
   if (DEBUG_RUST_API) {
     llvm::outs() << "sol.-: " << *ruleContext.getInst() << "\n";
   }
@@ -90,6 +90,7 @@ void handleMinus(const RuleContext &ruleContext, const CallSite &callSite) {
       }
     }
   }
+  return true;
 }
 
 } // namespace xray

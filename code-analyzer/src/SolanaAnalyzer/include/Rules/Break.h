@@ -6,7 +6,6 @@
 
 namespace xray {
 
-bool matchBreak(const CallSite &);
-void handleBreak(const RuleContext &, const CallSite &);
+bool handleBreak(const RuleContext &, const CallSite &);
 
 }; // namespace xray

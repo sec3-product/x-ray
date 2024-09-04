@@ -6,16 +6,16 @@
 
 namespace xray {
 
-bool matchBreak(const CallSite &CS) {
-  return CS.getTargetFunction()->getName().equals("sol.model.break");
-}
+bool handleBreak(const RuleContext &RC, const CallSite &CS) {
+  if (!CS.getTargetFunction()->getName().equals("sol.model.break")) {
+    return false;
+  }
 
-void handleBreak(const RuleContext &RC, const CallSite &CS) {
   if (DEBUG_RUST_API) {
     llvm::outs() << "sol.model.break: " << *RC.getInst() << "\n";
   }
   if (!RC.isInLoop()) {
-    return;
+    return true;
   }
 
   // check potential break => continue
@@ -40,6 +40,8 @@ void handleBreak(const RuleContext &RC, const CallSite &CS) {
       }
     }
   }
+
+  return true;
 }
 
 } // namespace xray

@@ -12,9 +12,9 @@ FetchContent_MakeAvailable(googletest)
 
 add_executable(unit_tests
     OverflowAddTest.cpp
-    OverflowMulTest.cpp    
-    OverflowSubTest.cpp    
-    CosplayFullTest.cpp    
+    OverflowMulTest.cpp
+    OverflowSubTest.cpp
+    CosplayFullTest.cpp
     CosplayPartialTest.cpp
     Main.cpp
 )

@@ -1,6 +1,5 @@
 #include "Rules/OverflowAdd.h"
 
-#include <map>
 #include <utility>
 
 #include <PointerAnalysis/Program/CallSite.h>
@@ -15,11 +14,11 @@
 
 namespace xray {
 
-bool matchPlusEqual(const CallSite &CS) {
-  return CS.getTargetFunction()->getName().equals("sol.+=");
-}
+bool handlePlusEqual(const RuleContext &RC, const CallSite &CS) {
+  if (!CS.getTargetFunction()->getName().equals("sol.+=")) {
+    return false;
+  }
 
-void handlePlusEqual(const RuleContext &RC, const CallSite &CS) {
   if (DEBUG_RUST_API) {
     llvm::outs() << "PlusEqualHandler: "
                  << "sol.+=: " << *RC.getInst() << "\n";
@@ -67,13 +66,14 @@ void handlePlusEqual(const RuleContext &RC, const CallSite &CS) {
       RC.collectUnsafeOperation(SVE::Type::OVERFLOW_ADD, 8);
     }
   }
+  return true;
 }
 
-bool matchPlus(const CallSite &callSite) {
-  return callSite.getTargetFunction()->getName().equals("sol.+");
-}
+bool handlePlus(const RuleContext &ruleContext, const CallSite &callSite) {
+  if (!callSite.getTargetFunction()->getName().equals("sol.+")) {
+    return false;
+  }
 
-void handlePlus(const RuleContext &ruleContext, const CallSite &callSite) {
   if (DEBUG_RUST_API) {
     llvm::outs() << "sol.+: " << *ruleContext.getInst() << "\n";
   }
@@ -86,6 +86,7 @@ void handlePlus(const RuleContext &ruleContext, const CallSite &callSite) {
       }
     }
   }
+  return true;
 }
 
 } // namespace xray
