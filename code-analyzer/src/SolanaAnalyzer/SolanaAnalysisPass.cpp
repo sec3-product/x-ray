@@ -2784,20 +2784,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
              targetFuncName.startswith("sol.<=")) {
     // No-op; this is handled by the rulset.
   } else if (targetFuncName.startswith("sol.checked_div.")) {
-    if (DEBUG_RUST_API)
-      llvm::outs() << "sol.checked_div: " << *inst << "\n";
-
-    if (isInLoop() && CS.getNumArgOperands() > 1) {
-      auto value = CS.getArgOperand(1);
-      if (auto denominator_inst = dyn_cast<CallBase>(value)) {
-        CallSite CS2(denominator_inst);
-        if (CS2.getTargetFunction()->getName().startswith("sol.checked_")) {
-          auto e = graph->createReadEvent(ctx, inst, tid);
-          UnsafeOperation::collect(e, callEventTraces,
-                                   SVE::Type::INCORRECT_DIVISION_LOGIC, 8);
-        }
-      }
-    }
+    // No-op; this is handled by the rulset.
   } else if (targetFuncName.contains("::check_account_owner.2")) {
     auto value1 = CS.getArgOperand(0); // program_id
     auto valueName1 = LangModel::findGlobalString(value1);

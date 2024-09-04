@@ -4,8 +4,6 @@
 
 #include <PointerAnalysis/Program/CallSite.h>
 #include <llvm/ADT/StringRef.h>
-#include <llvm/IR/Function.h>
-#include <llvm/IR/Instructions.h>
 
 #include "DebugFlags.h"
 #include "PTAModels/GraphBLASModel.h"
