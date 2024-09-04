@@ -16,7 +16,7 @@ class TestableRuleContext : public RuleContext {
 public:
   TestableRuleContext(bool safeType, bool inLoop, bool safeVariable)
       : RuleContext(nullptr, nullptr, dummyFuncArgTypesMap, nullptr,
-                    createReadEvent, nullptr, nullptr),
+                    createReadEvent, nullptr, nullptr, nullptr),
         safeType(safeType), inLoop(inLoop), safeVariable(safeVariable),
         unsafeOps(0) {}
 

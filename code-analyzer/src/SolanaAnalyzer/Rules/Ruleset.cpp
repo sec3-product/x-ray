@@ -1,5 +1,6 @@
 #include "Rules/Ruleset.h"
 
+#include "Rules/Break.h"
 #include "Rules/OverflowAdd.h"
 #include "Rules/OverflowDiv.h"
 #include "Rules/OverflowMul.h"
@@ -7,7 +8,7 @@
 
 namespace xray {
 
-Ruleset Ruleset::createRustModelRuleset() {
+Ruleset Ruleset::createNonRustModelRuleset() {
   Ruleset RS;
 
   // Overflow add rules.
@@ -27,6 +28,13 @@ Ruleset Ruleset::createRustModelRuleset() {
   return RS;
 }
 
-Ruleset Ruleset::createNonRustModelRuleset() { return Ruleset(); }
+Ruleset Ruleset::createRustModelRuleset() {
+  Ruleset RS;
+
+  // Break logic.
+  RS.addRule(Rule(matchBreak, handleBreak));
+
+  return Ruleset();
+}
 
 } // namespace xray

@@ -32,13 +32,16 @@ public:
       std::function<void(Event *, SVE::Type, int)>;
   using CreateReadEventFunc = std::function<Event *(const llvm::Instruction *)>;
   using IsInLoopFunc = std::function<bool()>;
+  using GetLastInstFunc = std::function<const llvm::Instruction *()>;
 
   RuleContext(const llvm::Function *func, const llvm::Instruction *inst,
               FuncArgTypesMap &funcArgTypesMap, StaticThread *thread,
               CreateReadEventFunc createReadEvent, IsInLoopFunc isInLoop,
+              GetLastInstFunc getLastInst,
               CollectUnsafeOperationFunc collectUnsafeOperation)
       : Func(func), Inst(inst), FuncArgTypesMap(funcArgTypesMap),
         Thread(thread), CreateReadEvent(createReadEvent), IsInLoop(isInLoop),
+        GetLastInst(getLastInst),
         CollectUnsafeOperation(collectUnsafeOperation) {}
 
   const llvm::Function *getFunc() const { return Func; }
@@ -52,6 +55,7 @@ public:
   virtual bool hasValueLessMoreThan(const llvm::Value *value,
                                     bool isLess) const;
   virtual bool isInLoop() const { return IsInLoop(); }
+  virtual const llvm::Instruction *getLastInst() const { return GetLastInst(); }
 
   virtual void collectUnsafeOperation(SVE::Type type, int size) const {
     auto e = createReadEvent();
@@ -65,6 +69,7 @@ private:
   StaticThread *Thread;
   CreateReadEventFunc CreateReadEvent;
   IsInLoopFunc IsInLoop;
+  GetLastInstFunc GetLastInst;
   CollectUnsafeOperationFunc CollectUnsafeOperation;
 };
 

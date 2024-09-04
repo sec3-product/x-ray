@@ -16,7 +16,7 @@ class TestableRuleContext : public RuleContext {
 public:
   TestableRuleContext(bool safeType, bool inLoop, bool safeVariable)
       : RuleContext(nullptr, nullptr, dummyFuncArgTypesMap, nullptr,
-                    createReadEvent, nullptr, nullptr),
+                    createReadEvent, nullptr, nullptr, nullptr),
         safeType(safeType), inLoop(inLoop), safeVariable(safeVariable),
         unsafeOps(0) {}
 
@@ -30,6 +30,8 @@ public:
   }
 
   bool isInLoop() const override { return inLoop; }
+
+  const llvm::Instruction *getLastInst() const override { return nullptr; }
 
   bool isSafeVariable(const llvm::Value *value) const override {
     return safeVariable;
@@ -79,10 +81,10 @@ TEST(HandleMinusEqualTest, OverflowTriggeredUnsafeTypes) {
   llvm::Module module("testModule", context);
 
   // Create the types for the arguments and the function.
-  llvm::FunctionType *funcType =
-    llvm::FunctionType::get(llvm::Type::getInt64Ty(context),
-                            {llvm::Type::getInt64Ty(context), llvm::Type::getInt64Ty(context)},
-                            false);
+  llvm::FunctionType *funcType = llvm::FunctionType::get(
+      llvm::Type::getInt64Ty(context),
+      {llvm::Type::getInt64Ty(context), llvm::Type::getInt64Ty(context)},
+      false);
   llvm::Function *solMinusEqualFunc = llvm::Function::Create(
       funcType, llvm::Function::ExternalLinkage, "sol.-=", module);
 
@@ -95,9 +97,10 @@ TEST(HandleMinusEqualTest, OverflowTriggeredUnsafeTypes) {
   llvm::BasicBlock *block =
       llvm::BasicBlock::Create(context, "entry", function);
 
-
-  llvm::Value *simpleLHS = llvm::Constant::getNullValue(llvm::Type::getInt8PtrTy(context));
-  llvm::Argument *valueRHS = new llvm::Argument(llvm::Type::getInt64Ty(context), "value1", function);
+  llvm::Value *simpleLHS =
+      llvm::Constant::getNullValue(llvm::Type::getInt8PtrTy(context));
+  llvm::Argument *valueRHS =
+      new llvm::Argument(llvm::Type::getInt64Ty(context), "value1", function);
 
   llvm::CallInst *callInst = llvm::CallInst::Create(
       solMinusEqualFunc, {simpleLHS, valueRHS}, "sol_minus_equal", block);

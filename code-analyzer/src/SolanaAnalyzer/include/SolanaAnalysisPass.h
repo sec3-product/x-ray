@@ -150,6 +150,7 @@ private:
   ReachGraph *graph;
 
   Ruleset nonRustModelRuleset;
+  Ruleset rustModelRuleset;
 };
 
 extern void computeCargoTomlConfig(llvm::Module *module);

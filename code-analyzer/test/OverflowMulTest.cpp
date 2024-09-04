@@ -18,13 +18,14 @@ class TestableRuleContext : public RuleContext {
 public:
   TestableRuleContext(bool safeType, bool inLoop, bool safeVariable)
       : RuleContext(nullptr, nullptr, dummyFuncArgTypesMap, nullptr,
-                    createReadEvent, nullptr, nullptr),
+                    createReadEvent, nullptr, nullptr, nullptr),
         safeType(safeType), inLoop(inLoop), safeVariable(safeVariable),
         unsafeOps(0) {}
 
-  TestableRuleContext(::xray::FuncArgTypesMap &funcArgTypesMap, bool safeType, bool inLoop, bool safeVariable)
-      : RuleContext(nullptr, nullptr, funcArgTypesMap, nullptr,
-                    createReadEvent, nullptr, nullptr),
+  TestableRuleContext(::xray::FuncArgTypesMap &funcArgTypesMap, bool safeType,
+                      bool inLoop, bool safeVariable)
+      : RuleContext(nullptr, nullptr, funcArgTypesMap, nullptr, createReadEvent,
+                    nullptr, nullptr, nullptr),
         safeType(safeType), inLoop(inLoop), safeVariable(safeVariable),
         unsafeOps(0) {}
 
@@ -72,7 +73,7 @@ TEST(handleMulTest, NoOverflowTriggered) {
 
   xray::CallSite callSite(callInst);
   TestableRuleContext ruleContext(true,  // safeType
-                                  true, // inLoop
+                                  true,  // inLoop
                                   true); // safeVariable
 
   handleMul(ruleContext, callSite);
@@ -96,30 +97,32 @@ TEST(HandleMultiplyTest, BothUnsafeTypes) {
       llvm::BasicBlock::Create(context, "entry", function);
 
   // Create two arguments using i64 type
-  llvm::Argument *value1 = new llvm::Argument(llvm::Type::getInt64Ty(context), "value1", function);
-  llvm::Argument *value2 = new llvm::Argument(llvm::Type::getInt64Ty(context), "value2", function);
+  llvm::Argument *value1 =
+      new llvm::Argument(llvm::Type::getInt64Ty(context), "value1", function);
+  llvm::Argument *value2 =
+      new llvm::Argument(llvm::Type::getInt64Ty(context), "value2", function);
 
   // Create a map that simulates FuncArgTypesMap for RuleContext
   ::xray::FuncArgTypesMap funcArgTypesMap;
-//   funcArgTypesMap[function][0] = std::make_pair(value1->getName(), llvm::StringRef("i64"));
-//   funcArgTypesMap[function][1] = std::make_pair(value2->getName(), llvm::StringRef("i64"));
+  //   funcArgTypesMap[function][0] = std::make_pair(value1->getName(),
+  //   llvm::StringRef("i64")); funcArgTypesMap[function][1] =
+  //   std::make_pair(value2->getName(), llvm::StringRef("i64"));
 
   TestableRuleContext ruleContext(funcArgTypesMap,
-                                  false,  // safeType
+                                  false, // safeType
                                   true,  // inLoop
                                   true); // safeVariable
 
-  // Simulate the multiplication 
-  llvm::FunctionType *funcType =
-    llvm::FunctionType::get(llvm::Type::getInt64Ty(context),
-                            {llvm::Type::getInt64Ty(context), llvm::Type::getInt64Ty(context)},
-                            false);
+  // Simulate the multiplication
+  llvm::FunctionType *funcType = llvm::FunctionType::get(
+      llvm::Type::getInt64Ty(context),
+      {llvm::Type::getInt64Ty(context), llvm::Type::getInt64Ty(context)},
+      false);
   llvm::Function *solMultiplyFunc = llvm::Function::Create(
       funcType, llvm::Function::ExternalLinkage, "sol.*", module);
 
-
   llvm::CallInst *callInst = llvm::CallInst::Create(
-    solMultiplyFunc, {value1, value2}, "sol_multiply", block);      
+      solMultiplyFunc, {value1, value2}, "sol_multiply", block);
   xray::CallSite callSite(callInst);
 
   if (DEBUG_UNIT_TEST) {

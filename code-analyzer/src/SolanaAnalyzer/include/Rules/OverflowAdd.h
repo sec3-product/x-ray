@@ -1,8 +1,5 @@
 #pragma once
 
-#include <map>
-#include <utility>
-
 #include <PointerAnalysis/Program/CallSite.h>
 
 #include "Rule.h"
