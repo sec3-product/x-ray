@@ -160,7 +160,9 @@ public:
     return next == 0 || next == antlr4::Token::EOF;
   }
 
-  bool next(char expect) { return _input->LA(1) == expect; }
+  bool next(char expect) {
+    return _input->LA(1) == static_cast<size_t>(expect);
+  }
 
   bool floatDotPossible() {
     size_t next = _input->LA(1);

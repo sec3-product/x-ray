@@ -340,7 +340,9 @@ public:
     RuleShr = 195
   };
 
-  bool next(char expect) { return _input->LA(1) == expect; }
+  bool next(char expect) {
+    return _input->LA(1) == static_cast<size_t>(expect);
+  }
 
   explicit RustParser(antlr4::TokenStream *input);
 
