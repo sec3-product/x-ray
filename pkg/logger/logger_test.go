@@ -2,8 +2,8 @@ package logger
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -19,9 +19,14 @@ func TestInit(t *testing.T) {
 func TestGetLogList(t *testing.T) {
 	cwd, err := os.Getwd()
 	if err != nil {
-		t.Errorf("Getwd() failed. err=%v", err)
+		t.Fatalf("Getwd() failed. err=%v", err)
 	}
 	logFolder := fmt.Sprintf("%s/.xray/logs", cwd)
+	t.Cleanup(func() {
+		if err := os.RemoveAll(logFolder); err != nil {
+			t.Errorf("Failed to remove log folder %s: %v", logFolder, err)
+		}
+	})
 
 	if dirExists(logFolder) {
 		if err := os.RemoveAll(logFolder); err != nil {
@@ -87,16 +92,22 @@ func TestRotateLogWhenRotateOne(t *testing.T) {
 		t.Errorf("Getwd() failed. err=%v", err)
 	}
 	logFolder := fmt.Sprintf("%s/.xray/logs", cwd)
+	t.Cleanup(func() {
+		if err := os.RemoveAll(logFolder); err != nil {
+			t.Errorf("Failed to remove log folder %s: %v", logFolder, err)
+		}
+	})
 
-	createBigFile(logFolder+"/log.current", 2*1024*1024)
+	logCurrent := filepath.Join(logFolder, "log.current")
+	createBigFile(logCurrent, 2*1024*1024)
 	if err := rotateLogs(logFolder, 2, 1*1024*1024); err != nil {
 		t.Errorf("Failed to rotate en empty folder. logFolder=%s", logFolder)
 	}
-	if fileExists(logFolder + "/log.current") {
-		t.Errorf("log.current is still there")
+	if fileExists(logCurrent) {
+		t.Errorf("log.current is still there: %v", logCurrent)
 	}
-	if !fileExists(logFolder + "/log.0") {
-		t.Errorf("log.0 wasn't created")
+	if !fileExists(filepath.Join(logFolder, "log.0")) {
+		t.Errorf("log.0 wasn't created: %v", filepath.Join(logFolder, "log.0"))
 	}
 }
 
@@ -106,6 +117,11 @@ func TestRotateLogWhenThereTwoFile(t *testing.T) {
 		t.Errorf("Getwd() failed. err=%v", err)
 	}
 	logFolder := fmt.Sprintf("%s/.xray/logs", cwd)
+	t.Cleanup(func() {
+		if err := os.RemoveAll(logFolder); err != nil {
+			t.Errorf("Failed to remove log folder %s: %v", logFolder, err)
+		}
+	})
 
 	if dirExists(logFolder) {
 		if err := os.RemoveAll(logFolder); err != nil {
@@ -119,7 +135,8 @@ func TestRotateLogWhenThereTwoFile(t *testing.T) {
 	}
 
 	createFile(logFolder + "/log.0")
-	createBigFile(logFolder+"/log.current", 2*1024*1024)
+	// default rotation limit is 128MB
+	createBigFile(logFolder+"/log.current", 130*1024*1024)
 	InitWithLogRotation("test")
 	if !fileExists(logFolder + "/log.0") {
 		t.Errorf("log.0 wasn't created")
@@ -138,6 +155,11 @@ func TestRotateLogs(t *testing.T) {
 		t.Errorf("Getwd() failed. err=%v", err)
 	}
 	logFolder := fmt.Sprintf("%s/.xray/logs", cwd)
+	t.Cleanup(func() {
+		if err := os.RemoveAll(logFolder); err != nil {
+			t.Errorf("Failed to remove log folder %s: %v", logFolder, err)
+		}
+	})
 
 	if dirExists(logFolder) {
 		if err := os.RemoveAll(logFolder); err != nil {
@@ -223,27 +245,30 @@ func fileExists(filepath string) bool {
 	return err == nil
 }
 
-func createBigFile(filepath string, sz int) (err error) {
-	os.Remove(filepath)
-	f, err := os.OpenFile(filepath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, getFileMode())
-	if err != nil {
+func createBigFile(path string, sz int) error {
+	if err := os.MkdirAll(filepath.Dir(path), getFileMode()); err != nil {
 		return err
 	}
-	defer f.Close()
-
+	if fileExists(path) {
+		if err := os.Remove(path); err != nil {
+			return err
+		}
+	}
 	data := make([]byte, sz)
-	_, err = f.Write(data)
-	return err
+	return os.WriteFile(path, data, getFileMode())
 }
 
-func createFile(filePath string) error {
-	os.Remove(filePath)
-	return ioutil.WriteFile(filePath, []byte("hello"), getFileMode())
+func createFile(path string) error {
+	if fileExists(path) {
+		if err := os.Remove(path); err != nil {
+			return err
+		}
+	}
+	return os.WriteFile(path, []byte("hello"), getFileMode())
 }
 
 func getFileMode() os.FileMode {
 	cwd, _ := os.Getwd()
 	fileInfo, _ := os.Stat(cwd)
-
 	return fileInfo.Mode()
 }

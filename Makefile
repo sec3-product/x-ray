@@ -149,6 +149,7 @@ build-container-image:
 run-unit-tests:
 	@ctest --test-dir $(BUILD_DIR)/analyzer/test
 	@ctest --test-dir $(BUILD_DIR)/parser/test
+	@go test -v -count=1 ./...
 
 prepare-e2e-test:
 	@if [ ! -d "workspace/dexterity" ]; then \
@@ -159,10 +160,10 @@ prepare-e2e-test:
 run-native-e2e: prepare-e2e-test
 	@PATH=$$(realpath ${INSTALL_DIR}/bin):$${PATH} \
 	  E2E_TEST_APP=$$(realpath workspace/dexterity/programs) \
-	  go test -v -run=TestNativeE2E -count=1 ./e2e/...
+	  go test -v -tags=e2e -run=TestNativeE2E -count=1 ./e2e/...
 
 run-container-e2e: prepare-e2e-test
 	@WORKING_DIR=$$(realpath workspace) \
 	  X_RAY_IMAGE=$(X_RAY_IMAGE) \
 	  E2E_TEST_APP=$$(realpath workspace/dexterity/programs) \
-	  go test -v -run=TestContainerE2E -count=1 ./e2e/...
+	  go test -v -tags=e2e -run=TestContainerE2E -count=1 ./e2e/...
