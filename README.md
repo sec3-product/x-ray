@@ -48,16 +48,42 @@ A full list of the supported bug patterns for Solana contracts is saved in
 
 ## Installation
 
+### Platform Support
+
+- **x86-based Linux platforms** (native or via
+  [WSL](https://learn.microsoft.com/en-us/windows/wsl/install)): You can use
+  the prebuilt binaries or container images to run X-Ray.
+- **x86-based Windows platforms**: Besides using WSL, you can also run the
+  container image directly from a shell (e.g., PowerShell).
+- **ARM64-based platforms**: Precompiled binaries will be available soon.
+- **Other platforms**: For now, you can build the project from source. Please
+  refer to the [Building from Source](docs/developer.md#building-from-source)
+  section for detailed instructions.
+
 ### Using Prebuilt Binaries
 
 Download binaries from the
 [releases page](https://github.com/sec3-product/x-ray/releases). Unzip the
 tarball and add `/path/to/extracted/bin` to your `PATH`.
 
+After extracting the binaries, perform a quick sanity check to verify the
+installation by running the following command to display the version:
+
+```sh
+/path/to/extracted/bin/xray -version
+```
+
 ### Using Prebuilt Container Images
 
 Find the available container images on [GitHub packages
 page](https://github.com/sec3-product/x-ray/pkgs/container/x-ray).
+
+You can run a sanity check by running the following command to display the
+version:
+
+```sh
+docker run --rm ghcr.io/sec3-product/x-ray:latest -version
+```
 
 ### Building From Source
 
@@ -85,7 +111,7 @@ git clone https://github.com/solana-labs/example-helloworld.git workspace/exampl
 ### Start a scan
 
 ```sh
-docker run --rm -v $(pwd)/workspace:/workspace \
+docker run --rm --volume "$(pwd)/workspace:/workspace" \
   ghcr.io/sec3-product/x-ray:latest \
   /workspace/example-helloworld
 ```
