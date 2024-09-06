@@ -222,7 +222,9 @@ When using Docker, if the compiler output shows `"internal compiler error:
 Killed (program cc1plus)"`, some threads might have been killed by the
 OOM-killer due to excessive use of Docker VM resources.
 
-Solution 1: Adjust `-j $(nproc)` and try to reduce the number of threads.
+Solution 1: Set `MAKE_THREADS` to a lower number (otherwise it uses `-j` by
+default) and pass it to `make` commands, e.g. `MAKE_THREADS=4 make
+build-x-ray`.
 
 Solution 2: Maximize the CPU core and RAM allocation in Docker's resource
 Settings.

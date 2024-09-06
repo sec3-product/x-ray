@@ -39,6 +39,8 @@ RUN apt-get install -y software-properties-common \
 
 WORKDIR /x-ray-toolchain
 ARG VERSION=unknown
+# Caller can optionally specify # of threads.
+ARG MAKE_THREADS=
 COPY Makefile .
 COPY common common
 

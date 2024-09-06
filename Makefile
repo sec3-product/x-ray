@@ -59,7 +59,7 @@ build-analyzer: check-llvm
 	    -DMLIR_DIR=$(LLVM_PREBUILT_PATH)/lib/cmake/mlir \
 	    -DLLVM_VERSION=$(LLVM_VERSION) \
 	    ../../code-analyzer && \
-	  make -j
+	  make -j$(MAKE_THREADS)
 
 build-parser: check-llvm
 	@mkdir -p $(BUILD_DIR)/parser
@@ -72,7 +72,7 @@ build-parser: check-llvm
 	    -DMLIR_DIR=$(LLVM_PREBUILT_PATH)/lib/cmake/mlir \
 	    -DLLVM_VERSION=$(LLVM_VERSION) \
 	    ../../code-parser && \
-	  make -j
+	  make -j$(MAKE_THREADS)
 
 build-cli:
 	@echo "Building X-Ray CLI..."
@@ -111,6 +111,7 @@ clean:
 build-llvm-prebuilt-image:
 	@docker build -t $(LLVM_PREBUILT_IMAGE) \
 	  --build-arg LLVM_VERSION=$(LLVM_VERSION) \
+	  --build-arg MAKE_THREADS=$(MAKE_THREADS) \
 	  -f Dockerfile.llvm .
 
 push-llvm-prebuilt-image: build-llvm-prebuilt-image
