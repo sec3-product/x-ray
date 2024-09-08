@@ -2,12 +2,16 @@ BUILD_DIR ?= build
 INSTALL_DIR ?= $(BUILD_DIR)/dist
 DIST_TARBALL ?= $(BUILD_DIR)/x-ray-$(VERSION).tar.gz
 
-# The LLVM version to use.
+BUILD_ARCH := $(shell uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+PLATFORM ?= linux/$(BUILD_ARCH)
+
 LLVM_VERSION ?= 14.0.6
+LLVM_PREBUILT_TAG ?= latest
 
 # The default LLVM prebuilt image, which is hosted on GitHub Container
 # Registry (ghcr.io).
-LLVM_PREBUILT_IMAGE ?= ghcr.io/sec3-product/llvm-prebuilt-$(LLVM_VERSION):latest
+LLVM_PREBUILT_IMAGE_NO_TAG ?= ghcr.io/sec3-product/llvm-prebuilt-$(LLVM_VERSION)
+LLVM_PREBUILT_IMAGE ?= $(LLVM_PREBUILT_IMAGE_NO_TAG):$(LLVM_PREBUILT_TAG)
 
 # The path to prebuilt LLVM files. It expects `clang++` to be available under
 # `$(LLVM_PREBUILT_PATH)/bin`. One can use `make extract-llvm` to extract the
@@ -26,7 +30,7 @@ endif
 .PHONY: all build-x-ray build-cli install extract-llvm check-llvm \
   build-analyzer build-parser \
   build-container-image \
-  build-llvm-prebuilt-image push-llvm-prebuilt-image \
+  build-llvm-prebuilt-image push-llvm-prebuilt-image push-llm-prebuilt-manifest \
   run-unit-tests \
   prepare-e2e-test run-container-e2e run-native-e2e \
   clean
@@ -110,12 +114,19 @@ clean:
 
 build-llvm-prebuilt-image:
 	@docker build -t $(LLVM_PREBUILT_IMAGE) \
+	  --platform $(PLATFORM) \
 	  --build-arg LLVM_VERSION=$(LLVM_VERSION) \
 	  --build-arg MAKE_THREADS=$(MAKE_THREADS) \
 	  -f Dockerfile.llvm .
 
 push-llvm-prebuilt-image: build-llvm-prebuilt-image
 	@docker push $(LLVM_PREBUILT_IMAGE)
+
+push-llvm-prebuilt-manifest:
+	@docker manifest create --amend $(LLVM_PREBUILT_IMAGE) \
+	  $(LLVM_PREBUILT_IMAGE_NO_TAG):arm64 \
+	  $(LLVM_PREBUILT_IMAGE_NO_TAG):amd64
+	@docker manifest push $(LLVM_PREBUILT_IMAGE)
 
 extract-llvm:
 	@echo "Extracting LLVM prebuilt files from $(LLVM_PREBUILT_IMAGE) to $(BUILD_DIR)/llvm..."
