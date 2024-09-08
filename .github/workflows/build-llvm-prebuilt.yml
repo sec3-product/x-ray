@@ -4,8 +4,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-amd64:
     runs-on: self-hosted
+    env:
+      LLVM_PREBUILT_TAG: amd64
 
     steps:
       - name: Checkout repository
@@ -22,3 +24,43 @@ jobs:
       - name: Push llvm-prebuilt image
         run: |
           make push-llvm-prebuilt-image
+
+  build-arm64:
+    runs-on: [self-hosted, qemu]
+    env:
+      LLVM_PREBUILT_TAG: arm64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup QEMU builder
+        run: |
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+      - name: Build llvm-prebuilt image
+        run: |
+          make build-llvm-prebuilt-image
+
+      - name: Login to registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push llvm-prebuilt image
+        run: |
+          make push-llvm-prebuilt-image
+
+  push-manifest:
+    runs-on: ubuntu-latest
+    needs: [build-amd64, build-arm64]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Create and push multi-arch manifest
+        run: |
+          make push-llvm-prebuilt-manifest
