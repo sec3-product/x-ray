@@ -24,23 +24,30 @@ RUN git clone --branch=llvmorg-${LLVM_VERSION} --single-branch --depth=1 https:/
 # Caller can optionally specify # of threads.
 ARG MAKE_THREADS=
 
+ARG TARGETARCH
+
 WORKDIR /llvm-project/build
 # LLVM_ENABLE_TERMINFO=OFF due to
 # https://github.com/llvm/llvm-project/issues/53950, and the feature isn't
 # needed for x-ray.
-RUN cmake \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_C_COMPILER=clang-14 \
-    -DCMAKE_CXX_COMPILER=clang++-14 \
-    -DCMAKE_INSTALL_PREFIX=/usr/local/llvm \
-    -DLLVM_ENABLE_PROJECTS="clang;openmp;compiler-rt;mlir" \
-    -DLLVM_ENABLE_RTTI=ON \
-    -DLLVM_ENABLE_TERMINFO=OFF \
-    -DLLVM_INCLUDE_BENCHMARKS=OFF \
-    -DLLVM_INCLUDE_EXAMPLES=OFF \
-    -DLLVM_INCLUDE_TESTS=OFF \
-    -DLLVM_TARGETS_TO_BUILD=X86 \
-    ../llvm \
+RUN if [ "${TARGETARCH}" = "arm64" ]; then \
+        export LLVM_TARGETS_TO_BUILD="AArch64"; \
+    else \
+        export LLVM_TARGETS_TO_BUILD="X86"; \
+    fi \
+    && cmake \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_C_COMPILER=clang-14 \
+        -DCMAKE_CXX_COMPILER=clang++-14 \
+        -DCMAKE_INSTALL_PREFIX=/usr/local/llvm \
+        -DLLVM_ENABLE_PROJECTS="clang;openmp;compiler-rt;mlir" \
+        -DLLVM_ENABLE_RTTI=ON \
+        -DLLVM_ENABLE_TERMINFO=OFF \
+        -DLLVM_INCLUDE_BENCHMARKS=OFF \
+        -DLLVM_INCLUDE_EXAMPLES=OFF \
+        -DLLVM_INCLUDE_TESTS=OFF \
+        -DLLVM_TARGETS_TO_BUILD=${LLVM_TARGETS_TO_BUILD} \
+        ../llvm \
     && make -j${MAKE_THREADS} \
     && make install
 
