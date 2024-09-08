@@ -50,15 +50,29 @@ A full list of the supported bug patterns for Solana contracts is saved in
 
 ### Platform Support
 
-- **x86-based Linux platforms** (native or via
-  [WSL](https://learn.microsoft.com/en-us/windows/wsl/install)): You can use
-  the prebuilt binaries or container images to run X-Ray.
-- **x86-based Windows platforms**: Besides using WSL, you can also run the
-  container image directly from a shell (e.g., PowerShell).
-- **ARM64-based platforms**: Precompiled binaries will be available soon.
-- **Other platforms**: For now, you can build the project from source. Please
-  refer to the [Building from Source](docs/developer.md#building-from-source)
-  section for detailed instructions.
+- **x86 and ARM64 platforms (e.g. Linux, Windows, macOS)**: You can run the
+  X-Ray container version directly on these platforms. We recommend using the
+  container version for a quick and easy start with scanning.
+- **x86-based Linux platforms (native or via
+  [WSL](https://learn.microsoft.com/en-us/windows/wsl/))**: In addition to the
+  container version, you can download and run our precompiled binary
+  executables.
+- **Other platforms**: If you’re using other platforms or wish to customize or
+  modify the code, you can build the project from source. Please refer to the
+  [Building from Source](docs/developer.md#building-from-source) section for
+  detailed instructions.
+
+### Using Prebuilt Container Images
+
+Find the available container images on [GitHub packages
+page](https://github.com/sec3-product/x-ray/pkgs/container/x-ray).
+
+You can run a sanity check by running the following command to display the
+version:
+
+```sh
+docker run --rm ghcr.io/sec3-product/x-ray:latest -version
+```
 
 ### Using Prebuilt Binaries
 
@@ -73,19 +87,7 @@ installation by running the following command to display the version:
 /path/to/extracted/bin/xray -version
 ```
 
-### Using Prebuilt Container Images
-
-Find the available container images on [GitHub packages
-page](https://github.com/sec3-product/x-ray/pkgs/container/x-ray).
-
-You can run a sanity check by running the following command to display the
-version:
-
-```sh
-docker run --rm ghcr.io/sec3-product/x-ray:latest -version
-```
-
-### Building From Source
+### Using Local Builds
 
 For developers who wish to build X-Ray from source, please refer to
 [Building from Source](docs/developer.md#building-from-source) for detailed

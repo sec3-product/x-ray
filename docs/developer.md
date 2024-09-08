@@ -108,8 +108,19 @@ to analyze codebases.
 -  Native Binaries: Compiling the source code directly on your local machine
    for optimal performance.
 
-Both options require LLVM binaries compiled from source code. The general
-workflow is as follows:
+Both options require LLVM binaries that are compiled from source code. Please
+note that the precompiled versions of LLVM provided by the official LLVM
+project are not compatible with X-Ray and should not be used.
+
+> [!NOTE]
+> Our primary development and testing environment is based on the amd64
+architecture, running Ubuntu 22.04 with LLVM 14.0.6. During the release
+process, we also generate an arm64 version. Other distributions or LLVM
+versions have not been directly tested, but we welcome patches and
+contributions for additional platform support. If you encounter issues or have
+specific needs, feel free to submit a PR or contact us.
+
+The general building workflow is as follows:
 
 1. Prepare LLVM artifacts: You can either build LLVM from source manually or
    use our provided prebuilt Docker images.
