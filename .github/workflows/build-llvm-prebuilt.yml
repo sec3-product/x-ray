@@ -29,6 +29,7 @@ jobs:
     runs-on: [self-hosted, qemu]
     env:
       LLVM_PREBUILT_TAG: arm64
+      PLATFORM: arm64
 
     steps:
       - name: Checkout repository
