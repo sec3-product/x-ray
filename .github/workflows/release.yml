@@ -79,7 +79,7 @@ jobs:
           body: |
             Release notes for version ${{ github.ref_name }}
           files: |
-            build/x-ray-${{ github.ref_name }}-linux-amd64.tar.gz
+            x-ray-${{ github.ref_name }}-linux-amd64.tar.gz
 
       - name: Login to registry
         run: |
@@ -90,5 +90,6 @@ jobs:
           docker manifest create --amend ${{ env.X_RAY_IMAGE }} \
             ${{ env.X_RAY_IMAGE_AMD64 }}
           docker manifest push ${{ env.X_RAY_IMAGE }}
-          docker tag ${{ env.X_RAY_IMAGE }} ${{ env.X_RAY_IMAGE_LATEST }}
+          docker pull ${{ env.X_RAY_IMAGE_AMD64 }}
+          docker tag ${{ env.X_RAY_IMAGE_AMD64 }} ${{ env.X_RAY_IMAGE_LATEST }}
           docker push ${{ env.X_RAY_IMAGE_LATEST }}
