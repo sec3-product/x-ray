@@ -2,8 +2,9 @@ BUILD_DIR ?= build
 INSTALL_DIR ?= $(BUILD_DIR)/dist
 DIST_TARBALL ?= $(BUILD_DIR)/x-ray-$(VERSION).tar.gz
 
-BUILD_ARCH := $(shell uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
-PLATFORM ?= linux/$(BUILD_ARCH)
+DEFAULT_TARGET_ARCH := $(shell uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+TARGET_ARCH ?= $(DEFAULT_TARGET_ARCH)
+PLATFORM := linux/$(TARGET_ARCH)
 
 LLVM_VERSION ?= 14.0.6
 LLVM_PREBUILT_TAG ?= latest
@@ -139,12 +140,14 @@ extract-llvm:
 build-container-image:
 	@if [ "$(CI)" = "true" ]; then \
 	  echo "CI build detected. Pulling $(LLVM_PREBUILT_IMAGE) to ensure using the latest."; \
-	  docker pull $(LLVM_PREBUILT_IMAGE) || \
+	  docker pull --platform $(PLATFORM) $(LLVM_PREBUILT_IMAGE) || \
 	    (echo "Error: Failed to pull $(LLVM_PREBUILT_IMAGE)." && \
 	     exit 1); \
 	else \
-	  if ! docker inspect --type=image $(LLVM_PREBUILT_IMAGE) > /dev/null 2>&1; then \
-	    docker pull $(LLVM_PREBUILT_IMAGE) || \
+	  FOUND_ARCH=$$(docker inspect --format '{{.Architecture}}' $(LLVM_PREBUILT_IMAGE)); \
+	  if [ "$${FOUND_ARCH}" != "$(TARGET_ARCH)" ]; then \
+	    echo "Pulling $(LLVM_PREBUILT_IMAGE) for $(FOUND_ARCH)"; \
+	    docker pull --platform $(PLATFORM) $(LLVM_PREBUILT_IMAGE) || \
 	      (echo "Error: Failed to pull $(LLVM_PREBUILT_IMAGE)." && \
 	       echo "Please make sure you are logged into the registry with the correct permissions." && \
 	       echo "You can log in with: `doctl registry login` or manually pull the image." && \
@@ -154,6 +157,7 @@ build-container-image:
 	  fi; \
 	fi
 	@docker build -t $(X_RAY_IMAGE) \
+	  --platform $(PLATFORM) \
 	  --build-arg LLVM_PREBUILT_IMAGE=$(LLVM_PREBUILT_IMAGE) \
 	  --build-arg VERSION=$(VERSION) \
 	  -f Dockerfile.x-ray .
