@@ -6,7 +6,7 @@ on:
       - "v*.*.*"
 
 jobs:
-  build:
+  build-amd64:
     runs-on: self-hosted
 
     env:
@@ -55,14 +55,45 @@ jobs:
         run: |
           docker push ${{ env.X_RAY_IMAGE }}
 
+  build-arm64:
+    runs-on: [self-hosted, qemu]
+
+    env:
+      BUILD_DIR: ${{ github.workspace }}/build
+      LLVM_PREBUILT_PATH: ${{ github.workspace }}/build/llvm
+      TARGET_ARCH: arm64
+      VERSION: ${{ github.ref_name }}
+      X_RAY_IMAGE: ghcr.io/sec3-product/x-ray:${{ github.ref_name }}-arm64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Remove existing GitHub registry login
+        run: |
+          docker logout ghcr.io
+
+      - name: Build and package
+        run: |
+          make -j build-container-image
+
+      - name: Login to registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push container image
+        run: |
+          docker push ${{ env.X_RAY_IMAGE }}
+
   release:
     runs-on: self-hosted
-    needs: [build]
+    needs: [build-amd64, build-arm64]
 
     env:
       VERSION: ${{ github.ref_name }}
       X_RAY_IMAGE: ghcr.io/sec3-product/x-ray:${{ github.ref_name }}
       X_RAY_IMAGE_AMD64: ghcr.io/sec3-product/x-ray:${{ github.ref_name }}-amd64
+      X_RAY_IMAGE_ARM64: ghcr.io/sec3-product/x-ray:${{ github.ref_name }}-arm64
       X_RAY_IMAGE_LATEST: ghcr.io/sec3-product/x-ray:latest
 
     steps:
@@ -88,8 +119,8 @@ jobs:
       - name: Create and push multiarch manifest to registry
         run: |
           docker manifest create --amend ${{ env.X_RAY_IMAGE }} \
-            ${{ env.X_RAY_IMAGE_AMD64 }}
+            ${{ env.X_RAY_IMAGE_AMD64 }} \
+            ${{ env.X_RAY_IMAGE_ARM64 }}
           docker manifest push ${{ env.X_RAY_IMAGE }}
-          docker pull ${{ env.X_RAY_IMAGE_AMD64 }}
-          docker tag ${{ env.X_RAY_IMAGE_AMD64 }} ${{ env.X_RAY_IMAGE_LATEST }}
+          docker tag ${{ env.X_RAY_IMAGE }} ${{ env.X_RAY_IMAGE_LATEST }}
           docker push ${{ env.X_RAY_IMAGE_LATEST }}
