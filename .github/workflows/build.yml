@@ -1,9 +1,5 @@
 name: Build X-Ray
 
-# Avoid having multiple builds simultaneously.
-concurrency:
-  group: build-x-ray
-
 on:
   push:
     branches:
@@ -11,7 +7,7 @@ on:
 
 jobs:
   build-container:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     env:
       X_RAY_IMAGE: x-ray-ci
 
@@ -37,7 +33,7 @@ jobs:
           make run-container-e2e
 
   build-native:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     env:
       BUILD_DIR: ${{ github.workspace }}/build
       LLVM_PREBUILT_PATH: ${{ github.workspace }}/build/llvm
