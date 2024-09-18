@@ -6,15 +6,14 @@ on:
       - "v*.*.*"
 
 jobs:
-  release:
+  build:
     runs-on: self-hosted
 
     env:
       BUILD_DIR: ${{ github.workspace }}/build
       LLVM_PREBUILT_PATH: ${{ github.workspace }}/build/llvm
       VERSION: ${{ github.ref_name }}
-      X_RAY_IMAGE: ghcr.io/sec3-product/x-ray:${{ github.ref_name }}
-      X_RAY_IMAGE_LATEST: ghcr.io/sec3-product/x-ray:latest
+      X_RAY_IMAGE: ghcr.io/sec3-product/x-ray:${{ github.ref_name }}-amd64
       DIST_TARBALL: ${{ github.workspace }}/build/x-ray-${{ github.ref_name }}-linux-amd64.tar.gz
 
     steps:
@@ -42,6 +41,36 @@ jobs:
         run: |
           make -j run-container-e2e run-native-e2e
 
+      - name: Upload dist files
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-amd64
+          path: ${{ env.DIST_TARBALL }}
+
+      - name: Login to registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push container image
+        run: |
+          docker push ${{ env.X_RAY_IMAGE }}
+
+  release:
+    runs-on: self-hosted
+    needs: [build]
+
+    env:
+      VERSION: ${{ github.ref_name }}
+      X_RAY_IMAGE: ghcr.io/sec3-product/x-ray:${{ github.ref_name }}
+      X_RAY_IMAGE_AMD64: ghcr.io/sec3-product/x-ray:${{ github.ref_name }}-amd64
+      X_RAY_IMAGE_LATEST: ghcr.io/sec3-product/x-ray:latest
+
+    steps:
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-amd64
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -56,8 +85,10 @@ jobs:
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Push container image to registry
+      - name: Create and push multiarch manifest to registry
         run: |
-          docker push ${{ env.X_RAY_IMAGE }}
+          docker manifest create --amend ${{ env.X_RAY_IMAGE }} \
+            ${{ env.X_RAY_IMAGE_AMD64 }}
+          docker manifest push ${{ env.X_RAY_IMAGE }}
           docker tag ${{ env.X_RAY_IMAGE }} ${{ env.X_RAY_IMAGE_LATEST }}
           docker push ${{ env.X_RAY_IMAGE_LATEST }}
