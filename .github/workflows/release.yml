@@ -86,7 +86,7 @@ jobs:
           docker push ${{ env.X_RAY_IMAGE }}
 
   release:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: [build-amd64, build-arm64]
 
     env:
@@ -116,11 +116,13 @@ jobs:
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Create and push multiarch manifest to registry
+      - name: Create and push multi-arch manifests to registry
         run: |
           docker manifest create --amend ${{ env.X_RAY_IMAGE }} \
             ${{ env.X_RAY_IMAGE_AMD64 }} \
             ${{ env.X_RAY_IMAGE_ARM64 }}
           docker manifest push ${{ env.X_RAY_IMAGE }}
-          docker tag ${{ env.X_RAY_IMAGE }} ${{ env.X_RAY_IMAGE_LATEST }}
-          docker push ${{ env.X_RAY_IMAGE_LATEST }}
+          docker manifest create --amend ${{ env.X_RAY_IMAGE_LATEST }} \
+            ${{ env.X_RAY_IMAGE_AMD64 }} \
+            ${{ env.X_RAY_IMAGE_ARM64 }}
+          docker manifest push ${{ env.X_RAY_IMAGE_LATEST }}
