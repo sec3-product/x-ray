@@ -74,7 +74,7 @@
       "1017": {
         "name": "MaliciousSimulation",
         "description": "The program may contain malicious simulation",
-        "url": "https://opcodes.fr/en/publications/2022-01/detecting-transaction-simulation/"
+        "url": "https://web.archive.org/web/20220916160633/https://opcodes.fr/publications/2022-01/detecting-transaction-simulation"
       },
       "1019": {
         "name": "UnvalidatedAccount",
