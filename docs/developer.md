@@ -68,7 +68,7 @@ public:
   Rule(Handler handler) : HandlerFunc(handler) {}
 
   bool handle(const RuleContext &RC, const CallSite &CS) const {
-    HandlerFunc(RC, CS);
+    return HandlerFunc(RC, CS);
   }
 
 private:
