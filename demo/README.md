@@ -3,7 +3,7 @@
 
 ```sh
 mkdir -p workspace
-git clone https://github.com/sec3-product/x-ray.git workspace/x-ray
+git clone --branch demo-v1 https://github.com/sec3-product/x-ray.git workspace/x-ray
 ```
 
 Start a scan with one-line command, using docker:
