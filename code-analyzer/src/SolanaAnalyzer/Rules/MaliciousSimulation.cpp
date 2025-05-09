@@ -28,7 +28,7 @@ bool handleComparisonEqual(const RuleContext &RC, const CallSite &CS) {
   if (valueName1.contains("slot") && valueName2.contains("slot") &&
       !valueName2.contains("price")) {
     RC.collectUntrustfulAccount(valueName1, SVE::Type::MALICIOUS_SIMULATION,
-                                11);
+                                11, "");
   }
   return true;
 }

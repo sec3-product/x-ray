@@ -26,8 +26,8 @@ using FuncArgTypesMap =
              std::vector<std::pair<llvm::StringRef, llvm::StringRef>>>;
 
 using CollectUnsafeOperationFunc = std::function<void(Event *, SVE::Type, int)>;
-using CollectUntrustfulAccountFunc =
-    std::function<void(llvm::StringRef, const Event *, SVE::Type, int)>;
+using CollectUntrustfulAccountFunc = std::function<void(
+    llvm::StringRef, const Event *, SVE::Type, int, std::string)>;
 
 // RuleContext encapsulates the context information when evaluating a rule.
 class RuleContext {
@@ -66,9 +66,10 @@ public:
     CollectUnsafeOperation(e, type, size);
   }
   virtual void collectUntrustfulAccount(llvm::StringRef name, SVE::Type type,
-                                        int size) const {
+                                        int size,
+                                        std::string additionalInfo) const {
     auto e = createReadEvent();
-    CollectUntrustfulAccount(name, e, type, size);
+    CollectUntrustfulAccount(name, e, type, size, additionalInfo);
   }
 
 private:

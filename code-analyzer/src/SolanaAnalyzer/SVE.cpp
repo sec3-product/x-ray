@@ -49,7 +49,7 @@ void SVE::init(Database sves) {
 
   addTypeID("1014", Type::BUMP_SEED);
   addTypeID("1015", Type::INSECURE_PDA_SHARING);
-
+  addTypeID("1016", Type::ARBITRARY_CPI);
   addTypeID("1017", Type::MALICIOUS_SIMULATION);
 
   addTypeID("2001", Type::INCORRECT_BREAK_LOGIC);

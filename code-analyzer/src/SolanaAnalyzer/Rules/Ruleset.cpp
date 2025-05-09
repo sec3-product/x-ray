@@ -1,5 +1,6 @@
 #include "Rules/Ruleset.h"
 
+#include "Rules/ArbitraryCPI.h"
 #include "Rules/Break.h"
 #include "Rules/InsecurePDA.h"
 #include "Rules/MaliciousSimulation.h"
@@ -38,6 +39,9 @@ Ruleset Ruleset::createNonRustModelRuleset() {
 
   // Malicious simulation rules.
   RS.addRule(Rule(handleComparisonEqual));
+
+  // Detect arbitrary CPI calls.
+  RS.addRule(Rule(handleInvoke));
 
   return RS;
 }

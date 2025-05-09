@@ -180,44 +180,6 @@ llvm::StringRef SolanaAnalysisPass::findNewStructAccountName(
   return stripCtxAccountsName(account_name);
 }
 
-std::pair<llvm::StringRef, const llvm::Instruction *>
-getProgramIdAccountName(const llvm::Instruction *inst) {
-  if (auto previousInst =
-          dyn_cast<CallBase>(inst->getPrevNonDebugInstruction())) {
-    auto prevCallName = previousInst->getCalledFunction()->getName();
-    if (prevCallName.startswith("sol.model.struct.new.Instruction.3")) {
-      auto value = previousInst->getArgOperand(0);
-      auto valueName = LangModel::findGlobalString(value);
-      if (valueName == "program_id") {
-        // find all the prev sol.model.opaqueAssign with program_id
-        auto prevInst = inst->getPrevNonDebugInstruction();
-        while (prevInst) {
-          if (auto callValue2 = dyn_cast<CallBase>(prevInst)) {
-            CallSite CS2(callValue2);
-            if (CS2.getTargetFunction()->getName().equals(
-                    "sol.model.opaqueAssign")) {
-              auto value1 = CS2.getArgOperand(0);
-              auto valueName1 = LangModel::findGlobalString(value1);
-              if (valueName1 == "program_id") {
-                auto value2 = CS2.getArgOperand(1);
-                auto valueName2 = LangModel::findGlobalString(value2);
-                // ctx.accounts.candy_machine_program.key
-                auto account = stripCtxAccountsName(valueName2);
-                auto found = account.find_last_of(".");
-                if (found != std::string::npos)
-                  account = account.substr(0, found);
-                return std::make_pair(account, prevInst);
-              }
-            }
-          }
-          prevInst = prevInst->getPrevNonDebugInstruction();
-        }
-      }
-    }
-  }
-  return std::make_pair("", inst);
-}
-
 std::map<llvm::StringRef, const llvm::Function *> FUNC_NAME_MAP;
 static const llvm::Function *
 getFunctionFromPartialName(llvm::StringRef partialName) {
@@ -985,7 +947,8 @@ void SolanaAnalysisPass::handleRustModelAPI(
                 callEventTraces, std::placeholders::_2, std::placeholders::_3);
   auto collectUntrustfulAccountFunc = std::bind(
       &UntrustfulAccount::collect, std::placeholders::_1, std::placeholders::_2,
-      callEventTraces, std::placeholders::_3, std::placeholders::_4);
+      callEventTraces, std::placeholders::_3, std::placeholders::_4,
+      std::placeholders::_5);
   auto getLastInstFunc = [this, tid]() -> const llvm::Instruction * {
     auto it = this->callEventTraces.find(tid);
     if (it != this->callEventTraces.end() && !it->second.empty()) {
@@ -1832,9 +1795,10 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
   auto collectUnsafeOperationFunc =
       std::bind(&UnsafeOperation::collect, std::placeholders::_1,
                 callEventTraces, std::placeholders::_2, std::placeholders::_3);
-  auto collectUntrustfulAccountFunc = std::bind(
-      &UntrustfulAccount::collect, std::placeholders::_1, std::placeholders::_2,
-      callEventTraces, std::placeholders::_3, std::placeholders::_4);
+  auto collectUntrustfulAccountFunc =
+      std::bind(&UntrustfulAccount::collect, std::placeholders::_1,
+                std::placeholders::_2, callEventTraces, std::placeholders::_3,
+                std::placeholders::_4, std::placeholders::_5);
   RuleContext RC(func, inst, funcArgTypesMap, thread, createReadEventFunc,
                  isInLoop, nullptr, collectUnsafeOperationFunc,
                  collectUntrustfulAccountFunc);
@@ -1843,7 +1807,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
   }
 
   // No matching rules. Traverse into the callee.
-  auto targetFuncName = CS.getCalledFunction()->getName();
+  auto TargetFuncName = CS.getCalledFunction()->getName();
   if (func->getName().startswith("sol.model.anchor.program.")) {
     // IMPORTANT: creating a new thread
     auto e = graph->createForkEvent(ctx, inst, tid);
@@ -1884,7 +1848,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
       lastThread->anchor_struct_function = func_struct;
       traverseFunctionWrapper(ctx, thread, callStack, inst, func_struct);
     }
-  } else if (targetFuncName.startswith("sol.sol_memset.3")) {
+  } else if (TargetFuncName.startswith("sol.sol_memset.3")) {
     auto value = CS.getArgOperand(0);
     // TODO source_account_data
     if (auto callValue = dyn_cast<CallBase>(value)) {
@@ -1907,7 +1871,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
         }
       }
     }
-  } else if (targetFuncName.equals("sol.position.2")) {
+  } else if (TargetFuncName.equals("sol.position.2")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "sol.position: " << *inst << "\n";
 
@@ -1915,14 +1879,14 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
     if (auto callValue = dyn_cast<CallBase>(value)) {
       handleConditionalCheck0(ctx, tid, func, inst, thread, value);
     }
-  } else if (targetFuncName.startswith("sol.Ok.1")) {
+  } else if (TargetFuncName.startswith("sol.Ok.1")) {
     auto value = CS.getArgOperand(0);
     auto valueName = LangModel::findGlobalString(value);
     auto e = graph->createReadEvent(ctx, inst, tid);
     auto funcx = findCallStackNonAnonFunc(e);
     if (!valueName.empty())
       thread->updateMostRecentFuncReturn(funcx, valueName);
-  } else if (targetFuncName.contains("::keccak::hashv.")) {
+  } else if (TargetFuncName.contains("::keccak::hashv.")) {
     auto value = CS.getArgOperand(0);
     auto valueName = LangModel::findGlobalString(value);
     if (valueName.contains(",")) {
@@ -1939,7 +1903,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
         }
       }
     }
-  } else if (targetFuncName.equals("sol.if")) {
+  } else if (TargetFuncName.equals("sol.if")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "sol.if: " << *inst << "\n";
 
@@ -1959,7 +1923,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
     }
     if (!handled)
       handleConditionalCheck0(ctx, tid, func, inst, thread, value);
-  } else if (targetFuncName.startswith("sol.&&")) {
+  } else if (TargetFuncName.startswith("sol.&&")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "sol.&&: " << *inst << "\n";
     auto e = graph->createReadEvent(ctx, inst, tid);
@@ -1979,7 +1943,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
       }
     }
 
-  } else if (targetFuncName.startswith("sol.!")) {
+  } else if (TargetFuncName.startswith("sol.!")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "sol.!: " << *inst << "\n";
     auto e = graph->createReadEvent(ctx, inst, tid);
@@ -1998,7 +1962,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
         thread->asssertSignerMap[account] = e;
       }
     }
-  } else if (targetFuncName.startswith("sol.get_account_data.2")) {
+  } else if (TargetFuncName.startswith("sol.get_account_data.2")) {
     auto e = graph->createReadEvent(ctx, inst, tid);
 
     auto value1 = CS.getArgOperand(0);
@@ -2024,13 +1988,13 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
     auto pair = std::make_pair(account1, account1);
     thread->assertOwnerEqualMap[pair] = e;
 
-  } else if (targetFuncName.startswith("sol.next_account_info.")) {
+  } else if (TargetFuncName.startswith("sol.next_account_info.")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "next_account_info: " << *inst << "\n";
     auto value = CS.getArgOperand(0);
     auto valueName = LangModel::findGlobalString(value);
 
-  } else if (targetFuncName.startswith("sol.Pubkey::find_program_address.")) {
+  } else if (TargetFuncName.startswith("sol.Pubkey::find_program_address.")) {
     auto value = CS.getArgOperand(0);
     auto valueName = LangModel::findGlobalString(value);
     auto e = graph->createReadEvent(ctx, inst, tid);
@@ -2069,7 +2033,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
       }
     }
 
-  } else if (targetFuncName.startswith("sol.Pubkey::create_program_address.")) {
+  } else if (TargetFuncName.startswith("sol.Pubkey::create_program_address.")) {
     auto value = CS.getArgOperand(0);
     auto valueName = LangModel::findGlobalString(value);
     auto e = graph->createReadEvent(ctx, inst, tid);
@@ -2102,10 +2066,10 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
         }
       }
     }
-  } else if (targetFuncName.startswith(
+  } else if (TargetFuncName.startswith(
                  "sol.spl_token::instruction::transfer") ||
-             targetFuncName.startswith("sol.spl_token::instruction::burn") ||
-             targetFuncName.startswith("sol.spl_token::instruction::mint_to")) {
+             TargetFuncName.startswith("sol.spl_token::instruction::burn") ||
+             TargetFuncName.startswith("sol.spl_token::instruction::mint_to")) {
     if (DEBUG_RUST_API) {
       llvm::outs() << "spl_token::instruction:: " << *inst << "\n";
     }
@@ -2141,8 +2105,8 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
                        << "\n";
       }
     }
-  } else if (targetFuncName.startswith("sol.Rent::from_account_info.") ||
-             targetFuncName.startswith("sol.Clock::from_account_info.")) {
+  } else if (TargetFuncName.startswith("sol.Rent::from_account_info.") ||
+             TargetFuncName.startswith("sol.Clock::from_account_info.")) {
     auto value = CS.getArgOperand(0);
     auto valueName = LangModel::findGlobalString(value);
     if (auto arg = dyn_cast<Argument>(value))
@@ -2156,34 +2120,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
       auto pair = std::make_pair(valueName, valueName);
       thread->assertKeyEqualMap[pair] = e;
     }
-  } else if (targetFuncName.contains("program::invoke")) {
-    auto value = CS.getArgOperand(0);
-    if (auto callValue = dyn_cast<CallBase>(value)) {
-      CallSite CS2(callValue);
-      if (CS2.getTargetFunction()->getName().startswith(
-              "sol.create_associated_token_account.")) {
-        auto value1 = CS.getArgOperand(1);
-        auto valueName = LangModel::findGlobalString(value1);
-        // split
-        llvm::SmallVector<StringRef, 8> accounts_vec;
-        valueName.split(accounts_vec, ',', -1, false);
-        if (accounts_vec.size() > 3) {
-          auto associate_account = accounts_vec[2];
-          associate_account = stripToAccountInfo(associate_account);
-          auto foundClone = associate_account.find(".clone()");
-          if (foundClone != std::string::npos)
-            associate_account = associate_account.substr(0, foundClone);
-          if (DEBUG_RUST_API)
-            llvm::outs() << "sol.create_associated_token_account: "
-                         << associate_account << "\n";
-          auto e = graph->createReadEvent(ctx, inst, tid);
-          // pool_associated_staked_token_account.to_account_info().clone()
-          thread->accountsInvokedMap[associate_account] = e;
-        }
-      }
-    }
-
-  } else if (targetFuncName.equals("sol.stake::instruction::split.4")) {
+  } else if (TargetFuncName.equals("sol.stake::instruction::split.4")) {
     auto e = graph->createReadEvent(ctx, inst, tid);
     for (int i = 1; i <= 1; i++) {
       auto value = CS.getArgOperand(i);
@@ -2206,7 +2143,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
       }
     }
 
-  } else if (targetFuncName.equals(
+  } else if (TargetFuncName.equals(
                  "sol.stake::instruction::delegate_stake.3")) {
     auto e = graph->createReadEvent(ctx, inst, tid);
     for (int i = 0; i <= 2; i++) {
@@ -2230,7 +2167,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
       }
     }
 
-  } else if (targetFuncName.equals("sol.stake::instruction::authorize.5")) {
+  } else if (TargetFuncName.equals("sol.stake::instruction::authorize.5")) {
     auto e = graph->createReadEvent(ctx, inst, tid);
     for (int i = 0; i <= 2; i++) {
       auto value = CS.getArgOperand(i);
@@ -2255,7 +2192,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
       }
     }
 
-  } else if (targetFuncName.equals("sol.stake::instruction::withdraw.5")) {
+  } else if (TargetFuncName.equals("sol.stake::instruction::withdraw.5")) {
     auto e = graph->createReadEvent(ctx, inst, tid);
     // withdrawer_pubkey: &Pubkey,
     // destination_lamports_info
@@ -2281,7 +2218,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
       }
     }
 
-  } else if (targetFuncName.contains("system_instruction::transfer")) {
+  } else if (TargetFuncName.contains("system_instruction::transfer")) {
     // TODO track parameter passing
     auto value = CS.getArgOperand(0);
     auto valueName = LangModel::findGlobalString(value);
@@ -2307,7 +2244,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
       thread->accountsInvokedMap[valueName_j] = e;
     }
 
-  } else if (targetFuncName.startswith("//sol.transfer_ctx")) {
+  } else if (TargetFuncName.startswith("//sol.transfer_ctx")) {
     auto value = CS.getArgOperand(0);
     auto valueName = LangModel::findGlobalString(value);
     if (DEBUG_RUST_API)
@@ -2316,7 +2253,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
     auto e = graph->createReadEvent(ctx, inst, tid);
     thread->accountsInvokedMap["authority"] = e;
 
-  } else if (targetFuncName.startswith("sol.CpiContext::new.")) {
+  } else if (TargetFuncName.startswith("sol.CpiContext::new.")) {
     auto value = CS.getArgOperand(1);
     auto valueName = LangModel::findGlobalString(value);
     auto found = valueName.find("authority:");
@@ -2342,7 +2279,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
       thread->accountsInvokedMap[valueName_j] = e;
     }
 
-  } else if (targetFuncName.startswith("sol.borrow_mut.")) {
+  } else if (TargetFuncName.startswith("sol.borrow_mut.")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "borrow_mut: " << *inst << "\n";
     auto value = CS.getArgOperand(0);
@@ -2398,7 +2335,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
       if (!thread->isInAccountOrStructAccountMap(account))
         thread->accountsMap[account] = e;
 
-  } else if (targetFuncName.startswith("sol.serialize.")) {
+  } else if (TargetFuncName.startswith("sol.serialize.")) {
     // create an object of a class
     if (DEBUG_RUST_API)
       llvm::outs() << "sol.serialize: " << *inst << "\n";
@@ -2407,7 +2344,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
     auto e = graph->createReadEvent(ctx, inst, tid);
     auto account = valueName;
     thread->borrowDataMutMap[account] = e;
-  } else if (targetFuncName.startswith("sol.try_borrow_mut_data.")) {
+  } else if (TargetFuncName.startswith("sol.try_borrow_mut_data.")) {
     // create an object of a class
     if (DEBUG_RUST_API)
       llvm::outs() << "sol.try_borrow_mut_data: " << *inst << "\n";
@@ -2426,8 +2363,8 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
       if (!thread->isInAccountOrStructAccountMap(account))
         thread->accountsMap[account] = e;
 
-  } else if (targetFuncName.startswith("sol.borrow.") ||
-             targetFuncName.startswith("sol.try_borrow_data.")) {
+  } else if (TargetFuncName.startswith("sol.borrow.") ||
+             TargetFuncName.startswith("sol.try_borrow_data.")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "sol.borrow: " << *inst << "\n";
     auto value = CS.getArgOperand(0);
@@ -2551,7 +2488,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
       }
     }
 
-  } else if (targetFuncName.startswith("sol.require.!2")) {
+  } else if (TargetFuncName.startswith("sol.require.!2")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "sol.require.!: " << *inst << "\n";
     // merkle_proof::verify(proof,distributor.root,node.0)
@@ -2575,7 +2512,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
     }
     // TODO parse more
 
-  } else if (targetFuncName.startswith("sol.assert.")) {
+  } else if (TargetFuncName.startswith("sol.assert.")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "assert: " << *inst << "\n";
     auto value = CS.getArgOperand(0);
@@ -2598,27 +2535,27 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
     } else {
       thread->asssertOtherMap[account] = e;
     }
-  } else if (targetFuncName.startswith("sol.assert_eq.") ||
-             targetFuncName.startswith("sol.ne.2") ||
-             targetFuncName.startswith("sol.eq.2") ||
-             targetFuncName.contains("_keys_eq.") ||
-             targetFuncName.contains("_keys_neq.") ||
-             targetFuncName.contains("_keys_equal.") ||
-             targetFuncName.contains("_keys_not_equal.")) {
-    // targetFuncName.startswith("sol.assert_eq.")
+  } else if (TargetFuncName.startswith("sol.assert_eq.") ||
+             TargetFuncName.startswith("sol.ne.2") ||
+             TargetFuncName.startswith("sol.eq.2") ||
+             TargetFuncName.contains("_keys_eq.") ||
+             TargetFuncName.contains("_keys_neq.") ||
+             TargetFuncName.contains("_keys_equal.") ||
+             TargetFuncName.contains("_keys_not_equal.")) {
+    // TargetFuncName.startswith("sol.assert_eq.")
     // ||
-    //        targetFuncName.startswith("sol.assert_keys_eq.2")
+    //        TargetFuncName.startswith("sol.assert_keys_eq.2")
     //        ||
-    //        targetFuncName.startswith("sol.require_keys_eq.2")
+    //        TargetFuncName.startswith("sol.require_keys_eq.2")
     //        ||
-    //        targetFuncName.startswith("sol.require_keys_neq.2")
+    //        TargetFuncName.startswith("sol.require_keys_neq.2")
     //        ||
-    //        targetFuncName.startswith("sol.check_keys_equal.2")
+    //        TargetFuncName.startswith("sol.check_keys_equal.2")
     //        ||
-    //        targetFuncName.startswith("sol.check_keys_not_equal.2")
+    //        TargetFuncName.startswith("sol.check_keys_not_equal.2")
     addCheckKeyEqual(ctx, tid, inst, thread, CS);
 
-  } else if (targetFuncName.startswith("sol.assert_owner.")) {
+  } else if (TargetFuncName.startswith("sol.assert_owner.")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "assert_owner: " << *inst << "\n";
     if (CS.getNumArgOperands() >= 2) {
@@ -2631,7 +2568,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
       auto e = graph->createReadEvent(ctx, inst, tid);
       thread->assertOwnerEqualMap[pair] = e;
     }
-  } else if (targetFuncName.startswith("sol.assert_signer.")) {
+  } else if (TargetFuncName.startswith("sol.assert_signer.")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "assert_signer: " << *inst << "\n";
     if (CS.getNumArgOperands() >= 1) {
@@ -2641,7 +2578,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
       auto e = graph->createReadEvent(ctx, inst, tid);
       thread->asssertSignerMap[account] = e;
     }
-  } else if (targetFuncName.startswith("sol.get.2")) {
+  } else if (TargetFuncName.startswith("sol.get.2")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "sol.get.2: " << *inst << "\n";
     auto value1 = CS.getArgOperand(0);
@@ -2677,7 +2614,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
         }
       }
     }
-  } else if (targetFuncName.startswith("sol.validate.!2")) {
+  } else if (TargetFuncName.startswith("sol.validate.!2")) {
     //            let want_destination_information_addr =
     //            self.get_destination_information_address(ctx);
     // validate!(
@@ -2720,7 +2657,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
         }
       }
     }
-  } else if (targetFuncName.equals("sol.==")) {
+  } else if (TargetFuncName.equals("sol.==")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "sol.==: " << *inst << "\n";
     auto value1 = CS.getArgOperand(0);
@@ -2741,7 +2678,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
         }
       }
     }
-  } else if (targetFuncName.equals("sol.contains.2")) {
+  } else if (TargetFuncName.equals("sol.contains.2")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "sol.contains.2: " << *inst << "\n";
     if (func->getName().contains("::verify")) {
@@ -2768,24 +2705,24 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
       auto pairx = std::make_pair(valueName2, valueName1);
       thread->accountContainsVerifiedMap[pairx] = e;
     }
-  } else if (targetFuncName.equals("sol.+=")) {
+  } else if (TargetFuncName.equals("sol.+=")) {
     // No-op; this is handled by the rulset.
-  } else if (targetFuncName.equals("sol.-=")) {
+  } else if (TargetFuncName.equals("sol.-=")) {
     // No-op; this is handled by the rulset.
-  } else if (targetFuncName.equals("sol.+")) {
+  } else if (TargetFuncName.equals("sol.+")) {
     // No-op; this is handled by the rulset.
-  } else if (targetFuncName.equals("sol.-")) {
+  } else if (TargetFuncName.equals("sol.-")) {
     // No-op; this is handled by the rulset.
-  } else if (targetFuncName.equals("sol.*")) {
+  } else if (TargetFuncName.equals("sol.*")) {
     // No-op; this is handled by the rulset.
-  } else if (targetFuncName.equals("sol./")) {
+  } else if (TargetFuncName.equals("sol./")) {
     // No-op; this is handled by the rulset.
-  } else if (targetFuncName.startswith("sol.>=") ||
-             targetFuncName.startswith("sol.<=")) {
+  } else if (TargetFuncName.startswith("sol.>=") ||
+             TargetFuncName.startswith("sol.<=")) {
     // No-op; this is handled by the rulset.
-  } else if (targetFuncName.startswith("sol.checked_div.")) {
+  } else if (TargetFuncName.startswith("sol.checked_div.")) {
     // No-op; this is handled by the rulset.
-  } else if (targetFuncName.contains("::check_account_owner.2")) {
+  } else if (TargetFuncName.contains("::check_account_owner.2")) {
     auto value1 = CS.getArgOperand(0); // program_id
     auto valueName1 = LangModel::findGlobalString(value1);
 
@@ -2808,7 +2745,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
     auto e = graph->createReadEvent(ctx, inst, tid);
     thread->assertOwnerEqualMap[pair] = e;
 
-  } else if (targetFuncName.contains("::validate_owner.")) {
+  } else if (TargetFuncName.contains("::validate_owner.")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "validate_owner: " << *inst << "\n";
     if (CS.getNumArgOperands() > 2) {
@@ -2836,7 +2773,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
                        << " valueName3: " << valueName3 << "\n";
       }
     }
-  } else if (targetFuncName.startswith("sol.require_eq.!")) {
+  } else if (TargetFuncName.startswith("sol.require_eq.!")) {
     auto value1 = CS.getArgOperand(0); // mint_info.key
     auto value2 = CS.getArgOperand(1); // dest_account.base.mint
     auto valueName1 = LangModel::findGlobalString(value1);
@@ -2857,7 +2794,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
         thread->assertOwnerEqualMap[pair] = e;
       }
     }
-  } else if (targetFuncName.contains("cmp_pubkeys.2")) {
+  } else if (TargetFuncName.contains("cmp_pubkeys.2")) {
     auto value1 = CS.getArgOperand(0); // mint_info.key
     auto value2 = CS.getArgOperand(1); // dest_account.base.mint
     auto valueName1 = LangModel::findGlobalString(value1);
@@ -2882,67 +2819,21 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
       if (valueName1.contains(".owner") || valueName2.contains(".owner"))
         thread->assertOwnerEqualMap[pair] = e;
     }
-  } else if (targetFuncName.startswith("sol.invoke_signed.") ||
-             targetFuncName.startswith("sol.invoke.")) {
-    auto value = CS.getArgOperand(0);
-    // find all accounts invoked
-    if (!isa<CallBase>(value))
-      value = inst->getPrevNonDebugInstruction();
-    auto e = graph->createReadEvent(ctx, inst, tid);
-
-    if (auto call_inst = dyn_cast<CallBase>(value)) {
-      auto value2 = value;
-      CallSite CS2(call_inst);
-      if (CS2.getTargetFunction()->getName().startswith(
-              "sol.model.opaqueAssign")) {
-        value2 = CS2.getArgOperand(1);
-      }
-      if (auto call_inst2 = dyn_cast<CallBase>(value2)) {
-        CallSite CS3(call_inst2);
-        if (CS3.getTargetFunction()->getName().contains("instruction::")) {
-          auto valuex = CS.getArgOperand(1);
-          auto valueNameX = LangModel::findGlobalString(valuex);
-          // split
-          valueNameX = valueNameX.substr(1, valueNameX.size() - 2);
-          if (DEBUG_RUST_API)
-            llvm::outs() << "sol.invoke: valueNameX: " << valueNameX << "\n";
-          llvm::SmallVector<StringRef, 8> value_vec;
-          valueNameX.split(value_vec, ',', -1, false);
-          for (auto value_ : value_vec) {
-            auto foundClone = value_.find(".clone");
-            if (foundClone != std::string::npos)
-              value_ = value_.substr(0, foundClone);
-            if (DEBUG_RUST_API)
-              llvm::outs() << "sol.invoke: value_: " << value_ << "\n";
-            thread->accountsInvokedMap[value_] = e;
-            if (!thread->isInAccountsMap(value_)) {
-              value_ = findCallStackAccountAliasName(func, e, value_);
-              thread->accountsInvokedMap[value_] = e;
-            }
-          }
-        }
-      }
-    } else {
-      if (DEBUG_RUST_API) {
-        llvm::outs() << "sol.invoke: failed to find invoked accounts: "
-                     << *value << "\n";
-      }
-    }
-  } else if (targetFuncName.contains("//initialized")) {
+  } else if (TargetFuncName.contains("//initialized")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "sol.initialized: " << *inst << "\n";
     thread->hasInitializedCheck = true;
 
   } else {
-    if (targetFuncName.contains("initialized")) {
+    if (TargetFuncName.contains("initialized")) {
       if (DEBUG_RUST_API) {
         llvm::outs() << "sol.initialized: " << *inst << "\n";
       }
       thread->hasInitializedCheck = true;
     }
 
-    if (targetFuncName.startswith("sol.check_") ||
-        targetFuncName.startswith("sol.validate_")) {
+    if (TargetFuncName.startswith("sol.check_") ||
+        TargetFuncName.startswith("sol.validate_")) {
       if (DEBUG_RUST_API) {
         llvm::outs() << "sol.check_: " << *inst << "\n";
       }
@@ -2960,7 +2851,7 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
             thread->assertKeyEqualMap[pair] = e;
           }
           if (DEBUG_RUST_API)
-            llvm::outs() << targetFuncName << " check_account: " << valueName
+            llvm::outs() << TargetFuncName << " check_account: " << valueName
                          << "\n";
         }
       }
@@ -3032,8 +2923,8 @@ void SolanaAnalysisPass::traverseFunction(
 
         if (!CS.isIndirectCall()) {
           if (LangModel::isRustAPI(CS.getCalledFunction())) {
-            auto targetFuncName = CS.getCalledFunction()->getName();
-            if (targetFuncName.startswith("sol.iter.")) {
+            auto TargetFuncName = CS.getCalledFunction()->getName();
+            if (TargetFuncName.startswith("sol.iter.")) {
               continue;
             }
 
@@ -3317,7 +3208,8 @@ void SolanaAnalysisPass::detectUntrustfulAccounts() {
   // Detect untrustful accounts.
   auto collector = std::bind(&UntrustfulAccount::collect, std::placeholders::_1,
                              std::placeholders::_2, callEventTraces,
-                             std::placeholders::_3, std::placeholders::_4);
+                             std::placeholders::_3, std::placeholders::_4,
+                             std::placeholders::_5);
   UntrustfulAccountDetector detector(
       funcArgTypesMap, threadStartFunctions, potentialOwnerAccounts,
       globalStateAccounts, anchorStructFunctionFieldsMap, accountsPDAMap,

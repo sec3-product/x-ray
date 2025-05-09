@@ -60,6 +60,9 @@ std::string xray::UntrustfulAccount::getErrorMsg(SVE::Type type) {
   case SVE::Type::INSECURE_PDA_SHARING:
     msg = "The PDA sharing with these seeds is insecure:";
     break;
+  case SVE::Type::ARBITRARY_CPI:
+    msg = "The CPI may be vulnerable and invoke an arbitrary program: ";
+    break;
   default:
     llvm::errs() << "Unhandled type: " << static_cast<int>(type) << "\n";
     llvm_unreachable("unhandled untrustful account");
@@ -101,7 +104,7 @@ bool xray::UntrustfulAccount::filterByCallStack(std::vector<std::string> &st0) {
 void xray::UntrustfulAccount::collect(
     llvm::StringRef accountName, const Event *e,
     std::map<TID, std::vector<CallEvent *>> &callEventTraces, SVE::Type type,
-    int P) {
+    int P, std::string additionalInfo) {
   SourceInfo srcInfo = getSourceLoc(e->getInst());
   if (filter(type, srcInfo))
     return;
@@ -154,6 +157,9 @@ void xray::UntrustfulAccount::collect(
     if (nolimit || budget > 0) {
       srcInfo.setStackTrace(st);
       auto msg = getErrorMsg(type); // TODO: add source location
+      if (!additionalInfo.empty()) {
+        msg = additionalInfo;
+      }
       untrustfulAccounts.emplace_back(accountName.str(), srcInfo, msg, type, P,
                                       isIgnored, isHidden);
       --budget;
@@ -191,13 +197,15 @@ nlohmann::json xray::UntrustfulAccount::to_json() const {
 }
 
 void xray::UntrustfulAccount::print() const {
-  // llvm::outs() << "=============This account may be
-  // UNTRUSTFUL!================\n";
   llvm::errs() << "==============VULNERABLE: " << name << "!============\n";
   outs() << "Found a potential vulnerability at line " << apiInst.getLine()
          << ", column " << apiInst.getCol() << " in " << apiInst.getFilename()
          << "\n";
-  outs() << description << ":\n";
+  if (!errorMsg.empty()) {
+    outs() << errorMsg << "\n\n";
+  } else {
+    outs() << description << ":\n\n";
+  }
   outs() << apiInst.getSnippet();
   outs() << ">>>Stack Trace:\n";
   printStackTrace(apiInst.getStackTrace());
@@ -216,4 +224,3 @@ void xray::UntrustfulAccount::printSummary() {
   info("detected " + std::to_string(untrustfulAccounts.size()) +
        " untrustful accounts in total.");
 }
-

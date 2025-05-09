@@ -9,6 +9,7 @@ set(SOLANA_ANALYZER_SOURCES
     LocksetManager.cpp
     LogColor.cpp
     PTAModels/GraphBLASModel.cpp
+    Rules/ArbitraryCPI.cpp
     Rules/Break.cpp
     Rules/CheckedDiv.cpp
     Rules/CosplayAccountDetector.cpp

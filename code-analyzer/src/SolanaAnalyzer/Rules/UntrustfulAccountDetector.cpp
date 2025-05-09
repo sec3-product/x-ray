@@ -80,7 +80,7 @@ void UntrustfulAccountDetector::detect(StaticThread *curThread) {
         !curThread->isAccountUsedInSeed(accountName)) {
       // llvm::errs() << "==============VULNERABLE:
       // MissingOwnerCheck!============\n";
-      collectUntrustfulAccountFunc(accountName, e, SVE::Type::MISS_OWNER, 10);
+      collectUntrustfulAccountFunc(accountName, e, SVE::Type::MISS_OWNER, 10, "");
       isUnvalidate = true;
     }
     if (!isUnvalidate && curThread->isAccountBorrowData(accountName) &&
@@ -93,7 +93,7 @@ void UntrustfulAccountDetector::detect(StaticThread *curThread) {
         if (!isOwnerOnly) {
           auto e1 = curThread->borrowDataMap[accountName];
           collectUntrustfulAccountFunc(
-              accountName, e1, SVE::Type::ACCOUNT_UNVALIDATED_BORROWED, 9);
+              accountName, e1, SVE::Type::ACCOUNT_UNVALIDATED_BORROWED, 9, "");
           isUnvalidate = true;
         }
       }
@@ -132,7 +132,7 @@ void UntrustfulAccountDetector::detect(StaticThread *curThread) {
               !accountName.contains("new_") && !accountName.contains("from_") &&
               !accountName.contains("to_") && !accountName.contains("_fee")) {
             collectUntrustfulAccountFunc(accountName, e, SVE::Type::MISS_SIGNER,
-                                         10);
+                                         10, "");
             isUnvalidate = true;
           }
 
@@ -215,7 +215,7 @@ void UntrustfulAccountDetector::detect(StaticThread *curThread) {
                       accountName) &&
                   !isAccountUsedInSeedsProgramAddress(accountName)) {
                 collectUntrustfulAccountFunc(
-                    accountName, e, SVE::Type::ACCOUNT_UNVALIDATED_OTHER, 8);
+                    accountName, e, SVE::Type::ACCOUNT_UNVALIDATED_OTHER, 8, "");
                 isUnvalidate = true;
               }
             }
@@ -244,7 +244,7 @@ void UntrustfulAccountDetector::detect(StaticThread *curThread) {
     if (!curThread->isAccountBumpValidated(bumpName) &&
         !curThread->isSignerAccountUsedSeedsOfAccount0(account)) {
       if (!isOwnerOnly) {
-        collectUntrustfulAccountFunc(bumpName, e, SVE::Type::BUMP_SEED, 9);
+        collectUntrustfulAccountFunc(bumpName, e, SVE::Type::BUMP_SEED, 9, "");
       }
     }
   }

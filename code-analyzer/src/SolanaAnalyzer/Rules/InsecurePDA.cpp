@@ -27,7 +27,7 @@ bool handleOpaqueAssign(const RuleContext &RC, const CallSite &CS) {
         !valueName1.contains("dest")) {
       // report pda_sharing_secure
       RC.collectUntrustfulAccount(valueName1, SVE::Type::INSECURE_PDA_SHARING,
-                                  5);
+                                  5, "");
       return true;
     }
   }

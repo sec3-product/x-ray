@@ -24,7 +24,7 @@ public:
   static void init(int configReportLimit, bool configNoReportLimit);
   static void collect(llvm::StringRef accountName, const Event *e,
                       std::map<TID, std::vector<CallEvent *>> &callEventTraces,
-                      SVE::Type type, int P);
+                      SVE::Type type, int P, std::string additionalInfo = "");
 
   static void printAll();
   static void printSummary();
