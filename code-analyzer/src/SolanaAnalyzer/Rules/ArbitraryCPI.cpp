@@ -31,11 +31,27 @@ static llvm::StringRef stripCtxAccountsName(llvm::StringRef account_name) {
   return account_name;
 }
 
+static bool isTrustedBuilder(llvm::StringRef BuilderName) {
+  if (BuilderName.contains("::system_instruction::")) {
+    return true;
+  }
+  if (BuilderName.contains("spl_associated_token_account::")) {
+    return true;
+  }
+  if (BuilderName.contains("spl_token::instruction::transfer_checked") ||
+      BuilderName.contains("spl_token::instruction::mint_to_checked") ||
+      BuilderName.contains("spl_token::instruction::approve_checked")) {
+    return true;
+  }
+  return false;
+}
+
 struct CPIInfo {
   std::string Account;
   const llvm::Instruction *BuilderCall;
   std::string InstName;
   std::string BuiltBy;
+  bool IsTrusted;
 };
 
 // getProgramIdAccountName locates and returns the account name used as the
@@ -48,11 +64,13 @@ static CPIInfo getProgramIdAccountName(const llvm::Instruction *InvokeInst) {
   CallSite InvokeCS(const_cast<Instruction *>(InvokeInst));
   if (auto *F = InvokeCS.getCalledFunction()) {
     auto Name = F->getName();
-    if (!Name.contains("program::invoke")) {
-      return CPIInfo{"", InvokeInst, "", ""};
+    if (!Name.contains("program::invoke") &&
+        !Name.startswith("sol.invoke_signed.") &&
+        !Name.startswith("sol.invoke.")) {
+      return CPIInfo{"", InvokeInst, "", "", false};
     }
   } else {
-    return CPIInfo{"", InvokeInst, "", ""};
+    return CPIInfo{"", InvokeInst, "", "", false};
   }
 
   const CallBase *BuilderCall = nullptr;
@@ -76,13 +94,17 @@ static CPIInfo getProgramIdAccountName(const llvm::Instruction *InvokeInst) {
     }
   }
   if (!BuilderCall) {
-    return CPIInfo{"", InvokeInst, "", ""};
+    return CPIInfo{"", InvokeInst, "", "", false};
   }
 
   // 3. Record the builder.
   std::string BuiltBy = "<unknown>";
   if (auto *BF = BuilderCall->getCalledFunction(); BF != nullptr) {
     BuiltBy = BF->getName().str();
+    // Heuristcally check if the builder is trusted.
+    if (isTrustedBuilder(BuiltBy)) {
+      return CPIInfo{"", InvokeInst, "", "", true};
+    }
   }
 
   // 4. Try to extract its first argument as the program_id account.
@@ -122,7 +144,7 @@ static CPIInfo getProgramIdAccountName(const llvm::Instruction *InvokeInst) {
     }
   }
 
-  return CPIInfo{Account, BuilderCall, InstName, BuiltBy};
+  return CPIInfo{Account, BuilderCall, InstName, BuiltBy, false};
 }
 
 bool handleInvoke(const RuleContext &RC, const CallSite &CS) {
@@ -161,8 +183,11 @@ bool handleInvoke(const RuleContext &RC, const CallSite &CS) {
   }
 
   // 2. Now run the general ABITRARY_CPI check.
-  auto [Account, ProgInst, InstName, BuiltBy] =
+  auto [Account, ProgInst, InstName, BuiltBy, IsTrusted] =
       getProgramIdAccountName(RC.getInst());
+  if (IsTrusted) {
+    return true;
+  }
   if (!Account.empty()) {
     if (!RC.getThread()->isAccountKeyValidated(Account)) {
       if (DEBUG_RUST_API) {
@@ -183,10 +208,13 @@ bool handleInvoke(const RuleContext &RC, const CallSite &CS) {
                  << "    InstName: " << InstName << "\n"
                  << "    BuiltBy: " << BuiltBy << "\n";
   }
-  auto desc =
-      "The CPI may be vulnerable because it invokes whatever program is "
-      "stored in `" +
-      InstName + "`, whose value is built by the call to `" + BuiltBy + "`.";
+  std::string desc;
+  if (!InstName.empty()) {
+    desc =
+        "The CPI may be vulnerable because it invokes whatever program is "
+        "stored in `" +
+        InstName + "`, whose value is built by the call to `" + BuiltBy + "`.";
+  }
   RC.collectUntrustfulAccount(Account, SVE::Type::ARBITRARY_CPI, 9, desc);
   return false;
 }
