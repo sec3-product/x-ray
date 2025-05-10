@@ -40,7 +40,7 @@ var (
   {
    "Name": "e2e-app_dex.ll",
    "ReportJSON": "PREFIX/.xray/build/raw_e2e-app_dex.ll.json",
-   "IssueCount": 62
+   "IssueCount": 67
   },
   {
    "Name": "e2e-app_dummy-oracle.ll",

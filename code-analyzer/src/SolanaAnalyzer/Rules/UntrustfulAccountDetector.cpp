@@ -58,7 +58,7 @@ void UntrustfulAccountDetector::detect(StaticThread *curThread) {
   // Traverse all the accounts and check for untrustful accounts.
   for (auto [accountName, e] : curThread->accountsMap) {
     if (DEBUG_RUST_API) {
-      llvm::outs() << "account: " << accountName << "\n";
+      llvm::outs() << "UntrustfulAccountDetector::detect account: " << accountName << "\n";
     }
     // Skip initialization function.
     if (isInit) {
@@ -214,6 +214,10 @@ void UntrustfulAccountDetector::detect(StaticThread *curThread) {
                   !curThread->isAccountReferencedByAnyOtherAccountInSeeds(
                       accountName) &&
                   !isAccountUsedInSeedsProgramAddress(accountName)) {
+
+                llvm::outs() << "==============VULNERABLE: Account other ==============\n";
+                llvm::outs() << "accountName: " << accountName << "\n"
+                  << "  validated? " << curThread->isAccountKeyValidated(accountName) << "\n";
                 collectUntrustfulAccountFunc(
                     accountName, e, SVE::Type::ACCOUNT_UNVALIDATED_OTHER, 8, "");
                 isUnvalidate = true;

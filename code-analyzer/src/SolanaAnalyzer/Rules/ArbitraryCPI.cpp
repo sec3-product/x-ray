@@ -32,7 +32,7 @@ static llvm::StringRef stripCtxAccountsName(llvm::StringRef account_name) {
 }
 
 static bool isTrustedBuilder(llvm::StringRef BuilderName) {
-  if (BuilderName.contains("::system_instruction::")) {
+  if (BuilderName.contains("system_instruction::")) {
     return true;
   }
   if (BuilderName.contains("spl_associated_token_account::")) {
@@ -101,6 +101,9 @@ static CPIInfo getProgramIdAccountName(const llvm::Instruction *InvokeInst) {
   std::string BuiltBy = "<unknown>";
   if (auto *BF = BuilderCall->getCalledFunction(); BF != nullptr) {
     BuiltBy = BF->getName().str();
+    if (DEBUG_RUST_API) {
+      llvm::outs() << "    BuiltBy: " << BuiltBy << "\n";
+    }
     // Heuristcally check if the builder is trusted.
     if (isTrustedBuilder(BuiltBy)) {
       return CPIInfo{"", InvokeInst, "", "", true};
@@ -186,7 +189,9 @@ bool handleInvoke(const RuleContext &RC, const CallSite &CS) {
   auto [Account, ProgInst, InstName, BuiltBy, IsTrusted] =
       getProgramIdAccountName(RC.getInst());
   if (IsTrusted) {
-    return true;
+    // TODO: It currently returns `false` so that later rules that rely on
+    // `sol.invoke` are evaluated.
+    return false;
   }
   if (!Account.empty()) {
     if (!RC.getThread()->isAccountKeyValidated(Account)) {
@@ -196,7 +201,9 @@ bool handleInvoke(const RuleContext &RC, const CallSite &CS) {
       }
       RC.collectUntrustfulAccount(Account, SVE::Type::ARBITRARY_CPI, 9, "");
     }
-    return true;
+    // TODO: It currently returns `false` so that later rules that rely on
+    // `sol.invoke` are evaluated.
+    return false;
   }
   // Unable to identify the account name. Report with warning.
   if (DEBUG_RUST_API) {
@@ -210,10 +217,10 @@ bool handleInvoke(const RuleContext &RC, const CallSite &CS) {
   }
   std::string desc;
   if (!InstName.empty()) {
-    desc =
-        "The CPI may be vulnerable because it invokes whatever program is "
-        "stored in `" +
-        InstName + "`, whose value is built by the call to `" + BuiltBy + "`.";
+    desc = "The CPI may be vulnerable because it invokes whatever program is "
+           "stored in `" +
+           InstName + "`, whose value is built by the call to `" + BuiltBy +
+           "`.";
   }
   RC.collectUntrustfulAccount(Account, SVE::Type::ARBITRARY_CPI, 9, desc);
   return false;

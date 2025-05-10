@@ -945,10 +945,10 @@ void SolanaAnalysisPass::handleRustModelAPI(
   auto collectUnsafeOperationFunc =
       std::bind(&UnsafeOperation::collect, std::placeholders::_1,
                 callEventTraces, std::placeholders::_2, std::placeholders::_3);
-  auto collectUntrustfulAccountFunc = std::bind(
-      &UntrustfulAccount::collect, std::placeholders::_1, std::placeholders::_2,
-      callEventTraces, std::placeholders::_3, std::placeholders::_4,
-      std::placeholders::_5);
+  auto collectUntrustfulAccountFunc =
+      std::bind(&UntrustfulAccount::collect, std::placeholders::_1,
+                std::placeholders::_2, callEventTraces, std::placeholders::_3,
+                std::placeholders::_4, std::placeholders::_5);
   auto getLastInstFunc = [this, tid]() -> const llvm::Instruction * {
     auto it = this->callEventTraces.find(tid);
     if (it != this->callEventTraces.end() && !it->second.empty()) {
@@ -2819,6 +2819,52 @@ void SolanaAnalysisPass::handleNonRustModelAPI(const xray::ctx *ctx, TID tid,
       if (valueName1.contains(".owner") || valueName2.contains(".owner"))
         thread->assertOwnerEqualMap[pair] = e;
     }
+  } else if (TargetFuncName.startswith("sol.invoke_signed.") ||
+             TargetFuncName.startswith("sol.invoke.")) {
+    auto value = CS.getArgOperand(0);
+    // find all accounts invoked
+    if (!isa<CallBase>(value))
+      value = inst->getPrevNonDebugInstruction();
+    auto e = graph->createReadEvent(ctx, inst, tid);
+
+    if (auto call_inst = dyn_cast<CallBase>(value)) {
+      auto value2 = value;
+      CallSite CS2(call_inst);
+      if (CS2.getTargetFunction()->getName().startswith(
+              "sol.model.opaqueAssign")) {
+        value2 = CS2.getArgOperand(1);
+      }
+      if (auto call_inst2 = dyn_cast<CallBase>(value2)) {
+        CallSite CS3(call_inst2);
+        if (CS3.getTargetFunction()->getName().contains("instruction::")) {
+          auto valuex = CS.getArgOperand(1);
+          auto valueNameX = LangModel::findGlobalString(valuex);
+          // split
+          valueNameX = valueNameX.substr(1, valueNameX.size() - 2);
+          if (DEBUG_RUST_API)
+            llvm::outs() << "sol.invoke: valueNameX: " << valueNameX << "\n";
+          llvm::SmallVector<StringRef, 8> value_vec;
+          valueNameX.split(value_vec, ',', -1, false);
+          for (auto value_ : value_vec) {
+            auto foundClone = value_.find(".clone");
+            if (foundClone != std::string::npos)
+              value_ = value_.substr(0, foundClone);
+            if (DEBUG_RUST_API)
+              llvm::outs() << "sol.invoke: value_: " << value_ << "\n";
+            thread->accountsInvokedMap[value_] = e;
+            if (!thread->isInAccountsMap(value_)) {
+              value_ = findCallStackAccountAliasName(func, e, value_);
+              thread->accountsInvokedMap[value_] = e;
+            }
+          }
+        }
+      }
+    } else {
+      if (DEBUG_RUST_API) {
+        llvm::outs() << "sol.invoke: failed to find invoked accounts: "
+                     << *value << "\n";
+      }
+    }
   } else if (TargetFuncName.contains("//initialized")) {
     if (DEBUG_RUST_API)
       llvm::outs() << "sol.initialized: " << *inst << "\n";
@@ -3206,10 +3252,10 @@ void SolanaAnalysisPass::updateAccountStates(StaticThread *curThread) {
 
 void SolanaAnalysisPass::detectUntrustfulAccounts() {
   // Detect untrustful accounts.
-  auto collector = std::bind(&UntrustfulAccount::collect, std::placeholders::_1,
-                             std::placeholders::_2, callEventTraces,
-                             std::placeholders::_3, std::placeholders::_4,
-                             std::placeholders::_5);
+  auto collector =
+      std::bind(&UntrustfulAccount::collect, std::placeholders::_1,
+                std::placeholders::_2, callEventTraces, std::placeholders::_3,
+                std::placeholders::_4, std::placeholders::_5);
   UntrustfulAccountDetector detector(
       funcArgTypesMap, threadStartFunctions, potentialOwnerAccounts,
       globalStateAccounts, anchorStructFunctionFieldsMap, accountsPDAMap,
