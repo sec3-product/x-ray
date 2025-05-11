@@ -16,26 +16,26 @@ RUN llvm-config --version
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Prepare for installing CMake via APT (ref: https://apt.kitware.com/).
-RUN apt-get update && \
-    apt-get install -y curl && \
-    curl -sSf https://apt.kitware.com/kitware-archive.sh | sh
-
 # Build tools and dependencies.
 # Go: Pick up the latest stable Go releases via
 # https://go.dev/wiki/Ubuntu#using-ppa.
 # Pinning to Go-1.22 due to https://github.com/golang/go/issues/68976.
-RUN apt-get install -y software-properties-common \
+RUN apt-get update \
+    && apt-get install -y curl software-properties-common \
     && add-apt-repository ppa:longsleep/golang-backports \
     && apt-get update \
     && apt-get install -y \
         build-essential \
-        cmake \
         golang-1.22-go \
         wget \
         git \
         zlib1g-dev
-ENV PATH=/usr/lib/go-1.22/bin:$PATH
+
+# Pin cmake to < 4.0 to avoid "Compatibility with CMake < 3.5 has been removed from CMake".
+RUN curl -LO https://github.com/Kitware/CMake/releases/download/v3.31.7/cmake-3.31.7-linux-x86_64.sh && \
+    sh cmake-3.31.7-linux-x86_64.sh --prefix=/usr/local --skip-license
+
+ENV PATH=/usr/lib/go-1.22/bin:/usr/local/bin:$PATH
 
 WORKDIR /x-ray-toolchain
 ARG VERSION=unknown

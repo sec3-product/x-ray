@@ -25,8 +25,7 @@ void UntrustfulAccountDetector::detect(StaticThread *curThread) {
                    << " == " << pair.second << "\n";
     }
     for (auto [account, aliasAccounts] : curThread->accountAliasesMap) {
-      llvm::outs() << "account: " << account << " aliases: "
-                   << "\n";
+      llvm::outs() << "account: " << account << " aliases: " << "\n";
       for (auto aliasAccount : aliasAccounts) {
         llvm::outs() << "         " << aliasAccount << "\n";
       }
@@ -58,7 +57,8 @@ void UntrustfulAccountDetector::detect(StaticThread *curThread) {
   // Traverse all the accounts and check for untrustful accounts.
   for (auto [accountName, e] : curThread->accountsMap) {
     if (DEBUG_RUST_API) {
-      llvm::outs() << "UntrustfulAccountDetector::detect account: " << accountName << "\n";
+      llvm::outs() << "UntrustfulAccountDetector::detect account: "
+                   << accountName << "\n";
     }
     // Skip initialization function.
     if (isInit) {
@@ -80,7 +80,8 @@ void UntrustfulAccountDetector::detect(StaticThread *curThread) {
         !curThread->isAccountUsedInSeed(accountName)) {
       // llvm::errs() << "==============VULNERABLE:
       // MissingOwnerCheck!============\n";
-      collectUntrustfulAccountFunc(accountName, e, SVE::Type::MISS_OWNER, 10, "");
+      collectUntrustfulAccountFunc(accountName, e, SVE::Type::MISS_OWNER, 10,
+                                   "");
       isUnvalidate = true;
     }
     if (!isUnvalidate && curThread->isAccountBorrowData(accountName) &&
@@ -215,11 +216,18 @@ void UntrustfulAccountDetector::detect(StaticThread *curThread) {
                       accountName) &&
                   !isAccountUsedInSeedsProgramAddress(accountName)) {
 
-                llvm::outs() << "==============VULNERABLE: Account other ==============\n";
-                llvm::outs() << "accountName: " << accountName << "\n"
-                  << "  validated? " << curThread->isAccountKeyValidated(accountName) << "\n";
+                if (DEBUG_RUST_API) {
+                  llvm::outs()
+                      << "==============VULNERABLE: Untrustful Account Other "
+                         "==============\n";
+                  llvm::outs()
+                      << "accountName: " << accountName << "\n"
+                      << "  validated? "
+                      << curThread->isAccountKeyValidated(accountName) << "\n";
+                }
                 collectUntrustfulAccountFunc(
-                    accountName, e, SVE::Type::ACCOUNT_UNVALIDATED_OTHER, 8, "");
+                    accountName, e, SVE::Type::ACCOUNT_UNVALIDATED_OTHER, 8,
+                    "");
                 isUnvalidate = true;
               }
             }
