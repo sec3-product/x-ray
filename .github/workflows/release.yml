@@ -5,6 +5,9 @@ on:
     tags:
       - "v*.*.*"
 
+env:
+  QEMU_BINFMT_IMAGE: tonistiigi/binfmt:qemu-v10.2.1
+
 jobs:
   build-amd64:
     runs-on: self-hosted
@@ -68,6 +71,18 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Setup QEMU builder
+        run: |
+          docker run --privileged --rm ${{ env.QEMU_BINFMT_IMAGE }} --version
+          docker run --privileged --rm ${{ env.QEMU_BINFMT_IMAGE }} --uninstall qemu-* || true
+          docker run --privileged --rm ${{ env.QEMU_BINFMT_IMAGE }} --install arm64
+
+      - name: Print QEMU and binfmt diagnostics
+        run: |
+          uname -a
+          cat /proc/sys/fs/binfmt_misc/qemu-aarch64
+          docker run --rm --platform linux/arm64 ubuntu:22.04 uname -m
 
       - name: Remove existing GitHub registry login
         run: |

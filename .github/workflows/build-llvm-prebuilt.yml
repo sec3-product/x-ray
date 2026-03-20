@@ -3,6 +3,9 @@ name: Build and push llvm-prebuilt image
 on:
   workflow_dispatch:
 
+env:
+  QEMU_BINFMT_IMAGE: tonistiigi/binfmt:qemu-v10.2.1
+
 jobs:
   build-amd64:
     runs-on: self-hosted
@@ -37,7 +40,15 @@ jobs:
 
       - name: Setup QEMU builder
         run: |
-          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          docker run --privileged --rm ${{ env.QEMU_BINFMT_IMAGE }} --version
+          docker run --privileged --rm ${{ env.QEMU_BINFMT_IMAGE }} --uninstall qemu-* || true
+          docker run --privileged --rm ${{ env.QEMU_BINFMT_IMAGE }} --install arm64
+
+      - name: Print QEMU and binfmt diagnostics
+        run: |
+          uname -a
+          cat /proc/sys/fs/binfmt_misc/qemu-aarch64
+          docker run --rm --platform linux/arm64 ubuntu:22.04 uname -m
 
       - name: Build llvm-prebuilt image
         run: |
