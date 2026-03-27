@@ -55,7 +55,7 @@ Ruleset Ruleset::createRustModelRuleset() {
   // Insecure PDA sharing.
   RS.addRule(Rule(handleOpaqueAssign));
 
-  return Ruleset();
+  return RS;
 }
 
 } // namespace xray
