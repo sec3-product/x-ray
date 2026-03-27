@@ -31,9 +31,17 @@ RUN apt-get update \
         git \
         zlib1g-dev
 
+ARG TARGETARCH
+
 # Pin cmake to < 4.0 to avoid "Compatibility with CMake < 3.5 has been removed from CMake".
-RUN curl -LO https://github.com/Kitware/CMake/releases/download/v3.31.7/cmake-3.31.7-linux-x86_64.sh && \
-    sh cmake-3.31.7-linux-x86_64.sh --prefix=/usr/local --skip-license
+# TODO: Remove the pinning and move back to the APT version.
+RUN case "${TARGETARCH}" in \
+      amd64) CMAKE_ARCH=x86_64 ;; \
+      arm64) CMAKE_ARCH=aarch64 ;; \
+      *) echo "Unsupported arch: ${TARGETARCH}" && exit 1 ;; \
+    esac && \
+    curl -LO https://github.com/Kitware/CMake/releases/download/v3.31.7/cmake-3.31.7-linux-${CMAKE_ARCH}.sh && \
+    sh cmake-3.31.7-linux-${CMAKE_ARCH}.sh --prefix=/usr/local --skip-license
 
 ENV PATH=/usr/lib/go-1.22/bin:/usr/local/bin:$PATH
 

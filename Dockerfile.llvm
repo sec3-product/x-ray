@@ -30,11 +30,11 @@ WORKDIR /llvm-project/build
 # LLVM_ENABLE_TERMINFO=OFF due to
 # https://github.com/llvm/llvm-project/issues/53950, and the feature isn't
 # needed for x-ray.
-RUN if [ "${TARGETARCH}" = "arm64" ]; then \
-        export LLVM_TARGETS_TO_BUILD="AArch64"; \
-    else \
-        export LLVM_TARGETS_TO_BUILD="X86"; \
-    fi \
+RUN case "${TARGETARCH}" in \
+        arm64) export LLVM_TARGETS_TO_BUILD="AArch64" ;; \
+        amd64) export LLVM_TARGETS_TO_BUILD="X86" ;; \
+        *) echo "Unsupported arch: ${TARGETARCH}" && exit 1 ;; \
+    esac \
     && cmake \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_C_COMPILER=clang-14 \
