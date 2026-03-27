@@ -182,7 +182,7 @@ dependencies setup, obtaining LLVM, and how to build X-Ray components.
 #### Prerequisites
 
 - CMake 3.24 or higher
-- Go 1.22 or higher
+- Go 1.26 or higher
 - Optional: Clang compiler 14.0.6 (only required when compiling the initial
   LLVM source code locally; subsequent X-Ray component compilation will use the
   Clang compiler from the prebuilt/built LLVM)

@@ -1,6 +1,6 @@
 module github.com/sec3-product/x-ray
 
-go 1.22
+go 1.26
 
 require (
 	github.com/buger/jsonparser v1.1.1

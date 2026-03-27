@@ -19,14 +19,13 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Build tools and dependencies.
 # Go: Pick up the latest stable Go releases via
 # https://go.dev/wiki/Ubuntu#using-ppa.
-# Pinning to Go-1.22 due to https://github.com/golang/go/issues/68976.
 RUN apt-get update \
     && apt-get install -y curl software-properties-common \
     && add-apt-repository ppa:longsleep/golang-backports \
     && apt-get update \
     && apt-get install -y \
         build-essential \
-        golang-1.22-go \
+        golang-1.26-go \
         wget \
         git \
         zlib1g-dev
@@ -43,7 +42,7 @@ RUN case "${TARGETARCH}" in \
     curl -LO https://github.com/Kitware/CMake/releases/download/v3.31.7/cmake-3.31.7-linux-${CMAKE_ARCH}.sh && \
     sh cmake-3.31.7-linux-${CMAKE_ARCH}.sh --prefix=/usr/local --skip-license
 
-ENV PATH=/usr/lib/go-1.22/bin:/usr/local/bin:$PATH
+ENV PATH=/usr/lib/go-1.26/bin:/usr/local/bin:$PATH
 
 WORKDIR /x-ray-toolchain
 ARG VERSION=unknown
